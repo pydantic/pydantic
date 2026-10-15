@@ -3,7 +3,7 @@ use core::fmt;
 use hashbrown::HashTable;
 use pyo3::PyTraverseError;
 use pyo3::PyVisit;
-use pyo3::exceptions::{PyAttributeError, PyKeyError};
+use pyo3::exceptions::PyKeyError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyMapping, PyString};
@@ -202,23 +202,6 @@ pub fn mapping_get<'py>(
         .map(|value| if value.is(undefined) { None } else { Some(value) })
 }
 
-// TODO replace with `PyAnyMethods::getattr_opt` once https://github.com/PyO3/pyo3/pull/5985 is merged:
-pub(crate) fn py_get_attrs<'py, N>(obj: &Bound<'py, PyAny>, attr_name: N) -> PyResult<Option<Bound<'py, PyAny>>>
-where
-    N: IntoPyObject<'py, Target = PyString>,
-{
-    match obj.getattr(attr_name) {
-        Ok(attr) => Ok(Some(attr)),
-        Err(err) => {
-            if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {
-                Ok(None)
-            } else {
-                Err(err)
-            }
-        }
-    }
-}
-
 /// A hash table which uses (hashable) Python objects as keys
 #[derive(Debug)]
 pub struct PyHashTable<T>(HashTable<PyHashTableEntry<T>>);
@@ -306,13 +289,8 @@ impl<'a, 'py> HashTableSearcher<'a, 'py> {
 }
 
 fn hash_object(value: &Bound<'_, PyAny>) -> PyResult<u64> {
-    let hash_value = cast_unsigned(value.hash()?).try_into()?;
+    let hash_value = value.hash()?.cast_unsigned().try_into()?;
     Ok(hash_value)
-}
-
-// TODO: replace with isize::cast_unsigned on MSRV 1.87
-fn cast_unsigned(x: isize) -> usize {
-    x as usize
 }
 
 impl<T: PyGcTraverse> PyGcTraverse for PyHashTableEntry<T> {
