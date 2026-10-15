@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from collections.abc import Iterable
 from copy import copy
+from datetime import timedelta
+from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any
 
-from pydantic_core import CoreSchema, PydanticCustomError, ValidationError, to_jsonable_python
+from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, ValidationError, to_jsonable_python
 from pydantic_core import core_schema as cs
 
 from ._fields import PydanticMetadata
@@ -203,6 +207,19 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     for constraint, value in schema_update.items():
         if constraint not in CONSTRAINTS_TO_ALLOWED_SCHEMAS:
             raise ValueError(f'Unknown constraint {constraint}')
+        if constraint == 'multiple_of':
+            try:
+                if isinstance(value, int | float) and (value <= 0 or not math.isfinite(value)):
+                    raise SchemaError("'multiple_of' must be a finite number greater than 0")
+                if isinstance(value, timedelta) and value <= timedelta(0):
+                    raise SchemaError("'multiple_of' must be a finite number greater than 0")
+                if isinstance(value, Decimal):
+                    if not value.is_finite() or value <= 0:
+                        raise SchemaError("'multiple_of' must be a finite number greater than 0")
+                if isinstance(value, Fraction) and value <= 0:
+                    raise SchemaError("'multiple_of' must be a finite number greater than 0")
+            except (TypeError, InvalidOperation):
+                raise SchemaError("'multiple_of' must be a finite number greater than 0")
         allowed_schemas = CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint]
 
         # if it becomes necessary to handle more than one constraint
