@@ -251,7 +251,6 @@ ExpectedSerializationTypes: TypeAlias = Literal[
     'float',
     'str',
     'bytes',
-    'bytearray',
     'list',
     'deque',
     'tuple',

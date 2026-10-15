@@ -90,6 +90,8 @@ from pydantic import (
     TypeAdapter,
     ValidateAs,
     ValidationError,
+    WrapSerializer,
+    WrapValidator,
     conbytes,
     condate,
     condecimal,
@@ -1621,6 +1623,20 @@ def test_skip_validation_serialization():
     assert A(x=1).model_dump() == {'x': 2}
     assert A(x='abc').model_dump() == {'x': 'abcabc'}  # no validation
     assert A(x='abc').model_dump_json() == '{"x":"abcabc"}'
+
+
+def test_skip_validation_wrap_serializer_context():
+    class User(BaseModel):
+        name: str
+
+    class UserLogin(User):
+        password: str
+
+    WrappedUser = Annotated[User, WrapValidator(lambda v, h: h(v)), WrapSerializer(lambda v, h: h(v))]
+
+    ta = TypeAdapter(SkipValidation[WrappedUser])
+
+    assert ta.dump_python(UserLogin(name='a', password='secret')) == {'name': 'a'}
 
 
 def test_skip_validation_json_schema():
