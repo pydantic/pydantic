@@ -2117,6 +2117,28 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
 
 
 @pytest.mark.parametrize(
+    'val_json_bytes,ser_json_bytes,validation_format,serialization_format',
+    [
+        ('base64', 'utf8', 'base64url', 'binary'),
+        ('utf8', 'base64', 'binary', 'base64url'),
+    ],
+)
+def test_bytes_format_json_schema_mode(
+    val_json_bytes: Literal['base64', 'utf8'],
+    ser_json_bytes: Literal['base64', 'utf8'],
+    validation_format: str,
+    serialization_format: str,
+):
+    class Model(BaseModel):
+        model_config = ConfigDict(val_json_bytes=val_json_bytes, ser_json_bytes=ser_json_bytes)
+
+        data: bytes
+
+    assert Model.model_json_schema(mode='validation')['properties']['data']['format'] == validation_format
+    assert Model.model_json_schema(mode='serialization')['properties']['data']['format'] == serialization_format
+
+
+@pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
