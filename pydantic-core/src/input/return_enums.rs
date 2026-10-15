@@ -146,7 +146,7 @@ pub(crate) fn validate_iter_to_vec<'py>(
                 max_length_check.incr()?;
                 if !is_last_partial {
                     errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
-                    if fail_fast {
+                    if fail_fast || state.errors_discarded {
                         return Err(ValError::LineErrors(errors));
                     }
                 }
@@ -261,7 +261,7 @@ pub(crate) fn validate_iter_to_set<'py>(
             Err(ValError::Omit) => (),
             Err(err) => return Err(err),
         }
-        if fail_fast && !errors.is_empty() {
+        if (fail_fast || state.errors_discarded) && !errors.is_empty() {
             return Err(ValError::LineErrors(errors));
         }
     }

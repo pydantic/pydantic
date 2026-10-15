@@ -26,6 +26,10 @@ pub struct ValidationState<'a, 'py> {
     // `model_fields_set` attached to a model. `model_fields_set` includes extra fields
     // when extra='allow', whereas this tally does not.
     pub fields_set_count: Option<usize>,
+    // True if any validation errors produced will be discarded, so only success or failure matters
+    // (e.g. smart union members tried after another member already succeeded). Validators which
+    // collect multiple errors may then stop at the first one.
+    pub errors_discarded: bool,
     // True if `allow_partial=true` and we're validating the last element of a sequence or mapping.
     pub allow_partial: PartialMode,
     // Whether at least one field had a validation error. This is used in the context of structured types
@@ -57,6 +61,7 @@ impl<'a, 'py> ValidationState<'a, 'py> {
             recursion_guard, // Don't care about exactness unless doing union validation
             exactness: None,
             fields_set_count: None,
+            errors_discarded: false,
             allow_partial,
             has_field_error: false,
             field_name,
