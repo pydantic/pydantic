@@ -2116,6 +2116,36 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
     }
 
 
+# Regression test for https://github.com/pydantic/pydantic/issues/14004
+# The validation JSON schema should follow val_json_bytes (which decides how
+# the input string is decoded), and the serialization JSON schema should
+# follow ser_json_bytes (which decides how the value is emitted). Previously
+# both modes consulted ser_json_bytes only, so the validation schema could
+# describe the wrong input.
+@pytest.mark.parametrize(
+    'val_json_bytes,ser_json_bytes,val_format,ser_format',
+    [
+        ('base64', 'utf8', 'base64url', 'binary'),
+        ('utf8', 'base64', 'binary', 'base64url'),
+        ('base64', 'base64', 'base64url', 'base64url'),
+        ('utf8', 'utf8', 'binary', 'binary'),
+    ],
+)
+def test_bytes_schema_follows_json_bytes_mode(
+    val_json_bytes: Literal['base64', 'utf8'],
+    ser_json_bytes: Literal['base64', 'utf8'],
+    val_format: str,
+    ser_format: str,
+):
+    class Model(BaseModel):
+        model_config = ConfigDict(val_json_bytes=val_json_bytes, ser_json_bytes=ser_json_bytes)
+
+        x: bytes
+
+    assert Model.model_json_schema()['properties']['x']['format'] == val_format
+    assert Model.model_json_schema(mode='serialization')['properties']['x']['format'] == ser_format
+
+
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
