@@ -290,8 +290,7 @@ impl ModelValidator {
             } else {
                 PySet::new(py, [root_field])?
             };
-            force_setattr(py, self_instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
-            force_setattr(py, self_instance, root_field, &output)?;
+            set_root_model_attrs(self_instance, &output, &fields_set)?;
         } else {
             let (model_dict, model_extra, fields_set) = self.validate_inner_fields(py, input, state)?;
             set_model_attrs(self_instance, &model_dict, &model_extra, &fields_set)?;
@@ -333,8 +332,7 @@ impl ModelValidator {
             } else {
                 PySet::new(py, [root_field])?
             };
-            force_setattr(py, &instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
-            force_setattr(py, &instance, root_field, output)?;
+            set_root_model_attrs(&instance, output, &fields_set)?;
         } else {
             let (model_dict, model_extra, val_fields_set) = self.validate_inner_fields(py, input, state)?;
             instance = create_class(self.class.bind(py))?;
@@ -380,6 +378,18 @@ pub(super) fn create_class<'py>(class: &Bound<'py, PyType>) -> PyResult<Bound<'p
             None => py_err!(PyTypeError; "base type without tp_new"),
         }
     }
+}
+
+fn set_root_model_attrs<'py, V>(instance: &Bound<'py, PyAny>, output: V, fields_set: &Bound<'py, PyAny>) -> PyResult<()>
+where
+    V: IntoPyObject<'py>,
+{
+    let py = instance.py();
+    force_setattr(py, instance, root_field_py_str(py), output)?;
+    force_setattr(py, instance, intern!(py, DUNDER_FIELDS_SET_KEY), fields_set)?;
+    force_setattr(py, instance, intern!(py, DUNDER_MODEL_EXTRA_KEY), py.None())?;
+    force_setattr(py, instance, intern!(py, DUNDER_MODEL_PRIVATE_KEY), py.None())?;
+    Ok(())
 }
 
 fn set_model_attrs(
