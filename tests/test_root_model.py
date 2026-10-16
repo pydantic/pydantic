@@ -762,3 +762,59 @@ def test_type_checking_model_dump_signature_in_sync_with_base_model() -> None:
     assert module.RootModel.model_dump.__doc__ is not None
     assert BaseModel.model_dump.__doc__ is not None
     assert inspect.cleandoc(module.RootModel.model_dump.__doc__) == inspect.cleandoc(BaseModel.model_dump.__doc__)
+
+
+def test_root_model_private_attributes_stored_in_slot() -> None:
+    class Root(RootModel[int]):
+        _tag: str = PrivateAttr('x')
+
+    r = Root(1)
+    assert r.__dict__ == {'root': 1}
+    assert r._tag == 'x'
+    assert r.__pydantic_private__ == {'_tag': 'x'}
+    assert r.__pydantic_extra__ is None
+
+
+def test_root_model_slots_initialized_without_private_attrs() -> None:
+    class Root(RootModel[int]):
+        pass
+
+    r = Root(1)
+    assert r.__dict__ == {'root': 1}
+    assert r.__pydantic_private__ is None
+    assert r.__pydantic_extra__ is None
+
+    r_constructed = Root.model_construct(1)
+    assert r_constructed.__dict__ == {'root': 1}
+    assert r_constructed.__pydantic_private__ is None
+    assert r_constructed.__pydantic_extra__ is None
+
+
+def test_root_model_pickle_and_backward_compatibility(create_module: Any) -> None:
+    @create_module
+    def module() -> None:
+        from pydantic import PrivateAttr, RootModel
+
+        class Root(RootModel[int]):
+            _tag: str = PrivateAttr('x')
+
+    Root = module.Root
+    r = Root(1)
+    dumped = pickle.dumps(r)
+    loaded = pickle.loads(dumped)
+    assert loaded.__dict__ == {'root': 1}
+    assert loaded._tag == 'x'
+    assert loaded.__pydantic_private__ == {'_tag': 'x'}
+    assert loaded.__pydantic_extra__ is None
+
+    # Older pickled RootModel where __pydantic_private__ was part of __dict__:
+    old_state = {
+        '__dict__': {'root': 1, '__pydantic_private__': {'_tag': 'old'}},
+        '__pydantic_fields_set__': {'root'},
+    }
+    old_model = Root.__new__(Root)
+    old_model.__setstate__(old_state)
+    assert old_model.__dict__ == {'root': 1}
+    assert old_model._tag == 'old'
+    assert old_model.__pydantic_private__ == {'_tag': 'old'}
+    assert old_model.__pydantic_extra__ is None

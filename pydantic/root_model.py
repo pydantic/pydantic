@@ -3,7 +3,7 @@
 from __future__ import annotations as _annotations
 
 from collections.abc import Callable
-from copy import copy, deepcopy
+from copy import copy
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 from pydantic_core import PydanticUndefined
@@ -46,8 +46,6 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
     """
 
     __pydantic_root_model__ = True
-    __pydantic_private__ = None
-    __pydantic_extra__ = None
 
     root: RootModelRootType
 
@@ -87,15 +85,16 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         """
         return super().model_construct(root=root, _fields_set=_fields_set)
 
-    def __getstate__(self) -> dict[Any, Any]:
-        return {
-            '__dict__': self.__dict__,
-            '__pydantic_fields_set__': self.__pydantic_fields_set__,
-        }
-
     def __setstate__(self, state: dict[Any, Any]) -> None:
-        _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
-        _object_setattr(self, '__dict__', state['__dict__'])
+        dict_ = state.get('__dict__', {})
+        if '__pydantic_private__' in dict_:
+            private = dict_.pop('__pydantic_private__')
+        else:
+            private = state.get('__pydantic_private__', None)
+        _object_setattr(self, '__pydantic_fields_set__', state.get('__pydantic_fields_set__', set()))
+        _object_setattr(self, '__pydantic_extra__', state.get('__pydantic_extra__', None))
+        _object_setattr(self, '__pydantic_private__', private)
+        _object_setattr(self, '__dict__', dict_)
 
     def __copy__(self) -> Self:
         """Returns a shallow copy of the model."""
@@ -103,24 +102,19 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         m = cls.__new__(cls)
         new_dict = copy(self.__dict__)
         new_dict['root'] = copy(self.__dict__['root'])  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
-        # Private attributes live in `__dict__` on root models, so give the copy its own:
-        private = new_dict.get('__pydantic_private__')
-        if private is not None:
-            new_dict['__pydantic_private__'] = {  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
-                k: v for k, v in private.items() if v is not PydanticUndefined
-            }
         _object_setattr(m, '__dict__', new_dict)
+        _object_setattr(m, '__pydantic_extra__', copy(self.__pydantic_extra__))
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
-        return m
 
-    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
-        """Returns a deep copy of the model."""
-        cls = type(self)
-        m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
-        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
-        # and attempting a deepcopy would be marginally slower.
-        _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
+        if not hasattr(self, '__pydantic_private__') or self.__pydantic_private__ is None:
+            _object_setattr(m, '__pydantic_private__', None)
+        else:
+            _object_setattr(
+                m,
+                '__pydantic_private__',
+                {k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined},
+            )
+
         return m
 
     if TYPE_CHECKING:

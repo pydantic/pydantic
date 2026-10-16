@@ -17,10 +17,14 @@ def test_model_root():
     assert isinstance(m, RootModel)
     assert m.root == [1, 2, 3]
     assert m.__dict__ == {'root': [1, 2, 3]}
+    assert m.__pydantic_extra__ is None
+    assert m.__pydantic_private__ is None
 
     m = v.validate_json('[1, 2, "3"]')
     assert isinstance(m, RootModel)
     assert m.root == [1, 2, 3]
+    assert m.__pydantic_extra__ is None
+    assert m.__pydantic_private__ is None
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('wrong')
