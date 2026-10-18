@@ -2116,6 +2116,22 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
     }
 
 
+def test_bytes_schema_val_json_bytes():
+    class ModelValOnly(BaseModel):
+        model_config = ConfigDict(val_json_bytes='base64')
+        x: bytes
+
+    assert ModelValOnly.model_json_schema(mode='validation')['properties']['x']['format'] == 'base64url'
+    assert ModelValOnly.model_json_schema(mode='serialization')['properties']['x']['format'] == 'binary'
+
+    class ModelSerOnly(BaseModel):
+        model_config = ConfigDict(ser_json_bytes='base64')
+        x: bytes
+
+    assert ModelSerOnly.model_json_schema(mode='validation')['properties']['x']['format'] == 'binary'
+    assert ModelSerOnly.model_json_schema(mode='serialization')['properties']['x']['format'] == 'base64url'
+
+
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
