@@ -115,6 +115,15 @@ impl ValidatorIterator {
         slf
     }
 
+    fn __copy__(slf: &Bound<'_, Self>) -> Py<Self> {
+        slf.clone().unbind()
+    }
+
+    #[pyo3(signature = (_memo, /))]
+    fn __deepcopy__(slf: &Bound<'_, Self>, _memo: &Bound<'_, PyAny>) -> Py<Self> {
+        slf.clone().unbind()
+    }
+
     fn __next__(mut slf: PyRefMut<'_, Self>, py: Python) -> PyResult<Option<Py<PyAny>>> {
         let min_length = slf.min_length;
         let max_length = slf.max_length;

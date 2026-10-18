@@ -189,3 +189,31 @@ def test_iterable_arbitrary_type():
         match='Unable to generate pydantic-core schema for .*CustomIterable.*. Set `arbitrary_types_allowed=True`',
     ):
         TypeAdapter(CustomIterable)
+
+
+def test_iterable_copy() -> None:
+    import copy
+
+    from pydantic.dataclasses import dataclass
+
+    class Parent(BaseModel):
+        children: Iterable[str]
+
+    p = Parent(children=['a', 'b'])
+    copied_deep = p.model_copy(deep=True)
+    assert copied_deep is not p
+
+    copied_shallow = p.model_copy(deep=False)
+    assert copied_shallow is not p
+
+    p2 = Parent(children=['x', 'y'])
+    dc = copy.deepcopy(p2)
+    assert dc is not p2
+
+    @dataclass
+    class ParentDC:
+        children: Iterable[str]
+
+    dc_inst = ParentDC(children=['1', '2'])
+    dc_copied = copy.deepcopy(dc_inst)
+    assert dc_copied is not dc_inst

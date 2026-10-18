@@ -177,6 +177,15 @@ impl SerializationIterator {
         slf
     }
 
+    fn __copy__(slf: &Bound<'_, Self>) -> Py<Self> {
+        slf.clone().unbind()
+    }
+
+    #[pyo3(signature = (_memo, /))]
+    fn __deepcopy__(slf: &Bound<'_, Self>, _memo: &Bound<'_, PyAny>) -> Py<Self> {
+        slf.clone().unbind()
+    }
+
     fn __next__(&mut self, py: Python) -> PyResult<Option<Py<PyAny>>> {
         let iterator = self.iterator.bind(py);
         let state = &mut self.extra_owned.to_state(py);
