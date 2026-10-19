@@ -3090,6 +3090,29 @@ def test_recursion_loop_error():
     )
 
 
+def test_recursion_loop_error_validate_strings_cyclic() -> None:
+    class Model(BaseModel):
+        x: Optional['Model'] = None
+
+    data = {}
+    data['x'] = data
+
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
+        Model.model_validate_strings(data)
+
+
+def test_recursion_loop_error_validate_strings_deep() -> None:
+    class Model(BaseModel):
+        x: Optional['Model'] = None
+
+    data = {}
+    for _ in range(10_000):
+        data = {'x': data}
+
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
+        Model.model_validate_strings(data)
+
+
 def test_protected_namespace_default():
     with pytest.warns(
         UserWarning, match="Field 'model_dump_something' in 'Model' conflicts with protected namespace 'model_dump'"
