@@ -1,6 +1,7 @@
 import itertools
 import re
-from collections.abc import Iterable
+import typing
+from collections.abc import Iterable, Iterator
 from typing import Annotated, Any
 
 import pytest
@@ -13,6 +14,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     field_validator,
+    validate_call,
 )
 
 
@@ -189,3 +191,47 @@ def test_iterable_arbitrary_type():
         match='Unable to generate pydantic-core schema for .*CustomIterable.*. Set `arbitrary_types_allowed=True`',
     ):
         TypeAdapter(CustomIterable)
+
+
+@pytest.mark.parametrize(
+    'type_annotation',
+    (
+        pytest.param(Iterator[int], id='Iterator[int]'),
+        pytest.param(Iterator[Any], id='Iterator[Any]'),
+        pytest.param(Iterator, id='Iterator'),
+        pytest.param(typing.Iterator[int], id='typing.Iterator[int]'),
+        pytest.param(typing.Iterator, id='typing.Iterator'),
+    ),
+)
+def test_iterator(type_annotation):
+    def int_gen():
+        yield '1'
+        yield 2
+        yield 3
+
+    ta = TypeAdapter(type_annotation)
+    it = ta.validate_python(int_gen())
+    if type_annotation in (Iterator[int], typing.Iterator[int]):
+        assert list(it) == [1, 2, 3]
+    else:
+        assert list(it) == ['1', 2, 3]
+
+
+def test_iterator_in_model_and_validate_call():
+    class StreamModel(BaseModel):
+        stream: Iterator[int]
+
+    def gen():
+        yield 1
+        yield 2
+
+    m = StreamModel(stream=gen())
+    assert list(m.stream) == [1, 2]
+
+    @validate_call(validate_return=True)
+    def generate_numbers() -> Iterator[int]:
+        yield 10
+        yield 20
+
+    res = generate_numbers()
+    assert list(res) == [10, 20]
