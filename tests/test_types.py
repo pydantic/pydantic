@@ -25,6 +25,7 @@ from pydantic_core import (
     CoreSchema,
     PydanticCustomError,
     PydanticOmit,
+    PydanticUseDefault,
     SchemaError,
     core_schema,
 )
@@ -90,6 +91,8 @@ from pydantic import (
     TypeAdapter,
     ValidateAs,
     ValidationError,
+    ValidatorFunctionWrapHandler,
+    WrapValidator,
     conbytes,
     condate,
     condecimal,
@@ -2239,6 +2242,74 @@ def test_on_error_omit() -> None:
     expected = Model(a_list=[1, 2, 3], a_dict={1: 1, 2: 2, 4: 4}, a_typed_dict=MyTypedDict(a=1))
 
     assert actual == expected
+
+
+@pytest.mark.parametrize('on_error', ['raise', 'default'])
+def test_invalid_validated_default(on_error: Literal['raise', 'default']) -> None:
+    class InvalidDefault:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.with_default_schema(
+                handler(source_type), default='bad', on_error=on_error, validate_default=True
+            )
+
+    class Model(TypedDict):
+        a: NotRequired[Annotated[int, InvalidDefault()]]
+
+    ta = TypeAdapter(Model)
+
+    assert ta.validate_python({'a': 1}) == {'a': 1}
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'bad',
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'a': 'abc'})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'bad' if on_error == 'default' else 'abc',
+        }
+    ]
+
+
+def test_invalid_validated_default_on_error_omit() -> None:
+    class InvalidDefault:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.with_default_schema(
+                handler(source_type), default='bad', on_error='omit', validate_default=True
+            )
+
+    class Model(TypedDict):
+        a: NotRequired[Annotated[int, InvalidDefault()]]
+
+    ta = TypeAdapter(Model)
+
+    assert ta.validate_python({}) == {}
+    assert ta.validate_python({'a': 'abc'}) == {}
+
+
+def test_use_default_in_validated_default() -> None:
+    def use_default(value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+        raise PydanticUseDefault()
+
+    class Model(BaseModel):
+        a: Annotated[str, WrapValidator(use_default)] = Field(default='default', validate_default=True)
+
+    with pytest.raises(SchemaError, match='Uncaught `PydanticUseDefault` exception'):
+        Model()
+
+    with pytest.raises(SchemaError, match='Uncaught `PydanticUseDefault` exception'):
+        Model(a='value')
 
 
 def test_on_error_omit_top_level() -> None:
