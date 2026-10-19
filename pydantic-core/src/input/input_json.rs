@@ -577,7 +577,15 @@ impl<'py> Input<'py> for str {
         _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<ValidationMatch<EitherTime<'py>>> {
-        bytes_as_time(self, self.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::lax)
+        match bytes_as_time(self, self.as_bytes(), microseconds_overflow_behavior) {
+            Ok(time) => Ok(ValidationMatch::lax(time)),
+            // Keys serialized with `ser_json_temporal='seconds'` are numbers of seconds, which in a JSON
+            // object can only be represented as strings (e.g. `{"3723": ...}`):
+            Err(err) => match str_as_float(self, self) {
+                Ok(float) => float_as_time(self, float.as_f64()).map(ValidationMatch::lax),
+                Err(_) => Err(err),
+            },
+        }
     }
 
     fn validate_datetime(
@@ -594,7 +602,17 @@ impl<'py> Input<'py> for str {
         _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<ValidationMatch<EitherTimedelta<'py>>> {
-        bytes_as_timedelta(self, self.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::lax)
+        match bytes_as_timedelta(self, self.as_bytes(), microseconds_overflow_behavior) {
+            Ok(timedelta) => Ok(ValidationMatch::lax(timedelta)),
+            // Keys serialized with `ser_json_timedelta='float'` (or `ser_json_temporal='seconds'`) are numbers
+            // of seconds, which in a JSON object can only be represented as strings (e.g. `{"1.5": ...}`):
+            Err(err) => match str_as_float(self, self) {
+                Ok(float) => {
+                    float_as_duration(self, float.as_f64()).map(|duration| ValidationMatch::lax(duration.into()))
+                }
+                Err(_) => Err(err),
+            },
+        }
     }
 
     fn validate_complex(&self, _strict: bool, py: Python<'py>) -> ValResult<ValidationMatch<EitherComplex<'py>>> {

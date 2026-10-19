@@ -121,6 +121,11 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
         if let Some(v) = T::validate_value(py, input, &self.lookup, strict)? {
             return Ok(v);
         }
+        if state.is_json_key()
+            && let Some(v) = self.lookup.validate_json_key(py, input)?
+        {
+            return Ok(v.clone_ref(py));
+        }
 
         // Fall back to calling the enum class (it handles calling `_missing_()` and such).
         // A `ValueError` means the value is not a valid member. Any other exception is propagated
@@ -128,13 +133,26 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
         // meaning the `_missing_()` definition is invalid):
         match class.call1((input.to_object(py)?,)) {
             Ok(res) => Ok(res.unbind()),
-            Err(err) if err.is_instance_of::<PyValueError>(py) => Err(ValError::new(
-                ErrorType::Enum {
-                    expected: self.expected_repr.clone(),
-                    context: None,
-                },
-                input,
-            )),
+            Err(err) if err.is_instance_of::<PyValueError>(py) => {
+                // JSON object keys can only be strings, e.g. `{"5": ...}` for a combination of
+                // `Flag` members which isn't a member itself (`ANIMALS | FRUIT`):
+                if state.is_json_key()
+                    && let Ok(int) = input.validate_int(false)
+                {
+                    match class.call1((int.into_inner(),)) {
+                        Ok(res) => return Ok(res.unbind()),
+                        Err(err) if err.is_instance_of::<PyValueError>(py) => {}
+                        Err(err) => return Err(err.into()),
+                    }
+                }
+                Err(ValError::new(
+                    ErrorType::Enum {
+                        expected: self.expected_repr.clone(),
+                        context: None,
+                    },
+                    input,
+                ))
+            }
             Err(err) => Err(err.into()),
         }
     }

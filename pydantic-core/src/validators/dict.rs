@@ -126,7 +126,12 @@ where
         for (_, is_last_partial, item_result) in self.state.enumerate_last_partial(iterator) {
             self.state.allow_partial = false.into();
             let (key, value) = item_result?;
-            let output_key = match self.key_validator.validate(self.py, key.borrow_input(), self.state) {
+            let key_input = key.borrow_input();
+            let key_result = {
+                let mut key_state = self.state.scoped_set_json_key(key_input.as_python().is_none());
+                self.key_validator.validate(self.py, key_input, &mut key_state)
+            };
+            let output_key = match key_result {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
                     for err in line_errors {

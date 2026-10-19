@@ -32,9 +32,9 @@ impl Validator for NoneValidator {
         &self,
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
-        _state: &mut ValidationState<'_, 'py>,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        match input.is_none() {
+        match input.is_none() || (state.is_json_key() && is_none_json_key(input)) {
             true => Ok(py.None()),
             false => Err(ValError::new(ErrorTypeDefaults::NoneRequired, input)),
         }
@@ -43,4 +43,13 @@ impl Validator for NoneValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+}
+
+/// Whether `input` is the JSON object key `None` is serialized to (see `none_json_key()`).
+///
+/// Should only be called when validating JSON object keys (see [`ValidationState::is_json_key()`]).
+pub(super) fn is_none_json_key<'py>(input: &(impl Input<'py> + ?Sized)) -> bool {
+    input
+        .validate_str(true, false)
+        .is_ok_and(|s| s.into_inner().as_cow().is_ok_and(|s| s == "None"))
 }

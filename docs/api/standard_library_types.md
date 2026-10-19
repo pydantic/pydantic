@@ -645,6 +645,17 @@ library can also be used.
 In [strict mode](../concepts/strict_mode.md), only [`time`][datetime.time] instances are accepted. In JSON mode, only strings complying to the
 [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format are accepted.
 
+<h4>JSON keys</h4>
+
+When used as [dictionary](#dictionaries) keys, [`time`][datetime.time] values are validated from
+the string keys of JSON objects. In addition to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format,
+numeric strings (e.g. `"3723"`, as produced when using the [`ser_json_temporal`][pydantic.ConfigDict.ser_json_temporal]
+`'seconds'` setting) are validated as seconds, the same way numbers are. This also applies in [strict mode](../concepts/strict_mode.md).
+
+/// version-changed | v2.15
+Numeric string keys were previously rejected.
+///
+
 <h4>Example</h4>
 
 ```python
@@ -706,6 +717,17 @@ In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as s
 In [strict mode](../concepts/strict_mode.md), only [`timedelta`][datetime.timedelta] instances are accepted. In JSON mode, only strings complying to the
 [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format are accepted.
 
+<h4>JSON keys</h4>
+
+When used as [dictionary](#dictionaries) keys, [`timedelta`][datetime.timedelta] values are validated from
+the string keys of JSON objects. In addition to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format,
+numeric strings (e.g. `"1.5"`, as produced when using the [`ser_json_timedelta`][pydantic.ConfigDict.ser_json_timedelta]
+`'float'` setting) are validated as seconds, the same way numbers are. This also applies in [strict mode](../concepts/strict_mode.md).
+
+/// version-changed | v2.15
+Numeric string keys were previously rejected.
+///
+
 <h4>Example</h4>
 
 ```python
@@ -748,6 +770,19 @@ use the enum [value][enum.Enum.value] during validation (so that it is also used
 
 In [JSON mode](../concepts/serialization.md#json-mode), enum instances are serialized using
 their [value][enum.Enum.value].
+
+<h3>JSON keys</h3>
+
+When used as [dictionary](#dictionaries) keys, enum members are validated from the string keys of JSON objects.
+As such, members with non-string values are also validated from the string representation of their value
+(e.g. `"1"` for a member with a value of `1`). This also applies in [strict mode](../concepts/strict_mode.md).
+
+[`Flag`][enum.Flag] enums are supported as well, including combinations of members that are not members themselves
+(e.g. `"5"` for `Perm.R | Perm.X`, with `R = 4` and `X = 1`).
+
+/// version-changed | v2.15
+Keys for non-string values and `Flag` combinations were previously rejected.
+///
 
 <h3>Example</h3>
 
@@ -792,6 +827,16 @@ except ValidationError as e:
 Supported types: [`None`][], [`NoneType`][types.NoneType] or `Literal[None]` (they are [equivalent](https://typing.readthedocs.io/en/latest/spec/special-types.html#none)).
 
 Allows only `None` as a value.
+
+<h3>JSON keys</h3>
+
+When used as [dictionary](#dictionaries) keys, `None` is serialized as the `"None"` string in JSON mode,
+and is validated from this string. If `None` is part of a union containing a string type (e.g. `str | None`),
+the `"None"` string is validated as a string.
+
+/// version-changed | v2.15
+The `"None"` key was previously rejected.
+///
 
 ## Generic collection types
 
@@ -1609,6 +1654,16 @@ Typing construct: [`typing.Literal`][] (see also: the [typing specification](htt
 Literals can be used to only allow specific literal values.
 
 Note that Pydantic applies [strict mode](../concepts/strict_mode.md) behavior when validating literal values (see [this issue](https://github.com/pydantic/pydantic/issues/9991)).
+
+<h3>JSON keys</h3>
+
+When used as [dictionary](#dictionaries) keys, literal values are validated from the string keys of JSON objects.
+As such, non-string literal values are also validated from their string representation (e.g. `"1"` for `Literal[1]`).
+String literal values take precedence in case of conflicts (e.g. for `Literal[1, '1']`, `"1"` is validated as `'1'`).
+
+/// version-changed | v2.15
+Keys for non-string values were previously rejected.
+///
 
 <h3>Example</h3>
 

@@ -41,6 +41,10 @@ pub struct ValidationState<'a, 'py> {
     pub data: Option<Bound<'py, PyDict>>,
     /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
     pub self_instance: Option<&'a Bound<'py, PyAny>>,
+    /// Whether we're validating a JSON object key. Such keys can only be represented as strings,
+    /// so validators which are otherwise exact (literals, enums) need to accept the string form of
+    /// non-string values (e.g. `"1"` for `Literal[1]`), even in strict mode.
+    json_key: bool,
     // deliberately make Extra readonly
     extra: Extra<'a, 'py>,
 }
@@ -63,6 +67,7 @@ impl<'a, 'py> ValidationState<'a, 'py> {
             extra,
             data: None,
             self_instance,
+            json_key: false,
         }
     }
 
@@ -115,6 +120,15 @@ impl<'a, 'py> ValidationState<'a, 'py> {
     /// Set `self_instance` to `None`, reset on exit of the scope.
     pub fn scoped_clear_self_instance(&mut self) -> ScopedSelfInstanceState<'_, 'a, 'py> {
         self.scoped_set(Self::self_instance_mut, None)
+    }
+
+    /// Set whether we're validating a JSON object key for the given scope.
+    pub fn scoped_set_json_key(&mut self, new_value: bool) -> ScopedJsonKeyState<'_, 'a, 'py> {
+        self.scoped_set(Self::json_key_mut, new_value)
+    }
+
+    pub fn is_json_key(&self) -> bool {
+        self.json_key
     }
 
     pub fn field_name(&self) -> Option<&Bound<'py, PyString>> {
@@ -184,6 +198,10 @@ impl<'a, 'py> ValidationState<'a, 'py> {
 
     fn has_field_error_mut(&mut self) -> &mut bool {
         &mut self.has_field_error
+    }
+
+    fn json_key_mut(&mut self) -> &mut bool {
+        &mut self.json_key
     }
 
     fn self_instance_mut(&mut self) -> &mut Option<&'a Bound<'py, PyAny>> {
@@ -303,4 +321,5 @@ type ScopedSetStateT<'scope, 'a, 'py, T> =
 type ScopedFieldNameState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<Bound<'py, PyString>>>;
 type ScopedDataState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<Bound<'py, PyDict>>>;
 type ScopedHasFieldErrorState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, bool>;
+type ScopedJsonKeyState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, bool>;
 type ScopedSelfInstanceState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<&'a Bound<'py, PyAny>>>;
