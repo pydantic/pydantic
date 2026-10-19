@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, TypeAlias, TypeGuard
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeGuard, cast
 
 from pydantic_core import CoreSchema, core_schema
 
@@ -60,7 +60,11 @@ def as_ser_schema(schema: CoreSchema) -> core_schema.SerSchema:
     schemas, as these types are already used by the plain and wrap serializer *function* schemas.
     For these, mimic what pydantic-core would do if they were used as the *main* schema:
 
-    - if the function schema has a `'serialization'` schema, use it.
+    - a `'function-wrap'` schema with a `'serialization'` schema is retyped as a `'function-after'`
+      schema, which builds the exact same serializer (the `'serialization'` schema may rely on the
+      schema it is attached to -- e.g. a wrap serializer's handler serializes using it -- so it can't
+      be detached).
+    - if a `'function-plain'` schema has a `'serialization'` schema, use it.
     - otherwise, a `'function-plain'` schema is serialized as `'any'`, and a `'function-wrap'` schema
       is serialized using its inner schema.
 
@@ -69,6 +73,13 @@ def as_ser_schema(schema: CoreSchema) -> core_schema.SerSchema:
     """
     if schema['type'] == 'function-plain' or schema['type'] == 'function-wrap':
         if (ser_schema := schema.get('serialization')) is not None:
+            if schema['type'] == 'function-wrap':
+                # The `'serialization'` schema may rely on the schema it is attached to: a wrap serializer's
+                # handler (and, with a `when_used` condition, the fallback serializer) serializes using the
+                # schema the ser schema is attached to. A `'function-wrap'` schema can't be used as a
+                # serialization schema (it would be understood as a wrap serializer *function* schema), but
+                # `'function-after'` builds the exact same serializer, so retype it:
+                return cast('core_schema.SerSchema', {**schema, 'type': 'function-after'})
             return ser_schema
         if schema['type'] == 'function-plain':
             return core_schema.any_schema()
