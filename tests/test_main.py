@@ -26,6 +26,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import pydantic_core
 import pytest
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 
@@ -3088,6 +3089,35 @@ def test_recursion_loop_error():
         "{'type': 'recursion_loop', 'loc': ('x', 0, 'x', 0), 'msg': "
         "'Recursion error - cyclic reference detected', 'input': {'x': [{...}]}}"
     )
+
+
+def test_recursion_loop_error_validate_strings_cyclic() -> None:
+    class Model(BaseModel):
+        x: Optional['Model'] = None
+
+    data = {}
+    data['x'] = data
+
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
+        Model.model_validate_strings(data)
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+def test_recursion_loop_error_validate_strings_deep() -> None:
+    class Model(BaseModel):
+        x: Optional['Model'] = None
+
+    # deeper than the recursion guard limit (at most 255), but not too deep as freeing
+    # deeply nested dicts can exhaust the stack on Pyodide:
+    data = {}
+    for _ in range(1_000):
+        data = {'x': data}
+
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
+        Model.model_validate_strings(data)
 
 
 def test_protected_namespace_default():
