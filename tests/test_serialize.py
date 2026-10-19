@@ -1180,6 +1180,23 @@ def test_enum_as_dict_key() -> None:
     assert MyModel(foo={MyEnum.A: 'hello'}, bar=MyEnum.B).model_dump_json() == '{"foo":{"a":"hello"},"bar":"b"}'
 
 
+def test_int_enum_as_dict_key_json_round_trip() -> None:
+    class Status(Enum):
+        OK = 200
+        NOT_FOUND = 404
+
+    class Report(BaseModel):
+        counts: dict[Status, int]
+
+    report = Report(counts={Status.OK: 3, Status.NOT_FOUND: 1})
+    json_data = report.model_dump_json()
+
+    assert json_data == '{"counts":{"200":3,"404":1}}'
+
+    restored = Report.model_validate_json(json_data)
+    assert restored == report
+
+
 def test_subclass_support_unions() -> None:
     class Pet(BaseModel):
         name: str

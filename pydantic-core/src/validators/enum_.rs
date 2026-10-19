@@ -9,7 +9,7 @@ use pyo3::types::{PyDict, PyFloat, PyInt, PyList, PyString, PyType};
 
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ValError, ValResult};
-use crate::input::{Input, InputType};
+use crate::input::{Input, InputType, Int};
 use crate::tools::SchemaDict;
 use crate::validators::literal::expected_repr;
 
@@ -46,6 +46,15 @@ impl BuildValidator for BuildEnumValidator {
         let class: Bound<PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let class_repr = class_repr(schema, &class)?;
 
+        let sub_type: Option<String> = schema.get_as(intern!(py, "sub_type"))?;
+        let mut json_key_ints = Vec::new();
+        if sub_type.is_none() {
+            for (index, (value, _)) in expected.iter().enumerate() {
+                if value.is_exact_instance_of::<PyInt>() {
+                    json_key_ints.push((value.extract::<Int>()?, index));
+                }
+            }
+        }
         let lookup = Box::new(LiteralLookup::new(py, expected.into_iter())?);
 
         macro_rules! build {
@@ -54,6 +63,7 @@ impl BuildValidator for BuildEnumValidator {
                     phantom: PhantomData::<$vv>,
                     class: class.clone().into(),
                     lookup,
+                    json_key_ints,
                     expected_repr,
                     strict: is_strict(schema, config)?,
                     class_repr: class_repr.clone(),
@@ -62,7 +72,6 @@ impl BuildValidator for BuildEnumValidator {
             };
         }
 
-        let sub_type: Option<String> = schema.get_as(intern!(py, "sub_type"))?;
         match sub_type.as_deref() {
             Some("int") => Ok(CombinedValidator::IntEnum(build!(IntEnumValidator, "int-enum")).into()),
             Some("str") => Ok(CombinedValidator::StrEnum(build!(StrEnumValidator, "str-enum")).into()),
@@ -80,6 +89,17 @@ pub trait EnumValidateValue: std::fmt::Debug + Clone + Send + Sync {
         lookup: &LiteralLookup<Py<PyAny>>,
         strict: bool,
     ) -> ValResult<Option<Py<PyAny>>>;
+
+    // Called only for native JSON object keys after the enum constructor raises ValueError.
+    fn validate_json_key<'py, I: Input<'py> + ?Sized>(
+        _py: Python<'py>,
+        _input: &I,
+        _lookup: &LiteralLookup<Py<PyAny>>,
+        _json_key_ints: &[(Int, usize)],
+        _strict: bool,
+    ) -> ValResult<Option<Py<PyAny>>> {
+        Ok(None)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -87,6 +107,8 @@ pub struct EnumValidator<T: EnumValidateValue> {
     phantom: PhantomData<T>,
     class: Py<PyType>,
     lookup: Box<LiteralLookup<Py<PyAny>>>,
+    // Rust-only values and indexes into lookup.values; no additional Python references.
+    json_key_ints: Vec<(Int, usize)>,
     expected_repr: String,
     strict: bool,
     class_repr: String,
@@ -128,13 +150,24 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
         // meaning the `_missing_()` definition is invalid):
         match class.call1((input.to_object(py)?,)) {
             Ok(res) => Ok(res.unbind()),
-            Err(err) if err.is_instance_of::<PyValueError>(py) => Err(ValError::new(
-                ErrorType::Enum {
-                    expected: self.expected_repr.clone(),
-                    context: None,
-                },
-                input,
-            )),
+            Err(err) if err.is_instance_of::<PyValueError>(py) => {
+                // Native JSON keys are str inputs, rather than JsonValue or Python inputs.
+                // Check the mode too, since StringMapping also provides neither representation.
+                if state.extra().input_type == InputType::Json
+                    && input.as_json().is_none()
+                    && input.as_python().is_none()
+                    && let Some(v) = T::validate_json_key(py, input, &self.lookup, &self.json_key_ints, strict)?
+                {
+                    return Ok(v);
+                }
+                Err(ValError::new(
+                    ErrorType::Enum {
+                        expected: self.expected_repr.clone(),
+                        context: None,
+                    },
+                    input,
+                ))
+            }
             Err(err) => Err(err.into()),
         }
     }
@@ -173,6 +206,29 @@ impl EnumValidateValue for PlainEnumValidator {
                 Ok(None)
             }
         }
+    }
+
+    fn validate_json_key<'py, I: Input<'py> + ?Sized>(
+        py: Python<'py>,
+        input: &I,
+        lookup: &LiteralLookup<Py<PyAny>>,
+        json_key_ints: &[(Int, usize)],
+        strict: bool,
+    ) -> ValResult<Option<Py<PyAny>>> {
+        if json_key_ints.is_empty() {
+            return Ok(None);
+        }
+        let value = match input.validate_int(strict).and_then(|value| value.into_inner().as_int()) {
+            Ok(value) => value,
+            // A failed integer conversion must not replace the original enum validation error.
+            Err(ValError::LineErrors(_)) => return Ok(None),
+            Err(err) => return Err(err),
+        };
+        // Match LiteralLookup's last-insertion precedence for duplicate integer values.
+        Ok(json_key_ints
+            .iter()
+            .rev()
+            .find_map(|(expected, index)| (expected == &value).then(|| lookup.values[*index].clone_ref(py))))
     }
 }
 
