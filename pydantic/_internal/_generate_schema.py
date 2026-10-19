@@ -1441,6 +1441,17 @@ class GenerateSchema:
                 return maybe_schema
 
             typevars_map = get_standard_typevars_map(typed_dict_cls)
+            if origin is not None and typevars_map:
+                # PEP 695 gives each generic TypedDict its own TypeVar objects. When
+                # an inherited annotation is collected below, it still refers to the
+                # base class's TypeVars, so map those through the specialized origin.
+                for base in getattr(origin, '__orig_bases__', ()):
+                    base_origin = get_origin(base)
+                    if base_origin is None or not hasattr(base_origin, '__parameters__'):
+                        continue
+                    base_args = tuple(replace_types(arg, typevars_map) for arg in get_args(base))
+                    for parameter, argument in zip(base_origin.__parameters__, base_args):
+                        typevars_map.setdefault(parameter, argument)
             if origin is not None:
                 typed_dict_cls = origin
 

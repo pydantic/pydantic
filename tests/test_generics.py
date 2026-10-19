@@ -3220,6 +3220,21 @@ def test_generic_with_not_required_in_typed_dict() -> None:
     assert ta_foo_generic.validate_python({}) == {}
 
 
+def test_pep695_typed_dict_inherited_typevars_are_specialized() -> None:
+    class Base[T](TypedDict):
+        base_val: T
+
+    class Sub[T, U](Base[T]):
+        sub_val: U
+
+    adapter = TypeAdapter(Sub[int, str])
+
+    with pytest.raises(ValidationError, match='valid integer'):
+        adapter.validate_python({'base_val': 'invalid', 'sub_val': 'valid'})
+
+    assert adapter.json_schema()['properties']['base_val']['type'] == 'integer'
+
+
 def test_generic_with_allow_extra():
     T = TypeVar('T')
 
