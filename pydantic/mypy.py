@@ -549,6 +549,10 @@ class PydanticModelTransformer:
                 if not self._api.final_iteration:
                     self._api.defer()
                 return False
+        for tv in info.defn.type_vars:
+            if has_placeholder(tv) and not self._api.final_iteration:
+                self._api.defer()
+                return False
 
         is_settings = info.has_base(BASESETTINGS_FULLNAME)
         self.add_initializer(fields, config, is_settings, is_a_root_model)
