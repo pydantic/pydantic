@@ -74,6 +74,11 @@ pub(crate) trait Input<'py>: fmt::Debug {
         None
     }
 
+    /// Identity of the input, used by the recursion guard to detect cycles and limit the depth.
+    ///
+    /// Inputs without an identity (e.g. JSON) can't be cyclic.
+    fn identity(&self) -> Option<usize>;
+
     fn as_json(&self) -> Option<&JsonValue<'_>> {
         None
     }

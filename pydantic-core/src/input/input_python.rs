@@ -100,6 +100,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Some(self)
     }
 
+    fn identity(&self) -> Option<usize> {
+        Some(self.as_ptr() as usize)
+    }
+
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
         self.cast::<PyDict>().ok().map(Bound::to_owned)
     }
