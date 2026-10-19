@@ -198,8 +198,10 @@ impl Validator for WithDefaultValidator {
                     stored_dft
                 };
                 if self.validate_default {
-                    match self.validate(py, dft.bind(py), state) {
+                    match self.validator.validate(py, dft.bind(py), state) {
                         Ok(v) => Ok(Some(v)),
+                        Err(ValError::UseDefault) => Err(ValError::UseDefault),
+                        Err(_) if matches!(self.on_error, OnError::Omit) => Err(ValError::Omit),
                         Err(e) => {
                             if let Some(outer_loc) = outer_loc {
                                 Err(e.with_outer_location(outer_loc))
