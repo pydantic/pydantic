@@ -1,58 +1,27 @@
+// Must match the Python version and platform tag of the pydantic-core wheels published to PyPI
+// (see the `core-build-pyemscripten` job in `.github/workflows/ci.yml`):
+const PYODIDE_VERSION = '314.0.7';
+const WHEEL_TAG = 'cp314-cp314-pyemscripten_2026_0_wasm32';
+// First pydantic release with pydantic-core Pyodide wheels published to PyPI:
+const MIN_PYDANTIC_VERSION = [2, 14, 0];
+
 let chunks = [];
 let last_post = 0;
-
-function print(tty) {
-  if (tty.output && tty.output.length > 0) {
-    chunks.push(tty.output);
-    tty.output = [];
-    const now = performance.now();
-    if (now - last_post > 100) {
-      post();
-      last_post = now;
-    }
-  }
-}
 
 function post() {
   self.postMessage(chunks);
   chunks = [];
 }
 
-function make_tty_ops() {
-  return {
-    put_char(tty, val) {
-      if (val !== null) {
-        tty.output.push(val);
-      }
-      if (val === null || val === 10) {
-        print(tty);
-      }
-    },
-    fsync(tty) {
-      print(tty);
-    },
-  };
-}
-
-function setupStreams(FS, TTY) {
-  let mytty = FS.makedev(FS.createDevice.major++, 0);
-  let myttyerr = FS.makedev(FS.createDevice.major++, 0);
-  TTY.register(mytty, make_tty_ops());
-  TTY.register(myttyerr, make_tty_ops());
-  FS.mkdev('/dev/mytty', mytty);
-  FS.mkdev('/dev/myttyerr', myttyerr);
-  FS.unlink('/dev/stdin');
-  FS.unlink('/dev/stdout');
-  FS.unlink('/dev/stderr');
-  FS.symlink('/dev/mytty', '/dev/stdin');
-  FS.symlink('/dev/mytty', '/dev/stdout');
-  FS.symlink('/dev/myttyerr', '/dev/stderr');
-  FS.closeStream(0);
-  FS.closeStream(1);
-  FS.closeStream(2);
-  FS.open('/dev/stdin', 0);
-  FS.open('/dev/stdout', 1);
-  FS.open('/dev/stderr', 1);
+function write(buffer) {
+  // the buffer may be reused by Pyodide, so copy it:
+  chunks.push(buffer.slice());
+  const now = performance.now();
+  if (now - last_post > 100) {
+    post();
+    last_post = now;
+  }
+  return buffer.length;
 }
 
 async function get(url, mode) {
@@ -63,46 +32,85 @@ async function get(url, mode) {
     } else if (mode === 'json') {
       return await r.json();
     } else {
-      const blob = await r.blob();
-      let buffer = await blob.arrayBuffer();
-      return btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+      return new Uint8Array(await r.arrayBuffer());
     }
   } else {
     let text = await r.text();
     console.error('unexpected response', r, text);
-    throw new Error(`${r.status}: ${text}`);
+    throw new Error(`${url}: ${r.status}: ${text}`);
   }
 }
 
-async function main() {
-  const query_args = new URLSearchParams(location.search);
-  let pydantic_core_version = query_args.get('pydantic_core_version');
-  if (!pydantic_core_version) {
-    const latest_release = await get('https://api.github.com/repos/pydantic/pydantic-core/releases/latest', 'json');
-    pydantic_core_version = latest_release.tag_name;
+function checkPydanticVersion(version) {
+  const match = version.match(/^(\d+)\.(\d+)\.(\d+)((?:a|b|rc)\d+)?$/);
+  if (!match) {
+    throw new Error(`Invalid pydantic version: ${version}`);
   }
-  self.postMessage(`Running tests against latest pydantic-core release (${pydantic_core_version}).\n`);
-  self.postMessage(`Downloading repo archive to get tests...\n`);
-  const zip_url = `https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/archive/refs/tags/${pydantic_core_version}.zip`;
+  const parts = match.slice(1, 4).map(Number);
+  const i = parts.findIndex((p, i) => p !== MIN_PYDANTIC_VERSION[i]);
+  // pre-releases of the minimum version (e.g. 2.14.0b1) are also not supported:
+  const supported = i === -1 ? !match[4] : parts[i] > MIN_PYDANTIC_VERSION[i];
+  if (!supported) {
+    throw new Error(
+      `pydantic ${version} is not supported, the minimum supported version is ${MIN_PYDANTIC_VERSION.join('.')}`,
+    );
+  }
+}
+
+async function getPydanticVersion(query_args) {
+  let pydantic_version = query_args.get('pydantic_version');
+  if (pydantic_version) {
+    return pydantic_version.replace(/^v/, '');
+  }
+  const latest_release = await get('https://pypi.org/pypi/pydantic/json', 'json');
+  return latest_release.info.version;
+}
+
+async function getPydanticCoreWheelUrl(pydantic_version) {
+  const pydantic_release = await get(`https://pypi.org/pypi/pydantic/${pydantic_version}/json`, 'json');
+  const requirement = pydantic_release.info.requires_dist.find((r) => /^pydantic[-_]core\s*==/.test(r));
+  if (!requirement) {
+    throw new Error(`Could not find the pydantic-core requirement of pydantic ${pydantic_version}`);
+  }
+  const pydantic_core_version = requirement.split('==')[1].trim();
+  const pydantic_core_release = await get(`https://pypi.org/pypi/pydantic-core/${pydantic_core_version}/json`, 'json');
+  const wheel = pydantic_core_release.urls.find((f) => f.filename.endsWith(`-${WHEEL_TAG}.whl`));
+  if (!wheel) {
+    throw new Error(`No ${WHEEL_TAG} wheel found for pydantic-core ${pydantic_core_version}`);
+  }
+  return [pydantic_core_version, wheel.url];
+}
+
+async function main() {
   try {
-    const [python_code, tests_zip] = await Promise.all([
+    const query_args = new URLSearchParams(location.search);
+    const pydantic_version = await getPydanticVersion(query_args);
+    checkPydanticVersion(pydantic_version);
+    const [pydantic_core_version, pydantic_core_wheel_url] = await getPydanticCoreWheelUrl(pydantic_version);
+    self.postMessage(`Running tests against pydantic ${pydantic_version} (pydantic-core ${pydantic_core_version}).\n`);
+    self.postMessage(`Downloading repo archive to get tests...\n`);
+    const zip_url = `https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic/archive/refs/tags/v${pydantic_version}.zip`;
+    const [python_code, repo_zip, {loadPyodide}] = await Promise.all([
       get(`./run_tests.py?v=${Date.now()}`, 'text'),
-      // e4cf2e2 commit matches the pydantic-core wheel being used, so tests should pass
       get(zip_url, 'blob'),
-      importScripts('https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js'),
+      import(`https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/pyodide.mjs`),
     ]);
 
     const pyodide = await loadPyodide();
-    const {FS} = pyodide;
-    setupStreams(FS, pyodide._module.TTY);
-    FS.mkdir('/test_dir');
-    FS.chdir('/test_dir');
-    await pyodide.loadPackage(['micropip', 'pytest', 'numpy', 'pygments']);
-    await pyodide.runPythonAsync(python_code, {globals: pyodide.toPy({pydantic_core_version, tests_zip})});
+    pyodide.setStdout({write, isatty: true});
+    pyodide.setStderr({write, isatty: true});
+    pyodide.FS.writeFile('/repo.zip', repo_zip);
+    pyodide.FS.mkdir('/test_dir');
+    pyodide.FS.chdir('/test_dir');
+    await pyodide.loadPackage(['micropip']);
+    await pyodide.runPythonAsync(python_code, {
+      globals: pyodide.toPy({repo_zip_path: '/repo.zip', pydantic_core_wheel_url}),
+    });
     post();
   } catch (err) {
     console.error(err);
-    self.postMessage(`Error: ${err}\n`);
+    post();
+    self.postMessage(`${err}\n`);
   }
 }
 
