@@ -395,7 +395,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
             _object_setattr(m, '__pydantic_extra__', _extra)
-            _object_setattr(m, '__pydantic_private__', None)
+        else:
+            # The root model validator on the Rust side doesn't initialize the slots, and
+            # extra fields aren't supported on root models:
+            _object_setattr(m, '__pydantic_extra__', None)
+        _object_setattr(m, '__pydantic_private__', None)
 
         if cls.__pydantic_post_init__:
             m.model_post_init(None)

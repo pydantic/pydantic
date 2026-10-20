@@ -277,6 +277,65 @@ def test_private_attr():
     assert m.model_dump() == 42
 
 
+def test_private_attributes_stored_in_slot_not_dict() -> None:
+    """Private attributes must live in the `__pydantic_private__` slot.
+
+    See https://github.com/pydantic/pydantic/issues/13998.
+    """
+
+    class Model(RootModel[int]):
+        _private_attr: int = PrivateAttr(default=1)
+
+    m = Model(42)
+    assert m.__pydantic_private__ == {'_private_attr': 1}
+    assert '__pydantic_private__' not in m.__dict__
+
+    m._private_attr = 2
+    assert m.__pydantic_private__ == {'_private_attr': 2}
+    assert '__pydantic_private__' not in m.__dict__
+
+    m2 = Model.model_construct(42)
+    assert m2.__pydantic_private__ == {'_private_attr': 1}
+    assert '__pydantic_private__' not in m2.__dict__
+
+
+def test_root_model_without_private_attributes_slots_initialized() -> None:
+    class Model(RootModel[int]):
+        pass
+
+    m = Model(42)
+    assert m.__pydantic_private__ is None
+    assert m.__pydantic_extra__ is None
+    assert m.__dict__ == {'root': 42}
+
+
+def test_root_model_model_post_init() -> None:
+    calls = []
+
+    class Model(RootModel[int]):
+        def model_post_init(self, context: Any, /) -> None:
+            calls.append((context, self.__pydantic_private__, self.__pydantic_extra__))
+
+    m = Model(42)
+    assert calls == [(None, None, None)]
+    assert m.__pydantic_private__ is None
+    assert m.__pydantic_extra__ is None
+
+
+def test_private_attributes_initialized_before_model_post_init() -> None:
+    calls = []
+
+    class Model(RootModel[int]):
+        _tag: str = PrivateAttr(default='default')
+
+        def model_post_init(self, context: Any, /) -> None:
+            calls.append(self._tag)
+
+    m = Model(42)
+    assert calls == ['default']
+    assert m._tag == 'default'
+
+
 def test_validate_assignment_false():
     Model = RootModel[int]
 
@@ -570,6 +629,44 @@ def test_pickle_root_model(create_module):
     assert MyRootModel(root='abc') == pickle.loads(pickle.dumps(MyRootModel(root='abc')))
 
 
+def test_pickle_root_model_with_private_attributes(create_module):
+    @create_module
+    def module():
+        from pydantic import PrivateAttr, RootModel
+
+        class MyRootModel(RootModel[str]):
+            _tag: str = PrivateAttr(default='original')
+
+    MyRootModel = module.MyRootModel
+    m = MyRootModel('abc')
+    m._tag = 'copy'
+
+    restored = pickle.loads(pickle.dumps(m))
+    assert restored.root == 'abc'
+    assert restored._tag == 'copy'
+    assert '__pydantic_private__' not in restored.__dict__
+
+
+def test_root_model_setstate_legacy_private_attributes_location() -> None:
+    class Model(RootModel[int]):
+        _private_attr: int = PrivateAttr(default=1)
+
+    # Simulate a state produced by older `pydantic` versions, where
+    # `__pydantic_private__` was stored in the instance `__dict__`:
+    legacy_state = {
+        '__dict__': {'root': 42, '__pydantic_private__': {'_private_attr': 2}},
+        '__pydantic_fields_set__': {'root'},
+    }
+
+    m = Model.__new__(Model)
+    m.__setstate__(legacy_state)
+
+    assert m.root == 42
+    assert m._private_attr == 2
+    assert m.__pydantic_private__ == {'_private_attr': 2}
+    assert '__pydantic_private__' not in m.__dict__
+
+
 def test_json_schema_extra_on_model():
     class Model(RootModel):
         model_config = ConfigDict(json_schema_extra={'schema key': 'schema value'})
@@ -657,6 +754,21 @@ def test_root_model_shallow_copy_private_attributes() -> None:
     copied._tag = 'copy'
     assert original._tag == 'original'
     assert copied._tag == 'copy'
+
+
+def test_root_model_deep_copy_private_attributes() -> None:
+    class Root(RootModel[int]):
+        _tags: list[str] = PrivateAttr(default_factory=list)
+
+    original = Root(1)
+    original._tags.append('original')
+
+    copied = original.model_copy(deep=True)
+    copied._tags.append('copy')
+
+    assert original._tags == ['original']
+    assert copied._tags == ['original', 'copy']
+    assert original.__pydantic_private__ is not copied.__pydantic_private__
 
 
 def test_root_model_deep_copy() -> None:

@@ -218,22 +218,40 @@ class ModelMetaclass(ABCMeta):
 
             # This can only be done after fields collection, as private attributes may be
             # discovered from the (evaluated) class annotations:
-            if cls.__private_attributes__:
+            if cls.__private_attributes__ or cls.__pydantic_root_model__:
                 original_model_post_init = get_model_post_init(namespace, bases)
-                if original_model_post_init is not None:
+                if cls.__private_attributes__:
                     # if there are private attributes and a model_post_init function, we handle both
+                    if original_model_post_init is not None:
 
-                    @wraps(original_model_post_init)
-                    def wrapped_model_post_init(self: BaseModel, context: Any, /) -> None:
-                        """We need to both initialize private attributes and call the user-defined model_post_init
-                        method.
-                        """
-                        init_private_attributes(self, context)
-                        original_model_post_init(self, context)
+                        @wraps(original_model_post_init)
+                        def wrapped_model_post_init(self: BaseModel, context: Any, /) -> None:
+                            """We need to both initialize private attributes and call the user-defined model_post_init
+                            method.
+                            """
+                            init_private_attributes(self, context)
+                            original_model_post_init(self, context)
 
-                    cls.model_post_init = wrapped_model_post_init  # pyright: ignore[reportAttributeAccessIssue]
+                        cls.model_post_init = wrapped_model_post_init  # pyright: ignore[reportAttributeAccessIssue]
+                    else:
+                        cls.model_post_init = init_private_attributes  # pyright: ignore[reportAttributeAccessIssue]
                 else:
-                    cls.model_post_init = init_private_attributes  # pyright: ignore[reportAttributeAccessIssue]
+                    # Root models don't use `set_model_attrs()` on the Rust side, so their
+                    # `__pydantic_private__`/`__pydantic_extra__` slots must be initialized
+                    # on the Python side:
+                    if original_model_post_init is not None:
+
+                        @wraps(original_model_post_init)
+                        def wrapped_root_model_post_init(self: BaseModel, context: Any, /) -> None:
+                            """We need to both initialize the `__pydantic_private__`/`__pydantic_extra__` slots and
+                            call the user-defined `model_post_init()` method.
+                            """
+                            init_root_model_slots(self, context)
+                            original_model_post_init(self, context)
+
+                        cls.model_post_init = wrapped_root_model_post_init  # pyright: ignore[reportAttributeAccessIssue]
+                    else:
+                        cls.model_post_init = init_root_model_slots  # pyright: ignore[reportAttributeAccessIssue]
 
             cls.__pydantic_post_init__ = (
                 None if cls.model_post_init is BaseModel_.model_post_init else 'model_post_init'
@@ -380,6 +398,24 @@ def init_private_attributes(self: BaseModel, context: Any, /) -> None:
             if default is not PydanticUndefined:
                 pydantic_private[name] = default
         object_setattr(self, '__pydantic_private__', pydantic_private)
+    if self.__pydantic_root_model__:
+        # Root models don't use `set_model_attrs()` on the Rust side (which initializes
+        # this slot for regular models), and extra fields aren't supported on root models:
+        object_setattr(self, '__pydantic_extra__', None)
+
+
+def init_root_model_slots(self, context: Any, /) -> None:
+    """Initialize the `__pydantic_private__` and `__pydantic_extra__` slots of root models.
+
+    This is needed as the root model validator in `pydantic-core` doesn't call
+    `set_model_attrs()` (unlike the regular model validator). Private attribute
+    defaults are handled by `init_private_attributes()`, so this should only be
+    used for root models *without* declared private attributes.
+    """
+    if getattr(self, '__pydantic_private__', None) is None:
+        object_setattr(self, '__pydantic_private__', None)
+    if getattr(self, '__pydantic_extra__', None) is None:
+        object_setattr(self, '__pydantic_extra__', None)
 
 
 def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...]) -> Callable[..., Any] | None:
