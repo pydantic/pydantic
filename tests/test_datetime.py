@@ -560,14 +560,16 @@ def test_past_date_validation_success(value, result, past_date_type):
 
 
 @pytest.mark.parametrize(
-    'value',
+    'value_fn',
     (
-        date.today(),
-        date.today() + timedelta(1),
-        '2064-06-01',
+        pytest.param(lambda: date.today(), id='today'),
+        pytest.param(lambda: date.today() + timedelta(1), id='tomorrow'),
+        pytest.param(lambda: '2064-06-01', id='future-str'),
     ),
 )
-def test_past_date_validation_fails(value, past_date_type):
+def test_past_date_validation_fails(value_fn, past_date_type):
+    value = value_fn()
+
     class Model(BaseModel):
         foo: past_date_type
 
@@ -585,13 +587,15 @@ def test_past_date_validation_fails(value, past_date_type):
 
 
 @pytest.mark.parametrize(
-    'value,result',
+    'value_fn',
     (
-        (date.today() + timedelta(1), date.today() + timedelta(1)),
-        ('2064-06-01', date(2064, 6, 1)),
+        pytest.param(lambda: (date.today() + timedelta(1), date.today() + timedelta(1)), id='tomorrow'),
+        pytest.param(lambda: ('2064-06-01', date(2064, 6, 1)), id='future-str'),
     ),
 )
-def test_future_date_validation_success(value, result, future_date_type):
+def test_future_date_validation_success(value_fn, future_date_type):
+    value, result = value_fn()
+
     class Model(BaseModel):
         foo: future_date_type
 
@@ -599,14 +603,16 @@ def test_future_date_validation_success(value, result, future_date_type):
 
 
 @pytest.mark.parametrize(
-    'value',
+    'value_fn',
     (
-        date.today(),
-        date.today() - timedelta(1),
-        '1996-01-22',
+        pytest.param(lambda: date.today(), id='today'),
+        pytest.param(lambda: date.today() - timedelta(1), id='yesterday'),
+        pytest.param(lambda: '1996-01-22', id='past-str'),
     ),
 )
-def test_future_date_validation_fails(value, future_date_type):
+def test_future_date_validation_fails(value_fn, future_date_type):
+    value = value_fn()
+
     class Model(BaseModel):
         foo: future_date_type
 
