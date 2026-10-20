@@ -1312,6 +1312,28 @@ def test_url_preserve_empty_path(type) -> None:
     assert str(ta_constraint.validate_python('http://example.com')) == 'http://example.com'
 
 
+@pytest.mark.parametrize(
+    'type',
+    [Url, AnyUrl, HttpUrl],
+)
+def test_url_preserve_empty_path_eq_hash(type) -> None:
+    ta = TypeAdapter(type)
+    ta_preserve = TypeAdapter(type, config={'url_preserve_empty_path': True})
+
+    url = ta.validate_python('http://example.com')
+    url_preserve = ta_preserve.validate_python('http://example.com')
+
+    assert url != url_preserve
+    assert url_preserve < url
+    assert url_preserve == ta_preserve.validate_python('http://example.com')
+    assert hash(url_preserve) == hash(ta_preserve.validate_python('http://example.com'))
+    assert url_preserve not in {url}
+
+    # a non-empty path is unaffected:
+    assert ta.validate_python('http://example.com/a') == ta_preserve.validate_python('http://example.com/a')
+    assert hash(ta.validate_python('http://example.com/a')) == hash(ta_preserve.validate_python('http://example.com/a'))
+
+
 def test_multi_url_build_hosts_with_none_values() -> None:
     """https://github.com/pydantic/pydantic/issues/13007"""
 

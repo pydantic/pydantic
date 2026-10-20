@@ -193,14 +193,17 @@ impl PyUrl {
         format!("Url('{}')", self.serialized(py))
     }
 
-    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyResult<bool> {
+        // compare the serialized form (and not `lib_url`) to account for `path_is_empty`,
+        // consistently with `__hash__()`:
+        let (this, other) = (self.serialized(py), other.serialized(py));
         match op {
-            CompareOp::Lt => Ok(self.lib_url < other.lib_url),
-            CompareOp::Le => Ok(self.lib_url <= other.lib_url),
-            CompareOp::Eq => Ok(self.lib_url == other.lib_url),
-            CompareOp::Ne => Ok(self.lib_url != other.lib_url),
-            CompareOp::Gt => Ok(self.lib_url > other.lib_url),
-            CompareOp::Ge => Ok(self.lib_url >= other.lib_url),
+            CompareOp::Lt => Ok(this < other),
+            CompareOp::Le => Ok(this <= other),
+            CompareOp::Eq => Ok(this == other),
+            CompareOp::Ne => Ok(this != other),
+            CompareOp::Gt => Ok(this > other),
+            CompareOp::Ge => Ok(this >= other),
         }
     }
 
