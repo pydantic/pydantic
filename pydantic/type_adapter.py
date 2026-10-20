@@ -622,6 +622,20 @@ class TypeAdapter(Generic[T]):
 
         Serialize an instance of the adapted type to JSON.
 
+        Example:
+            ```python
+            from pydantic import Json, TypeAdapter
+
+            adapter = TypeAdapter(Json[list[int]])
+            value = adapter.validate_python('[1, 2]')
+            print(adapter.dump_json(value))
+            #> b'[1,2]'
+            print(adapter.dump_json(value, round_trip=True))
+            #> b'"[1,2]"'
+            print(adapter.validate_json(adapter.dump_json(value, round_trip=True)))
+            #> [1, 2]
+            ```
+
         Args:
             instance: The instance to be serialized.
             indent: Number of spaces for JSON indentation.
@@ -636,7 +650,7 @@ class TypeAdapter(Generic[T]):
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
-            round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
+            round_trip: If `True`, dumped values should be valid as input for non-idempotent types such as `Json[T]`.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             fallback: A function to call when an unknown value is encountered. If not provided,
