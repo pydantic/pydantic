@@ -215,3 +215,26 @@ def test_sequence_named_tuple() -> None:
 
     assert ta.dump_python(Point(1, 2)) == Point(1, 2)
     assert ta.dump_json(Point(1, 2)) == b'[1,2]'
+
+
+def test_sequence_named_tuple_nested_type() -> None:
+    class Model(BaseModel):
+        a: int
+        b: int
+
+    class SubModel(Model):
+        c: int
+
+    Pair = namedtuple('Pair', ['x', 'y'])
+
+    ta = TypeAdapter(Sequence[Model])
+
+    pair = ta.validate_python(Pair(Model(a=1, b=2), SubModel(a=3, b=4, c=5)))
+    assert type(pair) is Pair
+
+    assert ta.dump_python(pair) == Pair({'a': 1, 'b': 2}, {'a': 3, 'b': 4})
+    assert ta.dump_json(pair) == b'[{"a":1,"b":2},{"a":3,"b":4}]'
+    assert ta.dump_python(pair, exclude={'__all__': {'b'}}) == Pair({'a': 1}, {'a': 3})
+    assert ta.dump_json(pair, exclude={'__all__': {'b'}}) == b'[{"a":1},{"a":3}]'
+    assert ta.dump_python(pair, exclude={0}) == ({'a': 3, 'b': 4},)
+    assert ta.dump_json(pair, exclude={0}) == b'[{"a":3,"b":4}]'
