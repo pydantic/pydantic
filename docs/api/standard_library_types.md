@@ -681,10 +681,10 @@ Standard library type: [`datetime.timedelta`][].
 
 <h4>Constraints</h4>
 
-Timedeltas support the following constraints (constraint values must be coercible to a [`timedata`][datetime.timedelta] instance):
+Timedeltas support the following constraints (constraint values must be coercible to a [`timedelta`][datetime.timedelta] instance):
 
 | Constraint | Description                                               | JSON Schema |
-| ---------- | ---------------------------------------------------- -----| ----------- |
+| ---------- | --------------------------------------------------------- | ----------- |
 | `le`       | The value must be less than or equal to this timedelta    | N/A         |
 | `ge`       | The value must be greater than or equal to this timedelta | N/A         |
 | `lt`       | The value must be strictly less than this timedelta       | N/A         |
