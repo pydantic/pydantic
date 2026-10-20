@@ -113,9 +113,6 @@ except ImportError:
     email_validator = None
 
 
-# TODO add back tests for Iterator
-
-
 def test_strict_raw_type():
     class Model(BaseModel):
         v: Annotated[str, Strict]

@@ -1,6 +1,7 @@
 import itertools
 import re
-from collections.abc import Iterable
+import typing
+from collections.abc import Iterable, Iterator
 from typing import Annotated, Any
 
 import pytest
@@ -13,6 +14,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     field_validator,
+    validate_call,
 )
 
 
@@ -102,6 +104,45 @@ def test_iterable_any(type_annotation):
             'ctx': {'field_type': 'Generator', 'max_length': 2, 'actual_length': None},
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'type_annotation',
+    (
+        pytest.param(Iterator[int], id='collections.abc.Iterator[int]'),
+        pytest.param(typing.Iterator[int], id='typing.Iterator[int]'),
+    ),
+)
+def test_iterator(type_annotation):
+    ta = TypeAdapter(type_annotation)
+
+    assert list(ta.validate_python(iter(['1', '2', '3']))) == [1, 2, 3]
+    assert ta.json_schema() == {'items': {'type': 'integer'}, 'type': 'array'}
+
+    class Model(BaseModel):
+        value: type_annotation
+
+    assert list(Model(value=iter(['1', '2'])).value) == [1, 2]
+
+    @validate_call(validate_return=True)
+    def generate() -> type_annotation:
+        yield '1'
+        yield '2'
+
+    assert list(generate()) == [1, 2]
+
+
+@pytest.mark.parametrize(
+    'type_annotation',
+    (
+        pytest.param(Iterator, id='collections.abc.Iterator'),
+        pytest.param(typing.Iterator, id='typing.Iterator'),
+    ),
+)
+def test_iterator_any(type_annotation):
+    ta = TypeAdapter(type_annotation)
+
+    assert list(ta.validate_python(iter(['1', 2]))) == ['1', 2]
 
 
 def test_invalid_iterable():
