@@ -161,6 +161,27 @@ def test_model_docs_inheritance():
     assert MyModel.model_fields['b'].description == 'B docs'
 
 
+def test_model_docs_nested_class():
+    class MyModel(BaseModel):
+        x: int
+        """Outer field."""
+
+        class Inner(BaseModel):
+            x: str
+            """Inner field."""
+
+            model_config = ConfigDict(use_attribute_docstrings=True)
+
+        y: int
+        """Outer y."""
+
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+    assert MyModel.model_fields['x'].description == 'Outer field.'
+    assert MyModel.model_fields['y'].description == 'Outer y.'
+    assert MyModel.Inner.model_fields['x'].description == 'Inner field.'
+
+
 def test_model_different_name():
     # As we extract docstrings from cls in `ModelMetaclass.__new__`,
     # we are not affected by `__name__` being altered in any way.
