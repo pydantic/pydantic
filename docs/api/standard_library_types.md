@@ -446,6 +446,10 @@ and [JSON](../concepts/serialization.md#json-mode) modes.
 Pydantic supports the following [date and time](https://docs.python.org/library/datetime.html#available-types)
 types from the [`datetime`][] standard library:
 
+!!! warning "Mocking the current time"
+    Pydantic does not work well with [freezegun](https://pypi.org/project/freezegun/) as freezegun replaces the
+    [`datetime`][] classes with its own subclasses. Instead, we recommend using [time-machine](https://pypi.org/project/time-machine/).
+
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#datetimedatetime}
