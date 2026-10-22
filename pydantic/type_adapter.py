@@ -562,7 +562,7 @@ class TypeAdapter(Generic[T]):
             by_alias: Whether to use alias names for field names.
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
-            exclude_none: Whether to exclude fields with None values.
+            exclude_none: Whether to exclude fields with a value of `None`.
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
@@ -623,12 +623,12 @@ class TypeAdapter(Generic[T]):
         Serialize an instance of the adapted type to JSON.
 
         Args:
-            instance: The instance to be serialized.
+            instance: The Python object to serialize.
             indent: Number of spaces for JSON indentation.
             ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
                 If `False` (the default), these characters will be output as-is.
-            include: Fields to include.
-            exclude: Fields to exclude.
+            include: Fields to include in the output.
+            exclude: Fields to exclude from the output.
             by_alias: Whether to use alias names for field names.
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
@@ -636,7 +636,7 @@ class TypeAdapter(Generic[T]):
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
-            round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
+            round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             fallback: A function to call when an unknown value is encountered. If not provided,
