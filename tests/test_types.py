@@ -1306,6 +1306,26 @@ def test_bytesize_conversions(input_value, output, human_bin, human_dec, human_s
     assert m.size.human_readable(separator=' ') == human_sep
 
 
+@pytest.mark.parametrize(
+    'input_value,human_bin,human_dec',
+    (
+        # one byte short of a boundary must not be rendered as the next
+        # unit's rounded boundary (previously e.g. 1024.0KiB)
+        (1024**2 - 1, '1.0MiB', '1.0MB'),
+        (1024**3 - 1, '1.0GiB', '1.1GB'),
+        # one unit short of each decimal unit boundary
+        (1000**2 - 1, '976.6KiB', '1.0MB'),
+        (1000**3 - 1, '953.7MiB', '1.0GB'),
+    ),
+)
+def test_bytesize_human_readable_unit_boundary(input_value, human_bin, human_dec):
+    # The unit is chosen from the rounded value: a size just below a unit
+    # boundary must not be printed as the next unit's rounded boundary.
+    # https://github.com/pydantic/pydantic/issues/14056
+    assert ByteSize(input_value).human_readable() == human_bin
+    assert ByteSize(input_value).human_readable(decimal=True) == human_dec
+
+
 def test_bytesize_to():
     class Model(BaseModel):
         size: ByteSize
