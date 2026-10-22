@@ -399,13 +399,28 @@ impl ValidationError {
         let py = slf.py();
         let callable = slf.getattr("from_exception_data")?;
         let borrow = slf.try_borrow()?;
-        let args = (
-            &borrow.title,
-            borrow.errors(py, include_url_env(py), true, true)?,
-            borrow.input_type,
-            borrow.hide_input,
-        )
-            .into_pyobject(py)?;
+        let errors = borrow.errors(py, include_url_env(py), true, true)?;
+        // Custom error types can't be looked up from their type string when unpickling,
+        // so pass the `PydanticCustomError` itself:
+        for (line_error, error) in borrow.line_errors.iter().zip(errors.bind(py).iter()) {
+            if let ErrorType::CustomError {
+                error_type,
+                message_template,
+                context,
+            } = &line_error.error_type
+            {
+                let custom_error = Bound::new(
+                    py,
+                    PydanticCustomError::py_new(
+                        error_type.clone(),
+                        message_template.clone(),
+                        context.as_ref().map(|c| c.bind(py).clone()),
+                    ),
+                )?;
+                error.cast::<PyDict>()?.set_item(intern!(py, "type"), custom_error)?;
+            }
+        }
+        let args = (&borrow.title, errors, borrow.input_type, borrow.hide_input).into_pyobject(py)?;
         Ok((callable, args))
     }
 }
