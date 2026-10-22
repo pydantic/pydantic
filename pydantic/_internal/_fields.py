@@ -603,13 +603,36 @@ def rebuild_model_fields(
         schema generation, where you don't want to mutate other model's fields.
     """
     rebuilt_fields: dict[str, FieldInfo] = {}
+    origin = cls.__pydantic_generic_metadata__['origin']
     with ns_resolver.push(cls):
         for f_name, field_info in cls.__pydantic_fields__.items():
             if field_info._complete:
                 rebuilt_fields[f_name] = field_info
             else:
+                annotation = field_info._original_annotation
+                if origin is not None and (origin_field := origin.__pydantic_fields__.get(f_name)) is not None:
+                    # For parametrized generic models, the stored annotation can mix names from the origin class
+                    # and (forward) type arguments, which need to be evaluated in different namespaces. For instance:
+                    #
+                    # class Model[T](BaseModel):
+                    #     a: dict[T, 'Later']
+                    #
+                    # M = Model['Item']
+                    #
+                    # The stored annotation of `M.a` is `dict['Item', 'Later']`, where `'Later'` must be evaluated
+                    # in the namespace of `Model` and `'Item'` in the namespace of `M`. Instead,
+                    # first evaluate the (unsubstituted) annotation of the origin in its own namespace:
+                    with ns_resolver.push(origin):
+                        annotation = _typing_extra.eval_type(
+                            origin_field._original_annotation,
+                            *ns_resolver.types_namespace,
+                        )
                 new_field = _recreate_field_info(
-                    field_info, ns_resolver=ns_resolver, typevars_map=typevars_map, lenient=False
+                    field_info,
+                    ns_resolver=ns_resolver,
+                    typevars_map=typevars_map,
+                    lenient=False,
+                    annotation=annotation,
                 )
                 update_field_from_config(config_wrapper, f_name, new_field)
                 rebuilt_fields[f_name] = new_field
@@ -641,8 +664,12 @@ def _recreate_field_info(
     typevars_map: Mapping[TypeVar, Any],
     *,
     lenient: bool,
+    annotation: Any = PydanticUndefined,
 ) -> FieldInfo:
     FieldInfo_ = import_cached_field_info()
+
+    if annotation is PydanticUndefined:
+        annotation = field_info._original_annotation
 
     existing_desc = field_info.description
     if lenient:
@@ -655,7 +682,7 @@ def _recreate_field_info(
         # Not the best pattern, maybe we could ship our own `eval_type()`,
         # that would replace the type variables on the fly during evaluation.
         ann = _typing_extra.eval_type(
-            field_info._original_annotation,
+            annotation,
             *ns_resolver.types_namespace,
         )
         ann = _generics.replace_types(ann, typevars_map)

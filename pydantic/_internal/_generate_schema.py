@@ -109,7 +109,7 @@ from ._fields import (
     update_field_from_config,
 )
 from ._forward_ref import PydanticRecursiveRef
-from ._generics import get_standard_typevars_map, replace_types
+from ._generics import get_model_typevars_map, get_standard_typevars_map, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
@@ -884,7 +884,7 @@ class GenerateSchema:
                             cls,
                             config_wrapper=self._config_wrapper,
                             ns_resolver=self._ns_resolver,
-                            typevars_map=self._typevars_map or {},
+                            typevars_map=get_model_typevars_map(cls),
                         )
                     except NameError as e:
                         raise PydanticUndefinedAnnotation.from_name_error(e) from e
