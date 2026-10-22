@@ -197,6 +197,30 @@ def test_model_generic():
     assert MyModel[int].model_fields['a'].description == 'A docs'
 
 
+def test_model_docs_nested_class():
+    class Outer(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+        x: int
+        """Outer docs"""
+
+        class Inner(BaseModel):
+            model_config = ConfigDict(use_attribute_docstrings=True)
+
+            x: str
+            """Inner docs"""
+
+            y: str
+            """Inner y docs"""
+
+        y: int
+
+    assert Outer.model_fields['x'].description == 'Outer docs'
+    assert Outer.model_fields['y'].description is None
+    assert Outer.Inner.model_fields['x'].description == 'Inner docs'
+    assert Outer.Inner.model_fields['y'].description == 'Inner y docs'
+
+
 def test_dataclass_no_docs_extraction():
     @pydantic_dataclass
     class MyModel:
