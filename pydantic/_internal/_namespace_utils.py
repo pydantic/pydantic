@@ -5,11 +5,14 @@ from collections.abc import Callable, Generator, Iterator, Mapping
 from contextlib import contextmanager
 from functools import cached_property
 from types import MappingProxyType
-from typing import Any, NamedTuple, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias, TypeVar
 
 from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple
 
-GlobalsNamespace: TypeAlias = 'dict[str, Any]'
+if TYPE_CHECKING:
+    from pydantic._internal._generics import PydanticGenericMetadata
+
+GlobalsNamespace: TypeAlias = dict[str, Any]
 """A global namespace.
 
 In most cases, this is a reference to the `__dict__` attribute of a module.
@@ -25,7 +28,7 @@ defined inside functions).
 This namespace type is expected as the `locals` argument during annotations evaluation.
 """
 
-_TypeVarLike: TypeAlias = 'TypeVar | ParamSpec | TypeVarTuple'
+_TypeVarLike: TypeAlias = TypeVar | ParamSpec | TypeVarTuple
 
 
 class NamespacesTuple(NamedTuple):
@@ -264,10 +267,15 @@ class NsResolver:
             first_type = self._types_stack[0]
             locals_list.append({first_type.__name__: first_type})
 
+        # Parametrized Pydantic generic models (e.g. `Model[int]`) inherit their (possibly unevaluated)
+        # field annotations from the origin class, so its namespace needs to be considered as well:
+        generic_metadata: PydanticGenericMetadata | None = getattr(typ, '__pydantic_generic_metadata__', None)
+        origin = generic_metadata['origin'] if generic_metadata is not None else None
+
         # Adding `__type_params__` *before* `vars(typ)`, as the latter takes priority
         # (see https://github.com/python/cpython/pull/120272).
         # TODO `typ.__type_params__` when we drop support for Python 3.11:
-        type_params: tuple[_TypeVarLike, ...] = getattr(typ, '__type_params__', ())
+        type_params: tuple[_TypeVarLike, ...] = getattr(origin or typ, '__type_params__', ())
         if type_params:
             # Adding `__type_params__` is mostly useful for generic classes defined using
             # PEP 695 syntax *and* using forward annotations (see the example in
@@ -276,6 +284,8 @@ class NsResolver:
             # value, e.g. `type A[T] = 'T'` (which is not necessary in most cases).
             locals_list.append({t.__name__: t for t in type_params})
 
+        if origin is not None:
+            locals_list.append(vars(origin))
         # TypeAliasType instances don't have a `__dict__` attribute, so the check
         # is necessary:
         if hasattr(typ, '__dict__'):
