@@ -1174,11 +1174,6 @@ class Foo(Bar):
     assert module_2.Foo.model_fields['f'].annotation is int
 
 
-@pytest.mark.xfail(
-    reason='Same as `test_uses_the_correct_globals_to_resolve_model_forward_refs()`. As the generic model is '
-    'parametrized in `module_2`, the `__module__` of the parametrized class is `module_2` and so `f` is '
-    'evaluated in this module when rebuilding.'
-)
 def test_uses_the_correct_globals_to_resolve_parametrized_generic_model_forward_refs(create_module):
     @create_module
     def module_1():
@@ -1741,32 +1736,25 @@ def test_parameterized_with_annotated_forward_refs() -> None:
     assert M.model_fields['c'].metadata == [Gt(2), 3, 2]
 
 
-@pytest.mark.xfail(
-    reason=(
-        'Similar to `test_uses_the_correct_globals_to_resolve_model_forward_refs()`,'
-        "the NsResolver used for the `M.model_rebuild()` call doesn't make use of `Parent`, "
-        "so its `__type_params__` aren't available (they contain `T`)."
-    )
-)
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
 def test_parameterized_pep695_generic_with_annotated_forward_refs(create_module) -> None:
     mod = create_module(
         """
-        from typing import Annotated
+from typing import Annotated
 
-        from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-        class Parent[T](BaseModel):
-            a: T
-            b: 'MyAnnotated[T, 1]'
-            c: Annotated[T, 2] = Field(gt=2)
+class Parent[T](BaseModel):
+    a: T
+    b: 'MyAnnotated[T, 1]'
+    c: Annotated[T, 2] = Field(gt=2)
 
-        M = Parent[Annotated['MyInt', 3]]
+M = Parent[Annotated['MyInt', 3]]
 
-        MyAnnotated = Annotated
-        MyInt = int
+MyAnnotated = Annotated
+MyInt = int
 
-        M.model_rebuild()
+M.model_rebuild()
         """
     )
 
@@ -1781,6 +1769,172 @@ def test_parameterized_pep695_generic_with_annotated_forward_refs(create_module)
     assert M.model_fields['a'].metadata == [3]
     assert M.model_fields['b'].metadata == [3, 1]
     assert M.model_fields['c'].metadata == [Gt(2), 3, 2]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_pep695_mutually_recursive_generic_models(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/14021"""
+
+    mod = create_module(
+        """
+from pydantic import BaseModel
+
+class Node[T1](BaseModel):
+    val: T1
+    parent: 'Parent[T1] | None' = None
+
+class Parent[T2](BaseModel):
+    child: 'Node[T2]'
+        """
+    )
+
+    # When `Parent` is created, `Node[T2]` is created while `Parent` isn't defined yet. The `parent` field
+    # of `Node[T2]` is then rebuilt during `Parent`'s schema generation, where `T1` must be resolved from
+    # the origin class (`Node`):
+    mod.Parent.model_rebuild()
+
+    assert mod.Parent(child={'val': 1}).child.val == 1
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_parametrized_generic_model_uses_origin_namespace(create_module) -> None:
+    mod = create_module(
+        """
+from pydantic import BaseModel
+
+class Model[T](BaseModel):
+    class Inner(BaseModel):
+        v: int
+
+    a: 'Inner | Later'
+    b: 'list[T]'
+
+M = Model[int]
+
+class Later(BaseModel):
+    pass
+
+M.model_rebuild()
+        """
+    )
+
+    M = mod.M
+
+    assert M.model_fields['a'].annotation == mod.Model.Inner | mod.Later
+    assert M.model_fields['b'].annotation == list[int]
+
+
+def test_parametrized_generic_model_rebuilt_during_schema_generation() -> None:
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        x: 'Later[T]'
+
+    # `x` can't be evaluated yet, and will be when building the schema of `Main`:
+    ModelInt = Model[int]
+
+    class Later(BaseModel, Generic[T]):
+        y: T
+
+    class Main(BaseModel):
+        m: ModelInt
+
+    # The type variables map of `Model[int]` (and not `Main`'s) must be used:
+    with pytest.raises(ValidationError):
+        Main(m={'x': {'y': 'not_an_int'}})
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_parametrized_generic_model_forward_type_arg_named_like_type_param(create_module) -> None:
+    mod = create_module(
+        """
+from pydantic import BaseModel
+
+class Page[Item](BaseModel):
+    items: list[Item]
+
+PageItem = Page['Item']
+
+class Item(BaseModel):
+    id: int
+
+PageItem.model_rebuild()
+        """
+    )
+
+    # `'Item'` refers to the `Item` class, not to the `Item` type parameter of `Page`:
+    assert mod.PageItem.model_fields['items'].annotation == list[mod.Item]
+
+    with pytest.raises(ValidationError):
+        mod.PageItem(items=['not_an_item'])
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_parametrized_generic_model_forward_type_arg_named_like_nested_class(create_module) -> None:
+    mod = create_module(
+        """
+from pydantic import BaseModel
+
+class Wrapper[T](BaseModel):
+    class Meta(BaseModel):
+        inner: int
+
+    value: T
+
+WrapperMeta = Wrapper['Meta']
+
+class Meta(BaseModel):
+    outer: int
+
+WrapperMeta.model_rebuild()
+        """
+    )
+
+    # `'Meta'` refers to the module-level `Meta` class, not to `Wrapper.Meta`:
+    assert mod.WrapperMeta.model_fields['value'].annotation is mod.Meta
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_parametrized_generic_model_forward_type_arg_named_like_class_var(create_module) -> None:
+    mod = create_module(
+        """
+from typing import ClassVar
+
+from pydantic import BaseModel
+
+class Wrapper[T](BaseModel):
+    Alias: ClassVar[str] = 'some value'
+
+    value: T
+
+WrapperAlias = Wrapper['Alias']
+
+Alias = int
+
+WrapperAlias.model_rebuild()
+        """
+    )
+
+    # `'Alias'` refers to the module-level `Alias` type alias, not to `Wrapper.Alias`:
+    assert mod.WrapperAlias.model_fields['value'].annotation is int
+
+
+def test_nested_model_type_variable_not_substituted_by_parent_typevars_map() -> None:
+    """https://github.com/pydantic/pydantic/issues/11223"""
+
+    T = TypeVar('T')
+
+    class Inner(BaseModel):
+        x: 'Later[T]'
+
+    class Outer(BaseModel, Generic[T]):
+        inner: Inner
+
+    class Later(BaseModel, Generic[T]):
+        y: T
+
+    # `Inner` isn't generic, and shouldn't have `T` substituted by the type variables map of `Outer[int]`
+    assert Outer[int](inner={'x': {'y': 'not_an_int'}}).inner.x.y == 'not_an_int'
 
 
 def test_string_annotation_union_type() -> None:
