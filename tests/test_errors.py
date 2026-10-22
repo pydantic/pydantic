@@ -91,12 +91,18 @@ class CustomErrorSubclass(PydanticCustomError):
     pass
 
 
+class CustomErrorOverriddenNew(PydanticCustomError):
+    def __new__(cls, setting: str) -> 'CustomErrorOverriddenNew':
+        return super().__new__(cls, 'custom_error', 'Custom error with {setting}', {'setting': setting})
+
+
 @pytest.mark.parametrize(
     'error',
     [
         PydanticCustomError('custom_error', 'Custom error with {value}', {'value': 1}),
         PydanticCustomError('custom_error', 'Custom error'),
         CustomErrorSubclass('custom_error', 'Custom error'),
+        CustomErrorOverriddenNew('my_setting'),
     ],
 )
 def test_pickle_pydantic_custom_error(error: PydanticCustomError) -> None:

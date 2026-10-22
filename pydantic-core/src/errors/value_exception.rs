@@ -109,10 +109,17 @@ impl PydanticCustomError {
     // so `BaseException.__reduce__()` can't be relied on:
     fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<Bound<'py, PyTuple>> {
         let py = slf.py();
-        let this = slf.get();
-        let args = match &this.context {
-            Some(context) => (&this.error_type, &this.message_template, context).into_pyobject(py)?,
-            None => (&this.error_type, &this.message_template).into_pyobject(py)?,
+        let args = slf.getattr(intern!(py, "args"))?.cast_into::<PyTuple>()?;
+        // Only use the stored values if `args` is empty, as `args` reflects the arguments
+        // passed to (potentially overridden) `__new__()` implementations of subclasses:
+        let args = if args.is_empty() {
+            let this = slf.get();
+            match &this.context {
+                Some(context) => (&this.error_type, &this.message_template, context).into_pyobject(py)?,
+                None => (&this.error_type, &this.message_template).into_pyobject(py)?,
+            }
+        } else {
+            args
         };
         match slf.getattr_opt(intern!(py, "__dict__"))? {
             // e.g. attributes set on subclass instances, or exception notes:
