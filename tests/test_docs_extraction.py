@@ -431,3 +431,24 @@ def test_exec_cant_be_parsed():
 
     exec(source, globals(), locals_dict)
     assert locals_dict['MyModel'].model_fields['a'].description is None
+
+
+def test_nested_class_docstring_does_not_overwrite_outer():
+    """Nested class fields with the same name must not overwrite the outer class's docstring."""
+
+    class Outer(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+        x: int
+        """Outer field."""
+
+        inner: 'Inner'
+
+        class Inner(BaseModel):
+            model_config = ConfigDict(use_attribute_docstrings=True)
+
+            x: str
+            """Inner field."""
+
+    assert Outer.model_fields['x'].description == 'Outer field.'
+    assert Outer.Inner.model_fields['x'].description == 'Inner field.'

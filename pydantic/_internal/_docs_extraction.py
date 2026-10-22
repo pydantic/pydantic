@@ -16,11 +16,21 @@ class DocstringVisitor(ast.NodeVisitor):
         self.target: str | None = None
         self.attrs: dict[str, str] = {}
         self.previous_node_type: type[ast.AST] | None = None
+        self._class_nesting: int = 0
 
     def visit(self, node: ast.AST) -> Any:
         node_result = super().visit(node)
         self.previous_node_type = type(node)
         return node_result
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> Any:
+        # Only descend into the outermost class body. Nested class definitions
+        # may share field names with the outer class; visiting their bodies
+        # would cause inner docstrings to overwrite outer ones.
+        if self._class_nesting == 0:
+            self._class_nesting += 1
+            self.generic_visit(node)
+            self._class_nesting -= 1
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> Any:
         if isinstance(node.target, ast.Name):
