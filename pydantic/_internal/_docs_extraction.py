@@ -16,6 +16,7 @@ class DocstringVisitor(ast.NodeVisitor):
         self.target: str | None = None
         self.attrs: dict[str, str] = {}
         self.previous_node_type: type[ast.AST] | None = None
+        self._visited_class: bool = False
 
     def visit(self, node: ast.AST) -> Any:
         node_result = super().visit(node)
@@ -25,6 +26,15 @@ class DocstringVisitor(ast.NodeVisitor):
     def visit_AnnAssign(self, node: ast.AnnAssign) -> Any:
         if isinstance(node.target, ast.Name):
             self.target = node.target.id
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> Any:
+        # Only inspect the class being built; nested class definitions are
+        # inspected separately when they are built, and descending into them
+        # would let a nested class's same-named field docstring overwrite the
+        # outer field's description.
+        if not self._visited_class:
+            self._visited_class = True
+            self.generic_visit(node)
 
     def visit_Expr(self, node: ast.Expr) -> Any:
         if (

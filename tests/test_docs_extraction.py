@@ -431,3 +431,33 @@ def test_exec_cant_be_parsed():
 
     exec(source, globals(), locals_dict)
     assert locals_dict['MyModel'].model_fields['a'].description is None
+    locals_dict = {}
+
+    exec(source, globals(), locals_dict)
+    assert locals_dict['MyModel'].model_fields['a'].description is None
+
+
+def test_model_docs_nested_class():
+    """Nested class attribute docstrings should not overwrite outer field descriptions.
+
+    https://github.com/pydantic/pydantic/issues/14041
+    """
+
+    class Outer(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+        x: int
+        """Outer field."""
+
+        class Inner(BaseModel):
+            model_config = ConfigDict(use_attribute_docstrings=True)
+
+            x: str
+            """Inner field."""
+
+        y: int
+        """Y docs."""
+
+    assert Outer.model_fields['x'].description == 'Outer field.'
+    assert Outer.Inner.model_fields['x'].description == 'Inner field.'
+    assert Outer.model_fields['y'].description == 'Y docs.'
