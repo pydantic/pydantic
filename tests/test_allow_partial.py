@@ -1,10 +1,10 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 import pytest
 from annotated_types import Ge
 from typing_extensions import TypedDict
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 from .conftest import Err
 
@@ -85,3 +85,28 @@ def test_dict():
     assert ta.validate_json('{"a": 10, "b": 20, "c": 30}', **eap) == {'a': 10, 'b': 20, 'c': 30}
     assert ta.validate_json('{"a": 10, "b": 20, "c": 3', **eap) == {'a': 10, 'b': 20}
     assert ta.validate_json('{"a": 10, "b": 20, "c": 3}', **eap) == {'a': 10, 'b': 20}
+
+
+class Model(BaseModel):
+    a: int
+
+
+@pytest.mark.parametrize(
+    'member',
+    [
+        # stops at the first (non-last) invalid item, as `list[float]` succeeded:
+        pytest.param(list[str], id='list'),
+        pytest.param(Annotated[list[str], Field(fail_fast=True)], id='list-fail-fast'),
+        pytest.param(Annotated[list[str], Field(max_length=1)], id='list-max-length'),
+        # don't support partial validation:
+        pytest.param(tuple[str], id='tuple'),
+        pytest.param(Model, id='model'),
+    ],
+)
+def test_union_members_do_not_affect_partial_mode(member: Any) -> None:
+    # Each union member should be validated with the same partial mode, regardless of the previous members.
+    # `list[int]` should be picked as it is a more exact match than `list[float]`:
+    ta = TypeAdapter(list[float] | member | list[int])
+
+    assert ta.validate_python([1, 2, 'x'], experimental_allow_partial=True) == [1, 2]
+    assert ta.validate_json('[1, 2, "x"]', experimental_allow_partial=True) == [1, 2]
