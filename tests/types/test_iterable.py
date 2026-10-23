@@ -1,6 +1,7 @@
 import itertools
 import re
-from collections.abc import Iterable
+import typing
+from collections.abc import Iterable, Iterator
 from typing import Annotated, Any
 
 import pytest
@@ -13,6 +14,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     field_validator,
+    validate_call,
 )
 
 
@@ -55,6 +57,34 @@ def test_infinite_iterable_int():
             'input': 'f',
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'type_annotation, expected',
+    [
+        pytest.param(Iterator, ['1', '2'], id='collections.abc.Iterator'),
+        pytest.param(Iterator[int], [1, 2], id='collections.abc.Iterator[int]'),
+        pytest.param(typing.Iterator[int], [1, 2], id='typing.Iterator[int]'),
+    ],
+)
+def test_iterator(type_annotation, expected):
+    ta = TypeAdapter(type_annotation)
+
+    assert list(ta.validate_python(iter(['1', '2']))) == expected
+
+
+def test_iterator_model_and_validate_call():
+    class Model(BaseModel):
+        stream: Iterator[int]
+
+    assert list(Model(stream=iter([1, 2])).stream) == [1, 2]
+
+    @validate_call(validate_return=True)
+    def generate_numbers() -> Iterator[int]:
+        yield 1
+        yield 2
+
+    assert list(generate_numbers()) == [1, 2]
 
 
 @pytest.mark.parametrize(
