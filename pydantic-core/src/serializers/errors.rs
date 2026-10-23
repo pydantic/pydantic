@@ -31,7 +31,7 @@ impl<T: ser::Error> From<PyErr> for WrappedSerError<T> {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
 pub struct PythonSerializerError {
     pub message: String,
@@ -73,7 +73,7 @@ pub(super) fn se_err_py_err(error: PythonSerializerError) -> PyErr {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object, frozen)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", frozen)]
 #[derive(Debug, Clone)]
 pub struct PydanticSerializationError {
     message: String,
@@ -108,7 +108,7 @@ impl PydanticSerializationError {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object, frozen)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", frozen)]
 #[derive(Debug, Clone)]
 pub struct PydanticSerializationUnexpectedValue {
     message: Option<String>,

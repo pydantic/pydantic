@@ -28,7 +28,7 @@ use super::types::ErrorType;
 use super::value_exception::PydanticCustomError;
 use super::{InputValue, ValError};
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, skip_from_py_object, frozen)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, frozen)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValidationError {

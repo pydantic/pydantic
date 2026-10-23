@@ -14,7 +14,7 @@ use serde::ser::{Error, Serialize, SerializeSeq, Serializer};
 
 use crate::common::counter::get_counter_type;
 use crate::common::deque::{deque_maxlen, new_deque};
-use crate::common::frozendict::get_frozendict_type;
+use crate::common::frozendict::{frozendict_items, new_frozendict};
 use crate::common::ordered_dict::get_ordered_dict_type;
 use crate::input::{EitherTimedelta, Int};
 use crate::serializers::SerializationState;
@@ -27,7 +27,7 @@ use crate::serializers::shared::serialize_to_python;
 use crate::serializers::type_serializers;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::format::serialize_via_str;
-use crate::tools::{py_err, py_get_attrs, safe_repr};
+use crate::tools::{py_err, safe_repr};
 
 use super::SchemaSerializer;
 use super::config::InfNanMode;
@@ -163,7 +163,8 @@ pub(crate) fn infer_to_python_known<'py>(
                 let dict = value.cast::<PyDict>()?;
                 serialize_pairs(dict.iter().map(Ok), state, serialize_to_python(py))?
             }
-            ObType::Frozendict | ObType::OrderedDict => {
+            ObType::Frozendict => serialize_pairs(frozendict_items(value)?.map(Ok), state, serialize_to_python(py))?,
+            ObType::OrderedDict => {
                 let mapping = value.cast::<PyMapping>()?;
                 serialize_pairs(mapping_pairs(mapping)?, state, serialize_to_python(py))?
             }
@@ -261,9 +262,8 @@ pub(crate) fn infer_to_python_known<'py>(
                 serialize_pairs(dict.iter().map(Ok), state, serialize_to_python(py))?
             }
             ObType::Frozendict => {
-                let mapping = value.cast::<PyMapping>()?;
-                let new_dict = serialize_pairs(mapping_pairs(mapping)?, state, serialize_to_python(py))?;
-                get_frozendict_type(py)?.call1((new_dict,))?.unbind()
+                let new_dict = serialize_pairs(frozendict_items(value)?.map(Ok), state, serialize_to_python(py))?;
+                new_frozendict(new_dict.bind(py))?.unbind()
             }
             ObType::OrderedDict => {
                 let mapping = value.cast::<PyMapping>()?;
@@ -441,7 +441,11 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
             let dict = value.cast::<PyDict>().map_err(py_err_se_err)?;
             serialize_pairs(dict.iter().map(Ok), state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
-        ObType::Frozendict | ObType::OrderedDict => {
+        ObType::Frozendict => {
+            let pairs = frozendict_items(value).map_err(py_err_se_err)?;
+            serialize_pairs(pairs.map(Ok), state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
+        }
+        ObType::OrderedDict => {
             let mapping = value.cast::<PyMapping>().map_err(py_err_se_err)?;
             let pairs = mapping_pairs(mapping).map_err(py_err_se_err)?;
             serialize_pairs(pairs, state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
@@ -671,7 +675,7 @@ pub(crate) fn get_pydantic_serializer<'py>(
     value: &Bound<'py, PyAny>,
 ) -> PyResult<Option<Bound<'py, SchemaSerializer>>> {
     let py = value.py();
-    let Some(py_serializer) = py_get_attrs(value, intern!(py, "__pydantic_serializer__"))? else {
+    let Some(py_serializer) = value.getattr_opt(intern!(py, "__pydantic_serializer__"))? else {
         return Ok(None);
     };
     if let Ok(serializer) = py_serializer.cast_exact::<SchemaSerializer>() {
@@ -757,10 +761,8 @@ fn get_field_marker(py: Python<'_>) -> PyResult<&Bound<'_, PyAny>> {
     DC_FIELD_MARKER.import(py, "dataclasses", "_FIELD")
 }
 
-// TODO: remove when https://github.com/PyO3/pyo3/pull/6174 gets released, and iterate
-// directly over `PyFrozenDict` in the `ObType::Frozendict` arms, like `ObType::Dict` does.
-// Note that this must still be used for `ObType::OrderedDict`, as iterating over an `OrderedDict`
-// through the `dict` C API does not account for reorderings (e.g. `move_to_end()`):
+// Used for `ObType::OrderedDict`, as iterating over an `OrderedDict` through the `dict` C API
+// does not account for reorderings (e.g. `move_to_end()`):
 fn mapping_pairs<'py>(
     mapping: &Bound<'py, PyMapping>,
 ) -> PyResult<impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>> {
