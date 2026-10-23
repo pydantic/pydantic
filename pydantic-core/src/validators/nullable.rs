@@ -4,11 +4,12 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::errors::ValResult;
+use crate::errors::{ValError, ValResult};
 use crate::input::Input;
 use crate::tools::SchemaDict;
 
 use super::ValidationState;
+use super::none::is_none_json_key;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
 
 #[derive(Debug)]
@@ -41,9 +42,13 @@ impl Validator for NullableValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        match input.is_none() {
-            true => Ok(py.None()),
-            false => self.validator.validate(py, input, state),
+        if input.is_none() {
+            return Ok(py.None());
+        }
+        match self.validator.validate(py, input, state) {
+            // The inner validator takes precedence, so that `"None"` is still a valid key for `dict[str | None, ...]`:
+            Err(ValError::LineErrors(_)) if state.is_json_key() && is_none_json_key(input) => Ok(py.None()),
+            result => result,
         }
     }
 

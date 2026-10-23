@@ -121,6 +121,11 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
         if let Some(v) = T::validate_value(py, input, &self.lookup, strict)? {
             return Ok(v);
         }
+        if state.is_json_key()
+            && let Some(v) = self.lookup.validate_json_key(py, input)?
+        {
+            return Ok(v.clone_ref(py));
+        }
 
         // Fall back to calling the enum class (it handles calling `_missing_()` and such).
         // A `ValueError` means the value is not a valid member. Any other exception is propagated
@@ -128,13 +133,26 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
         // meaning the `_missing_()` definition is invalid):
         match class.call1((input.to_object(py)?,)) {
             Ok(res) => Ok(res.unbind()),
-            Err(err) if err.is_instance_of::<PyValueError>(py) => Err(ValError::new(
-                ErrorType::Enum {
-                    expected: self.expected_repr.clone(),
-                    context: None,
-                },
-                input,
-            )),
+            Err(err) if err.is_instance_of::<PyValueError>(py) || is_py310_flag_type_error(class, &err) => {
+                // JSON object keys can only be strings, e.g. `{"5": ...}` for a combination of
+                // `Flag` members which isn't a member itself (`ANIMALS | FRUIT`):
+                if state.is_json_key()
+                    && let Ok(int) = input.validate_int(false)
+                {
+                    match class.call1((int.into_inner(),)) {
+                        Ok(res) => return Ok(res.unbind()),
+                        Err(err) if err.is_instance_of::<PyValueError>(py) => {}
+                        Err(err) => return Err(err.into()),
+                    }
+                }
+                Err(ValError::new(
+                    ErrorType::Enum {
+                        expected: self.expected_repr.clone(),
+                        context: None,
+                    },
+                    input,
+                ))
+            }
             Err(err) => Err(err.into()),
         }
     }
@@ -142,6 +160,39 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
     fn get_name(&self) -> &str {
         &self.name
     }
+}
+
+/// On Python 3.10, `Flag._missing_()` raises a `TypeError` when called with a non-integer value.
+///
+/// The `ValueError` was introduced in https://github.com/python/cpython/pull/24215, but reverted
+/// for Python 3.10 in https://github.com/python/cpython/pull/27010.
+#[cfg(not(Py_3_11))]
+fn is_py310_flag_type_error(class: &Bound<'_, PyType>, err: &PyErr) -> bool {
+    fn missing_func<'py>(cls: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyAny>> {
+        let py = cls.py();
+        cls.getattr(intern!(py, "_missing_"))?.getattr(intern!(py, "__func__"))
+    }
+
+    let py = class.py();
+    if !err.is_instance_of::<pyo3::exceptions::PyTypeError>(py) {
+        return false;
+    }
+    // Only if the stdlib implementation is used, so that errors from user-defined `_missing_()` methods are kept:
+    let Ok(flag) = py
+        .import(intern!(py, "enum"))
+        .and_then(|m| m.getattr(intern!(py, "Flag")))
+    else {
+        return false;
+    };
+    match (missing_func(class.as_any()), missing_func(&flag)) {
+        (Ok(class_missing), Ok(flag_missing)) => class_missing.is(&flag_missing),
+        _ => false,
+    }
+}
+
+#[cfg(Py_3_11)]
+fn is_py310_flag_type_error(_class: &Bound<'_, PyType>, _err: &PyErr) -> bool {
+    false
 }
 
 #[derive(Debug, Clone)]
