@@ -452,13 +452,30 @@ def _apply_parse(
         return cs.chain_schema([s, handler(tp)]) if s else handler(tp)
 
 
+# A `str` core schema has a fixed order: pydantic-core runs `strip_whitespace`, then
+# `min_length`/`max_length`, then `pattern`, then `to_lower`/`to_upper`, and keeps one slot for
+# each. Once any of these keys is set, folding another step into the same schema can reorder or
+# drop it, so the step is added after the schema instead.
+_STR_ORDER_SENSITIVE_KEYS = frozenset(
+    {'pattern', 'min_length', 'max_length', 'strip_whitespace', 'to_lower', 'to_upper'}
+)
+# The case transforms run after the length and pattern checks, so a constraint that follows them
+# in the pipeline cannot be folded into the same `str` schema.
+_STR_CASE_KEYS = frozenset({'to_lower', 'to_upper'})
+
+
+def _str_check_schema(**constraints: Any) -> cs.CoreSchema:
+    """A `str` schema that only checks: the explicit `False`s keep the config's string transforms out of it."""
+    return cs.str_schema(**constraints, strip_whitespace=False, to_lower=False, to_upper=False)
+
+
 def _apply_transform(
     s: cs.CoreSchema | None, func: Callable[[Any], Any], handler: GetCoreSchemaHandler
 ) -> cs.CoreSchema:
     if s is None:
         return cs.no_info_plain_validator_function(func)
 
-    if s['type'] == 'str':
+    if s['type'] == 'str' and not _STR_ORDER_SENSITIVE_KEYS & s.keys():
         if func is str.strip:
             s = s.copy()
             s['strip_whitespace'] = True
@@ -537,7 +554,9 @@ def _apply_constraint(  # noqa: C901
         min_len = constraint.min_length
         max_len = constraint.max_length
 
-        if s and s['type'] in _LENGTH_SCHEMA_TYPES:
+        if s and s['type'] == 'str' and _STR_CASE_KEYS & s.keys():
+            s = cs.chain_schema([s, _str_check_schema(min_length=min_len or None, max_length=max_len)])
+        elif s and s['type'] in _LENGTH_SCHEMA_TYPES:
             s = s.copy()
             if min_len != 0:
                 s['min_length'] = min_len  # pyright: ignore[reportGeneralTypeIssues]
@@ -650,7 +669,9 @@ def _apply_constraint(  # noqa: C901
         s = _check_func(check_not_in, f'not in {values}', s)
     else:
         assert isinstance(constraint, Pattern)
-        if s and s['type'] == 'str':
+        if s and s['type'] == 'str' and _STR_CASE_KEYS & s.keys():
+            s = cs.chain_schema([s, _str_check_schema(pattern=constraint)])
+        elif s and s['type'] == 'str':
             s = s.copy()
             s['pattern'] = constraint
         else:
