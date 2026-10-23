@@ -14,7 +14,7 @@ use smallvec::SmallVec;
 use crate::build_tools::py_schema_err;
 use crate::errors::{ErrorType, LocItem, Location, ValError, ValLineError, ValResult, py_err_string};
 use crate::input::StringMapping;
-use crate::tools::{mapping_get, py_err, py_get_attrs};
+use crate::tools::{mapping_get, py_err};
 
 /// The possible choices for an alias value in Python
 #[derive(FromPyObject)]
@@ -111,7 +111,7 @@ impl LookupPath {
     }
 
     pub fn simple_py_get_attr<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
-        self.get_impl(obj, py_get_attrs, |d, loc| loc.py_get_attrs(&d))
+        self.get_impl(obj, PyAnyMethods::getattr_opt, |d, loc| loc.py_get_attrs(&d))
     }
 
     pub fn py_get_attr<'py>(
@@ -366,7 +366,7 @@ impl PathItemString {
             // FIXME: should this instance check be for Mapping instead of Dict, and use `mapping_get`?
             Ok(obj.get_item(self).ok())
         } else {
-            py_get_attrs(obj, self)
+            obj.getattr_opt(self)
         }
     }
 }
