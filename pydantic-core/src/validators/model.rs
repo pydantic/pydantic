@@ -1,9 +1,11 @@
+#[cfg(not(Py_LIMITED_API))]
 use std::ptr::null_mut;
 use std::sync::Arc;
 
-use pyo3::exceptions::PyTypeError;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
+#[cfg(not(Py_LIMITED_API))]
+use pyo3::types::PyTuple;
+use pyo3::types::{PyDict, PySet, PyString, PyType};
 use pyo3::{BoundObject, IntoPyObjectExt, ffi};
 use pyo3::{intern, prelude::*};
 
@@ -17,7 +19,11 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::{Input, input_as_python_instance, py_error_on_minusone};
-use crate::tools::{ROOT_FIELD, SchemaDict, py_err, root_field_py_str};
+#[cfg(not(Py_LIMITED_API))]
+use crate::tools::py_err;
+use crate::tools::{ROOT_FIELD, SchemaDict, root_field_py_str};
+#[cfg(not(Py_LIMITED_API))]
+use pyo3::exceptions::PyTypeError;
 
 const DUNDER_DICT: &str = "__dict__";
 const DUNDER_FIELDS_SET_KEY: &str = "__pydantic_fields_set__";
@@ -364,20 +370,28 @@ impl ModelValidator {
 /// based on the following but with the second argument of new_func set to an empty tuple as required
 /// https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
 pub(super) fn create_class<'py>(class: &Bound<'py, PyType>) -> PyResult<Bound<'py, PyAny>> {
-    let py = class.py();
-    let args = PyTuple::empty(py);
-    let raw_type = class.as_type_ptr();
-    unsafe {
-        // Safety: raw_type is known to be a non-null type object pointer
-        match (*raw_type).tp_new {
-            // Safety: the result of new_func is guaranteed to be either an owned pointer or null on error returns.
-            Some(new_func) => Bound::from_owned_ptr_or_err(
-                py,
-                // Safety: the non-null pointers are known to be valid, and it's allowed to call tp_new with a
-                // null kwargs dict.
-                new_func(raw_type, args.as_ptr(), null_mut()),
-            ),
-            None => py_err!(PyTypeError; "base type without tp_new"),
+    #[cfg(Py_LIMITED_API)]
+    {
+        return class.call0();
+    }
+
+    #[cfg(not(Py_LIMITED_API))]
+    {
+        let py = class.py();
+        let args = PyTuple::empty(py);
+        let raw_type = class.as_type_ptr();
+        unsafe {
+            // Safety: raw_type is known to be a non-null type object pointer
+            match (*raw_type).tp_new {
+                // Safety: the result of new_func is guaranteed to be either an owned pointer or null on error returns.
+                Some(new_func) => Bound::from_owned_ptr_or_err(
+                    py,
+                    // Safety: the non-null pointers are known to be valid, and it's allowed to call tp_new with a
+                    // null kwargs dict.
+                    new_func(raw_type, args.as_ptr(), null_mut()),
+                ),
+                None => py_err!(PyTypeError; "base type without tp_new"),
+            }
         }
     }
 }
