@@ -2925,6 +2925,45 @@ def test_eq_with_cached_property():
     assert obj1 == obj2
 
 
+def test_eq_with_cached_property_non_bool_comparison() -> None:
+    """Test BaseModel.__eq__ compatibility with cached properties whose equality comparison
+
+    is element-wise or raises ValueError/TypeError when evaluated in a boolean context (e.g. numpy arrays).
+    See https://github.com/pydantic/pydantic/issues/14068
+    """
+
+    class NonBoolEq:
+        def __eq__(self, other: object) -> 'NonBoolEq':
+            return self
+
+        def __bool__(self) -> bool:
+            raise ValueError('The truth value of an array with more than one element is ambiguous.')
+
+    class Model(BaseModel):
+        attr: int
+
+        @functools.cached_property
+        def cached(self) -> NonBoolEq:
+            return NonBoolEq()
+
+    obj1 = Model(attr=1)
+    obj2 = Model(attr=1)
+    obj3 = Model(attr=2)
+
+    # Initial equality check
+    assert obj1 == obj2
+
+    # Access cached_property on only one instance
+    _ = obj1.cached
+    assert obj1 == obj2
+
+    # Access cached_property on both instances
+    _ = obj2.cached
+    assert obj1 == obj2
+    assert obj2 == obj1
+    assert obj1 != obj3
+
+
 def test_model_metaclass_on_other_class() -> None:
     """Test that `ModelMetaclass` can be used as a metaclass on an unrelated class.
 
