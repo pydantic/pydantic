@@ -8,7 +8,7 @@ from collections import Counter, OrderedDict, deque, namedtuple
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
-from math import inf, isinf, isnan, nan
+from math import copysign, inf, isinf, isnan, nan
 from pathlib import Path
 from typing import ClassVar
 
@@ -71,6 +71,38 @@ def test_any_json_round_trip(any_serializer, value):
     assert any_serializer.to_python(value) == value
     assert json.loads(any_serializer.to_json(value)) == value
     assert any_serializer.to_python(value, mode='json') == value
+
+
+@pytest.mark.parametrize('inf_nan_mode', ['null', 'constants', 'strings'])
+@pytest.mark.parametrize('value', [0.0, -0.0, 1.5, sys.float_info.max, sys.float_info.min])
+def test_any_json_reuses_exact_float(value, inf_nan_mode):
+    serializer = SchemaSerializer(core_schema.any_schema(), {'ser_json_inf_nan': inf_nan_mode})
+    # Immutable, already JSON-compatible values need no replacement allocation.
+    assert serializer.to_python(value, mode='json') is value
+    items = [value]
+    result = serializer.to_python(items, mode='json')
+    assert result is not items
+    assert result[0] is value
+    json_value = json.loads(serializer.to_json(value))
+    assert json_value == value
+    assert copysign(1, json_value) == copysign(1, value)
+
+
+@pytest.mark.parametrize('inf_nan_mode', ['null', 'constants', 'strings'])
+@pytest.mark.parametrize('value', [0.0, -0.0, 1.5, inf, -inf, nan])
+def test_any_json_float_subclass(value, inf_nan_mode):
+    class FloatSubclass(float):
+        pass
+
+    serializer = SchemaSerializer(core_schema.any_schema(), {'ser_json_inf_nan': inf_nan_mode})
+    expected = serializer.to_python(value, mode='json')
+    actual = serializer.to_python(FloatSubclass(value), mode='json')
+    assert type(actual) is type(expected)
+    if isinstance(expected, float) and isnan(expected):
+        assert isnan(actual)
+    else:
+        assert actual == expected
+    assert serializer.to_json(FloatSubclass(value)) == serializer.to_json(value)
 
 
 @pytest.mark.parametrize(

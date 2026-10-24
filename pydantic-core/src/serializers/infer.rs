@@ -118,6 +118,10 @@ pub(crate) fn infer_to_python_known<'py>(
                 let v = value.extract::<f64>()?;
                 match type_serializers::float::inf_nan_to_python(py, v, state.config.inf_nan_mode) {
                     Some(v) => v,
+                    // Exact floats are immutable and already JSON-compatible. In particular,
+                    // union serialization need not allocate a new float for every list item
+                    // in its intermediate Python representation.
+                    None if matches!(ob_type, ObType::Float) => value.clone().unbind(),
                     None => v.into_py_any(py)?,
                 }
             }
