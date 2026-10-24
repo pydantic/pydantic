@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyType};
 
 use crate::SchemaSerializer;
 use crate::serializers::SerializationState;
@@ -15,6 +15,10 @@ pub struct PrebuiltSerializer {
 }
 
 impl PrebuiltSerializer {
+    pub(crate) fn model_class(&self) -> Option<&Py<PyType>> {
+        self.schema_serializer.get().serializer.model_class()
+    }
+
     pub fn try_get_from_schema(type_: &str, schema: &Bound<'_, PyDict>) -> PyResult<Option<CombinedSerializer>> {
         get_prebuilt(type_, schema, "__pydantic_serializer__", |py_any| {
             let schema_serializer = py_any.extract::<Py<SchemaSerializer>>()?;

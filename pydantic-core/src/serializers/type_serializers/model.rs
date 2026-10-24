@@ -96,7 +96,7 @@ impl BuildSerializer for ModelFieldsBuilder {
 
 #[derive(Debug)]
 pub struct ModelSerializer {
-    class: Py<PyType>,
+    pub(crate) class: Py<PyType>,
     serializer: Arc<CombinedSerializer>,
     has_extra: bool,
     root_model: bool,

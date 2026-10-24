@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PyString};
+use pyo3::types::{PyDict, PyString, PyType};
 use pyo3::{IntoPyObjectExt, prelude::*};
 use pyo3::{PyTraverseError, PyVisit, intern};
 
@@ -270,6 +270,16 @@ impl CombinedSerializer {
         }
     }
 
+    /// Model class when the serializer retains the standard model type checks.
+    pub(crate) fn model_class(&self) -> Option<&Py<PyType>> {
+        match self {
+            Self::Model(model) => Some(&model.class),
+            Self::Prebuilt(prebuilt) => prebuilt.model_class(),
+            Self::PolymorphismTrampoline(trampoline) => trampoline.serializer.model_class(),
+            _ => None,
+        }
+    }
+
     /// Main recursive way to call serializers, supports possible recursive type inference by
     /// switching to type inference mode eagerly.
     pub fn to_python<'py>(
@@ -335,6 +345,30 @@ impl CombinedSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
+        // Most scalar JSON serializers deliberately omit the strict checks used by
+        // `to_python`. Buffered union candidates must retain those selection rules.
+        if state.check.enabled()
+            && state.compact_json.is_some()
+            && !matches!(
+                self,
+                Self::Any(_)
+                    | Self::Model(_)
+                    | Self::Prebuilt(_)
+                    | Self::PolymorphismTrampoline(_)
+                    | Self::Fields(_)
+                    | Self::Recursive(_)
+                    | Self::Union(_)
+                    | Self::TaggedUnion(_)
+                    | Self::Nullable(_)
+                    | Self::WithDefault(_)
+            )
+        {
+            let v = self
+                .to_python_no_infer(value, state)
+                .map_err(|err| state.capture_json_error::<S>(err))?;
+            let state = &mut state.scoped_include_exclude(super::extra::IncludeExclude::empty());
+            return infer_serialize(v.bind(value.py()), serializer, state);
+        }
         TypeSerializer::serde_serialize(self, value, serializer, state)
     }
 }
@@ -466,6 +500,14 @@ pub(crate) struct PydanticSerializer<'slf, 'py> {
 }
 
 impl<'slf, 'py> PydanticSerializer<'slf, 'py> {
+    fn json_error(&self, error: super::errors::PythonSerializerError) -> PyErr {
+        self.state
+            .borrow_mut()
+            .pending_json_error
+            .take()
+            .unwrap_or_else(|| se_err_py_err(error))
+    }
+
     pub(crate) fn new(
         value: &'slf Bound<'py, PyAny>,
         serializer: &'slf CombinedSerializer,
@@ -594,6 +636,8 @@ pub(crate) fn to_json_bytes<'py>(
     ensure_ascii: bool,
     expected_json_size: usize,
 ) -> PyResult<Vec<u8>> {
+    let state = &mut state.scoped_set(|s| &mut s.compact_json, indent.is_none().then_some(ensure_ascii));
+    let state = &mut state.scoped_set(|s| &mut s.pending_json_error, None);
     let serializer = PydanticSerializer::new(value, serializer, state);
 
     let writer: Vec<u8> = Vec::with_capacity(expected_json_size);
@@ -603,24 +647,32 @@ pub(crate) fn to_json_bytes<'py>(
             let indent = vec![b' '; indent];
             let formatter = EscapeNonAsciiPrettyFormatter::with_indent(&indent);
             let mut ser = PythonSerializer::with_formatter(writer, formatter);
-            serializer.serialize(&mut ser).map_err(se_err_py_err)?;
+            serializer
+                .serialize(&mut ser)
+                .map_err(|err| serializer.json_error(err))?;
             ser.into_inner()
         }
         (Some(indent), false) => {
             let indent = vec![b' '; indent];
             let formatter = PrettyFormatter::with_indent(&indent);
             let mut ser = PythonSerializer::with_formatter(writer, formatter);
-            serializer.serialize(&mut ser).map_err(se_err_py_err)?;
+            serializer
+                .serialize(&mut ser)
+                .map_err(|err| serializer.json_error(err))?;
             ser.into_inner()
         }
         (None, true) => {
             let mut ser = PythonSerializer::with_formatter(writer, EscapeNonAsciiFormatter);
-            serializer.serialize(&mut ser).map_err(se_err_py_err)?;
+            serializer
+                .serialize(&mut ser)
+                .map_err(|err| serializer.json_error(err))?;
             ser.into_inner()
         }
         (None, false) => {
             let mut ser = PythonSerializer::new(writer);
-            serializer.serialize(&mut ser).map_err(se_err_py_err)?;
+            serializer
+                .serialize(&mut ser)
+                .map_err(|err| serializer.json_error(err))?;
             ser.into_inner()
         }
     };
@@ -632,6 +684,8 @@ pub(crate) fn to_json_bytes<'py>(
 pub(crate) trait DoSerialize {
     type Ok;
     type Error: From<PyErr>;
+
+    fn serialization_error(state: &mut SerializationState<'_>, error: PyErr) -> Self::Error;
 
     fn serialize_no_infer<'py>(
         self,
@@ -695,6 +749,10 @@ pub struct SerializeToPython<'py>(Python<'py>);
 impl<'s> DoSerialize for SerializeToPython<'s> {
     type Ok = Py<PyAny>;
     type Error = PyErr;
+
+    fn serialization_error(_state: &mut SerializationState<'_>, error: PyErr) -> PyErr {
+        error
+    }
 
     fn serialize_no_infer<'py>(
         self,
@@ -774,6 +832,14 @@ pub(crate) struct SerializeToJson<S> {
 impl<S: Serializer> DoSerialize for SerializeToJson<S> {
     type Ok = S::Ok;
     type Error = WrappedSerError<S::Error>;
+
+    fn serialization_error(state: &mut SerializationState<'_>, error: PyErr) -> Self::Error {
+        if state.compact_json.is_some() && state.check.enabled() {
+            WrappedSerError(state.capture_json_error::<S>(error))
+        } else {
+            error.into()
+        }
+    }
 
     fn serialize_no_infer<'py>(
         self,

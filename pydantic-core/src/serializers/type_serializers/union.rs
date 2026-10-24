@@ -1,11 +1,13 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
+use serde::ser::SerializeStruct;
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::sync::Arc;
 use std::sync::OnceLock;
 
+use super::any::AnySerializer;
 use crate::build_tools::py_schema_err;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
@@ -13,6 +15,8 @@ use crate::serializers::PydanticSerializationUnexpectedValue;
 use crate::serializers::SerializationState;
 use crate::serializers::extra::IncludeExclude;
 use crate::serializers::extra::ScopedSetState;
+use crate::serializers::ser::RAW_JSON_TOKEN;
+use crate::serializers::shared::to_json_bytes;
 use crate::tools::PyHashTable;
 use crate::tools::SchemaDict;
 
@@ -91,6 +95,21 @@ impl TypeSerializer for UnionSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
+        if let Some(ensure_ascii) = state.compact_json
+            && self.choices.can_buffer_json(value)
+        {
+            let bytes = self
+                .choices
+                .serialize(
+                    |choice, state| serialize_json_candidate(value, choice, state, ensure_ascii),
+                    state,
+                )
+                .map_err(|e| json_selection_error::<S>(e, state))?;
+            return match bytes {
+                Some(bytes) => serialize_raw_json(&bytes, serializer),
+                None => infer_serialize(value, serializer, state),
+            };
+        }
         match self
             .choices
             .serialize(|comb_serializer, state| comb_serializer.to_python(value, state), state)
@@ -100,7 +119,7 @@ impl TypeSerializer for UnionSerializer {
                 infer_serialize(v.bind(value.py()), serializer, state)
             }
             Ok(None) => infer_serialize(value, serializer, state),
-            Err(err) => Err(serde::ser::Error::custom(err.to_string())),
+            Err(err) => Err(json_selection_error::<S>(err, state)),
         }
     }
 
@@ -196,6 +215,21 @@ impl TypeSerializer for TaggedUnionSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
+        if let Some(ensure_ascii) = state.compact_json
+            && self.choices.can_buffer_json(value)
+        {
+            let bytes = self
+                .tagged_union_serialize(
+                    value,
+                    |choice, state| serialize_json_candidate(value, choice, state, ensure_ascii),
+                    state,
+                )
+                .map_err(|e| json_selection_error::<S>(e, state))?;
+            return match bytes {
+                Some(bytes) => serialize_raw_json(&bytes, serializer),
+                None => infer_serialize(value, serializer, state),
+            };
+        }
         match self.tagged_union_serialize(
             value,
             |comb_serializer, state| comb_serializer.to_python(value, state),
@@ -206,7 +240,7 @@ impl TypeSerializer for TaggedUnionSerializer {
                 infer_serialize(v.bind(value.py()), serializer, state)
             }
             Ok(None) => infer_serialize(value, serializer, state),
-            Err(err) => Err(serde::ser::Error::custom(err.to_string())),
+            Err(err) => Err(json_selection_error::<S>(err, state)),
         }
     }
 
@@ -332,6 +366,7 @@ fn initial_check_level(state: &SerializationState<'_>) -> SerCheck {
 #[derive(Debug)]
 struct UnionChoices {
     choices: Vec<Arc<CombinedSerializer>>,
+    model_choices: bool,
 }
 
 impl_py_gc_traverse!(UnionChoices { choices });
@@ -343,11 +378,20 @@ enum FromChoicesOutput {
 
 impl UnionChoices {
     fn from_choices(choices: Vec<Arc<CombinedSerializer>>) -> PyResult<FromChoicesOutput> {
+        let model_choices = choices.iter().all(|choice| choice.model_class().is_some());
         match choices.len() {
             0 => py_schema_err!("One or more union choices required"),
             1 => Ok(FromChoicesOutput::Single(choices.into_iter().next().unwrap())),
-            _ => Ok(FromChoicesOutput::Multiple(Self { choices })),
+            _ => Ok(FromChoicesOutput::Multiple(Self { choices, model_choices })),
         }
+    }
+
+    fn can_buffer_json(&self, value: &Bound<'_, PyAny>) -> bool {
+        self.model_choices
+            && self
+                .choices
+                .iter()
+                .any(|choice| value.get_type().is(choice.model_class().unwrap()))
     }
 
     fn retry_with_lax_check(&self) -> bool {
@@ -397,6 +441,39 @@ impl UnionChoices {
 
         // ... before falling back to inference
         Ok(None)
+    }
+}
+
+/// The bytes came from our JSON serializer, so they can be written without quoting
+/// or another traversal of the original Python payload.
+fn serialize_raw_json<S: serde::ser::Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
+    let json = std::str::from_utf8(bytes).map_err(serde::ser::Error::custom)?;
+    let mut raw = serializer.serialize_struct(RAW_JSON_TOKEN, 1)?;
+    raw.serialize_field(RAW_JSON_TOKEN, json)?;
+    raw.end()
+}
+
+fn serialize_json_candidate<'py>(
+    value: &Bound<'py, PyAny>,
+    choice: &CombinedSerializer,
+    state: &mut SerializationState<'py>,
+    ensure_ascii: bool,
+) -> PyResult<Vec<u8>> {
+    if state.check == SerCheck::Strict {
+        to_json_bytes(value, choice, state, None, ensure_ascii, 0)
+    } else {
+        // Retain the existing subclass selection and conversion semantics in lax mode.
+        let v = choice.to_python(value, state)?;
+        let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+        to_json_bytes(v.bind(value.py()), AnySerializer::get(), state, None, ensure_ascii, 0)
+    }
+}
+
+fn json_selection_error<S: serde::ser::Serializer>(error: PyErr, state: &mut SerializationState<'_>) -> S::Error {
+    if state.compact_json.is_some() && state.check.enabled() {
+        state.capture_json_error::<S>(error)
+    } else {
+        serde::ser::Error::custom(error.to_string())
     }
 }
 

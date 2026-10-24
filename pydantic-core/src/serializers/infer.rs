@@ -343,10 +343,10 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
     ob_type: ObType,
     value: &Bound<'py, PyAny>,
     serializer: S,
-    state: &mut SerializationState<'py>,
+    outer_state: &mut SerializationState<'py>,
 ) -> Result<S::Ok, S::Error> {
-    let extra_serialize_unknown = state.extra.serialize_unknown;
-    let mut guard = match state.recursion_guard(value, INFER_DEF_REF_ID) {
+    let extra_serialize_unknown = outer_state.extra.serialize_unknown;
+    let mut guard = match outer_state.recursion_guard(value, INFER_DEF_REF_ID) {
         Ok(v) => v,
         Err(e) => {
             return if extra_serialize_unknown {
@@ -443,15 +443,44 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         }
         ObType::Dict | ObType::Counter => {
             let dict = value.cast::<PyDict>().map_err(py_err_se_err)?;
+            // Retain union key normalization where keys can collide, e.g. 1 and "1".
+            // Keep this check in the mapping path so scalar inference stays cheap.
+            if state.check.enabled()
+                && state.compact_json.is_some()
+                && dict
+                    .keys()
+                    .iter()
+                    .any(|key| !matches!(state.extra.ob_type_lookup.get_type(&key), ObType::Str))
+            {
+                let v = serialize_pairs(dict.iter().map(Ok), state, serialize_to_python(value.py()))
+                    .map_err(|err| state.capture_json_error::<S>(err))?;
+                drop(guard);
+                let state = &mut outer_state.scoped_include_exclude(IncludeExclude::empty());
+                return infer_serialize(v.bind(value.py()), serializer, state);
+            }
             serialize_pairs(dict.iter().map(Ok), state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
         ObType::Frozendict => {
             let pairs = frozendict_items(value).map_err(py_err_se_err)?;
+            if state.check.enabled() && state.compact_json.is_some() {
+                let v = serialize_pairs(pairs.map(Ok), state, serialize_to_python(value.py()))
+                    .map_err(|err| state.capture_json_error::<S>(err))?;
+                drop(guard);
+                let state = &mut outer_state.scoped_include_exclude(IncludeExclude::empty());
+                return infer_serialize(v.bind(value.py()), serializer, state);
+            }
             serialize_pairs(pairs.map(Ok), state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
         ObType::OrderedDict => {
             let mapping = value.cast::<PyMapping>().map_err(py_err_se_err)?;
             let pairs = mapping_pairs(mapping).map_err(py_err_se_err)?;
+            if state.check.enabled() && state.compact_json.is_some() {
+                let v = serialize_pairs(pairs, state, serialize_to_python(value.py()))
+                    .map_err(|err| state.capture_json_error::<S>(err))?;
+                drop(guard);
+                let state = &mut outer_state.scoped_include_exclude(IncludeExclude::empty());
+                return infer_serialize(v.bind(value.py()), serializer, state);
+            }
             serialize_pairs(pairs, state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
         ObType::List => serialize_seq_filter!(PyList),

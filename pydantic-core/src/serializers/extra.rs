@@ -30,6 +30,11 @@ pub(crate) struct SerializationState<'py> {
     field_name: Option<Bound<'py, PyString>>,
     /// Inside unions, checks are applied to attempt to select a preferred branch
     pub check: SerCheck,
+    /// Compact JSON output, carrying its ASCII escaping setting. Python conversion and
+    /// pretty printing cannot splice independently serialized union candidates.
+    pub compact_json: Option<bool>,
+    /// Preserve the original candidate error without eagerly formatting its input value.
+    pub pending_json_error: Option<PyErr>,
     pub include_exclude: IncludeExclude<'py>,
     /// Global settings for the serialization process
     pub extra: Extra<'py>,
@@ -72,6 +77,8 @@ impl<'py> SerializationState<'py> {
             model: None,
             field_name: None,
             check: SerCheck::None,
+            compact_json: None,
+            pending_json_error: None,
             include_exclude: IncludeExclude { include, exclude },
             extra,
         })
@@ -105,8 +112,18 @@ impl SerializationState<'_> {
         field_type: &str,
         value: &Bound<'_, PyAny>,
     ) -> Result<(), S::Error> {
+        if self.compact_json.is_some() && self.check.enabled() {
+            return self
+                .warn_fallback_py(field_type, value)
+                .map_err(|err| self.capture_json_error::<S>(err));
+        }
         self.warnings
             .on_fallback_ser::<S>(field_type, value, self.field_name.as_ref(), self.check)
+    }
+
+    pub fn capture_json_error<S: serde::ser::Serializer>(&mut self, error: PyErr) -> S::Error {
+        self.pending_json_error = Some(error);
+        S::Error::custom(super::errors::SERIALIZATION_ERR_MARKER)
     }
 
     pub fn final_check(&self, py: Python) -> PyResult<()> {
@@ -337,6 +354,8 @@ impl ExtraOwned {
             model: self.model.as_ref().map(|m| m.bind(py).clone()),
             field_name: self.field_name.as_ref().map(|name| name.bind(py).clone()),
             check: self.check,
+            compact_json: None,
+            pending_json_error: None,
             include_exclude: IncludeExclude {
                 include: self.include.as_ref().map(|m| m.bind(py).clone()),
                 exclude: self.exclude.as_ref().map(|m| m.bind(py).clone()),
@@ -484,9 +503,6 @@ impl CollectWarnings {
         if value.is_none() {
             Ok(())
         } else if check.enabled() {
-            // note: I think this should never actually happen since we use `to_python(..., mode='json')` during
-            // JSON serialization to "try" union branches, but it's here for completeness/correctness
-            // in particular, in future we could allow errors instead of warnings on fallback
             Err(S::Error::custom(UNEXPECTED_TYPE_SER_MARKER))
         } else {
             self.fallback_warning(field_name, field_type, value);

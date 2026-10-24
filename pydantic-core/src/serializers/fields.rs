@@ -207,8 +207,9 @@ impl GeneralFieldsSerializer {
                     used_req_fields += 1;
                 }
 
-                let Some((serializer, next_include_exclude)) =
-                    self.prepare_value(&key, &value, field, state, missing_sentinel)?
+                let Some((serializer, next_include_exclude)) = self
+                    .prepare_value(&key, &value, field, state, missing_sentinel)
+                    .map_err(|err| S::serialization_error(state, err))?
                 else {
                     // field was excluded
                     continue;
@@ -219,12 +220,13 @@ impl GeneralFieldsSerializer {
             } else if self.mode == FieldsMode::TypedDictAllow {
                 self.serialize_extra(&key_str, &value, state, missing_sentinel, extras_serializer, &mut map)?;
             } else if state.check == SerCheck::Strict {
-                return Err(unexpected_field(&key_str, model).into());
+                return Err(S::serialization_error(state, unexpected_field(&key_str, model)));
             }
         }
 
         if state.check.enabled() && self.required_fields > used_req_fields {
-            return Err(incorrect_field_count(self.required_fields, used_req_fields, model, state).into());
+            let error = incorrect_field_count(self.required_fields, used_req_fields, model, state);
+            return Err(S::serialization_error(state, error));
         }
 
         for result in extras_iter {

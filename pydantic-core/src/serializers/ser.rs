@@ -16,6 +16,7 @@ macro_rules! tri {
 
 type Result<T> = std::result::Result<T, PythonSerializerError>;
 const TOKEN: &str = "$serde_json::private::Number";
+pub(crate) const RAW_JSON_TOKEN: &str = "$pydantic::private::Json";
 pub struct PythonSerializer<W, F = CompactFormatter> {
     writer: W,
     formatter: F,
@@ -368,7 +369,7 @@ where
 
     fn serialize_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeStruct> {
         match name {
-            TOKEN => Ok(Compound::Number { ser: self }),
+            TOKEN | RAW_JSON_TOKEN => Ok(Compound::Number { ser: self, token: name }),
             _ => self.serialize_map(Some(len)),
         }
     }
@@ -638,8 +639,8 @@ where
     {
         match self {
             Compound::Map { .. } => serde::ser::SerializeMap::serialize_entry(self, key, value),
-            Compound::Number { ser, .. } => {
-                if key == TOKEN {
+            Compound::Number { ser, token } => {
+                if key == *token {
                     tri!(value.serialize(NumberStrEmitter(ser)));
                     Ok(())
                 } else {
@@ -787,6 +788,7 @@ pub enum Compound<'a, W: 'a, F: 'a> {
     },
     Number {
         ser: &'a mut PythonSerializer<W, F>,
+        token: &'static str,
     },
 }
 
