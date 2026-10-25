@@ -2925,6 +2925,42 @@ def test_eq_with_cached_property():
     assert obj1 == obj2
 
 
+def test_eq_with_cached_property_non_bool_comparable():
+    """
+    BaseModel.__eq__ must not raise when a cached_property stores a value whose
+    equality comparison is not bool-convertible (e.g. a list-like object).
+
+    See GH-14068: __dict__ comparison raised ValueError when both instances had
+    the cached_property populated with a non-bool-comparable value.
+    """
+
+    class NonBoolComparable:
+        """Mimics numpy arrays: == returns self, bool() raises."""
+
+        def __eq__(self, other: object) -> 'NonBoolComparable':  # type: ignore[override]
+            return self
+
+        def __bool__(self) -> bool:
+            raise ValueError('truth value is ambiguous')
+
+    class Model(BaseModel):
+        attr: int
+
+        @functools.cached_property
+        def computed(self) -> NonBoolComparable:
+            return NonBoolComparable()
+
+    a = Model(attr=1)
+    b = Model(attr=1)
+    # Populate the cache on both instances (previously this caused ValueError)
+    _ = a.computed, b.computed
+    assert a == b
+
+    c = Model(attr=2)
+    _ = c.computed
+    assert not (a == c)
+
+
 def test_model_metaclass_on_other_class() -> None:
     """Test that `ModelMetaclass` can be used as a metaclass on an unrelated class.
 
