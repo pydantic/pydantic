@@ -379,7 +379,10 @@ impl UnionChoices {
         // in a nested union, we immediately bail out with the collected errors
         if !in_top_level_union(state) {
             debug_assert_eq!(errors.len(), self.choices.len());
-            return Err(union_serialization_unexpected_value(&errors));
+            return Err(PydanticSerializationUnexpectedValue::new_from_union_errors(
+                state.py(),
+                &errors,
+            ));
         }
 
         // otherwise, in a top level union, we retry with lax checking if any choice supports it
@@ -406,14 +409,6 @@ fn scoped_check_level<'scope, 'py>(
     check_level: SerCheck,
 ) -> ScopedSetState<'scope, 'py, impl for<'s> Fn(&'s mut SerializationState<'py>) -> &'s mut SerCheck, SerCheck> {
     state.scoped_set(|s| &mut s.check, check_level)
-}
-
-/// Produce an unexpected value error from errors encountered during union serialization
-#[cold]
-fn union_serialization_unexpected_value(errors: &[PyErr]) -> PyErr {
-    // FIXME: used "joined" helper
-    let message = errors.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n");
-    PydanticSerializationUnexpectedValue::new_from_msg(Some(message)).to_py_err()
 }
 
 /// Register warnings from errors encountered during union serialization
