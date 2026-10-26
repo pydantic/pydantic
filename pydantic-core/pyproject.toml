@@ -169,9 +169,10 @@ cache-keys = [
     { file = "Cargo.toml" },
     { file = "Cargo.lock" },
     { file = "build.rs" },
-    { dir = ".cargo" },
-    { dir = "src" },
-    { dir = "python" },
+    { file = "src/**/*.rs" },
+    { file = ".cargo/config.toml" },
+    { file = "python/pydantic_core/**/*.py" },
+    { file = "python/pydantic_core/**/*.pyi" },
     { env = "MATURIN_PEP517_ARGS" },
     { env = "RUSTFLAGS" }
 ]
