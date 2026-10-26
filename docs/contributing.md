@@ -57,7 +57,7 @@ Such behavior can also result in a permanent ban from the organization.
 
 You'll need the following prerequisites:
 
-* Any Python version between **Python 3.10 and 3.14**
+* Any Python version between **Python 3.10 and 3.15**
 * [**uv**](https://docs.astral.sh/uv/getting-started/installation/)
 * [**git**](https://git-scm.com/) - For version control
 * [**make**](https://www.gnu.org/software/make/) - For running development commands (or use `nmake` on Windows)
@@ -93,6 +93,28 @@ git switch -c my-new-feature-branch
 # Make your changes...
 ```
 
+### Writing tests
+
+Pydantic currently has two separate test suites: the Pydantic test suite (located in `tests/`), and the `pydantic-core` test suite (located in `pydantic-core/tests`).
+`pydantic-core/tests` is symlinked under `tests/pydantic-core/`, so that a single `pytest` invocation can run all of them. For it to work, you may need to
+enable the [`core.symlinks`](https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks) Git option.
+
+When adding new tests, prefer adding them in `tests`, using the Pydantic Python API. Most `pydantic-core` tests are using internal APIs (e.g. `SchemaValidator`).
+Make sure to look for the right place to add a test, read the existing test files first. Tests related to types must go in `test/test_types/`
+(create a file if it doesn't exist yet).
+
+When introcuding a test for a specific issue/feature request, mention the issue link as a docstring, e.g.:
+
+```python
+def test_some_feature() -> None:
+    """https://github.com/pydantic/pydantic/issues/1234"""
+```
+
+The test you are adding may be relevant for Pydantic models as well as dataclasses and `TypedDict`. As such, it may be beneficial to use the `container_class` fixture,
+or the `dataclass_decorators()` test utility.
+
+When using `pytest.raises()`, prefer using the `check=lambda err: ...` argument, instead of asserting on `exc_info`.
+
 ### Run tests and linting
 
 Run tests and linting locally to make sure everything is working as expected.
@@ -109,10 +131,6 @@ make
 # which you might want to use, but generally just `make` should be all you need.
 # You can run `make help` to see more options.
 ```
-
-The `pydantic-core` test suite is located in `tests/pydantic-core`, as a symlink. For it to work, you may need to
-enable the [`core.symlinks`](https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks) Git
-option.
 
 ### Build documentation
 
@@ -148,11 +166,21 @@ For example, if the latest release is `v2.9.2`, you should make sure `docs-updat
 
 ### Commit and push your changes
 
-Commit your changes, push your branch to GitHub, and create a pull request.
+Commit your changes, push your branch to GitHub, and create a pull request, following the pull request template. The title of the pull request
+will be used for our changelog entry, it should follow these guidelines:
 
-Please follow the pull request template and fill in as much information as possible. Link to any relevant issues and include a description of your changes.
+* A one-line subject, sentence case: capitalized first word, imperative mood, no `fix:` or `feat(core):` prefix.
+* It starts with a verb that says what kind of change it is:
+    * Bug fixes: Fix (most common), often naming the symptom and its context. E.g. "Fix infinite recursion when validating an invalid default".
+    * Features: Support, Add, Implement, Honor/Respect, Take … into account.
+    * Performance: Improve performance of ... / Avoid ...
+    * Docs: Document, Correct, Add notes about ...
+    * Dependencies: Bump X from a to b.
+* Use backticks for code elements: classes (e.g. `BaseModel`), functions (e.g. `create_model()`).
+* Do not add the referenced issue in the title.
 
-When your pull request is ready for review, add a comment with the message "please review" and we'll take a look as soon as we can.
+The pull request body should first reference the issue if there is any (e.g. "Fixes #1234"). The body should be succinct, spaced, and code examples are usually
+recommended (e.g. "before / after" examples, showing the changed behavior). If you need to point to existing code, use [.](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-a-permanent-link-to-a-code-snippet)
 
 ## Documentation style
 
@@ -205,7 +233,7 @@ You may include example code in docstrings. This code should be complete, self-c
 !!! note "Class and instance attributes"
     Class attributes should be documented in the class docstring.
 
-    Instance attributes should be documented as "Args" in the `__init__` docstring.
+    Instance attributes should be documented as "Args" in the `__init__()` docstring.
 
 ### Documentation Style
 
