@@ -124,6 +124,13 @@ jobs:
             manylinux: auto
             target: aarch64
             interpreter: graalpy3.11 graalpy3.12
+            # PyPy 8.0 (`pp80` ABI) requires glibc 2.28:
+          - os: linux
+            manylinux: '2_28'
+            target: x86_64
+            interpreter: pypy3.11-pp80
+            # see the "Install PyPy 8.0" step below:
+            interpreter-path: /opt/python/pp311-pypy311_pp80/bin/python
 
           # musllinux
           - os: linux
@@ -145,6 +152,12 @@ jobs:
           - os: macos
             target: aarch64
             interpreter: pypy3.11 graalpy3.11 graalpy3.12
+          - os: macos
+            target: x86_64
+            interpreter: pypy3.11-pp80
+          - os: macos
+            target: aarch64
+            interpreter: pypy3.11-pp80
 
           # windows;
           # x86_64 pypy builds are not PGO optimized
@@ -153,6 +166,9 @@ jobs:
           - os: windows
             target: x86_64
             interpreter: pypy3.11
+          - os: windows
+            target: x86_64
+            interpreter: pypy3.11-pp80
           - os: windows
             target: i686
             python-architecture: x86
@@ -179,6 +195,23 @@ jobs:
 
       - run: uv sync --only-group build
 
+      # PyPy 3.11 exists with both the PyPy 7.3 (`pp73`) and 8.0 (`pp80`) ABIs, and `pypy3.11` resolves to PyPy 7.3
+      # on the runners and in the manylinux images (see https://github.com/pypa/manylinux/pull/1996), so we need to
+      # provide a PyPy 8.0 interpreter explicitly (on Linux, using `interpreter-path`).
+      # This can be removed once we drop PyPy 3.11 in favor of PyPy 3.12 (`pp80` only):
+      - name: Install PyPy 8.0
+        id: pypy-pp80
+        if: matrix.interpreter == 'pypy3.11-pp80' && matrix.os != 'linux'
+        shell: bash
+        run: |
+          uv python install pypy3.11
+          interpreter="$(uv python find --managed-python pypy3.11)"
+          "$interpreter" -c 'import sysconfig; soabi = sysconfig.get_config_var("SOABI"); assert "pp80" in soabi, soabi'
+          if command -v cygpath &> /dev/null; then
+            interpreter="$(cygpath --mixed "$interpreter")"
+          fi
+          echo "interpreter=$interpreter" >> "$GITHUB_OUTPUT"
+
       - name: Build wheels
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
@@ -187,7 +220,7 @@ jobs:
           maturin-version: v1.15.0
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --locked --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11' }}
+          args: --release --locked --out dist --interpreter ${{ steps.pypy-pp80.outputs.interpreter || matrix.interpreter-path || matrix.interpreter || '3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
 
