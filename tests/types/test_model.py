@@ -213,3 +213,83 @@ def test_duplicate_extra_keys_in_json_later_wins() -> None:
     json_input = b'{"x": "not_an_int", "x": 42}'
     m = Model.model_validate_json(json_input)
     assert m.__pydantic_extra__ == {'x': 42}
+
+
+def test_duplicate_nested_alias_keys_in_json_later_wins() -> None:
+    calls: list[Any] = []
+
+    def record(value: Any) -> Any:
+        calls.append(value)
+        return value
+
+    class Model(BaseModel):
+        a: Annotated[int, BeforeValidator(record), Field(validation_alias=AliasPath('payload', 'x'))]
+
+    m = Model.model_validate_json('{"payload": {"x": "invalid", "x": 1}}')
+    assert m.a == 1
+    assert calls == [1]
+
+
+@pytest.mark.parametrize('keys', [('x', 'y'), ('y', 'x')])
+def test_nested_alias_priority_independent_of_input_order(py_and_json, keys) -> None:
+    calls: list[Any] = []
+
+    def record(value: Any) -> Any:
+        calls.append(value)
+        return value
+
+    class Model(BaseModel):
+        a: Annotated[
+            int,
+            BeforeValidator(record),
+            Field(validation_alias=AliasChoices(AliasPath('payload', 'x'), AliasPath('payload', 'y'))),
+        ]
+
+    values = {'x': 1, 'y': 'invalid'}
+    m = py_and_json(Model).validate_test({'payload': {key: values[key] for key in keys}})
+    assert m.a == 1
+    assert calls == [1]
+
+
+def test_nested_alias_shared_by_fields(py_and_json) -> None:
+    class Model(BaseModel):
+        a: int = Field(validation_alias=AliasPath('payload', 'x'))
+        b: int = Field(validation_alias=AliasPath('payload', 'x'))
+
+    m = py_and_json(Model).validate_test({'payload': {'x': 1}})
+    assert m.a == 1
+    assert m.b == 1
+    assert m.model_fields_set == {'a', 'b'}
+
+
+def test_consumed_alias_root_not_in_extras(py_and_json) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        a: int = Field(validation_alias=AliasPath('payload', 'x'))
+        __pydantic_extra__: dict[str, int]
+
+    m = py_and_json(Model).validate_test({'payload': {'x': 1, 'unused': 2}, 'extra': 3})
+    assert m.__pydantic_extra__ == {'extra': 3}
+    assert m.model_fields_set == {'a', 'extra'}
+
+
+def test_fields_validate_in_schema_order_before_extra_values(py_and_json) -> None:
+    calls: list[tuple[str, Any]] = []
+
+    def record(name: str):
+        def validator(value: Any) -> Any:
+            calls.append((name, value))
+            return value
+
+        return validator
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        a: Annotated[int, BeforeValidator(record('a'))]
+        b: Annotated[int, BeforeValidator(record('b'))]
+        __pydantic_extra__: dict[str, Annotated[int, BeforeValidator(record('extra'))]]
+
+    py_and_json(Model).validate_test({'extra': 3, 'b': 2, 'a': 1})
+    assert calls == [('a', 1), ('b', 2), ('extra', 3)]
