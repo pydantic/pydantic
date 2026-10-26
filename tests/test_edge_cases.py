@@ -2923,6 +2923,47 @@ def test_eq_with_cached_property():
     obj1.cached
     # Ensure the objects still compare equals after caching a property
     assert obj1 == obj2
+    obj2.cached
+    assert obj1 == obj2
+
+
+def test_eq_with_ambiguous_cached_property():
+    """Test that BaseModel.__eq__ ignores cached_property returning array-like objects
+    whose boolean truth value is ambiguous (e.g. NumPy arrays, pandas Series).
+
+    See GH-14068: https://github.com/pydantic/pydantic/issues/14068
+    """
+
+    class ArrayLike:
+        def __init__(self, items: list[int]):
+            self.items = items
+
+        def __eq__(self, other: object) -> 'ArrayLike':
+            if not isinstance(other, ArrayLike):
+                return NotImplemented
+            return ArrayLike([int(x == y) for x, y in zip(self.items, other.items)])
+
+        def __bool__(self) -> bool:
+            raise ValueError(
+                'The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()'
+            )
+
+    class Model(BaseModel):
+        attr: int
+
+        @functools.cached_property
+        def derived(self) -> ArrayLike:
+            return ArrayLike([self.attr, self.attr])
+
+    a = Model(attr=1)
+    b = Model(attr=1)
+    assert a == b
+
+    _ = a.derived
+    assert a == b
+
+    _ = b.derived
+    assert a == b
 
 
 def test_model_metaclass_on_other_class() -> None:
