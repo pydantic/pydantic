@@ -1,9 +1,7 @@
-import json
 import platform
-import re
 
 import pytest
-from dirty_equals import IsFloatNan, IsList
+from dirty_equals import IsList
 
 import pydantic_core
 from pydantic_core import (
@@ -17,199 +15,6 @@ from pydantic_core import (
     to_json,
     to_jsonable_python,
 )
-
-from .conftest import Err
-
-
-@pytest.mark.parametrize(
-    'input_value,output_value',
-    [('false', False), ('true', True), ('0', False), ('1', True), ('"yes"', True), ('"no"', False)],
-)
-def test_bool(input_value, output_value):
-    v = SchemaValidator(core_schema.bool_schema())
-    assert v.validate_json(input_value) == output_value
-
-
-@pytest.mark.parametrize(
-    'input_value',
-    [
-        pytest.param('[1, 2, 3]', id='[1, 2, 3]_list'),
-        pytest.param(b'[1, 2, 3]', id='[1, 2, 3]_bytes'),
-        pytest.param(bytearray(b'[1, 2, 3]'), id='[1, 2, 3]_bytearray'),
-    ],
-)
-def test_input_types(input_value):
-    v = SchemaValidator(core_schema.list_schema(items_schema=core_schema.int_schema()))
-    assert v.validate_json(input_value) == [1, 2, 3]
-
-
-def test_input_type_invalid():
-    v = SchemaValidator(core_schema.list_schema(items_schema=core_schema.int_schema()))
-    with pytest.raises(ValidationError, match=r'JSON input should be string, bytes or bytearray \[type=json_type,'):
-        v.validate_json([])
-
-
-def test_null():
-    assert SchemaValidator(core_schema.none_schema()).validate_json('null') is None
-
-
-def test_str():
-    s = SchemaValidator(core_schema.str_schema())
-    assert s.validate_json('"foobar"') == 'foobar'
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
-        s.validate_json('false')
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
-        s.validate_json('123')
-
-
-def test_bytes():
-    s = SchemaValidator(core_schema.bytes_schema())
-    assert s.validate_json('"foobar"') == b'foobar'
-    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type,'):
-        s.validate_json('false')
-    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type,'):
-        s.validate_json('123')
-
-
-# A number well outside of i64 range
-_BIG_NUMBER_STR = '1' + ('0' * 40)
-
-
-@pytest.mark.parametrize(
-    'input_value,expected',
-    [
-        ('123', 123),
-        ('"123"', 123),
-        ('123.0', 123),
-        ('"123.0"', 123),
-        (_BIG_NUMBER_STR, int(_BIG_NUMBER_STR)),
-        ('123.4', Err('Input should be a valid integer, got a number with a fractional part [type=int_from_float,')),
-        ('"123.4"', Err('Input should be a valid integer, unable to parse string as an integer [type=int_parsing,')),
-        ('"string"', Err('Input should be a valid integer, unable to parse string as an integer [type=int_parsing,')),
-    ],
-)
-def test_int(input_value, expected):
-    v = SchemaValidator(core_schema.int_schema())
-    if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            v.validate_json(input_value)
-    else:
-        assert v.validate_json(input_value) == expected
-
-
-@pytest.mark.parametrize(
-    'input_value,expected',
-    [
-        ('123.4', 123.4),
-        ('123.0', 123.0),
-        ('123', 123.0),
-        ('"123.4"', 123.4),
-        ('"123.0"', 123.0),
-        ('"123"', 123.0),
-        ('"string"', Err('Input should be a valid number, unable to parse string as a number [type=float_parsing,')),
-    ],
-)
-def test_float(input_value, expected):
-    v = SchemaValidator(core_schema.float_schema())
-    if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            v.validate_json(input_value)
-    else:
-        assert v.validate_json(input_value) == expected
-
-
-def test_typed_dict():
-    v = SchemaValidator(
-        core_schema.typed_dict_schema(
-            fields={
-                'field_a': core_schema.typed_dict_field(schema=core_schema.str_schema()),
-                'field_b': core_schema.typed_dict_field(schema=core_schema.int_schema()),
-            }
-        )
-    )
-
-    # language=json
-    input_str = '{"field_a": "abc", "field_b": 1}'
-    assert v.validate_json(input_str) == {'field_a': 'abc', 'field_b': 1}
-    # language=json
-    input_str = '{"field_a": "a", "field_a": "b", "field_b": 1}'
-    assert v.validate_json(input_str) == {'field_a': 'b', 'field_b': 1}
-    assert v.validate_json(input_str) == {'field_a': 'b', 'field_b': 1}
-
-
-def test_float_no_remainder():
-    v = SchemaValidator(core_schema.int_schema())
-    assert v.validate_json('123.0') == 123
-
-
-def test_error_loc():
-    v = SchemaValidator(
-        core_schema.typed_dict_schema(
-            fields={
-                'field_a': core_schema.typed_dict_field(
-                    schema=core_schema.list_schema(items_schema=core_schema.int_schema())
-                )
-            },
-            extras_schema=core_schema.int_schema(),
-            extra_behavior='allow',
-        )
-    )
-
-    # assert v.validate_json('{"field_a": [1, 2, "3"]}') == ({'field_a': [1, 2, 3]}, {'field_a'})
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_json('{"field_a": [1, 2, "wrong"]}')
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'int_parsing',
-            'loc': ('field_a', 2),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'wrong',
-        }
-    ]
-
-
-def test_dict():
-    v = SchemaValidator(
-        core_schema.dict_schema(keys_schema=core_schema.int_schema(), values_schema=core_schema.int_schema())
-    )
-    assert v.validate_json('{"1": 2, "3": 4}') == {1: 2, 3: 4}
-
-    # duplicate keys, the last value wins, like with python
-    assert json.loads('{"1": 1, "1": 2}') == {'1': 2}
-    assert v.validate_json('{"1": 1, "1": 2}') == {1: 2}
-
-
-def test_dict_any_value():
-    v = SchemaValidator(core_schema.dict_schema(keys_schema=core_schema.str_schema()))
-    assert v.validate_json('{"1": 1, "2": "a", "3": null}') == {'1': 1, '2': 'a', '3': None}
-
-
-def test_json_invalid():
-    v = SchemaValidator(core_schema.bool_schema())
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_json('"foobar')
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'json_invalid',
-            'loc': (),
-            'msg': 'Invalid JSON: EOF while parsing a string at line 1 column 7',
-            'input': '"foobar',
-            'ctx': {'error': 'EOF while parsing a string at line 1 column 7'},
-        }
-    ]
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_json('[1,\n2,\n3,]')
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'json_invalid',
-            'loc': (),
-            'msg': 'Invalid JSON: trailing comma at line 3 column 3',
-            'input': '[1,\n2,\n3,]',
-            'ctx': {'error': 'trailing comma at line 3 column 3'},
-        }
-    ]
 
 
 class Foobar:
@@ -373,13 +178,6 @@ def test_bad_repr():
     assert to_json(b, serialize_unknown=True) == b'"<Unserializable BadRepr object>"'
 
 
-def test_inf_nan_allow():
-    v = SchemaValidator(core_schema.float_schema(allow_inf_nan=True))
-    assert v.validate_json('Infinity') == float('inf')
-    assert v.validate_json('-Infinity') == float('-inf')
-    assert v.validate_json('NaN') == IsFloatNan()
-
-
 def test_partial_parse():
     with pytest.raises(ValueError, match='EOF while parsing a string at line 1 column 15'):
         from_json('["aa", "bb", "c')
@@ -416,14 +214,14 @@ def test_json_bytes_base64_round_trip():
 def test_json_bytes_base64_no_padding():
     v = SchemaValidator(core_schema.bytes_schema(), config=CoreConfig(val_json_bytes='base64'))
     base_64_without_padding = 'bm8tcGFkZGluZw'
-    assert v.validate_json(json.dumps(base_64_without_padding)) == b'no-padding'
+    assert v.validate_json(f'"{base_64_without_padding}"') == b'no-padding'
 
 
 def test_json_bytes_base64_invalid():
     v = SchemaValidator(core_schema.bytes_schema(), config=CoreConfig(val_json_bytes='base64'))
     wrong_input = 'wrong!'
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_json(json.dumps(wrong_input))
+        v.validate_json(f'"{wrong_input}"')
     assert exc_info.value.errors(include_url=False, include_context=False) == [
         {
             'type': 'bytes_invalid_encoding',
@@ -455,7 +253,7 @@ def test_json_bytes_hex_invalid():
 
     wrong_input = 'a'
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_json(json.dumps(wrong_input))
+        v.validate_json(f'"{wrong_input}"')
     assert exc_info.value.errors(include_url=False, include_context=False) == [
         {
             'type': 'bytes_invalid_encoding',
@@ -467,7 +265,7 @@ def test_json_bytes_hex_invalid():
 
     wrong_input = 'ag'
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_json(json.dumps(wrong_input))
+        v.validate_json(f'"{wrong_input}"')
     assert exc_info.value.errors(include_url=False, include_context=False) == [
         {
             'type': 'bytes_invalid_encoding',

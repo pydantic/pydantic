@@ -24,11 +24,21 @@ PYDANTIC_CORE_DIR = Path(__file__).resolve().parent.parent
 def test_docstrings(example: CodeExample, eval_example: EvalExample):
     eval_example.set_config(quotes='single')
 
+    prefix_settings = example.prefix_settings()
+    requires_settings = prefix_settings.get('requires')
+    if requires_settings:
+        major, minor = map(int, requires_settings.split('.'))
+        if sys.version_info < (major, minor):
+            pytest.skip(f'requires python {requires_settings}')
+    lint_skip = prefix_settings.get('lint', '').startswith('skip')
+
     if eval_example.update_examples:
-        eval_example.format(example)
+        if not lint_skip:
+            eval_example.format(example)
         eval_example.run_print_update(example)
     else:
-        eval_example.lint(example)
+        if not lint_skip:
+            eval_example.lint(example)
         eval_example.run_print_check(example)
 
 

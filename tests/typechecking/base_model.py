@@ -16,13 +16,13 @@ class MyModel(BaseModel):
 
 m1 = MyModel(x='hello', y=[1, 2, 3])
 
-m2 = MyModel(x='hello')  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
+m2 = MyModel(x='hello')  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]  # pyrefly: ignore[missing-argument]
 
 m3 = MyModel(x='hello', y=[1, '2', b'3'])  # type: ignore[list-item]  # pyright: ignore[reportArgumentType]
 
-m1.z + 'not an int'  # type: ignore[operator]  # pyright: ignore[reportOperatorIssue]
+m1.z + 'not an int'  # type: ignore[operator]  # pyright: ignore[reportOperatorIssue]  # pyrefly: ignore[unsupported-operation]
 
-m1.foobar  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
+m1.foobar  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]  # pyrefly: ignore[missing-attribute]
 
 
 class Knight(BaseModel):
@@ -34,5 +34,5 @@ k = Knight()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
 
 assert_type(Knight.model_fields, dict[str, FieldInfo])
 assert_type(Knight.model_computed_fields, dict[str, ComputedFieldInfo])
-assert_type(k.model_fields, dict[str, FieldInfo])  # type: ignore[deprecated]  # pyright: ignore[reportDeprecated]
-assert_type(k.model_computed_fields, dict[str, ComputedFieldInfo])  # type: ignore[deprecated]  # pyright: ignore[reportDeprecated]
+assert_type(k.model_fields, dict[str, FieldInfo])  # type: ignore[deprecated]  # pyright: ignore[reportDeprecated]  # pyrefly: ignore[deprecated]
+assert_type(k.model_computed_fields, dict[str, ComputedFieldInfo])  # type: ignore[deprecated]  # pyright: ignore[reportDeprecated]  # pyrefly: ignore[deprecated]

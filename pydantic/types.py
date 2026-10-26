@@ -5,6 +5,8 @@ from __future__ import annotations as _annotations
 import base64
 import dataclasses as _dataclasses
 import re
+import secrets
+import sys
 from collections.abc import Callable, Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
@@ -1583,7 +1585,7 @@ class Secret(_SecretBase[SecretType]):
     """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
     You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing
-    is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods. The examples below demonstrate both
+    is that you can define a custom `_display()` method, which will be used for [`repr()`][repr] and [`str()`][str] methods. The examples below demonstrate both
     ways of using `Secret` to create a new secret type.
 
     1. Directly parametrizing `Secret` with a type:
@@ -1632,7 +1634,7 @@ class Secret(_SecretBase[SecretType]):
     #> 2022-01-01
     ```
 
-    The value returned by the `_display` method will be used for `repr()` and `str()`.
+    The value returned by the `_display()` method will be used for [`repr()`][repr] and [`str()`][str].
 
     You can enforce constraints on the underlying type through annotations:
     For example:
@@ -1683,6 +1685,11 @@ class Secret(_SecretBase[SecretType]):
 
     1. The input value is not greater than 0, so it raises a validation error.
     2. The input value is not an integer, so it raises a validation error because the `SecretPosInt` type has strict mode enabled.
+
+    Two `Secret` types compare equal if the secret values are equal. For the [`SecretStr`][pydantic.types.SecretStr] and
+    [`SecretBytes`][pydantic.types.SecretBytes] implementations, constant-time comparison is achieved
+    (using [`secrets.compare_digest()`][secrets.compare_digest]). If you need constant-time comparison on your `Secret`
+    subclass, you can do so by overriding [`__eq__()`][object.__eq__].
     """
 
     def _display(self) -> str | bytes:
@@ -1788,7 +1795,7 @@ class _SecretField(_SecretBase[SecretType]):
                 serialization=core_schema.plain_serializer_function_ser_schema(
                     _serialize_secret_field,
                     info_arg=True,
-                    when_used='always',
+                    when_used='unless-none',
                 ),
             )
 
@@ -1813,7 +1820,10 @@ class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
     When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
-    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
+    calls to [`repr()`][repr] and [`str()`][str]. If the value _is_ empty, it is displayed as `''`.
+
+    Two `SecretStr` types compare equal if the secret values are equal. Constant-time comparison is achieved
+    (using [`secrets.compare_digest()`][secrets.compare_digest]).
 
     ```python
     from pydantic import BaseModel, SecretStr
@@ -1835,7 +1845,7 @@ class SecretStr(_SecretField[str]):
     As seen above, by default, [`SecretStr`][pydantic.types.SecretStr] (and [`SecretBytes`][pydantic.types.SecretBytes])
     will be serialized as `**********` when serializing to json.
 
-    You can use the [`field_serializer`][pydantic.functional_serializers.field_serializer] to dump the
+    You can use a [field serializer](../concepts/serialization.md#field-serializers) to dump the
     secret as plain-text when serializing to json.
 
     ```python
@@ -1872,6 +1882,19 @@ class SecretStr(_SecretField[str]):
     def __len__(self) -> int:
         return len(self._secret_value)
 
+    def __hash__(self) -> int:
+        return hash(self.get_secret_value())
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        # `secrets.compare_digest()` only supports ASCII strings, so encode to bytes first:
+        return secrets.compare_digest(
+            self.get_secret_value().encode('utf-8', errors='surrogatepass'),
+            other.get_secret_value().encode('utf-8', errors='surrogatepass'),
+        )
+
     def _display(self) -> str:
         return _secret_display(self._secret_value)
 
@@ -1879,9 +1902,11 @@ class SecretStr(_SecretField[str]):
 class SecretBytes(_SecretField[bytes]):
     """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
     When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
-    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
+    calls to [`repr()`][repr] and [`str()`][str]. If the value _is_ empty, it is displayed as `b''`.
+
+    Two `SecretBytes` types compare equal if the secret values are equal. Constant-time comparison is achieved
+    (using [`secrets.compare_digest()`][secrets.compare_digest]).
 
     ```python
     from pydantic import BaseModel, SecretBytes
@@ -1904,6 +1929,15 @@ class SecretBytes(_SecretField[bytes]):
 
     def __len__(self) -> int:
         return len(self._secret_value)
+
+    def __hash__(self) -> int:
+        return hash(self.get_secret_value())
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return secrets.compare_digest(self.get_secret_value(), other.get_secret_value())
 
     def _display(self) -> bytes:
         return _secret_display(self._secret_value).encode()
@@ -2070,7 +2104,7 @@ class ByteSize(int):
     ```
     """
 
-    byte_sizes = {
+    byte_sizes: dict[str, float] = {
         'b': 1,
         'kb': 10**3,
         'mb': 10**6,
@@ -2140,7 +2174,10 @@ class ByteSize(int):
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
-        return cls(int(float(scalar) * unit_mult))
+        try:
+            return cls(int(float(scalar) * unit_mult))
+        except OverflowError:
+            raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
     def human_readable(self, decimal: bool = False, separator: str = '') -> str:
         """Converts a byte size to a human readable string.
@@ -2439,6 +2476,9 @@ class Base64Encoder(EncoderProtocol):
         return 'base64'
 
 
+_urlsafe_translation = bytes.maketrans(b'+/', b'-_')
+
+
 class Base64UrlEncoder(EncoderProtocol):
     """URL-safe Base64 encoder."""
 
@@ -2453,7 +2493,15 @@ class Base64UrlEncoder(EncoderProtocol):
             The decoded data.
         """
         try:
-            return base64.urlsafe_b64decode(data)
+            if sys.version_info >= (3, 15):
+                # In Python >= 3.15, `urlsafe_b64decode()` doesn't require padded input anymore.
+                # It also raises a `FutureWarning` if '+' or '/' is found in input (and translates it
+                # to '-' and '_'). We can't have this warning raised while validating, so we do the translation
+                # ourselves.
+                data = data.translate(_urlsafe_translation)
+                return base64.urlsafe_b64decode(data, padded=True)
+            else:
+                return base64.urlsafe_b64decode(data)
         except ValueError as e:
             raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
@@ -2804,11 +2852,8 @@ Base64UrlBytes = Annotated[bytes, EncodedBytes(encoder=Base64UrlEncoder)]
 """A bytes type that is encoded and decoded using the URL-safe base64 encoder.
 
 Note:
-    Under the hood, `Base64UrlBytes` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
-    functions.
-
-    As a result, the `Base64UrlBytes` type can be used to faithfully decode "vanilla" base64 data
-    (using `'+'` and `'/'`).
+    Under the hood, `Base64UrlBytes` uses the standard library [`base64.urlsafe_b64encode()`][base64.urlsafe_b64encode]
+    and [`base64.urlsafe_b64decode()`][base64.urlsafe_b64decode] functions.
 
 ```python
 from pydantic import Base64UrlBytes, BaseModel
@@ -2826,10 +2871,8 @@ Base64UrlStr = Annotated[str, EncodedStr(encoder=Base64UrlEncoder)]
 """A str type that is encoded and decoded using the URL-safe base64 encoder.
 
 Note:
-    Under the hood, `Base64UrlStr` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
-    functions.
-
-    As a result, the `Base64UrlStr` type can be used to faithfully decode "vanilla" base64 data (using `'+'` and `'/'`).
+    Under the hood, `Base64UrlStr` uses the standard library [`base64.urlsafe_b64encode()`][base64.urlsafe_b64encode]
+    and [`base64.urlsafe_b64decode()`][base64.urlsafe_b64decode] functions.
 
 ```python
 from pydantic import Base64UrlStr, BaseModel
@@ -3072,13 +3115,29 @@ class Discriminator:
             return self._convert_schema(original_schema, handler)
 
     def _convert_schema(
-        self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
+        self,
+        original_schema: core_schema.CoreSchema,
+        handler: GetCoreSchemaHandler | None = None,
+        definitions: dict[str, core_schema.CoreSchema] | None = None,
     ) -> core_schema.TaggedUnionSchema:
-        if handler is not None and original_schema['type'] == 'definition-ref':
+        def _resolve_ref(schema: core_schema.CoreSchema) -> core_schema.CoreSchema | None:
+            # `handler` is set when this method is called while generating the schema for the field
+            # (e.g. via `Annotated[<type>, Discriminator(...)]`). `definitions` is set instead when
+            # this method is called from `apply_discriminator()` (deferred/callable discriminators).
+            if handler is not None:
+                try:
+                    return handler.resolve_ref_schema(schema)
+                except LookupError:  # pragma: no cover
+                    return None
+            elif definitions is not None:
+                schema_ref = cast(core_schema.DefinitionReferenceSchema, schema)['schema_ref']
+                return definitions.get(schema_ref)
+            return None
+
+        if original_schema['type'] == 'definition-ref':
             # Same logic as `_ApplyInferredDiscriminator._apply_to_root()`
-            try:
-                def_schema = handler.resolve_ref_schema(original_schema)
-            except LookupError:  # pragma: no cover
+            def_schema = _resolve_ref(original_schema)
+            if def_schema is None:
                 from pydantic._internal._discriminated_union import MissingDefinitionForUnionRef
 
                 raise MissingDefinitionForUnionRef(original_schema['schema_ref'])
@@ -3104,14 +3163,11 @@ class Discriminator:
             if metadata is not None:
                 tag = metadata.get('pydantic_internal_union_tag_key') or tag
             if tag is None:
-                # `handler` is None when this method is called from `apply_discriminator()` (deferred discriminators)
-                if handler is not None and choice['type'] == 'definition-ref':
+                if choice['type'] == 'definition-ref':
                     # If choice was built from a PEP 695 type alias, try to resolve the def:
-                    try:
-                        choice = handler.resolve_ref_schema(choice)
-                    except LookupError:
-                        pass
-                    else:
+                    resolved_choice = _resolve_ref(choice)
+                    if resolved_choice is not None:
+                        choice = resolved_choice
                         metadata = cast('CoreMetadata | None', choice.get('metadata'))
                         if metadata is not None:
                             tag = metadata.get('pydantic_internal_union_tag_key')
@@ -3178,7 +3234,13 @@ class _AllowAnyJson:
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         python_schema = handler(source_type)
-        return core_schema.json_or_python_schema(json_schema=core_schema.any_schema(), python_schema=python_schema)
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.any_schema(),
+            python_schema=python_schema,
+            # Valid JSON values are serialized identically by inference, which avoids the overhead
+            # of the tagged union serializer (and its Python discriminator function) in Python mode:
+            serialization=core_schema.simple_ser_schema('any'),
+        )
 
 
 if TYPE_CHECKING:
@@ -3258,22 +3320,72 @@ class _OnErrorOmit:
 
 
 OnErrorOmit = Annotated[T, _OnErrorOmit]
-"""
-When used as an item in a list, the key type in a dict, optional values of a TypedDict, etc.
-this annotation omits the item from the iteration if there is any error validating it.
-That is, instead of a [`ValidationError`][pydantic_core.ValidationError] being propagated up and the entire iterable being discarded
-any invalid items are discarded and the valid ones are returned.
+"""Discard the invalid items of a collection instead of failing validation.
+
+/// version-added | v2.6
+///
+
+By default, when an item of a collection (such as a list, a dictionary or a [`TypedDict`][typing.TypedDict])
+fails validation, a [`ValidationError`][pydantic_core.ValidationError] is raised and the whole collection is
+discarded. This annotation changes this behavior: any item failing validation is silently omitted from the
+result, and the valid ones are kept.
+
+It can be applied to:
+
+* the item type of an iterable (e.g. `list[OnErrorOmit[int]]`, `tuple[OnErrorOmit[int], ...]`).
+* the key and/or value types of a mapping (e.g. `dict[OnErrorOmit[int], str]`). If either the key or the value of
+  an entry fails validation, the whole entry is omitted.
+* the value type of a [*not required*][typing.NotRequired] [`TypedDict`][typing.TypedDict] key.
+  Using it on a required key is not allowed, as it would make the key effectively optional.
+
+```python
+from typing_extensions import NotRequired, TypedDict
+
+from pydantic import BaseModel, OnErrorOmit
+
+OmittableInt = OnErrorOmit[int]
+
+class Settings(TypedDict):
+    timeout: NotRequired[OmittableInt]
+
+class Model(BaseModel):
+    ids: list[OmittableInt]
+    scores: dict[str, OnErrorOmit[float]]
+    settings: Settings
+
+model = Model(
+    ids=[1, 2, 'a', 3],
+    scores={'a': 1.5, 'b': 'invalid'},
+    settings={'timeout': 'invalid'},
+)
+print(model)
+#> ids=[1, 2, 3] scores={'a': 1.5} settings={}
+```
+
+!!! note
+    The omitted items are discarded silently: no error is reported and there is no way to know
+    which items were invalid. If you need to keep track of them, use a
+    [wrap validator](../concepts/validators.md#field-wrap-validator) instead.
+
+!!! warning
+    `OnErrorOmit` is only meaningful when the annotated type is part of a collection.
+    Using it on a top-level type (e.g. `TypeAdapter(OnErrorOmit[int])`) or on a model field is not supported.
 """
 
 
 @_dataclasses.dataclass
 class FailFast(_fields.PydanticMetadata, BaseMetadata):
-    """A `FailFast` annotation can be used to specify that validation should stop at the first error.
+    """Stop validating a collection at the first invalid item, instead of collecting the errors of every item.
 
-    This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.
+    /// version-added | v2.8
+    ///
 
-    You might want to enable this setting if you want to validate your data faster (basically, if you use this,
-    validation will be more performant with the caveat that you get less information).
+    By default, when validating a collection, Pydantic validates every item and reports all the errors
+    at once. This annotation can be applied to a collection type (such as a [`list`][], a [`tuple`][],
+    a [`set`][] or a [`dict`][]) to stop as soon as an item fails validation.
+
+    This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not:
+    validation will be faster, with the caveat that you get less information about the errors.
 
     ```python
     from typing import Annotated

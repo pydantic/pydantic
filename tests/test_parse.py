@@ -1,7 +1,7 @@
 import pytest
 from pydantic_core import CoreSchema
 
-from pydantic import BaseModel, GetJsonSchemaHandler, ValidationError, model_validator, parse_obj_as
+from pydantic import BaseModel, GetJsonSchemaHandler, PydanticUserError, ValidationError, model_validator, parse_obj_as
 from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
 
@@ -60,7 +60,7 @@ def test_model_validate_wrong_model():
 
 def test_root_model_error():
     with pytest.raises(
-        TypeError, match="To define root models, use `pydantic.RootModel` rather than a field called '__root__'"
+        PydanticUserError, match="To define root models, use `pydantic.RootModel` rather than a field called '__root__'"
     ):
 
         class MyModel(BaseModel):

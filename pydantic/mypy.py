@@ -7,6 +7,8 @@ from collections.abc import Callable, Iterator
 from configparser import ConfigParser
 from typing import Any
 
+# To avoid import error (https://github.com/python/mypy/issues/17726):
+import mypy.types  # noqa: F401
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
 from mypy.nodes import (
@@ -58,6 +60,7 @@ from mypy.plugins.common import (
     deserialize_and_fixup_type,
 )
 from mypy.semanal import set_callable_name
+from mypy.semanal_shared import has_placeholder
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.state import state
 from mypy.type_visitor import TypeTranslator
@@ -83,11 +86,13 @@ from pydantic.version import parse_mypy_version
 
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
+METADATA_TAG_KEY = 'pydantic-mypy-metadata-tag'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 CREATE_MODEL_FULLNAME = 'pydantic.main.create_model'
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
 ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
+ROOT_MODEL_METACLASS_FULLNAME = 'pydantic.root_model._RootModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 MODEL_VALIDATOR_FULLNAME = 'pydantic.functional_validators.model_validator'
@@ -143,7 +148,7 @@ class PydanticPlugin(Plugin):
 
     def get_metaclass_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         """Update Pydantic `ModelMetaclass` definition."""
-        if fullname == MODEL_METACLASS_FULLNAME:
+        if fullname in (MODEL_METACLASS_FULLNAME, ROOT_MODEL_METACLASS_FULLNAME):
             return self._pydantic_model_metaclass_marker_callback
         return None
 
@@ -524,14 +529,29 @@ class PydanticModelTransformer:
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         info = self._cls.info
+        # Tag the class as being processed by the plugin. This is used to detect base classes
+        # that are Pydantic models for which the plugin hasn't completed processing yet (in which
+        # case the `METADATA_KEY` is not yet present in the metadata):
+        info.metadata.setdefault(METADATA_TAG_KEY, {})
         is_a_root_model = is_root_model(info)
         config = self.collect_config()
         fields, class_vars = self.collect_fields_and_class_vars(config, is_a_root_model)
         if fields is None or class_vars is None:
             # Some definitions are not ready. We need another pass.
+            if not self._api.final_iteration:
+                self._api.defer()
             return False
         for field in fields:
-            if field.type is None:
+            if field.type is None or has_placeholder(field.type):
+                # The field type may contain placeholders, e.g. when inheriting from a generic
+                # model parametrized with a forward reference to the class being defined.
+                # Request another pass so that they can be resolved:
+                if not self._api.final_iteration:
+                    self._api.defer()
+                return False
+        for tv in info.defn.type_vars:
+            if has_placeholder(tv) and not self._api.final_iteration:
+                self._api.defer()
                 return False
 
         is_settings = info.has_base(BASESETTINGS_FULLNAME)
@@ -670,10 +690,13 @@ class PydanticModelTransformer:
         found_fields: dict[str, PydanticModelField] = {}
         found_class_vars: dict[str, PydanticModelClassVar] = {}
         for info in reversed(cls.info.mro[1:-1]):  # 0 is the current class, -2 is BaseModel, -1 is object
-            # if BASEMODEL_METADATA_TAG_KEY in info.metadata and BASEMODEL_METADATA_KEY not in info.metadata:
-            #     # We haven't processed the base class yet. Need another pass.
-            #     return None, None
             if METADATA_KEY not in info.metadata:
+                if METADATA_TAG_KEY in info.metadata and not self._api.final_iteration:
+                    # The base class is a Pydantic model, but the plugin hasn't finished processing it yet
+                    # (e.g. because its own processing got deferred, as it has fields with unresolved
+                    # forward references). We need another pass, otherwise the fields of the base
+                    # class would be missing from the generated signatures of this class.
+                    return None, None
                 continue
 
             # Each class depends on the set of attributes in its dataclass ancestors.
@@ -916,7 +939,13 @@ class PydanticModelTransformer:
 
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
         """
-        if '__init__' in self._cls.info.names and not self._cls.info.names['__init__'].plugin_generated:
+        if (
+            '__init__' in self._cls.info.names
+            and not self._cls.info.names['__init__'].plugin_generated
+            # `RootModel` declares a typed `__init__` for the benefit of type checkers when the plugin
+            # isn't used, but the plugin-generated one should take priority over it:
+            and self._cls.fullname != ROOT_MODEL_FULLNAME
+        ):
             return  # Don't generate an __init__ if one already exists
 
         typed = self.plugin_config.init_typed
@@ -1090,7 +1119,7 @@ class PydanticModelTransformer:
 
     @staticmethod
     def get_strict(stmt: AssignmentStmt) -> bool | None:
-        """Returns a the `strict` value of a field if defined, otherwise `None`."""
+        """Returns the `strict` value of a field if defined, otherwise `None`."""
         expr = stmt.rvalue
         if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
             for arg, name in zip(expr.args, expr.arg_names, strict=True):

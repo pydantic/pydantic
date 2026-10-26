@@ -296,7 +296,7 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
             new_location = REDIRECT_TO_V1[import_path]
             warnings.warn(
                 f'`{import_path}` has been removed. We are importing from `{new_location}` instead.'
-                'See the migration guide for more details: https://pydantic.dev/docs/validation/latest/get-started/migration/',
+                f' See the migration guide for more details: https://pydantic.dev/docs/validation/{version_short()}/migration/',
                 category=PydanticDeprecatedSince20,
                 stacklevel=2,
             )

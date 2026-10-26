@@ -130,7 +130,7 @@ class ValidateCallWrapper:
 
         self.__pydantic_complete__ = True
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, /, *args: Any, **kwargs: Any) -> Any:
         if not self.__pydantic_complete__:
             self._create_validators()
 

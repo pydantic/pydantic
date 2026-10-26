@@ -3,7 +3,7 @@ use std::sync::Arc;
 use pyo3::exceptions::{PyOverflowError, PyTypeError, PyValueError, PyZeroDivisionError};
 use pyo3::intern;
 use pyo3::sync::PyOnceLock;
-use pyo3::types::{IntoPyDict, PyDict, PyString, PyType};
+use pyo3::types::{IntoPyDict, PyDict, PyInt, PyString, PyType};
 use pyo3::{PyTypeInfo, prelude::*};
 
 use crate::build_tools::is_strict;
@@ -16,16 +16,8 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 
 static FRACTION_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
-pub fn get_fraction_type(py: Python<'_>) -> &Bound<'_, PyType> {
-    FRACTION_TYPE
-        .get_or_init(py, || {
-            py.import("fractions")
-                .and_then(|fraction_module| fraction_module.getattr("Fraction"))
-                .unwrap()
-                .extract()
-                .unwrap()
-        })
-        .bind(py)
+pub fn get_fraction_type(py: Python<'_>) -> PyResult<&Bound<'_, PyType>> {
+    FRACTION_TYPE.import(py, "fractions", "Fraction")
 }
 
 fn validate_as_fraction(
@@ -47,6 +39,7 @@ fn validate_as_fraction(
 #[derive(Debug, Clone)]
 pub struct FractionValidator {
     strict: bool,
+    multiple_of: Option<Py<PyAny>>,
     le: Option<Py<PyAny>>,
     lt: Option<Py<PyAny>>,
     ge: Option<Py<PyAny>>,
@@ -62,8 +55,16 @@ impl BuildValidator for FractionValidator {
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
 
+        let multiple_of = validate_as_fraction(py, schema, intern!(py, "multiple_of"))?;
+        if let Some(ref m) = multiple_of
+            && !m.bind(py).gt(0)?
+        {
+            return Err(PyValueError::new_err("'multiple_of' must be greater than 0"));
+        }
+
         Ok(CombinedValidator::Fraction(Self {
             strict: is_strict(schema, config)?,
+            multiple_of,
             le: validate_as_fraction(py, schema, intern!(py, "le"))?,
             lt: validate_as_fraction(py, schema, intern!(py, "lt"))?,
             ge: validate_as_fraction(py, schema, intern!(py, "ge"))?,
@@ -73,7 +74,13 @@ impl BuildValidator for FractionValidator {
     }
 }
 
-impl_py_gc_traverse!(FractionValidator { le, lt, ge, gt });
+impl_py_gc_traverse!(FractionValidator {
+    multiple_of,
+    le,
+    lt,
+    ge,
+    gt
+});
 
 impl Validator for FractionValidator {
     fn validate<'py>(
@@ -83,6 +90,18 @@ impl Validator for FractionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let fraction = input.validate_fraction(state.strict_or(self.strict), py)?.unpack(state);
+
+        if let Some(multiple_of) = &self.multiple_of
+            && !fraction.rem(multiple_of)?.eq(0)?
+        {
+            return Err(ValError::new(
+                ErrorType::MultipleOf {
+                    multiple_of: Number::String(multiple_of.to_string()),
+                    context: Some([("multiple_of", multiple_of)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
+        }
 
         if let Some(le) = &self.le
             && !fraction.le(le)?
@@ -137,9 +156,47 @@ impl Validator for FractionValidator {
     }
 }
 
+/// Maximum absolute value of the exponent accepted in string inputs (e.g. `'1e4300'`).
+///
+/// `Fraction` computes `10**exp` for exponent notation, producing an integer with `|exp| + 1`
+/// decimal digits, which can be very expensive and lead to DoS. Cap it so the result is
+/// no larger than what we accept for `int` inputs.
+const MAX_FRACTION_EXPONENT: u64 = 4300;
+
+/// Whether the string uses exponent notation with an exponent larger than `MAX_FRACTION_EXPONENT`.
+fn exponent_too_large(s: &Bound<'_, PyString>) -> bool {
+    // Based on https://github.com/python/cpython/blob/v3.14.8/Lib/fractions.py#L257-L283:
+
+    // A string that isn't valid UTF-8 is rejected by `Fraction` anyway.
+    let Ok(str) = s.to_str() else {
+        return false;
+    };
+    // In a valid `Fraction` string, `e`/`E` can only appear as the exponent marker.
+    let Some(pos) = str.rfind(['e', 'E']) else {
+        return false;
+    };
+    let py = s.py();
+    // `Fraction` parses the exponent with `int()`:
+    let Ok(exp) = PyString::new(py, &str[pos + 1..])
+        .call_method0(intern!(py, "strip"))
+        .and_then(|exp| PyInt::type_object(py).call1((exp,)))
+    else {
+        // Not a valid exponent, `Fraction` will reject the string itself.
+        return false;
+    };
+    // Not fitting in an `i64` means it's way above the limit.
+    exp.extract::<i64>()
+        .map_or(true, |exp| exp.unsigned_abs() > MAX_FRACTION_EXPONENT)
+}
+
 pub(crate) fn create_fraction<'py>(arg: &Bound<'py, PyAny>, input: impl ToErrorValue) -> ValResult<Bound<'py, PyAny>> {
     let py = arg.py();
-    get_fraction_type(py)
+    if let Ok(s) = arg.cast::<PyString>()
+        && exponent_too_large(s)
+    {
+        return Err(ValError::new(ErrorTypeDefaults::FractionParsing, input));
+    }
+    get_fraction_type(py)?
         .call1((arg,))
         .map_err(|e| handle_fraction_new_error(input, e))
 }

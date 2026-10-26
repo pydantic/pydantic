@@ -1,3 +1,4 @@
+import platform
 import re
 from copy import deepcopy
 
@@ -733,6 +734,28 @@ def test_multi_host_url_ok_2(py_and_json: PyAndJson):
         {'username': None, 'password': None, 'host': 'foo.com', 'port': 443},
         {'username': None, 'password': None, 'host': 'bar.com', 'port': 443},
     ]
+
+
+@pytest.mark.timeout(
+    20 if platform.python_implementation() == 'PyPy' else 5  # PyPy is ~3-5x slower, even in linear time
+)
+@pytest.mark.parametrize(
+    ['prefix', 'expected_prefix', 'expected_suffix', 'expected_port'],
+    [
+        (' ' * 150_000 + 'postgres://', 'postgres://', '', None),
+        ('http:' + '/' * 150_000, 'http://', '/', 80),
+    ],
+    ids=['leading_whitespace', 'slashes'],
+)
+def test_multi_host_url_linear_time(prefix: str, expected_prefix: str, expected_suffix: str, expected_port: int | None):
+    """The prefix before the hosts must not be parsed again for every host."""
+    hosts = ','.join(['h'] * 150_000)
+
+    url = MultiHostUrl(prefix + hosts)
+
+    assert str(url) == expected_prefix + hosts + expected_suffix
+    assert url.hosts()[0] == {'username': None, 'password': None, 'host': 'h', 'port': expected_port}
+    assert len(url.hosts()) == 150_000
 
 
 @pytest.fixture(scope='module', name='multi_host_url_validator')

@@ -134,10 +134,14 @@ combined_serializer! {
         Date: super::type_serializers::datetime_etc::DateSerializer;
         Time: super::type_serializers::datetime_etc::TimeSerializer;
         List: super::type_serializers::list::ListSerializer;
+        Deque: super::type_serializers::deque::DequeSerializer;
         Set: super::type_serializers::set_frozenset::SetSerializer;
         FrozenSet: super::type_serializers::set_frozenset::FrozenSetSerializer;
         Generator: super::type_serializers::generator::GeneratorSerializer;
         Dict: super::type_serializers::dict::DictSerializer;
+        FrozenDict: super::type_serializers::frozendict::FrozenDictSerializer;
+        OrderedDict: super::type_serializers::ordered_dict::OrderedDictSerializer;
+        Counter: super::type_serializers::counter::CounterSerializer;
         Model: super::type_serializers::model::ModelSerializer;
         Dataclass: super::type_serializers::dataclass::DataclassSerializer;
         Url: super::type_serializers::url::UrlSerializer;
@@ -153,11 +157,13 @@ combined_serializer! {
         TaggedUnion: super::type_serializers::union::TaggedUnionSerializer;
         Literal: super::type_serializers::literal::LiteralSerializer;
         MissingSentinel: super::type_serializers::missing_sentinel::MissingSentinelSerializer;
+        Ellipsis: super::type_serializers::ellipsis::EllipsisSerializer;
         Enum: super::type_serializers::enum_::EnumSerializer;
         Recursive: super::type_serializers::definitions::DefinitionRefSerializer;
         Tuple: super::type_serializers::tuple::TupleSerializer;
         Complex: super::type_serializers::complex::ComplexSerializer;
         TypedDict: super::type_serializers::typed_dict::TypedDictSerializer;
+        NamedTuple: super::type_serializers::named_tuple::NamedTupleSerializer;
     }
 }
 
@@ -204,10 +210,15 @@ impl CombinedSerializer {
                 )
                 // if `schema.serialization.type` is None, fall back to `schema.type`
                 | None => (),
-                Some(ser_type) => {
-                    // otherwise if `schema.serialization.type` is defined, use that with `find_serializer`
-                    // instead of `schema.type`. In this case it's an error if a serializer isn't found.
-                    return Self::find_serializer(ser_type, &ser_schema, config, definitions);
+                Some(_) => {
+                    // otherwise, `schema.serialization` is an arbitrary core schema (which includes the
+                    // simple `{'type': ...}` ser schemas), so build a serializer from it as if it was
+                    // the main schema (this ensures nested `serialization` schemas, prebuilt serializers
+                    // and polymorphic serialization are handled). In this case, it's an error if a
+                    // serializer isn't found.
+                    // Note that as a consequence, `function-plain`/`function-wrap` *validator* schemas can't
+                    // be used as `schema.serialization`, as they are interpreted as the function *ser* schemas.
+                    return Self::build(&ser_schema, config, definitions);
                 }
             }
         }
@@ -224,8 +235,7 @@ impl CombinedSerializer {
             }
         }
 
-        let serializer = Self::find_serializer(type_, schema, config, definitions)?;
-        Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
+        Self::find_serializer(type_, schema, config, definitions)
     }
 
     fn maybe_wrap_in_polymorphism_trampoline(
@@ -368,10 +378,14 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Date(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Time(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::List(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Deque(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Set(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::FrozenSet(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Generator(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Dict(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::FrozenDict(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::OrderedDict(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Counter(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Model(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Dataclass(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Url(inner) => inner.py_gc_traverse(visit),
@@ -386,12 +400,14 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::TaggedUnion(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Literal(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::MissingSentinel(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Ellipsis(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Enum(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Recursive(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Tuple(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Uuid(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Complex(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::TypedDict(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::NamedTuple(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::PolymorphismTrampoline(inner) => inner.py_gc_traverse(visit),
         }
     }

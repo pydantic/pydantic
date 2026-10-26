@@ -225,6 +225,8 @@ pub struct InternalValidator {
     extra_behavior: Option<ExtraBehavior>,
     from_attributes: Option<bool>,
     context: Option<Py<PyAny>>,
+    by_alias: Option<bool>,
+    by_name: Option<bool>,
     field_name: Option<Py<PyString>>,
     self_instance: Option<Py<PyAny>>,
     recursion_guard: RecursionState,
@@ -259,6 +261,8 @@ impl InternalValidator {
             extra_behavior: extra.extra_behavior,
             from_attributes: extra.from_attributes,
             context: extra.context.map(|d| d.clone().unbind()),
+            by_alias: extra.by_alias,
+            by_name: extra.by_name,
             field_name: state.field_name().map(|d| d.clone().unbind()),
             self_instance: state.self_instance.map(|d| d.clone().unbind()),
             recursion_guard: state.recursion_guard.clone(),
@@ -286,8 +290,8 @@ impl InternalValidator {
             from_attributes: self.from_attributes,
             context: self.context.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
-            by_alias: None,
-            by_name: None,
+            by_alias: self.by_alias,
+            by_name: self.by_name,
         };
         let mut state = ValidationState::new(
             extra,
@@ -329,8 +333,8 @@ impl InternalValidator {
             from_attributes: self.from_attributes,
             context: self.context.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
-            by_alias: None,
-            by_name: None,
+            by_alias: self.by_alias,
+            by_name: self.by_name,
         };
         let mut state = ValidationState::new(
             extra,
@@ -359,8 +363,10 @@ impl InternalValidator {
     }
 }
 
+// `validator` is intentionally not traversed: it is an `Arc` clone of a subtree owned (and
+// traversed) by the `SchemaValidator`. Visiting it here as well would report twice for a single reference,
+// which corrupts the GC's refcount logic.
 impl_py_gc_traverse!(InternalValidator {
-    validator,
     data,
     context,
     self_instance

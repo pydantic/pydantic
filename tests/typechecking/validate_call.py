@@ -11,10 +11,10 @@ def foo(a: int, *, c: str = 'x') -> str:
 a = foo(1, c='a')
 assert_type(a, str)
 
-foo('', c=1)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+foo('', c=1)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-argument-type]
 
 # Not possible to type check currently (see https://github.com/pydantic/pydantic/issues/9883):
-foo.raw_function(1, c='a')  # type: ignore[attr-defined]  # pyright: ignore[reportFunctionMemberAccess]
+foo.raw_function(1, c='a')  # type: ignore[attr-defined]  # pyright: ignore[reportFunctionMemberAccess]  # pyrefly: ignore[missing-attribute]
 
 
 # Should work even when not used as a bare decorator:

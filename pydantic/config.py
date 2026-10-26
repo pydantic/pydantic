@@ -53,7 +53,7 @@ class ConfigDict(TypedDict, total=False):
     """Whether to strip leading and trailing whitespace for str types."""
 
     str_min_length: int
-    """The minimum length for str types. Defaults to `None`."""
+    """The minimum length for str types. Defaults to `0`."""
 
     str_max_length: int | None
     """The maximum length for str types. Defaults to `None`."""
@@ -595,6 +595,7 @@ class ConfigDict(TypedDict, total=False):
     /// version-added | v2.12
     This setting replaces [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta],
     which will be deprecated in v3. `ser_json_temporal` adds more configurability for the other temporal types.
+    It takes precedence over `ser_json_timedelta`.
     ///
     """
 
@@ -815,7 +816,8 @@ class ConfigDict(TypedDict, total=False):
     The `GenerateSchema` class to use during core schema generation.
 
     /// version-deprecated | v2.10
-    The `GenerateSchema` class is private and highly subject to change.
+    The `GenerateSchema` class is private and highly subject to change. This setting
+    no longer has any effect.
     ///
     """
 
@@ -1195,9 +1197,9 @@ class ConfigDict(TypedDict, total=False):
 
         url: AnyUrl
 
-    m = Model(url='http://example.com')
+    m = Model(url='https://example.com')
     print(m.url)
-    #> http://example.com
+    #> https://example.com
     ```
 
     /// version-added | v2.12

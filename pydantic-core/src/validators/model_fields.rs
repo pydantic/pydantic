@@ -139,90 +139,8 @@ impl Validator for ModelFieldsValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        // this validator does not yet support partial validation, disable it to avoid incorrect results
-        state.allow_partial = false.into();
-
-        let strict = state.strict_or(self.strict);
-        let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
-
-        let extra_behavior = state.extra_behavior_or(self.extra_behavior);
-        let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
-        let validate_by_name = state.validate_by_name_or(self.validate_by_name);
-        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
-
-        let model_dict = PyDict::new(py);
-        let extra_validator = match extra_behavior {
-            ExtraBehavior::Forbid => ModelExtraValidator::Forbid,
-            ExtraBehavior::Ignore => ModelExtraValidator::Ignore,
-            ExtraBehavior::Allow => ModelExtraValidator::Allow {
-                extra_dict: PyDict::new(py),
-                keys_validator: self.extras_keys_validator.as_deref(),
-                values_validator: self.extras_validator.as_deref(),
-            },
-        };
-
-        let state = &mut state.scoped_set_data(Some(model_dict.clone()));
-        let state = &mut state.scoped_clear_field_error();
-
-        let mut state = ModelFieldsValidationState {
-            lookup_type,
-            model_dict,
-            extra_validator,
-            fields_set: PySet::empty(py)?,
-            fields_set_count: 0,
-            state,
-            errors: Vec::new(),
-            loc_by_alias: self.loc_by_alias,
-        };
-
-        if let Some(json_input) = input.as_json() {
-            let JsonValue::Object(json_object) = json_input else {
-                return Err(ValError::new(
-                    ErrorType::ModelType {
-                        context: None,
-                        class_name: self.model_name.clone(),
-                    },
-                    input,
-                ));
-            };
-            self.validate_json_by_iteration(py, json_input, json_object, &mut state)?;
-        } else {
-            // we convert the DictType error to a ModelType error
-            let dict = match input.validate_model_fields(strict, from_attributes) {
-                Ok(d) => d,
-                Err(ValError::LineErrors(errors)) => {
-                    let errors: Vec<ValLineError> = errors
-                        .into_iter()
-                        .map(|e| match e.error_type {
-                            ErrorType::DictType { .. } => {
-                                let mut e = e;
-                                e.error_type = ErrorType::ModelType {
-                                    class_name: self.model_name.clone(),
-                                    context: None,
-                                };
-                                e
-                            }
-                            _ => e,
-                        })
-                        .collect();
-                    return Err(ValError::LineErrors(errors));
-                }
-                Err(err) => return Err(err),
-            };
-            self.validate_by_get_item(py, input, dict, &mut state)?;
-        }
-
-        if !state.errors.is_empty() {
-            return Err(ValError::LineErrors(state.errors));
-        }
-
-        state.state.add_fields_set(state.fields_set_count);
-        let extra_dict = match state.extra_validator {
-            ModelExtraValidator::Allow { extra_dict, .. } => Some(extra_dict),
-            _ => None,
-        };
-
-        Ok((state.model_dict, extra_dict, state.fields_set).into_py_any(py)?)
+        let (model_dict, model_extra, fields_set) = self.validate_fields(py, input, state)?;
+        Ok((model_dict, model_extra, fields_set).into_py_any(py)?)
     }
 
     fn validate_assignment<'py>(
@@ -332,7 +250,102 @@ impl Validator for ModelFieldsValidator {
     }
 }
 
+pub(crate) type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, Bound<'py, PySet>);
+
 impl ModelFieldsValidator {
+    /// Like `Validator::validate()`, but returns the components without packing them into a Python tuple.
+    pub fn validate_fields<'py>(
+        &self,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<ValidatedModelFields<'py>> {
+        // this validator does not yet support partial validation, disable it to avoid incorrect results
+        state.allow_partial = false.into();
+
+        let strict = state.strict_or(self.strict);
+        let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
+
+        let extra_behavior = state.extra_behavior_or(self.extra_behavior);
+        let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
+        let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
+
+        let model_dict = PyDict::new(py);
+        let extra_validator = match extra_behavior {
+            ExtraBehavior::Forbid => ModelExtraValidator::Forbid,
+            ExtraBehavior::Ignore => ModelExtraValidator::Ignore,
+            ExtraBehavior::Allow => ModelExtraValidator::Allow {
+                extra_dict: PyDict::new(py),
+                keys_validator: self.extras_keys_validator.as_deref(),
+                values_validator: self.extras_validator.as_deref(),
+            },
+        };
+
+        let state = &mut state.scoped_set_data(Some(model_dict.clone()));
+        let state = &mut state.scoped_clear_field_error();
+
+        let mut state = ModelFieldsValidationState {
+            lookup_type,
+            model_dict,
+            extra_validator,
+            fields_set: PySet::empty(py)?,
+            fields_set_count: 0,
+            state,
+            errors: Vec::new(),
+            loc_by_alias: self.loc_by_alias,
+        };
+
+        if let Some(json_input) = input.as_json() {
+            let JsonValue::Object(json_object) = json_input else {
+                return Err(ValError::new(
+                    ErrorType::ModelType {
+                        context: None,
+                        class_name: self.model_name.clone(),
+                    },
+                    input,
+                ));
+            };
+            self.validate_json_by_iteration(py, json_input, json_object, &mut state)?;
+        } else {
+            // we convert the DictType error to a ModelType error
+            let dict = match input.validate_model_fields(strict, from_attributes) {
+                Ok(d) => d,
+                Err(ValError::LineErrors(errors)) => {
+                    let errors: Vec<ValLineError> = errors
+                        .into_iter()
+                        .map(|e| match e.error_type {
+                            ErrorType::DictType { .. } => {
+                                let mut e = e;
+                                e.error_type = ErrorType::ModelType {
+                                    class_name: self.model_name.clone(),
+                                    context: None,
+                                };
+                                e
+                            }
+                            _ => e,
+                        })
+                        .collect();
+                    return Err(ValError::LineErrors(errors));
+                }
+                Err(err) => return Err(err),
+            };
+            self.validate_by_get_item(py, input, dict, &mut state)?;
+        }
+
+        if !state.errors.is_empty() {
+            return Err(ValError::LineErrors(state.errors));
+        }
+
+        state.state.add_fields_set(state.fields_set_count);
+        let extra_dict = match state.extra_validator {
+            ModelExtraValidator::Allow { extra_dict, .. } => Some(extra_dict),
+            _ => None,
+        };
+
+        Ok((state.model_dict, extra_dict, state.fields_set))
+    }
+
     fn validate_by_get_item<'a, 'py>(
         &'a self,
         py: Python<'py>,

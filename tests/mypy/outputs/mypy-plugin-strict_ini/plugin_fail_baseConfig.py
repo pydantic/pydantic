@@ -138,7 +138,7 @@ DefaultTestingModel()
 
 class UndefinedAnnotationModel(BaseModel):
     undefined: Undefined  # noqa F821
-# MYPY: error: Name "Undefined" is not defined  [name-defined]
+# MYPY: error: Name "Undefined" is not defined; did you mean "undefined"?  [name-defined]
 
 
 UndefinedAnnotationModel()

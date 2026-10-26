@@ -14,11 +14,10 @@ from typing import (
     TypeVar,
     cast,
     final,
-    overload,
 )
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import ParamSpec, is_typeddict
+from typing_extensions import ParamSpec, TypeForm, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
@@ -105,16 +104,6 @@ class TypeAdapter(Generic[T]):
         serializer: The schema serializer for the type.
         pydantic_complete: Whether the core schema for the type is successfully built.
 
-    ??? tip "Compatibility with `mypy`"
-        Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
-        annotate your variable:
-
-        ```py
-        from pydantic import TypeAdapter
-
-        ta: TypeAdapter[str | int] = TypeAdapter(str | int)  # type: ignore[arg-type]
-        ```
-
     ??? info "Namespace management nuances and implementation details"
 
         Here, we collect some notes on namespace management, and subtle differences from `BaseModel`:
@@ -168,32 +157,9 @@ class TypeAdapter(Generic[T]):
     serializer: SchemaSerializer
     pydantic_complete: bool
 
-    @overload
     def __init__(
         self,
-        type: type[T],
-        *,
-        config: ConfigDict | None = ...,
-        _parent_depth: int = ...,
-        module: str | None = ...,
-    ) -> None: ...
-
-    # This second overload is for unsupported special forms (such as Annotated, Union, etc.)
-    # Currently there is no way to type this correctly
-    # See https://github.com/python/typing/pull/1618
-    @overload
-    def __init__(
-        self,
-        type: Any,
-        *,
-        config: ConfigDict | None = ...,
-        _parent_depth: int = ...,
-        module: str | None = ...,
-    ) -> None: ...
-
-    def __init__(
-        self,
-        type: Any,
+        type: TypeForm[T],
         *,
         config: ConfigDict | None = None,
         _parent_depth: int = 2,
@@ -408,6 +374,11 @@ class TypeAdapter(Generic[T]):
     ) -> T:
         """Validate a Python object against the model.
 
+        A [`ValidationError`][pydantic_core.ValidationError] reports the rejected locations and values.
+        If you record validations with [Logfire](../integrations/logfire.md), the complete object and trace
+        context are retained alongside the error — `TypeAdapter` validations are captured the same way as
+        model validations (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             object: The Python object to validate against the model.
             strict: Whether to strictly check types.
@@ -463,6 +434,11 @@ class TypeAdapter(Generic[T]):
             [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate a JSON string or bytes against the model.
+
+        JSON validated this way often comes from an external source, where a
+        [`ValidationError`][pydantic_core.ValidationError] can be the first sign that the source changed
+        shape. [Logfire](../integrations/logfire.md) retains the complete document and trace context
+        alongside the errors — see [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             data: The JSON data to validate against the model.
@@ -586,7 +562,7 @@ class TypeAdapter(Generic[T]):
             by_alias: Whether to use alias names for field names.
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
-            exclude_none: Whether to exclude fields with None values.
+            exclude_none: Whether to exclude fields with a value of `None`.
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
@@ -647,12 +623,12 @@ class TypeAdapter(Generic[T]):
         Serialize an instance of the adapted type to JSON.
 
         Args:
-            instance: The instance to be serialized.
+            instance: The Python object to serialize.
             indent: Number of spaces for JSON indentation.
             ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
                 If `False` (the default), these characters will be output as-is.
-            include: Fields to include.
-            exclude: Fields to exclude.
+            include: Fields to include in the output.
+            exclude: Fields to exclude from the output.
             by_alias: Whether to use alias names for field names.
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
@@ -660,7 +636,7 @@ class TypeAdapter(Generic[T]):
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
-            round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
+            round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             fallback: A function to call when an unknown value is encountered. If not provided,
@@ -694,7 +670,7 @@ class TypeAdapter(Generic[T]):
     def json_schema(
         self,
         *,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
@@ -703,7 +679,9 @@ class TypeAdapter(Generic[T]):
         """Generate a JSON schema for the adapted type.
 
         Args:
-            by_alias: Whether to use alias names for field names.
+            by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+                aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+                schemas). An explicit value takes precedence over the configuration.
             ref_template: The format string used for generating $ref strings.
             union_format: The format to use when combining schemas from unions together. Can be one of:
 
@@ -716,8 +694,6 @@ class TypeAdapter(Generic[T]):
             schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
-            schema_generator: The generator class used for creating the schema.
-            mode: The mode to use for schema generation.
 
         Returns:
             The JSON schema for the model as a dictionary.
@@ -728,14 +704,17 @@ class TypeAdapter(Generic[T]):
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
             self.core_schema.rebuild()
             assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
-        return schema_generator_instance.generate(self.core_schema, mode=mode)
+        # The configuration provided to the type adapter (if any) is not part of the core schema,
+        # so we need to explicitly make it available to the JSON Schema generator:
+        with schema_generator_instance._config_wrapper_stack.push(self._config):
+            return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
     def json_schemas(
         inputs: Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]],
         /,
         *,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         title: str | None = None,
         description: str | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
@@ -748,7 +727,9 @@ class TypeAdapter(Generic[T]):
             inputs: Inputs to schema generation. The first two items will form the keys of the (first)
                 output mapping; the type adapters will provide the core schemas that get converted into
                 definitions in the output JSON schema.
-            by_alias: Whether to use alias names.
+            by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+                aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+                schemas). An explicit value takes precedence over the configuration.
             title: The title for the schema.
             description: The description for the schema.
             ref_template: The format string used for generating $ref strings.

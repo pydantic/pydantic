@@ -229,16 +229,18 @@ class ValidatedFunction:
     def create_model(self, fields: dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
 
-        config_wrapper = _config.ConfigWrapper(config)
+        config_dict = _config.prepare_config(config)
 
-        if config_wrapper.alias_generator:
+        if config_dict.get('alias_generator'):
             raise PydanticUserError(
                 'Setting the "alias_generator" property on custom Config for '
                 '@validate_arguments is not yet supported, please remove.',
                 code=None,
             )
-        if config_wrapper.extra is None:
-            config_wrapper.config_dict['extra'] = 'forbid'
+        if config_dict.get('extra') is None:
+            config_dict['extra'] = 'forbid'
+
+        config_wrapper = _config.ConfigWrapper(config_dict, check=False)
 
         class DecoratorBaseModel(BaseModel):
             @field_validator(self.v_args_name, check_fields=False)

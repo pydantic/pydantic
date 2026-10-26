@@ -51,6 +51,7 @@ PydanticErrorCodes = Literal[
     'schema-for-unknown-type',
     'import-error',
     'create-model-field-definitions',
+    'create-model-namespace',
     'validator-instance-method',
     'validator-input-type',
     'root-validator-pre-skip',

@@ -17,15 +17,15 @@ Define how data should be in pure, canonical Python 3.10+; validate it with Pyda
 
 ## Pydantic Logfire :fire:
 
-We've launched Pydantic Logfire to help you monitor your applications.
-[Learn more](https://pydantic.dev/logfire/?utm_source=pydantic_validation)
+Logfire is an observability and evaluation platform for AI applications and agents. Debug and trace agent execution, evaluate AI outputs, and manage model interactions through an integrated AI gateway.
+Explore [Logfire’s AI observability and evaluation platform](https://pydantic.dev/logfire).
 
 ## Pydantic V1.10 vs. V2
 
 Pydantic V2 is a ground-up rewrite that offers many new features, performance improvements, and some breaking changes compared to Pydantic V1.
 
 If you're using Pydantic V1 you may want to look at the
-[pydantic V1.10 Documentation](https://pydantic.dev/docs/validation/latest/get-started/) or,
+[pydantic V1.10 Documentation](https://pydantic.dev/docs/validation/1.10/overview/) or,
 [`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.10.X-fixes). Pydantic V2 also ships with the latest version of Pydantic V1 built in so that you can incrementally upgrade your code base and projects: `from pydantic import v1 as pydantic_v1`.
 
 ## Help

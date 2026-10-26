@@ -1538,8 +1538,8 @@ def test_dataclass_wrap_json():
     assert v.validate_json('{"a": "hello", "b": true}', strict=True) == FooDataclass(a='hello', b=True)
 
 
-@pytest.mark.xfail(
-    condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
 @pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 @pytest.mark.parametrize('validator', [None, 'field', 'dataclass'])

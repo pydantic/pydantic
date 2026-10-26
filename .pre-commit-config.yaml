@@ -52,3 +52,10 @@ repos:
         types: [python]
         language: system
         pass_filenames: false
+      - id: invisible-unicode
+        name: Check for invisible Unicode characters
+        language: pygrep
+        # pygrep matches on bytes, so the characters are spelled as UTF-8 sequences:
+        # U+00A0, U+200B-U+200F, U+2028-U+202F, U+205F-U+2064, U+2066-U+2069, U+3000, U+FEFF
+        entry: '\xc2\xa0|\xe2\x80[\x8b-\x8f\xa8-\xaf]|\xe2\x81[\x9f-\xa4\xa6-\xa9]|\xe3\x80\x80|\xef\xbb\xbf'
+        types: [text]

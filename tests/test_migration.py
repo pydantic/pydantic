@@ -4,6 +4,8 @@ import pytest
 
 from pydantic._migration import DEPRECATED_MOVED_IN_V2, MOVED_IN_V2, REDIRECT_TO_V1, REMOVED_IN_V2, getattr_migration
 from pydantic.errors import PydanticImportError
+from pydantic.version import version_short
+from pydantic.warnings import PydanticDeprecatedSince20
 
 
 def import_from(dotted_path: str):
@@ -30,6 +32,13 @@ def test_moved_but_not_warn_on_v2(module: str):
 @pytest.mark.parametrize('module', REDIRECT_TO_V1.keys())
 def test_redirect_to_v1(module: str):
     import_from(module)
+
+
+def test_redirect_to_v1_warning_uses_versioned_docs_link():
+    with pytest.warns(PydanticDeprecatedSince20) as warning_info:
+        import_from('pydantic.utils:deep_update')
+
+    assert f'https://pydantic.dev/docs/validation/{version_short()}/migration/' in str(warning_info[0].message)
 
 
 @pytest.mark.parametrize('module', REMOVED_IN_V2)

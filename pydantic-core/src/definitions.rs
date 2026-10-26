@@ -89,13 +89,13 @@ impl<T: Debug> Debug for Definitions<T> {
         // Formatted as a list for backwards compatibility; in principle
         // this could be formatted as a map. Maybe change in a future
         // minor release of pydantic.
-        write![f, "["]?;
+        write!(f, "[")?;
         let mut first = true;
         for def in self.0.values() {
-            write![f, "{sep}{def:?}", sep = if first { "" } else { ", " }]?;
+            write!(f, "{sep}{def:?}", sep = if first { "" } else { ", " })?;
             first = false;
         }
-        write![f, "]"]?;
+        write!(f, "]")?;
         Ok(())
     }
 }
@@ -106,15 +106,6 @@ impl<T: Debug> Debug for Definition<T> {
             Some(value) => value.fmt(f),
             None => "...".fmt(f),
         }
-    }
-}
-
-impl<T: PyGcTraverse> PyGcTraverse for DefinitionRef<T> {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        if let Some(value) = self.value.upgrade().as_ref().and_then(|v| v.get()) {
-            value.py_gc_traverse(visit)?;
-        }
-        Ok(())
     }
 }
 

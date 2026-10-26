@@ -62,7 +62,7 @@ class User(BaseModel):
         datetime,
         validate_as(int)
         .transform(lambda x: x / 1_000_000)
-        .validate_as(...),  # (8)!
+        .validate_as(...),  # (7)!
     ]
 ```
 
@@ -144,6 +144,10 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 Partial validation allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.
 
 Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).
+
+Streaming pipelines like this can be fiddly to debug after the fact. If you run one in production,
+[Logfire](../integrations/logfire.md) can record each validation in the context of the surrounding
+request, which makes it easier to reconstruct how a given stream was handled.
 
 !!! warning
     Partial validation is an experimental feature and may change in future versions of Pydantic. The current implementation should be considered a proof of concept at this time and has a number of [limitations](#limitations-of-partial-validation).
@@ -338,7 +342,7 @@ class MyModel(BaseModel):
 ta = TypeAdapter(MyModel)
 try:
     v = ta.validate_json(
-        '{"a": 1, "b": ["12345", "12', experimental_allow_partial=True
+        '{"a": 1, "b": ["12345", "12"', experimental_allow_partial=True
     )
 except ValidationError as e:
     print(e)
@@ -490,51 +494,3 @@ args, kwargs = val.validate_json('{"args": ["arg1"], "kwargs": {"extra": 1}}')
 print(args, kwargs)
 #> ('arg1',) {'extra': 1}
 ```
-
-## `MISSING` sentinel
-
-The `MISSING` sentinel is a singleton indicating a field value was not provided during validation.
-
-This singleton can be used as a default value, as an alternative to `None` when it has an explicit
-meaning. During serialization, any field with `MISSING` as a value is excluded from the output.
-
-```python
-from pydantic import BaseModel
-from pydantic.experimental.missing_sentinel import MISSING
-
-
-class Configuration(BaseModel):
-    timeout: int | None | MISSING = MISSING
-
-
-# configuration defaults, stored somewhere else:
-defaults = {'timeout': 200}
-
-conf = Configuration()
-
-# `timeout` is excluded from the serialization output:
-conf.model_dump()
-# {}
-
-# The `MISSING` value doesn't appear in the JSON Schema:
-Configuration.model_json_schema()['properties']['timeout']
-#> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}}
-
-
-# `is` can be used to discriminate between the sentinel and other values:
-timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
-```
-
-This feature is marked as experimental because it relies on the draft [PEP 661](https://peps.python.org/pep-0661/), introducing sentinels in the standard library.
-
-As such, the following limitations currently apply:
-
-* Static type checking of sentinels is only supported with Pyright
-  [1.1.402](https://github.com/microsoft/pyright/releases/tag/1.1.402)
-  or greater, and the `enableExperimentalFeatures` type evaluation setting
-  should be enabled.
-* Pickling of models containing `MISSING` as a value is not supported.
-
-!!! note
-    When [applying constraints](./fields.md#field-constraints) to a union containing the `MISSING` sentinel,
-    such constraints are automatically applied to the remaining type(s) of the union.

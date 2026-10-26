@@ -21,10 +21,14 @@ from _pytest.assertion.rewrite import AssertionRewritingHook
 from _pytest.nodes import Item
 from typing_extensions import TypedDict
 
-import pydantic
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.json_schema import GenerateJsonSchema
+
+try:
+    is_free_threaded = not sys._is_gil_enabled()
+except AttributeError:
+    is_free_threaded = False
 
 
 def pytest_addoption(parser: pytest.Parser):

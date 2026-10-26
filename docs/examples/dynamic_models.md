@@ -162,7 +162,7 @@ A couple notes on the implementation:
 
     However, note that static type checkers *won't* be able to understand that all fields are now optional.
 
-* The experimental [`MISSING` sentinel](../concepts/experimental.md#missing-sentinel) can be used as an alternative to `None`
+* The [`MISSING` sentinel](../concepts/types.md#missing-sentinel) can be used as an alternative to `None`
   for the default values. Simply replace `None` by `MISSING` in the new annotation and default value.
 
 * You might be tempted to make a copy of the original [`FieldInfo`][pydantic.fields.FieldInfo] instances, add a

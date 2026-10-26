@@ -1,6 +1,5 @@
 from collections import namedtuple
-from collections.abc import Callable
-from typing import Annotated, ClassVar, ForwardRef, Literal, NamedTuple
+from typing import Annotated, ClassVar, ForwardRef, NamedTuple
 
 import pytest
 
@@ -10,7 +9,6 @@ from pydantic._internal._typing_extra import (
     get_function_type_hints,
     is_classvar_annotation,
     is_namedtuple,
-    is_none_type,
     parent_frame_namespace,
 )
 
@@ -41,18 +39,6 @@ def test_is_namedtuple():
         id: int
 
     assert is_namedtuple(Other) is False
-
-
-def test_is_none_type():
-    assert is_none_type(Literal[None]) is True
-    assert is_none_type(None) is True
-    assert is_none_type(type(None)) is True
-    assert is_none_type(6) is False
-    assert is_none_type({}) is False
-    # WARNING: It's important to test `typing.Callable` not
-    # `collections.abc.Callable` (even with python >= 3.9) as they behave
-    # differently
-    assert is_none_type(Callable) is False
 
 
 @pytest.mark.parametrize(

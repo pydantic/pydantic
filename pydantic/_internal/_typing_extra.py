@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import collections.abc
 import re
 import sys
 import types
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, MutableMapping
 from functools import partial
 from inspect import Signature, signature
 from types import NoneType
@@ -61,36 +60,6 @@ def unpack_type(tp: Any, /) -> Any | None:
     return get_args(tp)[0] if typing_objects.is_unpack(get_origin(tp)) else None
 
 
-def is_hashable(tp: Any, /) -> bool:
-    """Return whether the provided argument is the `Hashable` class.
-
-    ```python {test="skip" lint="skip"}
-    is_hashable(Hashable)
-    #> True
-    ```
-    """
-    # `get_origin` is documented as normalizing any typing-module aliases to `collections` classes,
-    # hence the second check:
-    return tp is collections.abc.Hashable or get_origin(tp) is collections.abc.Hashable
-
-
-def is_callable(tp: Any, /) -> bool:
-    """Return whether the provided argument is a `Callable`, parametrized or not.
-
-    ```python {test="skip" lint="skip"}
-    is_callable(Callable[[int], str])
-    #> True
-    is_callable(typing.Callable)
-    #> True
-    is_callable(collections.abc.Callable)
-    #> True
-    ```
-    """
-    # `get_origin` is documented as normalizing any typing-module aliases to `collections` classes,
-    # hence the second check:
-    return tp is collections.abc.Callable or get_origin(tp) is collections.abc.Callable
-
-
 _classvar_re = re.compile(r'((\w+\.)?Annotated\[)?(\w+\.)?ClassVar\[')
 
 
@@ -132,46 +101,6 @@ def is_classvar_annotation(tp: Any, /) -> bool:
     return False
 
 
-_t_final = typing.Final
-_te_final = typing_extensions.Final
-
-
-# TODO implement `is_finalvar_annotation` as Final can be wrapped with other special forms:
-def is_finalvar(tp: Any, /) -> bool:
-    """Return whether the provided argument is a `Final` special form, parametrized or not.
-
-    ```python {test="skip" lint="skip"}
-    is_finalvar(Final[int])
-    #> True
-    is_finalvar(Final)
-    #> True
-    """
-    # Final is not necessarily parametrized:
-    if tp is _t_final or tp is _te_final:
-        return True
-    origin = get_origin(tp)
-    return origin is _t_final or origin is _te_final
-
-
-_NONE_TYPES: tuple[Any, ...] = (None, NoneType, typing.Literal[None], typing_extensions.Literal[None])
-
-
-def is_none_type(tp: Any, /) -> bool:
-    """Return whether the argument represents the `None` type as part of an annotation.
-
-    ```python {test="skip" lint="skip"}
-    is_none_type(None)
-    #> True
-    is_none_type(NoneType)
-    #> True
-    is_none_type(Literal[None])
-    #> True
-    is_none_type(type[None])
-    #> False
-    """
-    return tp in _NONE_TYPES
-
-
 def is_namedtuple(tp: Any, /) -> bool:
     """Return whether the provided argument is a named tuple class.
 
@@ -202,7 +131,7 @@ typing_base: Any = typing._Final  # pyright: ignore[reportAttributeAccessIssue]
 ### Annotation evaluations functions:
 
 
-def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dict[str, Any] | None:
+def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> MutableMapping[str, Any] | None:
     """Fetch the local namespace of the parent frame where this function is called.
 
     Using this function is mostly useful to resolve forward annotations pointing to members defined in a local namespace,
@@ -278,9 +207,12 @@ def _type_convert(arg: Any) -> Any:
     if arg is None:
         return NoneType
     if isinstance(arg, str):
-        # Like `typing.get_type_hints()`, assume the arg can be in any context,
-        # hence the proper `is_argument` and `is_class` args:
-        return ForwardRef(arg, is_argument=False, is_class=True)
+        if sys.version_info[:3] == (3, 10, 0):
+            return ForwardRef(arg, is_argument=False)
+        else:
+            # Like `typing.get_type_hints()`, assume the arg can be in any context,
+            # hence the proper `is_argument` and `is_class` args:
+            return ForwardRef(arg, is_argument=False, is_class=True)
     return arg
 
 
@@ -294,7 +226,10 @@ def safe_get_annotations(obj: Any) -> dict[str, Any]:
     if sys.version_info >= (3, 14):
         return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
     else:
-        return getattr(obj, '__annotations__', {})
+        if isinstance(obj, type):
+            return obj.__dict__.get('__annotations__', {})
+        else:
+            return getattr(obj, '__annotations__', {})
 
 
 def get_model_type_hints(
@@ -403,12 +338,10 @@ def try_eval_type(
         A two-tuple containing the possibly evaluated type and a boolean indicating
             whether the evaluation succeeded or not.
     """
-    value = _type_convert(value)
-
     try:
         return eval_type(value, globalns, localns), True
     except NameError:
-        return value, False
+        return _type_convert(value), False
 
 
 def eval_type(
@@ -431,6 +364,16 @@ def eval_type(
     value = _type_convert(value)
     try:
         return _eval_type(value, globalns, localns, type_params)
+    except ImportError as e:
+        # Starting in Python 3.15, resolving a lazy import during evaluation can fail, typically because of a
+        # circular import between modules (an `ImportError` can also happen without lazy imports but this is
+        # way less likely). Report it as a `NameError` so that callers treat the annotation as not resolvable
+        # yet, exactly an undefined forward reference.
+        if sys.version_info >= (3, 12):
+            name = e.name_from if e.name_from is not None else e.name
+        else:
+            name = e.name
+        raise NameError(f'Unable to resolve the import of {name!r}: {e}', name=name) from e
     except TypeError as e:
         if 'Unable to evaluate type annotation' in str(e):
             raise

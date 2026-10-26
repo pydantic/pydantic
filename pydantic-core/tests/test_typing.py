@@ -4,6 +4,8 @@ from collections.abc import Callable
 from datetime import date, datetime, time
 from typing import Any
 
+import pytest
+
 from pydantic_core import (
     CoreSchema,
     ErrorDetails,
@@ -177,13 +179,8 @@ def test_schema_validator() -> None:
 
 
 def test_schema_validator_wrong() -> None:
-    # use this instead of pytest.raises since pyright complains about input when pytest isn't installed
-    try:
+    with pytest.raises(SchemaError):
         SchemaValidator({'type': 'bad'})  # type: ignore
-    except SchemaError:
-        pass
-    else:
-        raise AssertionError('SchemaValidator did not raise SchemaError')
 
 
 def test_correct_function_signature() -> None:
@@ -200,22 +197,13 @@ def test_wrong_function_signature() -> None:
 
     v = SchemaValidator(core_schema.with_info_plain_validator_function(wrong_validator))  # type: ignore
 
-    # use this instead of pytest.raises since pyright complains about input when pytest isn't installed
-    try:
+    with pytest.raises(TypeError, match='takes 1 positional argument but 2 were given'):
         v.validate_python(1)
-    except TypeError as exc:
-        assert 'takes 1 positional argument but 2 were given' in str(exc)
-    else:
-        raise AssertionError('v.validate_python(1) did not raise TypeError')
 
 
 def test_type_error():
-    try:
+    with pytest.raises(KeyError, match="Invalid error type: 'foobar'"):
         PydanticKnownError('foobar')  # type: ignore
-    except KeyError as exc:
-        assert str(exc) == '"Invalid error type: \'foobar\'"'
-    else:
-        raise AssertionError("PydanticKnownError('foobar') did not raise KeyError")
 
     e = PydanticKnownError('recursion_loop')
     assert isinstance(e, PydanticKnownError)
@@ -259,6 +247,11 @@ def test_ser_function_wrap():
     )
 
 
+def test_ser_core_schema():
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.list_schema(core_schema.int_schema())))
+    assert s.to_python([1, 2]) == [1, 2]
+
+
 def test_error_details() -> None:
     # Test that the ErrorDetails type is correctly exported.
     def act_on_error_details(_: ErrorDetails) -> None:
@@ -266,8 +259,8 @@ def test_error_details() -> None:
 
     v = SchemaValidator({'type': 'int'})
 
-    try:
+    with pytest.raises(ValidationError) as exc_info:
         v.validate_python('not an int')
-    except ValidationError as err:
-        for details in err.errors(include_url=False):
-            act_on_error_details(details)
+
+    for details in exc_info.value.errors(include_url=False):
+        act_on_error_details(details)

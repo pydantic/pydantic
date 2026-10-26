@@ -1,6 +1,7 @@
 import gc
 import itertools
 import json
+import pickle
 import platform
 import re
 import subprocess
@@ -11,6 +12,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
 from textwrap import dedent
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     ClassVar,
@@ -64,6 +66,22 @@ from pydantic._internal._generics import (
     replace_types,
 )
 from pydantic.warnings import GenericBeforeBaseModelWarning
+
+IS_PYPY = sys.implementation.name == 'pypy' and sys.version_info >= (3, 11)
+
+if TYPE_CHECKING:
+    import cloudpickle
+else:
+    # cloudpickle is broken on PyPy (https://github.com/cloudpipe/cloudpickle/issues/592):
+    # importing it raises `AttributeError`, not `ImportError`, so the guard below
+    # cannot catch it and the import must be avoided outright.
+    if not IS_PYPY:
+        try:
+            import cloudpickle
+        except ImportError:
+            cloudpickle = None
+    else:
+        cloudpickle = None
 
 
 def test_generic_name():
@@ -1022,9 +1040,63 @@ def test_generic_model_from_function_pickle_fail(create_module):
             pickle.dumps(original)
 
 
+def test_generic_model_parametrized_in_other_module_pickle(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/13991"""
+
+    @create_module
+    def module_1():
+        from typing import Generic, TypeVar
+
+        from pydantic import BaseModel
+
+        T = TypeVar('T')
+
+        class Page(BaseModel, Generic[T]):
+            items: list[T]
+
+        class Response(BaseModel, Generic[T]):
+            result: T
+
+    module_2 = create_module(
+        f"""
+from pydantic import BaseModel
+
+from {module_1.__name__} import Page, Response
+
+class Item(BaseModel):
+    name: str
+
+ItemResponse = Response[Page[Item]]
+        """
+    )
+
+    ItemResponse = module_2.ItemResponse
+    ItemPage = ItemResponse.model_fields['result'].annotation
+
+    assert ItemResponse.__module__ == ItemPage.__module__ == module_2.__name__
+    assert getattr(module_2, ItemResponse.__qualname__) is ItemResponse
+    assert getattr(module_2, ItemPage.__qualname__) is ItemPage
+    # The module where the generic classes are defined shouldn't be polluted:
+    assert not hasattr(module_1, ItemResponse.__qualname__)
+    assert not hasattr(module_1, ItemPage.__qualname__)
+
+    original = ItemResponse(result={'items': [{'name': 'a'}]})
+    loaded = pickle.loads(pickle.dumps(original))
+    assert type(loaded) is ItemResponse
+    assert type(loaded.result) is ItemPage
+    assert type(loaded.result.items[0]) is module_2.Item
+    assert loaded == original
+
+
+# `cloudpickle` is in the optional `testing-extra` dependency group, so the
+# subprocesses below may not be able to import it.
 @pytest.mark.skipif(
     sys.platform == 'emscripten' or platform.python_implementation() == 'PyPy',
     reason='no subprocesses on emscripten and PyPy pickle issue',
+)
+@pytest.mark.skipif(
+    cloudpickle is None,
+    reason='cloudpickle not installed, or tests are running with PyPy (https://github.com/cloudpipe/cloudpickle/issues/592).',
 )
 def test_generic_model_pickle_different_module(tmp_path) -> None:
     """https://github.com/pydantic/pydantic/issues/9390#issuecomment-4561654742
@@ -1069,6 +1141,7 @@ def test_generic_model_pickle_different_module(tmp_path) -> None:
         timeout=30,
     )
 
+    assert creator.returncode == 0, creator.stderr
     payload = creator.stdout.splitlines()[0]
 
     loader_code = dedent(
@@ -2366,6 +2439,7 @@ def test_parse_generic_json():
     }
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 15), reason="memray doesn't yet support Python 3.15")
 def memray_limit_memory(limit):
     if '--memray' in sys.argv:
         return pytest.mark.limit_memory(limit)
@@ -3271,3 +3345,17 @@ def test_slots_forwarded_from_generic_class() -> None:
         with pytest.raises(TypeError):
             # As per https://docs.python.org/3/reference/datamodel.html#slots:
             weakref.ref(BaseInt())
+
+
+def test_generics_parameterization_not_hashable() -> None:
+    class NoHash:
+        __hash__ = None
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        f: T
+
+    Mint = Model[Annotated[int, NoHash()]]
+
+    assert Mint(f='1').f == 1

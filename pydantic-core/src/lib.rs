@@ -22,6 +22,7 @@ mod errors;
 mod input;
 mod lookup_key;
 mod recursion_guard;
+mod schema_gather;
 mod serializers;
 mod tools;
 mod url;
@@ -118,6 +119,12 @@ pub mod _pydantic_core {
         SchemaError, SchemaSerializer, SchemaValidator, TzInfo, ValidationError, from_json, list_all_errors, to_json,
         to_jsonable_python,
     };
+
+    #[pymodule]
+    mod _schema_gather {
+        #[pymodule_export]
+        use crate::schema_gather::{MissingDefinitionError, gather_schemas_for_cleaning};
+    }
 
     #[pymodule_init]
     fn module_init(m: &Bound<'_, PyModule>) -> PyResult<()> {

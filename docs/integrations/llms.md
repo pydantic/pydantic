@@ -10,5 +10,11 @@ Two formats are available:
   but every link content is included. Note that this file may be too large for some LLMs.
 
 As of today, these files *cannot* be natively leveraged by LLM frameworks or IDEs. Alternatively,
-a [MCP server](https://modelcontextprotocol.io/) can be implemented to properly parse the `llms.txt`
+an [MCP server](https://modelcontextprotocol.io/) can be implemented to properly parse the `llms.txt`
 file.
+
+Where `llms.txt` gives an AI tool the Pydantic *documentation*, the
+[Logfire MCP server](https://pydantic.dev/docs/logfire/guides/mcp-server/) gives it your
+application's *runtime data*: an agent can query the traces, metrics, and recorded validations from your
+own service and, for example, pull up the input behind a [`ValidationError`][pydantic_core.ValidationError]
+while it's helping you fix it.

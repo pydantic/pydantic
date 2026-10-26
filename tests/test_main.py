@@ -2,6 +2,7 @@ import json
 import platform
 import re
 import sys
+import threading
 import typing
 import warnings
 from collections import defaultdict
@@ -25,6 +26,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import pydantic_core
 import pytest
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 
@@ -398,6 +400,31 @@ def test_reassign_instance_method_with_extra_allow():
     m.not_extra_func = partial(not_extra_func_replacement, m)
     assert m.not_extra_func() == 'hi james'
     assert 'not_extra_func' in m.__dict__
+
+
+def test_set_class_attribute_set_to_none_with_extra_allow():
+    class Mixin:
+        # Plain class attributes, not Pydantic fields. `None` is a legitimate value here.
+        a = None
+        b = 'b'
+
+    class Model(Mixin, BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    m = Model()
+
+    # `b` exists on the class, so the assignment shadows it on the instance:
+    m.b = 'set'
+    assert m.b == 'set'
+    assert m.__dict__ == {'b': 'set'}
+    assert m.model_extra == {}
+
+    # `a` exists on the class as well and must behave the same, even though it is `None`
+    # (otherwise the class attribute keeps shadowing the assigned value on reads):
+    m.a = 'set'
+    assert m.a == 'set'
+    assert m.__dict__ == {'a': 'set', 'b': 'set'}
+    assert m.model_extra == {}
 
 
 def test_extra_ignored():
@@ -2110,7 +2137,11 @@ def test_class_kwargs_config_and_attr_conflict():
 
 
 def test_class_kwargs_custom_config():
-    with pytest.raises(TypeError, match=r'__init_subclass__\(\) takes no keyword arguments'):
+    if platform.python_implementation() == 'PyPy':
+        msg = r"object.__init_subclass__\(\) got an unexpected keyword argument 'some_config'"
+    else:
+        msg = r'__init_subclass__\(\) takes no keyword arguments'
+    with pytest.raises(TypeError, match=msg):
 
         class Model(BaseModel, some_config='new_value'):
             a: int
@@ -2539,6 +2570,84 @@ def test_model_rebuild_localns():
 
     with pytest.raises(PydanticUndefinedAnnotation, match="name 'Model' is not defined"):
         C.model_rebuild(_types_namespace={'A': A})
+
+
+@pytest.mark.timeout(5)
+def test_model_rebuild_nested_during_parametrization():
+    T = TypeVar('T')
+
+    class Model(BaseModel):
+        b: Optional['Box[Leaf]'] = None
+
+    class Box(BaseModel, Generic[T]):
+        leaf: Optional['Leaf'] = None
+
+    class Leaf(BaseModel):
+        x: int = 0
+
+    assert not Model.__pydantic_complete__
+    assert not Box.__pydantic_complete__
+
+    # Rebuilding `Model` evaluates `Box[Leaf]`, and `__class_getitem__` then calls
+    # `Box.model_rebuild()` on the same thread. Any locking added to the rebuild logic
+    # must support this reentrancy:
+    m = Model(b={'leaf': {'x': 1}})
+    assert m.b.leaf.x == 1
+    assert Model.__pydantic_complete__
+
+
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no threading on emscripten')
+def test_model_rebuild_already_rebuilt_by_other_thread():
+    schema_gen_entered = threading.Event()
+    resume_schema_gen = threading.Event()
+    hook_calls: list[type] = []
+
+    class Model(BaseModel):
+        x: 'Gate'
+
+        @classmethod
+        def __pydantic_on_complete__(cls) -> None:
+            hook_calls.append(cls)
+
+    class Gate:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type, handler):
+            schema_gen_entered.set()
+            resume_schema_gen.wait(timeout=10)
+            return core_schema.int_schema()
+
+    assert not Model.__pydantic_complete__
+
+    results: dict[str, bool | None] = {}
+    t2_started = threading.Event()
+
+    def rebuild(key: str) -> None:
+        if key == 't2':
+            t2_started.set()
+        results[key] = Model.model_rebuild(_types_namespace={'Gate': Gate})
+
+    # The first thread acquires the rebuild lock and waits in schema generation:
+    t1 = threading.Thread(target=rebuild, args=('t1',), daemon=True)
+    t1.start()
+    assert schema_gen_entered.wait(timeout=10)
+
+    # While the first thread is waiting on `resume_schema_gen`, `Model` can't become complete,
+    # so the second thread is guaranteed to pass the unlocked completeness check and block on the lock:
+    t2 = threading.Thread(target=rebuild, args=('t2',), daemon=True)
+    t2.start()
+    assert t2_started.wait(timeout=10)
+    assert t2.is_alive()
+    assert 't2' not in results
+
+    resume_schema_gen.set()
+    t1.join(timeout=10)
+    t2.join(timeout=10)
+    assert not t1.is_alive()
+    assert not t2.is_alive()
+
+    assert results == {'t1': True, 't2': None}
+    assert hook_calls == [Model]
+    assert Model(x=1).x == 1
 
 
 def test_model_rebuild_zero_depth():
@@ -2980,6 +3089,35 @@ def test_recursion_loop_error():
         "{'type': 'recursion_loop', 'loc': ('x', 0, 'x', 0), 'msg': "
         "'Recursion error - cyclic reference detected', 'input': {'x': [{...}]}}"
     )
+
+
+def test_recursion_loop_error_validate_strings_cyclic() -> None:
+    class Model(BaseModel):
+        x: Optional['Model'] = None
+
+    data = {}
+    data['x'] = data
+
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
+        Model.model_validate_strings(data)
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+def test_recursion_loop_error_validate_strings_deep() -> None:
+    class Model(BaseModel):
+        x: Optional['Model'] = None
+
+    # deeper than the recursion guard limit (at most 255), but not too deep as freeing
+    # deeply nested dicts can exhaust the stack on Pyodide:
+    data = {}
+    for _ in range(1_000):
+        data = {'x': data}
+
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
+        Model.model_validate_strings(data)
 
 
 def test_protected_namespace_default():
@@ -3433,6 +3571,25 @@ def test_extra_generic_class() -> None:
     assert Mint(extra_value='1').model_extra == {'extra_value': 1}
 
 
+def test_extra_generic_class_subclass() -> None:
+    """https://github.com/pydantic/pydantic/issues/13465"""
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T], extra='allow'):
+        __pydantic_extra__: dict[str, T]
+
+    class Sub(Model[int]):
+        pass
+
+    assert Sub.model_json_schema()['additionalProperties'] == {'type': 'integer'}
+
+    with pytest.raises(ValidationError):
+        Sub(extra_value='not_an_int')
+
+    assert Sub(extra_value='1').model_extra == {'extra_value': 1}
+
+
 def test_super_getattr_extra():
     class Model(BaseModel):
         model_config = {'extra': 'allow'}
@@ -3571,21 +3728,23 @@ help_result_string = pydoc.render_doc(Model)
 
 def test_cannot_use_leading_underscore_field_names():
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., use 'x' instead of '_x'"
+        PydanticUserError, match="Fields must not use names with leading underscores; e.g., use 'x' instead of '_x'"
     ):
 
         class Model1(BaseModel):
             _x: int = Field(alias='x')
 
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., use 'x__' instead of '__x__'"
+        PydanticUserError,
+        match="Fields must not use names with leading underscores; e.g., use 'x__' instead of '__x__'",
     ):
 
         class Model2(BaseModel):
             __x__: int = Field()
 
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., use 'my_field' instead of '___'"
+        PydanticUserError,
+        match="Fields must not use names with leading underscores; e.g., use 'my_field' instead of '___'",
     ):
 
         class Model3(BaseModel):

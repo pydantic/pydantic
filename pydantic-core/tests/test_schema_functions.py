@@ -1,7 +1,8 @@
 import dataclasses
+import sys
 from datetime import date
 from enum import Enum
-from typing import Any
+from typing import Any, NamedTuple
 
 import pytest
 from typing_extensions import get_args, get_type_hints  # noqa: UP035
@@ -26,6 +27,10 @@ class MyModel:
 class MyDataclass:
     x: int
     y: str
+
+
+class MyNamedTuple(NamedTuple):
+    foo: int
 
 
 class MyEnum(int, Enum):
@@ -84,6 +89,12 @@ all_schema_functions = [
     (core_schema.literal_schema, args(['a', 'b']), {'type': 'literal', 'expected': ['a', 'b']}),
     (core_schema.missing_sentinel_schema, args(), {'type': 'missing-sentinel'}),
     (
+        core_schema.missing_sentinel_schema,
+        args({'type': 'int'}),
+        {'type': 'missing-sentinel', 'schema': {'type': 'int'}},
+    ),
+    (core_schema.ellipsis_schema, args(), {'type': 'ellipsis'}),
+    (
         core_schema.enum_schema,
         args(MyEnum, list(MyEnum.__members__.values())),
         {'type': 'enum', 'cls': MyEnum, 'members': [MyEnum.a, MyEnum.b]},
@@ -92,6 +103,12 @@ all_schema_functions = [
     (core_schema.callable_schema, args(), {'type': 'callable'}),
     (core_schema.list_schema, args(), {'type': 'list'}),
     (core_schema.list_schema, args({'type': 'int'}), {'type': 'list', 'items_schema': {'type': 'int'}}),
+    (core_schema.deque_schema, args(), {'type': 'deque'}),
+    (
+        core_schema.deque_schema,
+        args({'type': 'int'}, min_length=1),
+        {'type': 'deque', 'items_schema': {'type': 'int'}, 'min_length': 1},
+    ),
     (core_schema.tuple_schema, args([]), {'type': 'tuple', 'items_schema': []}),
     (
         core_schema.set_schema,
@@ -109,6 +126,24 @@ all_schema_functions = [
         core_schema.dict_schema,
         args({'type': 'str'}, {'type': 'int'}),
         {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
+    ),
+    (core_schema.frozendict_schema, args(), {'type': 'frozendict'}),
+    (
+        core_schema.frozendict_schema,
+        args({'type': 'str'}, {'type': 'int'}),
+        {'type': 'frozendict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
+    ),
+    (core_schema.ordered_dict_schema, args(), {'type': 'ordered-dict'}),
+    (
+        core_schema.ordered_dict_schema,
+        args({'type': 'str'}, {'type': 'int'}),
+        {'type': 'ordered-dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
+    ),
+    (core_schema.counter_schema, args(), {'type': 'counter'}),
+    (
+        core_schema.counter_schema,
+        args({'type': 'str'}, {'type': 'int'}),
+        {'type': 'counter', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
     ),
     (
         core_schema.with_info_before_validator_function,
@@ -307,6 +342,15 @@ all_schema_functions = [
         args(MyDataclass, {'type': 'int'}, ['foobar'], slots=True),
         {'type': 'dataclass', 'schema': {'type': 'int'}, 'fields': ['foobar'], 'cls': MyDataclass, 'slots': True},
     ),
+    (
+        core_schema.named_tuple_schema,
+        args(MyNamedTuple, [{'name': 'foo', 'type': 'named-tuple-field', 'schema': {'type': 'int'}}]),
+        {
+            'type': 'named-tuple',
+            'cls': MyNamedTuple,
+            'fields': [{'name': 'foo', 'type': 'named-tuple-field', 'schema': {'type': 'int'}}],
+        },
+    ),
     (core_schema.uuid_schema, args(), {'type': 'uuid'}),
     (core_schema.decimal_schema, args(), {'type': 'decimal'}),
     (core_schema.decimal_schema, args(multiple_of=5, gt=1.2), {'type': 'decimal', 'multiple_of': 5, 'gt': 1.2}),
@@ -322,6 +366,9 @@ def test_schema_functions(function, args_kwargs, expected_schema):
     schema = function(*args, **kwargs)
     assert schema == expected_schema
     if schema.get('type') in {None, 'definition-ref', 'typed-dict-field', 'model-field', 'invalid'}:
+        return
+    if schema['type'] == 'frozendict' and sys.version_info < (3, 15):
+        # the validator/serializer can only be built on Python 3.15+:
         return
 
     v = SchemaValidator(schema)
@@ -392,3 +439,11 @@ def test_deprecation_warning() -> None:
         match='The `field_name` argument on `with_info_before_validator_function` is deprecated'
     ):
         core_schema.with_info_before_validator_function(val_function, schema={'type': 'int'}, field_name='foo')
+
+
+def test_enum_schema_missing_deprecation_warning() -> None:
+    class MyEnum(Enum):
+        a = 1
+
+    with pytest.deprecated_call(match=r'The `missing` argument on `enum_schema\(\)` is deprecated and no longer used'):
+        core_schema.enum_schema(MyEnum, list(MyEnum.__members__.values()), missing=MyEnum._missing_)

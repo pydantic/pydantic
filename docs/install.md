@@ -17,6 +17,7 @@ Pydantic has a few dependencies:
 * [`pydantic-core`](https://pypi.org/project/pydantic-core/): Core validation logic for Pydantic written in Rust.
 * [`typing-extensions`](https://pypi.org/project/typing-extensions/): Backport of the standard library [typing][] module.
 * [`annotated-types`](https://pypi.org/project/annotated-types/): Reusable constraint types to use with [`typing.Annotated`][].
+* [`typing-inspection`](https://pypi.org/project/typing-inspection/): Runtime typing introspection tools.
 
 If you've got Python 3.10+ and `pip` installed, you're good to go.
 

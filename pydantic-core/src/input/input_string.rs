@@ -83,6 +83,14 @@ impl<'py> Input<'py> for StringMapping<'py> {
         }
     }
 
+    fn identity(&self) -> Option<usize> {
+        match self {
+            Self::String(_) => None,
+            // mappings are Python dicts, which can be cyclic or arbitrarily nested:
+            Self::Mapping(mapping) => Some(mapping.as_ptr() as usize),
+        }
+    }
+
     type Arguments<'a>
         = StringMappingDict<'py>
     where
@@ -177,6 +185,27 @@ impl<'py> Input<'py> for StringMapping<'py> {
         }
     }
 
+    fn strict_frozendict(&self) -> ValMatch<StringMappingDict<'py>> {
+        match self {
+            Self::String(_) => Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self)),
+            Self::Mapping(d) => Ok(ValidationMatch::strict(StringMappingDict(d.clone()))),
+        }
+    }
+
+    fn strict_ordered_dict(&self) -> ValMatch<StringMappingDict<'py>> {
+        match self {
+            Self::String(_) => Err(ValError::new(ErrorTypeDefaults::OrderedDictType, self)),
+            Self::Mapping(d) => Ok(ValidationMatch::strict(StringMappingDict(d.clone()))),
+        }
+    }
+
+    fn strict_counter(&self) -> ValMatch<StringMappingDict<'py>> {
+        match self {
+            Self::String(_) => Err(ValError::new(ErrorTypeDefaults::CounterType, self)),
+            Self::Mapping(d) => Ok(ValidationMatch::strict(StringMappingDict(d.clone()))),
+        }
+    }
+
     type List<'a>
         = Never
     where
@@ -184,6 +213,10 @@ impl<'py> Input<'py> for StringMapping<'py> {
 
     fn validate_list(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
+    }
+
+    fn validate_deque(&self, _strict: bool) -> ValMatch<(Never, Option<usize>)> {
+        Err(ValError::new(ErrorTypeDefaults::DequeType, self))
     }
 
     type Tuple<'a>

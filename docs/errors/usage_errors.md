@@ -620,11 +620,13 @@ type C = B
 This error is raised when Pydantic fails to generate a JSON schema for some `CoreSchema`.
 
 ```python
-from pydantic import BaseModel, ImportString, PydanticUserError
+from collections.abc import Callable
+
+from pydantic import BaseModel, PydanticUserError
 
 
 class Model(BaseModel):
-    a: ImportString
+    a: Callable[..., object]
 
 
 try:
@@ -706,6 +708,36 @@ except PydanticUserError as exc_info:
 ```
 
 The fields definition syntax can be found in the [dynamic model creation](../concepts/models.md#dynamic-model-creation) documentation.
+
+## `create_model` namespace {#create-model-namespace}
+
+This error is raised when a key of the `__namespace__` argument of [`create_model()`][pydantic.create_model]
+clashes with a field name:
+
+```python
+from pydantic import PydanticUserError, create_model
+
+try:
+    create_model('FooModel', foo=int, __namespace__={'foo': 1})
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'create-model-namespace'
+```
+
+It is also raised when a key of the `__namespace__` argument is an attribute that has a dedicated argument
+(`__annotations__`, `__module__`, `__qualname__`, `__doc__` and `model_config`):
+
+```python
+from pydantic import ConfigDict, PydanticUserError, create_model
+
+try:
+    create_model(
+        'FooModel', __namespace__={'model_config': ConfigDict(strict=True)}
+    )
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'create-model-namespace'
+```
+
+Use the `__config__` argument instead.
 
 ## Validator on instance method {#validator-instance-method}
 

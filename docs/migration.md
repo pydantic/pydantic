@@ -326,7 +326,7 @@ like `class MyModel(Model1, Model2)`, the non-default settings in the `model_con
 will be merged, and for any settings defined in both, those from `Model2` will override those from `Model1`.
 
 * The following config settings have been removed:
-    * `allow_mutation` — this has been removed. You should be able to use [frozen](api/config.md#pydantic.config.ConfigDict) equivalently (inverse of current use).
+    * `allow_mutation` — this has been removed. You should be able to use [`frozen`](api/config.md#pydantic.config.ConfigDict.frozen) equivalently (inverse of current use).
     * `error_msg_templates`
     * `fields` — this was the source of various bugs, so has been removed.
       You should be able to use `Annotated` on fields to modify them as desired.

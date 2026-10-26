@@ -57,10 +57,10 @@ class BeforeModelValidator(BaseModel):
 
 
 class WrapModelValidator(BaseModel):
-    @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+    @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-argument-type]
     def no_classmethod(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self: ...
 
-    @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+    @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-argument-type]
     @classmethod
     def no_handler(cls, value: Any) -> Self: ...
 
@@ -94,7 +94,7 @@ class WrapModelValidator(BaseModel):
 
 class AfterModelValidator(BaseModel):
     # Mypy somehow reports "Cannot infer function type argument" here:
-    @model_validator(mode='after')  # type:ignore[misc]  # pyright: ignore[reportArgumentType]
+    @model_validator(mode='after')  # type:ignore[misc]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-argument-type]
     def missing_return_value(self) -> None: ...
 
     @model_validator(mode='after')
@@ -121,7 +121,7 @@ class BeforeFieldValidator(BaseModel):
     @classmethod
     def valid_classmethod(cls, value: Any) -> Any: ...
 
-    @field_validator('foo', mode='before')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
+    @field_validator('foo', mode='before')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-specialization]
     @classmethod
     def invalid_with_info(cls, value: Any, info: int) -> Any: ...
 
@@ -147,7 +147,7 @@ class AfterFieldValidator(BaseModel):
     @classmethod
     def valid_classmethod_info(cls, value: Any, info: ValidationInfo[int]) -> Any: ...
 
-    @field_validator('foo', mode='after', json_schema_input_type=int)  # type: ignore[call-overload]  # pyright: ignore[reportCallIssue, reportArgumentType]
+    @field_validator('foo', mode='after', json_schema_input_type=int)  # type: ignore[call-overload]  # pyright: ignore[reportCallIssue, reportArgumentType]  # pyrefly: ignore[no-matching-overload]
     @classmethod
     def invalid_input_type_not_allowed(cls, value: Any) -> Any: ...
 
@@ -163,7 +163,7 @@ class WrapFieldValidator(BaseModel):
         `pydantic_core.core_schema.NoInfoWrapValidatorFunction`.
         """
 
-    @field_validator('foo', mode='wrap')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
+    @field_validator('foo', mode='wrap')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-specialization]
     @classmethod
     def invalid_handler(cls, value: Any, handler: int) -> Any: ...
 
@@ -183,7 +183,7 @@ class WrapFieldValidator(BaseModel):
 
 
 class PlainModelSerializer(BaseModel):
-    @model_serializer  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
+    @model_serializer  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-specialization]
     def too_many_arguments(self, info: SerializationInfo, unrelated: Any) -> Any: ...
 
     @model_serializer
@@ -200,7 +200,7 @@ class PlainModelSerializer(BaseModel):
 
 
 class WrapModelSerializer(BaseModel):
-    @model_serializer(mode='wrap')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
+    @model_serializer(mode='wrap')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-specialization]
     def no_handler(self) -> Any: ...
 
     @model_serializer(mode='wrap')
@@ -228,7 +228,7 @@ class PlainFieldSerializer(BaseModel):
     @field_serializer('a', mode='plain')
     def valid_method_no_info_2(self, value: Any) -> Any: ...
 
-    @field_serializer('a', mode='plain')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
+    @field_serializer('a', mode='plain')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-specialization]
     def invalid_method_info_1(self, value: Any, info: int) -> Any: ...
 
     @field_serializer('a', mode='plain')
@@ -292,7 +292,7 @@ class WrapFieldSerializer(BaseModel):
         `pydantic_core.core_schema.GeneralWrapNoInfoSerializerFunction`.
         """
 
-    @field_serializer('a', mode='wrap')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
+    @field_serializer('a', mode='wrap')  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-specialization]
     @staticmethod
     def staticmethod_no_handler(value: Any) -> Any: ...
 

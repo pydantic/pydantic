@@ -453,7 +453,7 @@ The available constraints for each type (and the way they affect the JSON Schema
 in the [standard library types](../api/standard_library_types.md) documentation.
 
 !!! note
-    When adding constraints to a union type, if a member of the union is `None` or the [`MISSING` sentinel](./experimental.md#missing-sentinel),
+    When adding constraints to a union type, if a member of the union is `None` or the [`MISSING` sentinel](./types.md#missing-sentinel),
     the constraints will be automatically applied to the remaining type(s) of the union:
 
     ```python

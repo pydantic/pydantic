@@ -73,11 +73,11 @@ git clone git@github.com:<your username>/pydantic.git
 cd pydantic
 
 # Install UV and pre-commit
-# We use pipx here, for other options see:
+# We use uv here, for other options see:
 # https://docs.astral.sh/uv/getting-started/installation/
 # https://pre-commit.com/#install
 curl -LsSf https://astral.sh/uv/install.sh | sh
-uvx install pre-commit
+uv tool install pre-commit
 
 # Install pydantic, dependencies, test dependencies and doc dependencies
 make install
@@ -109,6 +109,10 @@ make
 # which you might want to use, but generally just `make` should be all you need.
 # You can run `make help` to see more options.
 ```
+
+The `pydantic-core` test suite is located in `tests/pydantic-core`, as a symlink. For it to work, you may need to
+enable the [`core.symlinks`](https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks) Git
+option.
 
 ### Build documentation
 
@@ -196,7 +200,7 @@ def bar(self, baz: int) -> str:
     return 'bar'
 ```
 
-You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`BeforeValidator`][pydantic.functional_validators.AfterValidator] for an example.
+You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`AfterValidator`][pydantic.functional_validators.AfterValidator] for an example.
 
 !!! note "Class and instance attributes"
     Class attributes should be documented in the class docstring.

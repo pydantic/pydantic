@@ -2,20 +2,20 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::PyTraverseError;
-use pyo3::exceptions::{PyAttributeError, PyRecursionError, PyRuntimeError};
+use pyo3::exceptions::{PyAttributeError, PyRecursionError, PyRuntimeError, PyTypeError};
 use pyo3::gc::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use pyo3::types::PyString;
+use pyo3::types::{PyInt, PyString};
 
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::extra::IncludeExclude;
 use crate::tools::SchemaDict;
-use crate::tools::{function_name, py_err, py_error_type};
+use crate::tools::{function_name, py_err, py_error_type, safe_repr};
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
 
 use super::format::WhenUsed;
@@ -217,16 +217,16 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
-                let (ret_serializer, v) = match self.call(value, state) {
-                    Ok((true, v)) => (&*self.return_serializer, v),
-                    Ok((false, v)) => (self.get_fallback_serializer(), v),
+                let (ret_serializer, v, include_exclude) = match self.call(value, state) {
+                    // Filtering was done by the function, so drop include/exclude for the return serializer:
+                    Ok((true, v)) => (&*self.return_serializer, v, IncludeExclude::empty()),
+                    Ok((false, v)) => (self.get_fallback_serializer(), v, state.include_exclude()),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
                         return infer_to_python(value, state);
                     }
                 };
-                // None for include/exclude here, as filtering should be done
-                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                let state = &mut state.scoped_include_exclude(include_exclude);
                 ret_serializer.to_python(v.bind(py), state)
             }
 
@@ -236,16 +236,16 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
                 let py = key.py();
-                let (ret_serializer, v) = match self.call(key, state) {
-                    Ok((true, v)) => (&*self.return_serializer, v),
-                    Ok((false, v)) => (self.get_fallback_serializer(), v),
+                let (ret_serializer, v, include_exclude) = match self.call(key, state) {
+                    // Filtering was done by the function, so drop include/exclude for the return serializer:
+                    Ok((true, v)) => (&*self.return_serializer, v, IncludeExclude::empty()),
+                    Ok((false, v)) => (self.get_fallback_serializer(), v, state.include_exclude()),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
                         return infer_json_key(key, state);
                     }
                 };
-                // None for include/exclude here, as filtering should be done
-                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                let state = &mut state.scoped_include_exclude(include_exclude);
                 ret_serializer
                     .json_key(v.bind(py), state)
                     .map(|cow| Cow::Owned(cow.into_owned()))
@@ -258,16 +258,16 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> Result<S::Ok, S::Error> {
                 let py = value.py();
-                let (ret_serializer, v) = match self.call(value, state) {
-                    Ok((true, v)) => (&*self.return_serializer, v),
-                    Ok((false, v)) => (self.get_fallback_serializer(), v),
+                let (ret_serializer, v, include_exclude) = match self.call(value, state) {
+                    // Filtering was done by the function, so drop include/exclude for the return serializer:
+                    Ok((true, v)) => (&*self.return_serializer, v, IncludeExclude::empty()),
+                    Ok((false, v)) => (self.get_fallback_serializer(), v, state.include_exclude()),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state).map_err(py_err_se_err)?;
                         return infer_serialize(value, serializer, state);
                     }
                 };
-                // None for include/exclude here, as filtering should be done
-                let mut state = state.scoped_include_exclude(IncludeExclude::empty());
+                let mut state = state.scoped_include_exclude(include_exclude);
                 ret_serializer.serde_serialize(v.bind(py), serializer, &mut state)
             }
 
@@ -433,10 +433,10 @@ pub(crate) struct SerializationCallable {
     filter: AnyFilter,
 }
 
-impl_py_gc_traverse!(SerializationCallable {
-    serializer,
-    extra_owned
-});
+// `serializer` is intentionally not traversed: it is an `Arc` clone of a subtree owned (and
+// traversed) by the `SchemaSerializer`. Visiting it here as well would report twice for a single reference,
+// which corrupts the GC's refcount logic.
+impl_py_gc_traverse!(SerializationCallable { extra_owned });
 
 impl SerializationCallable {
     pub fn new(serializer: &Arc<CombinedSerializer>, state: &SerializationState<'_>) -> Self {
@@ -446,7 +446,10 @@ impl SerializationCallable {
             filter: AnyFilter::new(),
         }
     }
+}
 
+#[pymethods]
+impl SerializationCallable {
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.py_gc_traverse(&visit)
     }
@@ -456,10 +459,7 @@ impl SerializationCallable {
         self.extra_owned.fallback = None;
         self.extra_owned.context = None;
     }
-}
 
-#[pymethods]
-impl SerializationCallable {
     #[pyo3(signature = (value, index_key=None))]
     fn __call__(
         &mut self,
@@ -476,8 +476,13 @@ impl SerializationCallable {
         if let Some(index_key) = index_key {
             let filter = if let Ok(index) = index_key.extract::<usize>() {
                 self.filter.index_filter(index, state, None)?
-            } else {
+            } else if index_key.is_instance_of::<PyString>() || index_key.is_instance_of::<PyInt>() {
                 self.filter.key_filter(index_key, state)?
+            } else {
+                return Err(PyTypeError::new_err(format!(
+                    "'index_key' is expected to be an integer or a string, got '{}'",
+                    safe_repr(index_key),
+                )));
             };
             if let Some(next_include_exclude) = filter {
                 let state = &mut state.scoped_include_exclude(next_include_exclude);
@@ -556,7 +561,7 @@ impl SerializationInfo {
                     exclude_unset: extra.exclude_unset,
                     exclude_defaults: extra.exclude_defaults,
                     exclude_none: extra.exclude_none,
-                    exclude_computed_fields: extra.exclude_none,
+                    exclude_computed_fields: extra.exclude_computed_fields,
                     round_trip: extra.round_trip,
                     field_name: Some(field_name.to_string()),
                     serialize_as_any: extra.serialize_as_any,
@@ -584,7 +589,10 @@ impl SerializationInfo {
             })
         }
     }
+}
 
+#[pymethods]
+impl SerializationInfo {
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.py_gc_traverse(&visit)
     }
@@ -594,10 +602,7 @@ impl SerializationInfo {
         self.exclude = None;
         self.context = None;
     }
-}
 
-#[pymethods]
-impl SerializationInfo {
     fn mode_is_json(&self) -> bool {
         self._mode.is_json()
     }

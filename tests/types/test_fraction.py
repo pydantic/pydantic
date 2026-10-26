@@ -1,9 +1,12 @@
+import json
+import sys
 from decimal import Decimal
 from fractions import Fraction
 from typing import Annotated
 
 import annotated_types
 import pytest
+from pydantic_core import SchemaError
 
 from pydantic import Field, TypeAdapter, ValidationError
 
@@ -150,6 +153,64 @@ def test_fraction_validation_error(input: object, error_type: str):
 
 
 @pytest.mark.parametrize(
+    ['input_value', 'expected'],
+    [
+        ('1e4300', Fraction(10**4300)),
+        ('-1E+4300', Fraction(-(10**4300))),
+        ('1e-4300', Fraction(1, 10**4300)),
+        pytest.param(
+            '1.5e4_300 ',
+            Fraction(15 * 10**4299),
+            marks=pytest.mark.skipif(sys.version_info < (3, 11), reason='Fraction supports underscores since 3.11'),
+        ),
+        ('1e00000000004300', Fraction(10**4300)),
+        ('1e٤٣٠٠', Fraction(10**4300)),
+    ],
+)
+@pytest.mark.parametrize('mode', ['python', 'json', 'strings'])
+def test_fraction_exponent_within_limit(input_value: str, expected: Fraction, mode: str) -> None:
+    ta = TypeAdapter(Fraction)
+
+    if mode == 'python':
+        assert ta.validate_python(input_value) == expected
+    elif mode == 'json':
+        assert ta.validate_json(json.dumps(input_value)) == expected
+        assert ta.validate_json(json.dumps(input_value), strict=True) == expected
+    else:
+        assert ta.validate_strings(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'input_value',
+    [
+        '1e4301',
+        '1e-4301',
+        '1E+4301',
+        '1e4_301',
+        '1.5e4301',
+        '1e32000000',
+        '1e-32000000',
+        '1e99999999999999999999999',
+        '1e32000000 ',
+        '1e32000000\x1c',
+        '1e٣٢٠٠٠٠٠٠',  # 32000000 in Arabic-Indic digits
+        '1e３２００００００',  # 32000000 in fullwidth digits
+    ],
+)
+@pytest.mark.parametrize('mode', ['python', 'json', 'strings'])
+def test_fraction_exponent_too_large(input_value: str, mode: str) -> None:
+    ta = TypeAdapter(Fraction)
+
+    with pytest.raises(ValidationError, check=lambda e: e.errors()[0]['type'] == 'fraction_parsing'):
+        if mode == 'python':
+            ta.validate_python(input_value)
+        elif mode == 'json':
+            ta.validate_json(json.dumps(input_value), strict=True)
+        else:
+            ta.validate_strings(input_value)
+
+
+@pytest.mark.parametrize(
     'input_value,expected',
     [
         (Fraction(0), '0'),
@@ -190,6 +251,9 @@ def test_fraction_dump_json(input_value, expected):
         (annotated_types.Lt(1), '1/3', Fraction(1, 3)),
         (annotated_types.Le(1), 1, Fraction(1)),
         (annotated_types.Le(1), '1/3', Fraction(1, 3)),
+        (annotated_types.MultipleOf(Fraction(1, 3)), '2/3', Fraction(2, 3)),
+        (annotated_types.MultipleOf(Fraction(1, 3)), -1, Fraction(-1)),
+        (annotated_types.MultipleOf(Fraction(1, 3)), 0, Fraction(0)),
         # float bound
         (annotated_types.Gt(0.5), 1, Fraction(1)),
     ],
@@ -208,6 +272,8 @@ def test_fraction_constraints(constraint, input_value, expected):
         (annotated_types.Lt(1), 1),
         (annotated_types.Lt(1), 2),
         (annotated_types.Le(1), 2),
+        (annotated_types.MultipleOf(Fraction(1, 3)), '1/2'),
+        (annotated_types.MultipleOf(Fraction(1, 3)), 0.5),
         # float bound
         (annotated_types.Gt(0.5), '1/3'),
     ],
@@ -216,6 +282,33 @@ def test_fraction_constraints_error(constraint, input_value):
     ta = TypeAdapter(Annotated[Fraction, constraint])
     with pytest.raises(ValidationError):
         ta.validate_python(input_value)
+
+
+def test_fraction_multiple_of_error() -> None:
+    """https://github.com/pydantic/pydantic/issues/13868"""
+
+    ta = TypeAdapter(Annotated[Fraction, Field(multiple_of=Fraction(1, 3))])
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(Fraction(1, 2))
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'multiple_of',
+            'loc': (),
+            'msg': 'Input should be a multiple of 1/3',
+            'input': Fraction(1, 2),
+            'ctx': {'multiple_of': Fraction(1, 3)},
+        }
+    ]
+
+
+@pytest.mark.parametrize('multiple_of', [0, Fraction(0), Fraction(-1, 3)])
+def test_fraction_multiple_of_invalid_constraint(multiple_of: Fraction) -> None:
+    """https://github.com/pydantic/pydantic/issues/13868"""
+
+    with pytest.raises(SchemaError, match="'multiple_of' must be greater than 0"):
+        TypeAdapter(Annotated[Fraction, Field(multiple_of=multiple_of)])
 
 
 def test_fraction_json_schema():

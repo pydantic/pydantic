@@ -35,7 +35,10 @@ pub(super) struct SerField {
     pub serialization_exclude_if: Option<Py<PyAny>>,
 }
 
-impl_py_gc_traverse!(SerField { serializer });
+impl_py_gc_traverse!(SerField {
+    serializer,
+    serialization_exclude_if
+});
 
 impl SerField {
     pub fn new(
@@ -114,6 +117,12 @@ pub struct GeneralFieldsSerializer {
     required_fields: usize,
 }
 
+impl_py_gc_traverse!(GeneralFieldsSerializer {
+    fields,
+    computed_fields,
+    extra_serializer,
+});
+
 impl GeneralFieldsSerializer {
     pub(super) fn new(
         fields: AHashMap<PyBackedStr, SerField>,
@@ -178,7 +187,7 @@ impl GeneralFieldsSerializer {
         let py = model.py();
         let mut map = do_serialize.serialize_map()?;
         let mut used_req_fields: usize = 0;
-        let missing_sentinel = get_missing_sentinel_object(py);
+        let missing_sentinel = get_missing_sentinel_object(py)?;
 
         let extras_serializer = self
             .extra_serializer
@@ -334,11 +343,6 @@ pub fn exclude_field_by_value<'py>(
 
     Ok(false)
 }
-
-impl_py_gc_traverse!(GeneralFieldsSerializer {
-    fields,
-    computed_fields
-});
 
 impl TypeSerializer for GeneralFieldsSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

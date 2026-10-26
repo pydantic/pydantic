@@ -18,16 +18,14 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 
 static DECIMAL_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
-pub fn get_decimal_type(py: Python<'_>) -> &Bound<'_, PyType> {
-    DECIMAL_TYPE
-        .get_or_init(py, || {
-            py.import("decimal")
-                .and_then(|decimal_module| decimal_module.getattr("Decimal"))
-                .unwrap()
-                .extract()
-                .unwrap()
-        })
-        .bind(py)
+pub fn get_decimal_type(py: Python<'_>) -> PyResult<&Bound<'_, PyType>> {
+    DECIMAL_TYPE.import(py, "decimal", "Decimal")
+}
+
+static DECIMAL_EXCEPTION_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
+
+fn get_decimal_exception_type(py: Python<'_>) -> PyResult<&Bound<'_, PyType>> {
+    DECIMAL_EXCEPTION_TYPE.import(py, "decimal", "DecimalException")
 }
 
 fn validate_as_decimal(
@@ -78,12 +76,22 @@ impl BuildValidator for DecimalValidator {
             ));
         }
 
+        let multiple_of = validate_as_decimal(py, schema, intern!(py, "multiple_of"))?;
+        // `is_finite()` is checked first, as comparing a NaN decimal raises `InvalidOperation`:
+        if let Some(ref m) = multiple_of
+            && !(m.bind(py).call_method0(intern!(py, "is_finite"))?.is_truthy()? && m.bind(py).gt(0)?)
+        {
+            return Err(PyValueError::new_err(
+                "'multiple_of' must be a finite number greater than 0",
+            ));
+        }
+
         Ok(CombinedValidator::Decimal(Self {
             strict: is_strict(schema, config)?,
             allow_inf_nan,
             check_digits: decimal_places.is_some() || max_digits.is_some(),
             decimal_places,
-            multiple_of: validate_as_decimal(py, schema, intern!(py, "multiple_of"))?,
+            multiple_of,
             le: validate_as_decimal(py, schema, intern!(py, "le"))?,
             lt: validate_as_decimal(py, schema, intern!(py, "lt"))?,
             ge: validate_as_decimal(py, schema, intern!(py, "ge"))?,
@@ -102,37 +110,79 @@ impl_py_gc_traverse!(DecimalValidator {
     gt
 });
 
-fn extract_decimal_digits_info(decimal: &Bound<'_, PyAny>, normalized: bool) -> ValResult<(u64, u64)> {
-    let py = decimal.py();
-    let mut normalized_decimal: Option<Bound<'_, PyAny>> = None;
-    if normalized {
-        normalized_decimal = decimal.call_method0(intern!(py, "normalize")).ok();
-    }
-    let (_, digit_tuple, exponent): (Bound<'_, PyAny>, Bound<'_, PyTuple>, Bound<'_, PyAny>) = normalized_decimal
-        .as_ref()
-        .unwrap_or(decimal)
-        .call_method0(intern!(py, "as_tuple"))?
-        .extract()?;
-
-    // finite values have numeric exponent, we checked is_finite above
-    let exponent: i64 = exponent.extract()?;
-    let mut digits: u64 = u64::try_from(digit_tuple.len()).map_err(|e| ValError::InternalErr(e.into()))?;
-    let decimals;
+fn count_digits(num_digits: u64, exponent: i64) -> (u64, u64) {
     if exponent >= 0 {
         // A positive exponent adds that many trailing zeros.
-        digits += exponent as u64;
-        decimals = 0;
+        (0, num_digits.saturating_add(exponent as u64))
     } else {
         // If the absolute value of the negative exponent is larger than the
         // number of digits, then it's the same as the number of digits,
         // because it'll consume all the digits in digit_tuple and then
         // add abs(exponent) - len(digit_tuple) leading zeros after the
         // decimal point.
-        decimals = exponent.unsigned_abs();
-        digits = digits.max(decimals);
+        let decimals = exponent.unsigned_abs();
+        (decimals, num_digits.max(decimals))
     }
+}
 
-    Ok((decimals, digits))
+fn extract_decimal_digits_info(decimal: &Bound<'_, PyAny>) -> ValResult<((u64, u64), (u64, u64))> {
+    let py = decimal.py();
+    let (_, digit_tuple, exponent): (Bound<'_, PyAny>, Bound<'_, PyTuple>, Bound<'_, PyAny>) =
+        decimal.call_method0(intern!(py, "as_tuple"))?.extract()?;
+
+    let num_digits: u64 = u64::try_from(digit_tuple.len()).map_err(|e| ValError::InternalErr(e.into()))?;
+
+    // While we could use `Decimal.normalize()` to strip trailing zeros, this method also
+    // rounds according to current context (with default precision of 28). Instead, we
+    // strip them manually:
+    let mut trailing_zeros: u64 = 0;
+    for digit in digit_tuple.iter().rev() {
+        if digit.extract::<u8>()? != 0 {
+            break;
+        }
+        trailing_zeros += 1;
+    }
+    // `Decimal.normalize()` canonicalizes any zero to `0E0`, whatever the exponent is:
+    let is_zero = trailing_zeros == num_digits;
+
+    // Finite values have a numeric exponent (we checked `Decimal.is_finite()` before calling
+    // `extract_decimal_digits_info()`). The C implementation of the `decimal` module bounds
+    // the exponent (see https://docs.python.org/3/library/decimal.html#constants), so it always fits
+    // in an `i64`. However, the pure Python implementation does not, and the exponent can be an arbitrarily
+    // large integer.
+    let Ok(exponent) = exponent.extract::<i64>() else {
+        // We don't need the exact number of digits and decimal places: they are only ever compared
+        // against the `max_digits` and `decimal_places` constraints, which are `u64`s. If the exponent
+        // doesn't fit in an `i64`, the value has more than `i64::MAX` digits (when the exponent is
+        // positive) or more than `i64::MAX` decimal places and digits (when the exponent is negative),
+        // so the result of these comparisons is already known: any constraint one can set is exceeded.
+        // Saturating the counts to `u64::MAX` gives that outcome (except for the theoretical `u64::MAX`
+        // constraint) without having to represent the actual exponent.
+        let is_negative: bool = exponent.lt(0)?;
+        let counts = if is_negative {
+            (u64::MAX, u64::MAX)
+        } else {
+            (0, u64::MAX)
+        };
+        let normalized = if is_zero { (0, 1) } else { counts };
+        return Ok((counts, normalized));
+    };
+
+    let counts = count_digits(num_digits, exponent);
+    let normalized = if is_zero {
+        (0, 1)
+    } else if exponent >= 0 {
+        // Stripping `k` trailing zeros increments the exponent by `k`, and the number of digits is
+        // `num_digits + exponent` for a non-negative exponent, so the counts are unchanged. Reusing
+        // them also avoids overflowing the exponent when it is close to `i64::MAX`.
+        counts
+    } else {
+        // Each stripped trailing zero is compensated by incrementing the exponent. This can't
+        // overflow, as the exponent is negative and `trailing_zeros <= num_digits`.
+        count_digits(num_digits - trailing_zeros, exponent + trailing_zeros as i64)
+    };
+
+    Ok((counts, normalized))
 }
 
 impl Validator for DecimalValidator {
@@ -151,8 +201,8 @@ impl Validator for DecimalValidator {
 
             if self.check_digits
                 // TODO: should errors be raised if extract_decimal_digits_info fails?
-                && let Ok((normalized_decimals, normalized_digits)) = extract_decimal_digits_info(&decimal, true)
-                && let Ok((decimals, digits)) = extract_decimal_digits_info(&decimal, false)
+                && let Ok(((decimals, digits), (normalized_decimals, normalized_digits))) =
+                    extract_decimal_digits_info(&decimal)
             {
                 if let Some(max_digits) = self.max_digits
                     && (digits > max_digits)
@@ -202,9 +252,13 @@ impl Validator for DecimalValidator {
 
         if let Some(multiple_of) = &self.multiple_of {
             // fraction = (decimal / multiple_of) % 1
-            let fraction = (decimal.div(multiple_of)?).rem(1)?;
-            let zero = 0u8.into_pyobject(py)?;
-            if !fraction.eq(&zero)? {
+            let is_multiple = match decimal.div(multiple_of).and_then(|quotient| quotient.rem(1)) {
+                Ok(fraction) => fraction.eq(0u8.into_pyobject(py)?)?,
+                // The quotient can't be computed in the current decimal context:
+                Err(err) if err.matches(py, get_decimal_exception_type(py)?).unwrap_or(false) => false,
+                Err(err) => return Err(err.into()),
+            };
+            if !is_multiple {
                 return Err(ValError::new(
                     ErrorType::MultipleOf {
                         multiple_of: multiple_of.to_string().into(),
@@ -281,20 +335,16 @@ impl Validator for DecimalValidator {
 
 pub(crate) fn create_decimal<'py>(arg: &Bound<'py, PyAny>, input: impl ToErrorValue) -> ValResult<Bound<'py, PyAny>> {
     let py = arg.py();
-    get_decimal_type(py).call1((arg,)).map_err(|e| {
-        let decimal_exception = match py
-            .import("decimal")
-            .and_then(|decimal_module| decimal_module.getattr("DecimalException"))
-        {
-            Ok(decimal_exception) => decimal_exception,
-            Err(e) => return ValError::InternalErr(e),
-        };
-        handle_decimal_new_error(input, e, decimal_exception)
-    })
+    get_decimal_type(py)?
+        .call1((arg,))
+        .map_err(|e| handle_decimal_new_error(py, input, e))
 }
 
-fn handle_decimal_new_error(input: impl ToErrorValue, error: PyErr, decimal_exception: Bound<'_, PyAny>) -> ValError {
-    let py = decimal_exception.py();
+fn handle_decimal_new_error(py: Python<'_>, input: impl ToErrorValue, error: PyErr) -> ValError {
+    let decimal_exception = match get_decimal_exception_type(py) {
+        Ok(decimal_exception) => decimal_exception,
+        Err(e) => return ValError::InternalErr(e),
+    };
     if error.matches(py, decimal_exception).unwrap_or(false) {
         ValError::new(ErrorTypeDefaults::DecimalParsing, input)
     } else if error.matches(py, PyTypeError::type_object(py)).unwrap_or(false) {

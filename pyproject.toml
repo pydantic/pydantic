@@ -33,6 +33,7 @@ classifiers = [
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: 3.15',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Operating System :: OS Independent',
@@ -43,11 +44,11 @@ classifiers = [
 ]
 requires-python = '>=3.10'
 dependencies = [
-    'typing-extensions>=4.15.0',
+    'typing-extensions>=4.16.0',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.47.0',
-    'typing-inspection>=0.4.2',
+    'pydantic-core==2.50.0',
+    'typing-inspection>=0.4.4',
 ]
 dynamic = ['version', 'readme']
 
@@ -80,6 +81,7 @@ dev = [
     'pytest-run-parallel>=0.3.1',
     'packaging',
     'jsonschema',
+    'time-machine; platform_python_implementation != "PyPy"',
 ]
 coverage = [
     'coverage[toml]',
@@ -89,7 +91,7 @@ docs = [
     'mkdocs',
     'mkdocs-exclude',
     'mkdocs-llmstxt',
-    'mkdocs-material[imaging]',
+    'mkdocs-material',
     'mkdocs-redirects',
     'mkdocstrings-python',
     'tomli',
@@ -117,7 +119,8 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
-    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
+    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows" and python_version < "3.15"',
+    'memray; platform_python_implementation == "CPython" and platform_system != "Windows" and python_version < "3.15"',
 ]
 typechecking = [
     'mypy',
@@ -126,7 +129,7 @@ typechecking = [
     'pydantic-settings',
 ]
 build = [
-    'build',
+    'build>=1.6',
     'twine',
 ]
 pyodide-build = [
@@ -200,7 +203,7 @@ markers = [
 
 [tool.uv]
 default-groups = ['dev']
-required-version = '>=0.8.4'
+required-version = '>=0.13.0'
 
 [tool.uv.sources]
 pydantic-core = { workspace = true }
@@ -305,4 +308,4 @@ enableExperimentalFeatures = true
 skip = '.git,env*,pydantic/v1/*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
-ignore-words-list = 'gir,ser,crate,deques'
+ignore-words-list = 'gir,ser,crate,deques,nam'

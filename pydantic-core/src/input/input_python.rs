@@ -14,6 +14,10 @@ use pyo3::PyTypeInfo;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::ArgsKwargs;
+use crate::common::counter::get_counter_type;
+use crate::common::deque::{deque_maxlen, get_deque_type};
+use crate::common::frozendict::as_frozendict;
+use crate::common::ordered_dict::get_ordered_dict_type;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::LookupPath;
 use crate::tools::safe_repr;
@@ -96,6 +100,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Some(self)
     }
 
+    fn identity(&self) -> Option<usize> {
+        Some(self.as_ptr() as usize)
+    }
+
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
         self.cast::<PyDict>().ok().map(Bound::to_owned)
     }
@@ -171,7 +179,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     }
                 } else if coerce_numbers_to_str && !self.is_exact_instance_of::<PyBool>() && {
                     let py = self.py();
-                    let decimal_type = get_decimal_type(py);
+                    let decimal_type = get_decimal_type(py)?;
 
                     // only allow int, float, and decimal (not bool)
                     self.is_instance_of::<PyInt>()
@@ -179,7 +187,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                         || self.is_instance(decimal_type).unwrap_or_default()
                 } {
                     Ok(self.str()?.into())
-                } else if let Some(enum_val) = maybe_as_enum(self) {
+                } else if let Some(enum_val) = maybe_as_enum(self)? {
                     Ok(enum_val.str()?.into())
                 } else {
                     break 'lax;
@@ -275,7 +283,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     fraction_as_int(self, &fraction.into_inner())
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_int(self, float)
-                } else if let Some(enum_val) = maybe_as_enum(self) {
+                } else if let Some(enum_val) = maybe_as_enum(self)? {
                     Ok(EitherInt::Py(enum_val))
                 } else {
                     break 'lax;
@@ -329,7 +337,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_fraction(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
-        let fraction_type = get_fraction_type(py);
+        let fraction_type = get_fraction_type(py)?;
 
         // Fast path for existing fraction objects
         if self.is_exact_instance(fraction_type) {
@@ -358,7 +366,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
-        let decimal_type = get_decimal_type(py);
+        let decimal_type = get_decimal_type(py)?;
 
         // Fast path for existing decimal objects
         if self.is_exact_instance(decimal_type) {
@@ -430,6 +438,74 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
+    fn strict_frozendict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if let Some(frozendict) = as_frozendict(self) {
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(frozendict)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
+        }
+    }
+
+    fn lax_frozendict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if let Some(frozendict) = as_frozendict(self) {
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(frozendict)))
+        } else if let Ok(dict) = self.cast_exact::<PyDict>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)))
+        } else if let Ok(mapping) = self.cast::<PyMapping>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
+        }
+    }
+
+    fn strict_ordered_dict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if self.is_instance(get_ordered_dict_type(self.py())?)? {
+            // An `OrderedDict` is a `dict` subclass, but it is iterated over using the mapping protocol
+            // as the `dict` C API does not account for reorderings (e.g. `move_to_end()`):
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
+                self.cast::<PyMapping>()?,
+            )))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::OrderedDictType, self))
+        }
+    }
+
+    fn lax_ordered_dict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if self.is_instance(get_ordered_dict_type(self.py())?)? {
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
+                self.cast::<PyMapping>()?,
+            )))
+        } else if let Ok(dict) = self.cast_exact::<PyDict>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)))
+        } else if let Ok(mapping) = self.cast::<PyMapping>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::OrderedDictType, self))
+        }
+    }
+
+    fn strict_counter<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if self.is_instance(get_counter_type(self.py())?)? {
+            // A `Counter` is a `dict` subclass and (unlike `OrderedDict`) can safely be
+            // iterated over using the `dict` C API:
+            Ok(ValidationMatch::exact(GenericPyMapping::Dict(self.cast::<PyDict>()?)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::CounterType, self))
+        }
+    }
+
+    fn lax_counter<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if self.is_instance(get_counter_type(self.py())?)? {
+            Ok(ValidationMatch::exact(GenericPyMapping::Dict(self.cast::<PyDict>()?)))
+        } else if let Ok(dict) = self.cast_exact::<PyDict>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)))
+        } else if let Ok(mapping) = self.cast::<PyMapping>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::CounterType, self))
+        }
+    }
+
     fn validate_model_fields<'a>(
         &'a self,
         strict: bool,
@@ -475,6 +551,19 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
 
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
+    }
+
+    fn validate_deque<'a>(&'a self, strict: bool) -> ValMatch<(PySequenceIterable<'a, 'py>, Option<usize>)> {
+        if self.is_instance(get_deque_type(self.py())?)? {
+            return Ok(ValidationMatch::exact((
+                PySequenceIterable::Deque(self),
+                deque_maxlen(self)?,
+            )));
+        } else if !strict && let Ok(other) = extract_sequence_iterable(self) {
+            return Ok(ValidationMatch::lax((other, None)));
+        }
+
+        Err(ValError::new(ErrorTypeDefaults::DequeType, self))
     }
 
     type Tuple<'a>
@@ -756,14 +845,14 @@ fn bytearray_to_str<'py>(bytearray: &Bound<'py, PyByteArray>) -> PyResult<Bound<
 }
 
 /// Utility for extracting an enum value, if possible.
-fn maybe_as_enum<'py>(v: &Bound<'py, PyAny>) -> Option<Bound<'py, PyAny>> {
+fn maybe_as_enum<'py>(v: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
     let py = v.py();
-    let enum_meta_object = get_enum_meta_object(py);
+    let enum_meta_object = get_enum_meta_object(py)?;
     let meta_type = v.get_type().get_type();
     if meta_type.is(enum_meta_object) {
-        v.getattr(intern!(py, "value")).ok()
+        Ok(v.getattr(intern!(py, "value")).ok())
     } else {
-        None
+        Ok(None)
     }
 }
 
@@ -917,6 +1006,7 @@ pub enum PySequenceIterable<'a, 'py> {
     Tuple(&'a Bound<'py, PyTuple>),
     Set(&'a Bound<'py, PySet>),
     FrozenSet(&'a Bound<'py, PyFrozenSet>),
+    Deque(&'a Bound<'py, PyAny>),
     Iterator(Bound<'py, PyIterator>),
 }
 
@@ -955,6 +1045,7 @@ impl<'py> PySequenceIterable<'_, 'py> {
             PySequenceIterable::Tuple(iter) => Some(iter.len()),
             PySequenceIterable::Set(iter) => Some(iter.len()),
             PySequenceIterable::FrozenSet(iter) => Some(iter.len()),
+            PySequenceIterable::Deque(iter) => iter.len().ok(),
             PySequenceIterable::Iterator(iter) => iter.len().ok(),
         }
     }
@@ -964,6 +1055,7 @@ impl<'py> PySequenceIterable<'_, 'py> {
             PySequenceIterable::Tuple(iter) => iter.iter().map(Ok).try_for_each(f),
             PySequenceIterable::Set(iter) => iter.iter().map(Ok).try_for_each(f),
             PySequenceIterable::FrozenSet(iter) => iter.iter().map(Ok).try_for_each(f),
+            PySequenceIterable::Deque(iter) => iter.try_iter()?.try_for_each(f),
             PySequenceIterable::Iterator(mut iter) => iter.try_for_each(f),
         }
     }
@@ -976,6 +1068,7 @@ impl<'py> PySequenceIterable<'_, 'py> {
             PySequenceIterable::Tuple(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
             PySequenceIterable::Set(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
             PySequenceIterable::FrozenSet(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
+            PySequenceIterable::Deque(iter) => Ok(consumer.consume_iterator(iter.try_iter()?)),
             PySequenceIterable::Iterator(iter) => Ok(consumer.consume_iterator(iter.try_iter()?)),
         }
     }

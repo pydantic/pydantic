@@ -4,7 +4,7 @@ import json
 import platform
 import re
 import sys
-from collections import namedtuple
+from collections import Counter, OrderedDict, deque, namedtuple
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -22,6 +22,7 @@ from pydantic_core import (
     SchemaValidator,
     core_schema,
     to_json,
+    to_jsonable_python,
 )
 
 from ..conftest import plain_repr
@@ -435,6 +436,10 @@ def test_base64():
         (lambda: timedelta(seconds=-1), dict(timedelta_mode='float'), b'-1.0'),
         (lambda: {1, 2, 3}, {}, b'[1,2,3]'),
         (lambda: frozenset([1, 2, 3]), {}, b'[1,2,3]'),
+        (lambda: deque([1, 2, 3]), {}, b'[1,2,3]'),
+        (lambda: deque([1, 2, 3], maxlen=5), {}, b'[1,2,3]'),
+        (lambda: OrderedDict([('a', 1), ('b', 2)]), {}, b'{"a":1,"b":2}'),
+        (lambda: Counter({'a': 1, 'b': 2}), {}, b'{"a":1,"b":2}'),
         (lambda: (v for v in range(4)), {}, b'[0,1,2,3]'),
         (lambda: iter([0, 1, 2, 3]), {}, b'[0,1,2,3]'),
         (lambda: iter((0, 1, 2, 3)), {}, b'[0,1,2,3]'),
@@ -630,10 +635,10 @@ def test_ser_json_inf_nan_with_any() -> None:
 
     s = SchemaSerializer(core_schema.any_schema(), core_schema.CoreConfig(ser_json_inf_nan='strings'))
     assert isinf(s.to_python(inf))
-    assert isinf(s.to_python(inf, mode='json'))
+    assert s.to_python(inf, mode='json') == 'Infinity'
     assert s.to_json(inf) == b'"Infinity"'
     assert isnan(s.to_python(nan))
-    assert isnan(s.to_python(nan, mode='json'))
+    assert s.to_python(nan, mode='json') == 'NaN'
     assert s.to_json(nan) == b'"NaN"'
 
 
@@ -773,3 +778,102 @@ def test_ipaddress_type_inference(any_serializer, value, expected_json):
     assert any_serializer.to_python(value) == value
     assert any_serializer.to_python(value, mode='json') == expected_json
     assert any_serializer.to_json(value) == f'"{expected_json}"'.encode()
+
+
+def test_deque(any_serializer):
+    d = deque([1, 2, 3], maxlen=5)
+    output = any_serializer.to_python(d)
+
+    assert output == d
+    assert type(output) is deque
+    assert output is not d
+    assert output.maxlen == 5
+    assert any_serializer.to_python(deque([1, 2, 3])).maxlen is None
+    assert any_serializer.to_python(d, mode='json') == [1, 2, 3]
+    assert any_serializer.to_json(d) == b'[1,2,3]'
+    assert to_jsonable_python(d) == [1, 2, 3]
+
+    # index-based include/exclude, like lists and tuples:
+    assert any_serializer.to_python(d, include={0, 2}) == deque([1, 3], maxlen=5)
+    assert any_serializer.to_python(d, exclude={0}, mode='json') == [2, 3]
+    assert any_serializer.to_json(d, exclude={-1}) == b'[1,2]'
+
+    # nested values are inferred as well:
+    assert any_serializer.to_json(deque([MyModel(a=1, b='b')])) == b'[{"a":1,"b":"b"}]'
+
+
+def test_deque_subclass(any_serializer):
+    class MyDeque(deque):
+        pass
+
+    output = any_serializer.to_python(MyDeque([1, 2]))
+
+    assert output == deque([1, 2])
+    assert type(output) is deque
+    assert any_serializer.to_json(MyDeque([1, 2])) == b'[1,2]'
+
+
+def test_ordered_dict(any_serializer) -> None:
+    d = OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+    # the `dict` C API doesn't account for reorderings, make sure we don't use it:
+    d.move_to_end('a')
+    output = any_serializer.to_python(d)
+
+    assert output == d
+    assert list(output) == ['b', 'c', 'a']
+    assert type(output) is OrderedDict
+    assert output is not d
+    assert any_serializer.to_python(d, mode='json') == {'b': 2, 'c': 3, 'a': 1}
+    assert any_serializer.to_json(d) == b'{"b":2,"c":3,"a":1}'
+    assert to_jsonable_python(d) == {'b': 2, 'c': 3, 'a': 1}
+
+    # key-based include/exclude, like dicts:
+    assert any_serializer.to_python(d, include={'a', 'b'}) == OrderedDict([('b', 2), ('a', 1)])
+    assert any_serializer.to_python(d, exclude={'a'}, mode='json') == {'b': 2, 'c': 3}
+    assert any_serializer.to_json(d, exclude={'b'}) == b'{"c":3,"a":1}'
+
+    # nested values are inferred as well:
+    assert any_serializer.to_json(OrderedDict(m=MyModel(a=1, b='b'))) == b'{"m":{"a":1,"b":"b"}}'
+
+
+def test_ordered_dict_subclass(any_serializer) -> None:
+    class MyOrderedDict(OrderedDict):
+        pass
+
+    output = any_serializer.to_python(MyOrderedDict([('a', 1)]))
+
+    assert output == OrderedDict([('a', 1)])
+    assert type(output) is OrderedDict
+    assert any_serializer.to_json(MyOrderedDict([('a', 1)])) == b'{"a":1}'
+
+
+def test_counter(any_serializer) -> None:
+    c = Counter({'a': 3, 'b': 0, 'c': -2})
+    output = any_serializer.to_python(c)
+
+    assert output == c
+    assert dict(output) == {'a': 3, 'b': 0, 'c': -2}
+    assert type(output) is Counter
+    assert output is not c
+    assert any_serializer.to_python(c, mode='json') == {'a': 3, 'b': 0, 'c': -2}
+    assert any_serializer.to_json(c) == b'{"a":3,"b":0,"c":-2}'
+    assert to_jsonable_python(c) == {'a': 3, 'b': 0, 'c': -2}
+
+    # key-based include/exclude, like dicts:
+    assert any_serializer.to_python(c, include={'a', 'b'}) == Counter({'a': 3, 'b': 0})
+    assert any_serializer.to_python(c, exclude={'a'}, mode='json') == {'b': 0, 'c': -2}
+    assert any_serializer.to_json(c, exclude={'b'}) == b'{"a":3,"c":-2}'
+
+    # nested values are inferred as well:
+    assert any_serializer.to_json(Counter(m=MyModel(a=1, b='b'))) == b'{"m":{"a":1,"b":"b"}}'
+
+
+def test_counter_subclass(any_serializer) -> None:
+    class MyCounter(Counter):
+        pass
+
+    output = any_serializer.to_python(MyCounter({'a': 1}))
+
+    assert output == Counter({'a': 1})
+    assert type(output) is Counter
+    assert any_serializer.to_json(MyCounter({'a': 1})) == b'{"a":1}'

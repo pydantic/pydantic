@@ -1886,6 +1886,23 @@ def test_kw_only_inheritance_on_field() -> None:
         B(1)
 
 
+def test_kw_only_false_inheritance_on_field() -> None:
+    @dataclasses.dataclass(kw_only=True)
+    class A:
+        a: int = Field(kw_only=False)
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        b: int = 1
+
+    assert B.__dataclass_fields__['a'].kw_only is False
+    assert B.__match_args__ == ('a', 'b')
+    assert list(inspect.signature(B).parameters) == ['a', 'b']
+    assert B(1, 2) == B(a=1, b=2)
+    # The stdlib base shouldn't be affected:
+    assert A.__dataclass_fields__['a'].kw_only is True
+
+
 def test_repr_inheritance() -> None:
     @dataclasses.dataclass
     class A:
@@ -2784,6 +2801,23 @@ def test_signature():
     )
 
 
+def test_signature_validate_by_alias_false():
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_by_alias=False, validate_by_name=True))
+    class Model:
+        x: int = Field(alias='xAlias')
+        y: int = Field(default=1, alias='yAlias')
+
+    sig = inspect.signature(Model)
+    assert str(sig) == '(x: int, y: int = 1) -> None'
+
+    # The signature must describe the arguments `__init__` actually accepts:
+    sig.bind(x=1)
+    with pytest.raises(TypeError):
+        sig.bind(xAlias=1)
+
+    assert Model(x=1) == Model(x=1, y=1)
+
+
 def test_inherited_dataclass_signature():
     @pydantic.dataclasses.dataclass
     class A:
@@ -2987,6 +3021,37 @@ def test_init_false_with_default(input_data, extra, expected, field_constructor)
         assert exc_info.value.errors(include_url=False) == expected
     else:
         assert dataclasses.asdict(MyDataclass(**input_data)) == expected
+
+
+@pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
+def test_init_false_dataclass_field(field_constructor) -> None:
+    """https://github.com/pydantic/pydantic/issues/13833"""
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
+    class A:
+        a: int = field_constructor(init=False, default=1)
+        b: int = 0
+
+    assert [(f.name, f.init) for f in dataclasses.fields(A)] == [('a', False), ('b', True)]
+    assert A.__match_args__ == ('b',)
+    assert dataclasses.replace(A(b=2), b=3) == A(b=3)
+
+
+def test_init_false_inheritance() -> None:
+    @dataclasses.dataclass
+    class A:
+        a: int = Field(init=False, default=1)
+        b: int = 0
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
+    class B(A):
+        c: int = 0
+
+    assert [(f.name, f.init) for f in dataclasses.fields(B)] == [('a', False), ('b', True), ('c', True)]
+    assert B.__match_args__ == ('b', 'c')
+    assert dataclasses.replace(B(b=2), c=3) == B(b=2, c=3)
+    # The stdlib base shouldn't be affected:
+    assert A.__dataclass_fields__['a'].init is True
 
 
 def test_disallow_extra_allow_and_init_false() -> None:

@@ -24,7 +24,7 @@ class _HAS_DEFAULT_FACTORY_CLASS:
 _HAS_DEFAULT_FACTORY = _HAS_DEFAULT_FACTORY_CLASS()
 
 
-def _field_name_for_signature(field_name: str, field_info: FieldInfo) -> str:
+def _field_name_for_signature(field_name: str, field_info: FieldInfo, validate_by_alias: bool) -> str:
     """Extract the correct name to use for the field when generating a signature.
 
     Assuming the field has a valid alias, this will return the alias. Otherwise, it will return the field name.
@@ -33,23 +33,26 @@ def _field_name_for_signature(field_name: str, field_info: FieldInfo) -> str:
     Args:
         field_name: The name of the field
         field_info: The corresponding FieldInfo object.
+        validate_by_alias: The `validate_by_alias` value of the config.
 
     Returns:
         The correct name to use when generating a signature.
     """
-    if isinstance(field_info.alias, str) and is_valid_identifier(field_info.alias):
-        return field_info.alias
-    if isinstance(field_info.validation_alias, str) and is_valid_identifier(field_info.validation_alias):
-        return field_info.validation_alias
+    if validate_by_alias:
+        if isinstance(field_info.alias, str) and is_valid_identifier(field_info.alias):
+            return field_info.alias
+        if isinstance(field_info.validation_alias, str) and is_valid_identifier(field_info.validation_alias):
+            return field_info.validation_alias
 
     return field_name
 
 
-def _process_param_defaults(param: Parameter) -> Parameter:
+def _process_param_defaults(param: Parameter, validate_by_alias: bool) -> Parameter:
     """Modify the signature for a parameter in a dataclass where the default value is a FieldInfo instance.
 
     Args:
         param (Parameter): The parameter
+        validate_by_alias: The `validate_by_alias` value of the config.
 
     Returns:
         Parameter: The custom processed parameter
@@ -74,7 +77,9 @@ def _process_param_defaults(param: Parameter) -> Parameter:
                 # this is used by dataclasses to indicate a factory exists:
                 default = dataclasses._HAS_DEFAULT_FACTORY  # type: ignore
         return param.replace(
-            annotation=annotation, name=_field_name_for_signature(param.name, param_default), default=default
+            annotation=annotation,
+            name=_field_name_for_signature(param.name, param_default, validate_by_alias),
+            default=default,
         )
     return param
 
@@ -82,8 +87,8 @@ def _process_param_defaults(param: Parameter) -> Parameter:
 def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use a refactor)
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
-    validate_by_name: bool,
     extra: ExtraValues | None,
+    validate_by_alias: bool,
 ) -> dict[str, Parameter]:
     """Generate a mapping of parameter names to Parameter objects for a pydantic BaseModel or dataclass."""
     from itertools import islice
@@ -100,7 +105,7 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
             # exclude params with init=False
             if getattr(fields[param.name], 'init', True) is False:
                 continue
-            param = param.replace(name=_field_name_for_signature(param.name, fields[param.name]))
+            param = param.replace(name=_field_name_for_signature(param.name, fields[param.name], validate_by_alias))
         if param.annotation == 'Any':
             param = param.replace(annotation=Any)
         if param.kind is param.VAR_KEYWORD:
@@ -109,20 +114,17 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
         merged_params[param.name] = param
 
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
-        allow_names = validate_by_name
         for field_name, field in fields.items():
             # when alias is a str it should be used for signature generation
-            param_name = _field_name_for_signature(field_name, field)
+            param_name = _field_name_for_signature(field_name, field, validate_by_alias)
 
             if field_name in merged_params or param_name in merged_params:
                 continue
 
             if not is_valid_identifier(param_name):
-                if allow_names:
-                    param_name = field_name
-                else:
-                    use_var_kw = True
-                    continue
+                # Can happen with `create_model()`, where field names are not validated as identifiers:
+                use_var_kw = True
+                continue
 
             if field.is_required():
                 default = Parameter.empty
@@ -164,9 +166,10 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
 
 
 def generate_pydantic_signature(
+    *,
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
-    validate_by_name: bool,
+    validate_by_alias: bool,
     extra: ExtraValues | None,
     is_dataclass: bool = False,
 ) -> Signature:
@@ -175,16 +178,16 @@ def generate_pydantic_signature(
     Args:
         init: The class init.
         fields: The model fields.
-        validate_by_name: The `validate_by_name` value of the config.
+        validate_by_alias: The `validate_by_alias` value of the config.
         extra: The `extra` value of the config.
         is_dataclass: Whether the model is a dataclass.
 
     Returns:
         The dataclass/BaseModel subclass signature.
     """
-    merged_params = _generate_signature_parameters(init, fields, validate_by_name, extra)
+    merged_params = _generate_signature_parameters(init, fields, extra, validate_by_alias)
 
     if is_dataclass:
-        merged_params = {k: _process_param_defaults(v) for k, v in merged_params.items()}
+        merged_params = {k: _process_param_defaults(v, validate_by_alias) for k, v in merged_params.items()}
 
     return Signature(parameters=list(merged_params.values()), return_annotation=None)

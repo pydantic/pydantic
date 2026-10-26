@@ -8,13 +8,13 @@ import re
 from collections import deque
 from collections.abc import Callable, Container
 from dataclasses import dataclass
-from decimal import Decimal
 from functools import cached_property, partial
 from re import Pattern
 from types import EllipsisType
 from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeAlias, TypeVar, overload
 
 import annotated_types
+from typing_extensions import TypeForm
 
 if TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler
@@ -29,16 +29,16 @@ __all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
 @dataclass(frozen=True, slots=True)
 class _ValidateAs:
-    tp: type[Any]
+    tp: TypeForm[Any]
     strict: bool = False
 
 
 @dataclass
 class _ValidateAsDefer:
-    func: Callable[[], type[Any]]
+    func: Callable[[], TypeForm[Any]]
 
     @cached_property
-    def tp(self) -> type[Any]:
+    def tp(self) -> TypeForm[Any]:
         return self.func()
 
 
@@ -139,7 +139,7 @@ class _Pipeline(Generic[_InT, _OutT]):
         return _Pipeline[_InT, _NewOutT](self._steps + (_Transform(func),))
 
     @overload
-    def validate_as(self, tp: type[_NewOutT], *, strict: bool = False) -> _Pipeline[_InT, _NewOutT]: ...
+    def validate_as(self, tp: TypeForm[_NewOutT], *, strict: bool = False) -> _Pipeline[_InT, _NewOutT]: ...
 
     @overload
     def validate_as(
@@ -149,12 +149,7 @@ class _Pipeline(Generic[_InT, _OutT]):
         strict: bool = False,
     ) -> _Pipeline[_InT, Any]: ...
 
-    # TODO PEP 747: use TypeForm to properly type Annotated aliases (e.g. NewPath, FilePath).
-    # This fallback accepts any type expression but loses generic type inference.
-    @overload
-    def validate_as(self, tp: Any, *, strict: bool = ...) -> _Pipeline[_InT, Any]: ...
-
-    def validate_as(self, tp: type[_NewOutT] | EllipsisType | Any, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
+    def validate_as(self, tp: TypeForm[_NewOutT] | EllipsisType, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
         """Validate / parse the input into a new type.
 
         If no type is provided, the type of the field is used.
@@ -440,7 +435,7 @@ def _apply_step(step: _Step, s: cs.CoreSchema | None, handler: GetCoreSchemaHand
 
 def _apply_parse(
     s: cs.CoreSchema | None,
-    tp: type[Any],
+    tp: TypeForm[Any],
     strict: bool,
     handler: GetCoreSchemaHandler,
     source_type: Any,
@@ -480,20 +475,25 @@ def _apply_transform(
     return cs.no_info_after_validator_function(func, s)
 
 
+# Core schema types with native support for the `gt`/`ge`/`lt`/`le` constraints:
+_ORDERING_SCHEMA_TYPES = frozenset({'int', 'float', 'decimal', 'fraction', 'date', 'time', 'datetime', 'timedelta'})
+# Core schema types with native support for the `min_length`/`max_length` constraints:
+_LENGTH_SCHEMA_TYPES = frozenset(
+    {'str', 'bytes', 'list', 'tuple', 'set', 'frozenset', 'dict', 'frozendict', 'ordered-dict', 'counter', 'generator'}
+)
+
+
 def _apply_constraint(  # noqa: C901
     s: cs.CoreSchema | None, constraint: _ConstraintAnnotation
 ) -> cs.CoreSchema:
     """Apply a single constraint to a schema."""
+    # No casting of the constraints is necessary, as pydantic-core does it
+    # when building the validator from the core schema:
     if isinstance(constraint, annotated_types.Gt):
         gt = constraint.gt
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(gt, int):
-                s['gt'] = gt
-            elif s['type'] == 'float' and isinstance(gt, float):
-                s['gt'] = gt
-            elif s['type'] == 'decimal' and isinstance(gt, Decimal):
-                s['gt'] = gt
+            s['gt'] = gt  # pyright: ignore[reportGeneralTypeIssues]
         else:
 
             def check_gt(v: Any) -> bool:
@@ -502,89 +502,70 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_gt, f'> {gt}', s)
     elif isinstance(constraint, annotated_types.Ge):
         ge = constraint.ge
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(ge, int):
-                s['ge'] = ge
-            elif s['type'] == 'float' and isinstance(ge, float):
-                s['ge'] = ge
-            elif s['type'] == 'decimal' and isinstance(ge, Decimal):
-                s['ge'] = ge
+            s['ge'] = ge  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_ge(v: Any) -> bool:
-            return v >= ge
+            def check_ge(v: Any) -> bool:
+                return v >= ge
 
-        s = _check_func(check_ge, f'>= {ge}', s)
+            s = _check_func(check_ge, f'>= {ge}', s)
     elif isinstance(constraint, annotated_types.Lt):
         lt = constraint.lt
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(lt, int):
-                s['lt'] = lt
-            elif s['type'] == 'float' and isinstance(lt, float):
-                s['lt'] = lt
-            elif s['type'] == 'decimal' and isinstance(lt, Decimal):
-                s['lt'] = lt
+            s['lt'] = lt  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_lt(v: Any) -> bool:
-            return v < lt
+            def check_lt(v: Any) -> bool:
+                return v < lt
 
-        s = _check_func(check_lt, f'< {lt}', s)
+            s = _check_func(check_lt, f'< {lt}', s)
     elif isinstance(constraint, annotated_types.Le):
         le = constraint.le
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(le, int):
-                s['le'] = le
-            elif s['type'] == 'float' and isinstance(le, float):
-                s['le'] = le
-            elif s['type'] == 'decimal' and isinstance(le, Decimal):
-                s['le'] = le
+            s['le'] = le  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_le(v: Any) -> bool:
-            return v <= le
+            def check_le(v: Any) -> bool:
+                return v <= le
 
-        s = _check_func(check_le, f'<= {le}', s)
+            s = _check_func(check_le, f'<= {le}', s)
     elif isinstance(constraint, annotated_types.Len):
         min_len = constraint.min_length
         max_len = constraint.max_length
 
-        if s and s['type'] in {'str', 'list', 'tuple', 'set', 'frozenset', 'dict'}:
-            assert (
-                s['type'] == 'str'
-                or s['type'] == 'list'
-                or s['type'] == 'tuple'
-                or s['type'] == 'set'
-                or s['type'] == 'dict'
-                or s['type'] == 'frozenset'
-            )
+        if s and s['type'] in _LENGTH_SCHEMA_TYPES:
             s = s.copy()
             if min_len != 0:
-                s['min_length'] = min_len
+                s['min_length'] = min_len  # pyright: ignore[reportGeneralTypeIssues]
             if max_len is not None:
-                s['max_length'] = max_len
+                s['max_length'] = max_len  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_len(v: Any) -> bool:
-            if max_len is not None:
-                return (min_len <= len(v)) and (len(v) <= max_len)
-            return min_len <= len(v)
+            def check_len(v: Any) -> bool:
+                len_v = len(v)
+                if max_len is not None:
+                    return min_len <= len_v <= max_len
+                return min_len <= len_v
 
-        s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
+            predicate_err = (
+                f'length >= {min_len}' if max_len is None else f'length >= {min_len} and length <= {max_len}'
+            )
+            s = _check_func(check_len, predicate_err, s)
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
         if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(multiple_of, int):
-                s['multiple_of'] = multiple_of
-            elif s['type'] == 'float' and isinstance(multiple_of, float):
-                s['multiple_of'] = multiple_of
-            elif s['type'] == 'decimal' and isinstance(multiple_of, Decimal):
-                s['multiple_of'] = multiple_of
+            s['multiple_of'] = multiple_of  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_multiple_of(v: Any) -> bool:
-            return v % multiple_of == 0
+            def check_multiple_of(v: Any) -> bool:
+                return v % multiple_of == 0
 
-        s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
+            s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
     elif isinstance(constraint, annotated_types.Timezone):
         tz = constraint.tz
 
@@ -613,13 +594,13 @@ def _apply_constraint(  # noqa: C901
         else:
             raise NotImplementedError('Constraining to a specific timezone is not yet supported')
     elif isinstance(constraint, annotated_types.Interval):
-        if constraint.ge:
+        if constraint.ge is not None:
             s = _apply_constraint(s, annotated_types.Ge(constraint.ge))
-        if constraint.gt:
+        if constraint.gt is not None:
             s = _apply_constraint(s, annotated_types.Gt(constraint.gt))
-        if constraint.le:
+        if constraint.le is not None:
             s = _apply_constraint(s, annotated_types.Le(constraint.le))
-        if constraint.lt:
+        if constraint.lt is not None:
             s = _apply_constraint(s, annotated_types.Lt(constraint.lt))
         assert s is not None
     elif isinstance(constraint, annotated_types.Predicate):
@@ -671,7 +652,7 @@ def _apply_constraint(  # noqa: C901
         assert isinstance(constraint, Pattern)
         if s and s['type'] == 'str':
             s = s.copy()
-            s['pattern'] = constraint.pattern
+            s['pattern'] = constraint
         else:
 
             def check_pattern(v: object) -> bool:

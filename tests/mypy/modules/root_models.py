@@ -22,6 +22,18 @@ pets1 = Pets1(['dog', 'cat'])
 pets2 = Pets2(['dog', 'cat'])
 pets3 = Pets3(['dog', 'cat'])
 
+RFloat = RootModel[float]
+
+
+class RFloatSub(RootModel[float]):
+    pass
+
+
+# When the plugin is used with `init_typed` unset, arbitrary input
+# should be accepted as it may be coerced to the `root` type:
+rfloat = RFloat('1.0')
+rfloat_sub = RFloatSub('1.0')
+
 
 class Pets4(RootModel[list[str]]):
     pets: list[str]
