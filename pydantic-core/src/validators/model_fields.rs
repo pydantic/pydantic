@@ -462,51 +462,57 @@ impl ModelFieldsValidator {
         let mut possible_extra = (!matches!(&state.extra_validator, ModelExtraValidator::Ignore))
             .then_some(IndexMap::with_hasher(RandomState::new()));
 
-        for (key, value) in &**json_object {
-            let mut might_be_extra = possible_extra.is_some();
-            let key = key.as_ref();
-            for (field_info, field_value) in self.lookup.iter_matches(key, value) {
-                if !field_info.matches_lookup(state.lookup_type) {
-                    continue;
-                }
-
-                let field_input = &mut field_inputs[field_info.field_index];
-
-                // later inputs are preferred unless the existing input has come from a higher priority alias
-                if let Some((existing_field_info, _)) = &field_input
-                    && existing_field_info
-                        .lookup_priority
-                        .is_higher_priority_than(&field_info.lookup_priority)
-                {
-                    continue;
-                }
-
-                *field_input = Some((*field_info, field_value));
-
-                if might_be_extra
-                    && field_info
-                        .lookup_priority
-                        .is_maximum_priority_for_lookup_type(state.lookup_type)
-                {
-                    // this input is definitely going to consume the key, so we don't want to
-                    // buffer it in possible_extra
-                    might_be_extra = false;
+        match &self.lookup {
+            LookupTree::NoAliases(lookup) => {
+                for (key, value) in &**json_object {
+                    if let Some(&index) = lookup.get(key.as_ref()) {
+                        field_inputs[index] = Some((LookupFieldInfo::by_name(index), value));
+                    } else if let Some(extra) = &mut possible_extra {
+                        extra.insert(key.as_ref(), (value, false));
+                    }
                 }
             }
+            LookupTree::Flat(lookup) => {
+                for (key, value) in &**json_object {
+                    let mut might_be_extra = possible_extra.is_some();
+                    let key = key.as_ref();
+                    for field_info in lookup.get(key) {
+                        if !field_info.matches_lookup(state.lookup_type) {
+                            continue;
+                        }
 
-            if might_be_extra {
-                let possible_extra = possible_extra.as_mut().expect("must be Some if might_be_extra is true");
-                match possible_extra.entry(key) {
-                    indexmap::map::Entry::Vacant(entry) => {
-                        // when recording in possible_extra, we also record a boolean which is used to
-                        // skip extra for any keys consumed by a field input (see below)
-                        entry.insert((value, false));
+                        let field_input = &mut field_inputs[field_info.field_index];
+                        if let Some((existing_field_info, _)) = &field_input
+                            && existing_field_info
+                                .lookup_priority
+                                .is_higher_priority_than(&field_info.lookup_priority)
+                        {
+                            continue;
+                        }
+
+                        *field_input = Some((*field_info, value));
+                        if field_info
+                            .lookup_priority
+                            .is_maximum_priority_for_lookup_type(state.lookup_type)
+                        {
+                            might_be_extra = false;
+                        }
                     }
-                    indexmap::map::Entry::Occupied(mut existing) => {
-                        // if the key is already in possible_extra, we update the value to the latest one
-                        existing.get_mut().0 = value;
+
+                    if might_be_extra {
+                        possible_extra
+                            .as_mut()
+                            .expect("must be Some if might_be_extra is true")
+                            .insert(key, (value, false));
                     }
                 }
+            }
+            LookupTree::Nested(lookup) => {
+                lookup.collect_json(json_object, state.lookup_type, &mut field_inputs, |key, value| {
+                    if let Some(possible_extra) = &mut possible_extra {
+                        possible_extra.insert(key, (value, false));
+                    }
+                });
             }
         }
 

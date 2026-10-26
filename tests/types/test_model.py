@@ -1,3 +1,4 @@
+import json
 from typing import Annotated, Any
 
 import pytest
@@ -13,6 +14,7 @@ from pydantic import (
     SerializationInfo,
     TypeAdapter,
     ValidationError,
+    create_model,
     model_serializer,
 )
 
@@ -293,3 +295,167 @@ def test_fields_validate_in_schema_order_before_extra_values(py_and_json) -> Non
 
     py_and_json(Model).validate_test({'extra': 3, 'b': 2, 'a': 1})
     assert calls == [('a', 1), ('b', 2), ('extra', 3)]
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+@pytest.mark.parametrize(
+    'path,json_input',
+    [
+        (('payload', 'x'), '{"payload": {"x": 1}, "payload": {}}'),
+        (('payload', 'x'), '{"payload": {"x": 1}, "payload": null}'),
+        (('payload', 'x'), '{"payload": {"x": 1}, "payload": {"y": 2}}'),
+        (('payload', 'inner', 'x'), '{"payload": {"inner": {"x": 1}, "inner": {}}}'),
+    ],
+)
+def test_duplicate_parent_replacement_makes_alias_missing(mode, path, json_input) -> None:
+    class Model(BaseModel):
+        x: int = Field(validation_alias=AliasPath(*path))
+
+    data = json.loads(json_input)
+    with pytest.raises(ValidationError) as exc_info:
+        if mode == 'json':
+            Model.model_validate_json(json_input)
+        else:
+            Model.model_validate(data)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': path, 'msg': 'Field required', 'input': data}
+    ]
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+def test_duplicate_parent_replacement_uses_default(mode) -> None:
+    class Model(BaseModel):
+        x: int = Field(default=42, validation_alias=AliasPath('payload', 'x'))
+
+    json_input = '{"payload": {"x": 1}, "payload": {}}'
+    m = Model.model_validate_json(json_input) if mode == 'json' else Model.model_validate(json.loads(json_input))
+    assert m.x == 42
+    assert m.model_fields_set == set()
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+@pytest.mark.parametrize(
+    'json_input',
+    [
+        '{"fallback": 9, "payload": {"x": 1}, "payload": {}}',
+        '{"payload": {"x": 1}, "fallback": 9, "payload": {}}',
+        '{"payload": {"x": 1}, "payload": {}, "fallback": 9}',
+    ],
+)
+def test_duplicate_parent_replacement_uses_fallback_alias(mode, json_input) -> None:
+    class Model(BaseModel):
+        x: int = Field(validation_alias=AliasChoices(AliasPath('payload', 'x'), 'fallback'))
+
+    m = Model.model_validate_json(json_input) if mode == 'json' else Model.model_validate(json.loads(json_input))
+    assert m.x == 9
+    assert m.model_fields_set == {'x'}
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+@pytest.mark.parametrize('extra_behavior', ['allow', 'forbid'])
+@pytest.mark.parametrize('consume_parent', [False, True])
+def test_duplicate_parent_replacement_extras(mode, extra_behavior, consume_parent) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra=extra_behavior)
+
+        x: int = Field(default=42, validation_alias=AliasPath('payload', 'x'))
+        if consume_parent:
+            payload: dict[str, Any]
+
+    json_input = '{"payload": {"x": 1}, "payload": {}}'
+    validate = Model.model_validate_json if mode == 'json' else Model.model_validate
+    input_value = json_input if mode == 'json' else json.loads(json_input)
+    if extra_behavior == 'forbid' and not consume_parent:
+        with pytest.raises(ValidationError) as exc_info:
+            validate(input_value)
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'extra_forbidden', 'loc': ('payload',), 'msg': 'Extra inputs are not permitted', 'input': {}}
+        ]
+    else:
+        m = validate(input_value)
+        if consume_parent:
+            assert m.payload == {}
+            assert m.__pydantic_extra__ == ({} if extra_behavior == 'allow' else None)
+        else:
+            assert m.__pydantic_extra__ == {'payload': {}}
+
+
+@pytest.mark.parametrize('by_name', [False, True])
+@pytest.mark.parametrize(
+    'paths,json_input',
+    [
+        (
+            [('preferred', 'x'), ('fallback', 'x')],
+            '{"fallback": {"x": 9}, "preferred": {"x": 1}, "preferred": {}}',
+        ),
+        (
+            [('preferred', 'x'), ('fallback', 'x')],
+            '{"fallback": {"x": 9}, "preferred": {"x": 1}, "fallback": {}, "preferred": {}}',
+        ),
+        (
+            [('payload', 'x'), ('payload', 'y')],
+            '{"payload": {"x": 1}, "payload": {"y": 2}}',
+        ),
+        (
+            [('payload', 'inner', 'x'), ('payload', 'y')],
+            '{"payload": {"y": 9, "inner": {"x": 1}, "inner": {"x": 2}, "inner": {}}}',
+        ),
+        (
+            [('payload', 'inner', 'x'), ('payload', 'y')],
+            '{"payload": {"y": 9, "inner": {"x": 1}}, "payload": {"inner": {}, "inner": {"x": 2}}}',
+        ),
+        (
+            [('payload', 0, 'x'), ('payload', -1, 'y')],
+            '{"payload": [{"x": 1}], "payload": [{"y": 9}]}',
+        ),
+        (
+            [('payload', 0, 'inner', 'x'), ('payload', -1, 'y')],
+            '{"payload": [{"y": 9, "inner": {"x": 1}, "inner": {}}]}',
+        ),
+        (
+            [('payload', 0, 'x'), ('payload', -1, 'y')],
+            '{"payload": [{"x": 1, "y": 9}], "payload": null}',
+        ),
+    ],
+)
+def test_nested_alias_candidates_survive_only_their_own_subtree(by_name, paths, json_input) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        x: int = Field(default=42, validation_alias=AliasChoices(*(AliasPath(*path) for path in paths)))
+
+    json_input = '{"x": 7, ' + json_input[1:]
+    expected = Model.model_validate(json.loads(json_input), by_name=by_name)
+    actual = Model.model_validate_json(json_input, by_name=by_name)
+    assert actual.x == expected.x
+    assert actual.model_fields_set == expected.model_fields_set
+    assert actual.__pydantic_extra__ == expected.__pydantic_extra__
+
+
+@pytest.mark.parametrize('replace_root', [False, True])
+def test_duplicate_parent_replacement_many_nested_paths(replace_root) -> None:
+    Model = create_model(
+        'Model',
+        **{
+            f'f{i}': (int, Field(default=42, validation_alias=AliasPath('payload', f'k{i}', 'value')))
+            for i in range(70)
+        },
+    )
+    original = json.dumps({f'k{i}': {'value': i} for i in range(70)})
+    replacement = json.dumps({f'k{i}': {'value': i + 100} for i in range(70)})
+    if replace_root:
+        json_input = (
+            '{"payload": '
+            + original
+            + ', "payload": {}, "payload": '
+            + replacement
+            + ', "payload": {"k69": {"value": 9}}}'
+        )
+    else:
+        members = ', '.join(f'"k{i}": {{"value": {i}}}, "k{i}": {{}}' for i in range(70))
+        json_input = '{"payload": {' + members + '}}'
+    actual = Model.model_validate_json(json_input)
+    expected = Model.model_validate(json.loads(json_input))
+    assert actual == expected
+    assert actual.model_fields_set == ({'f69'} if replace_root else set())
