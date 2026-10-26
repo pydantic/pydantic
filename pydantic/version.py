@@ -53,7 +53,12 @@ def version_info() -> str:
     related_packages = []
 
     for dist in importlib.metadata.distributions():
-        name = dist.metadata['Name']
+        try:
+            name = dist.metadata['Name']
+        except FileNotFoundError:
+            # Python 3.15+ raises `MetadataNotFound` (a `FileNotFoundError` subclass) for
+            # distributions without a metadata file (older versions return empty metadata):
+            continue
         if name in package_names:
             related_packages.append(f'{name}-{dist.version}')
 

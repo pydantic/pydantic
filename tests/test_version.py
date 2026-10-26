@@ -23,6 +23,16 @@ def test_version_info():
     assert s.count('\n') == 6
 
 
+@pytest.mark.thread_unsafe(reason='Monkeypatching')
+def test_version_info_distribution_without_metadata(tmp_path, monkeypatch):
+    # a `.dist-info` directory without a `METADATA` file:
+    (tmp_path / 'broken-1.0.dist-info').mkdir()
+    monkeypatch.syspath_prepend(tmp_path)
+
+    s = version_info()
+    assert s.count('\n') == 6
+
+
 def test_standard_version():
     v = parse_version(pydantic.VERSION)
     assert str(v) == pydantic.VERSION
