@@ -134,13 +134,13 @@ jobs:
 
           # musllinux
           - os: linux
-            manylinux: musllinux_1_1
+            manylinux: musllinux_1_2
             target: x86_64
           - os: linux
-            manylinux: musllinux_1_1
+            manylinux: musllinux_1_2
             target: aarch64
           - os: linux
-            manylinux: musllinux_1_1
+            manylinux: musllinux_1_2
             target: armv7
 
           # macos;
