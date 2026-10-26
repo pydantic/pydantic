@@ -2201,7 +2201,8 @@ class ByteSize(int):
 
         num = float(self)
         for unit in units:
-            if abs(num) < divisor:
+            threshold = round(abs(num)) if unit == 'B' else round(abs(num), 1)
+            if threshold < divisor:
                 if unit == 'B':
                     return f'{num:0.0f}{separator}{unit}'
                 else:

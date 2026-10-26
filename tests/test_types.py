@@ -1319,6 +1319,20 @@ def test_bytesize_to():
     assert m.size.to('kbit') == pytest.approx(8589934.592)
 
 
+def test_bytesize_human_readable_boundary():
+    # Value one byte short of 1 MiB should round up to 1.0MiB, not 1024.0KiB (#14056)
+    assert ByteSize(1048575).human_readable() == '1.0MiB'
+    assert ByteSize(1048575).human_readable(separator=' ') == '1.0 MiB'
+    assert ByteSize(999_999).human_readable(decimal=True) == '1.0MB'
+    assert ByteSize(999_999).human_readable(decimal=True, separator=' ') == '1.0 MB'
+    # Exact unit boundaries
+    assert ByteSize(1048576).human_readable() == '1.0MiB'
+    assert ByteSize(1_000_000).human_readable(decimal=True) == '1.0MB'
+    # Negative values near boundaries
+    assert ByteSize(-1048575).human_readable() == '-1.0MiB'
+    assert ByteSize(-999_999).human_readable(decimal=True) == '-1.0MB'
+
+
 def test_bytesize_raises():
     class Model(BaseModel):
         size: ByteSize
