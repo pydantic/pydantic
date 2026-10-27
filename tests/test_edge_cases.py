@@ -2925,6 +2925,92 @@ def test_eq_with_cached_property():
     assert obj1 == obj2
 
 
+def test_eq_with_cached_property_non_bool_comparable() -> None:
+    """Test BaseModel.__eq__ compatibility with functools.cached_property returning a non-bool-comparable value.
+
+    See GH-14068: https://github.com/pydantic/pydantic/issues/14068
+    """
+
+    class NonBoolArray:
+        def __init__(self, items: list[int]) -> None:
+            self.items = items
+
+        def __eq__(self, other: Any) -> Any:
+            if isinstance(other, NonBoolArray):
+                return NonBoolArray([x == y for x, y in zip(self.items, other.items)])
+            return False
+
+        def __bool__(self) -> bool:
+            raise ValueError('The truth value of an array with more than one element is ambiguous.')
+
+    class Model(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+        value: int
+
+        @functools.cached_property
+        def derived(self) -> NonBoolArray:
+            return NonBoolArray([self.value, self.value])
+
+    a = Model(value=1)
+    b = Model(value=1)
+    c = Model(value=2)
+
+    assert a == b
+
+    _ = a.derived
+    assert a == b
+
+    _ = b.derived
+    assert a == b
+    assert b == a
+    assert a != c
+    assert c != a
+
+    s = {a}
+    assert b in s
+    d = {a: 42}
+    assert d[b] == 42
+
+
+def test_eq_with_cached_property_numpy() -> None:
+    """Test BaseModel.__eq__ with numpy array cached_property.
+
+    See GH-14068.
+    """
+    pytest.importorskip('numpy')
+    import numpy as np
+
+    class Model(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+        value: int
+
+        @functools.cached_property
+        def derived(self) -> np.ndarray:
+            return np.array([self.value, self.value])
+
+    a = Model(value=1)
+    b = Model(value=1)
+    c = Model(value=2)
+
+    assert a == b
+
+    _ = a.derived
+    assert a == b
+
+    _ = b.derived
+    assert a == b
+    assert b == a
+    assert a != c
+    assert c != a
+
+    s = {a}
+    assert b in s
+    d = {a: 42}
+    assert d[b] == 42
+
+
 def test_model_metaclass_on_other_class() -> None:
     """Test that `ModelMetaclass` can be used as a metaclass on an unrelated class.
 
