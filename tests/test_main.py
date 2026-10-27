@@ -28,7 +28,7 @@ from uuid import UUID, uuid4
 
 import pydantic_core
 import pytest
-from pydantic_core import CoreSchema, PydanticUndefined, core_schema
+from pydantic_core import CoreSchema, PydanticOmit, PydanticUndefined, core_schema
 
 from pydantic import (
     AfterValidator,
@@ -1979,6 +1979,29 @@ def test_default_factory_validated_data_not_called_if_missing_value_validation_e
             'msg': 'Field required',
             'input': {},
         },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+
+def test_default_factory_validated_data_not_called_if_omitted(py_and_json) -> None:
+    class Model(BaseModel):
+        a: int
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+        @field_validator('a', mode='before')
+        @classmethod
+        def omit(cls, value: Any) -> Any:
+            raise PydanticOmit
+
+    with pytest.raises(ValidationError) as exc:
+        py_and_json(Model).validate_test({'a': 1})
+
+    assert exc.value.errors(include_url=False) == [
         {
             'input': PydanticUndefined,
             'loc': ('b',),

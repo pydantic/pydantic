@@ -626,7 +626,10 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                 }
                 // will fall through to default value logic below
                 Err(ValError::UseDefault) => {}
-                Err(ValError::Omit) => return Ok(()),
+                Err(ValError::Omit) => {
+                    state.has_field_error = true;
+                    return Ok(());
+                }
                 Err(err @ ValError::InternalErr(_)) => return Err(err),
                 Err(ValError::LineErrors(line_errors)) => {
                     state.has_field_error = true;
