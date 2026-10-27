@@ -610,7 +610,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
         full_input: &(impl Input<'py> + ?Sized),
         field: &Field,
         field_input: Option<(&LookupPath, impl BorrowInput<'py>)>,
-    ) -> PyResult<()> {
+    ) -> ValResult<()> {
         let state = &mut self
             .state
             .scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
@@ -626,7 +626,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                 // will fall through to default value logic below
                 Err(ValError::UseDefault) => {}
                 Err(ValError::Omit) => return Ok(()),
-                Err(ValError::InternalErr(e)) => return Err(e),
+                Err(err @ ValError::InternalErr(_)) => return Err(err),
                 Err(ValError::LineErrors(line_errors)) => {
                     state.has_field_error = true;
                     for err in line_errors {
@@ -645,7 +645,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                 self.model_dict.set_item(&field.name, value)?;
                 Ok(())
             }
-            Ok(None) | Err(ValError::UseDefault) => {
+            Ok(None) => {
                 // There was no default value available
                 state.has_field_error = true;
                 let error_type = ErrorTypeDefaults::Missing;
@@ -668,7 +668,9 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                 }
                 Ok(())
             }
-            Err(ValError::InternalErr(e)) => Err(e),
+            // `UseDefault` here means it was raised when validating the default value itself,
+            // which is a developer error (propagated as a `SchemaError`).
+            Err(err @ (ValError::UseDefault | ValError::InternalErr(_))) => Err(err),
         }
     }
 
