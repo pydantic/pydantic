@@ -23,7 +23,7 @@ pub enum LookupTree {
     ///
     /// All matches must be retained until the end, as a later duplicate key can replace the
     /// parent of the preferred match (e.g. `{"a": {"b": 1}, "a": 2}` with `AliasPath('a', 'b')`).
-    Nested(NestedLookup),
+    Nested(Box<NestedLookup>),
 }
 
 impl LookupTree {
@@ -66,11 +66,11 @@ impl LookupTree {
                 .into_iter()
                 .map(|(key, node)| (key, node.build(&mut paths, &mut branch_count)))
                 .collect();
-            Self::Nested(NestedLookup {
+            Self::Nested(Box::new(NestedLookup {
                 inner,
                 paths,
                 branch_count,
-            })
+            }))
         } else {
             let mut inner: AHashMap<PathItemString, SmallVec<[LookupFieldInfo; 1]>> =
                 AHashMap::with_capacity(fields.len());
