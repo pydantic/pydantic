@@ -130,12 +130,14 @@ assert user.id == 321
 
     For example, the following will not behave as expected and would yield a validation error:
 
-    ```python {test="skip"}
+    ```python {test="skip" lint="skip" upgrade="skip"}
+    from typing import Optional
+
     from pydantic import BaseModel
 
 
     class Boo(BaseModel):
-        int: int | None = None
+        int: Optional[int] = None
 
 
     m = Boo(int=123)  # Will fail to validate.

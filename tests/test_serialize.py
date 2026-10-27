@@ -3,6 +3,7 @@ New tests for v2 of serialization logic.
 """
 
 import json
+import pickle
 import re
 import sys
 from collections.abc import Callable
@@ -12,7 +13,12 @@ from re import Pattern
 from typing import Annotated, Any, ClassVar, Optional
 
 import pytest
-from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
+from pydantic_core import (
+    PydanticSerializationError,
+    PydanticSerializationUnexpectedValue,
+    core_schema,
+    to_jsonable_python,
+)
 from typing_extensions import TypedDict
 
 from pydantic import (
@@ -1205,6 +1211,46 @@ def test_subclass_support_unions() -> None:
     # confirming same serialization + validation behavior as for a single list (not a union)
     s = Shelter(pets=[Dog(name='fluffy', breed='lab'), Dog(name='patches', breed='boxer')])
     assert s.model_dump() == {'pets': [{'name': 'fluffy'}, {'name': 'patches'}]}
+
+
+def test_nested_union_errors_formatted_lazily() -> None:
+    """https://github.com/pydantic/pydantic/issues/14073"""
+
+    repr_calls = 0
+
+    class Pet(BaseModel):
+        name: str
+
+    class Dog(Pet):
+        def __repr__(self) -> str:
+            nonlocal repr_calls
+            repr_calls += 1
+            return super().__repr__()
+
+    caught: list[PydanticSerializationUnexpectedValue] = []
+
+    def wrap(v: Any, handler: SerializerFunctionWrapHandler) -> Any:
+        try:
+            return handler(v)
+        except PydanticSerializationUnexpectedValue as e:
+            caught.append(e)
+            raise
+
+    ta = TypeAdapter(str | list[Annotated[str | Pet, WrapSerializer(wrap)]])
+
+    # The nested union fails during the strict pass of the outer union, and succeeds during the lax one:
+    assert ta.dump_python([Dog(name='fluffy')], warnings='error') == [{'name': 'fluffy'}]
+    assert ta.dump_json([Dog(name='fluffy')], warnings='error') == b'[{"name":"fluffy"}]'
+    assert repr_calls == 0
+
+    err = caught[0]
+    assert str(err) == (
+        'PydanticSerializationUnexpectedValue: Expected `str` - serialized value may not be as expected '
+        "[input_value=Dog(name='fluffy'), input_type=Dog]\n"
+        'PydanticSerializationUnexpectedValue: Expected `Pet` - serialized value may not be as expected '
+        "[input_value=Dog(name='fluffy'), input_type=Dog]"
+    )
+    assert str(pickle.loads(pickle.dumps(err))) == str(err)
 
 
 def test_subclass_support_unions_with_forward_ref() -> None:
