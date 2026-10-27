@@ -25,6 +25,7 @@ use crate::tools::SchemaDict;
 use crate::tools::new_py_string;
 use crate::validators::shared::lookup_tree::LookupFieldInfo;
 use crate::validators::shared::lookup_tree::LookupTree;
+use crate::validators::shared::lookup_tree::offer_field_input;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
@@ -48,6 +49,7 @@ pub struct ModelFieldsValidator {
     strict: bool,
     from_attributes: bool,
     loc_by_alias: bool,
+    /// The lookup tree, used when validating JSON input (see [`Self::validate_json_by_iteration`]).
     lookup: LookupTree,
     validate_by_alias: Option<bool>,
     validate_by_name: Option<bool>,
@@ -346,6 +348,20 @@ impl ModelFieldsValidator {
         Ok((state.model_dict, extra_dict, state.fields_set))
     }
 
+    /// Validate a Python input field by field, looking up each field's paths in the input.
+    ///
+    /// For example, with `a: int = Field(alias='b')`, `validate_by_name=True` and `{'a': 1, 'b': 2}` as input:
+    ///
+    /// - Field `a`: is there a key `b` (its alias)? Yes, use `2`, and mark `b` as used.
+    ///   (If not: is there a key `a` (its name)?)
+    ///
+    /// Then (unless extra is ignored or validating from attributes), the input is iterated a second time:
+    ///
+    /// - Key `a`: not used by any field, so it is an extra.
+    /// - Key `b`: used by field `a`, skip it.
+    ///
+    /// Going field by field suits Python inputs: dict lookups are O(1), the input is not iterated at all
+    /// when extra is ignored, and attributes (with `from_attributes`) can only be looked up, not iterated.
     fn validate_by_get_item<'a, 'py>(
         &'a self,
         py: Python<'py>,
@@ -437,6 +453,24 @@ impl ModelFieldsValidator {
         Ok(())
     }
 
+    /// Validate a JSON object key by key, in a single pass over the object (using `self.lookup`
+    /// to know which fields want a key).
+    ///
+    /// For example, with `a: int = Field(alias='b')`, `validate_by_name=True` and `{"a": 1, "b": 2}` as input:
+    ///
+    /// - Key `a`: which fields want it? Field `a` (its name), so `1` is the input of `a` for now.
+    /// - Key `b`: which fields want it? Field `a` (its alias), which takes priority over its name,
+    ///   so `2` replaces `1` as the input of `a`.
+    ///
+    /// Then, fields are validated with their input, and keys not used as an input are extras:
+    ///
+    /// - Field `a`: validate `2`, and mark `b` as used.
+    /// - Key `a`: not used by any field, so it is an extra.
+    ///
+    /// This gives the same result as [`Self::validate_by_get_item`].
+    ///
+    /// Going key by key suits JSON inputs: a parsed JSON object is represented by jiter as a list
+    /// of key/value pairs without an index.
     fn validate_json_by_iteration<'py>(
         &self,
         py: Python<'py>,
@@ -449,8 +483,12 @@ impl ModelFieldsValidator {
 
         // Individual inputs for each field. There is some complicated decision making
         // around which field input to use if multiple lookup paths match:
+        //
         // - aliases are preferred over field names (if validating by alias)
-        // - later inputs for *the same path* are preferred over earlier inputs
+        // - later inputs for *the same path* are preferred over earlier inputs:
+        //   - In `{"a": 1, "a": 2}`, `2` is used for field `a`.
+        //   - In `{"a": {"b": 1}, "a": 2}`, no input is found for `AliasPath('a', 'b')`
+        //     as the second `a` replaces the first one.
         //
         // Once the iteration is complete, the highest priority input for each field
         // is validated and the rest are propagated into extra (if necessary).
@@ -477,23 +515,10 @@ impl ModelFieldsValidator {
                     let mut might_be_extra = possible_extra.is_some();
                     let key = key.as_ref();
                     for field_info in lookup.get(key) {
-                        if !field_info.matches_lookup(state.lookup_type) {
-                            continue;
-                        }
-
-                        let field_input = &mut field_inputs[field_info.field_index];
-                        if let Some((existing_field_info, _)) = &field_input
-                            && existing_field_info
+                        if offer_field_input(&mut field_inputs, field_info, value, state.lookup_type)
+                            && field_info
                                 .lookup_priority
-                                .is_higher_priority_than(&field_info.lookup_priority)
-                        {
-                            continue;
-                        }
-
-                        *field_input = Some((*field_info, value));
-                        if field_info
-                            .lookup_priority
-                            .is_maximum_priority_for_lookup_type(state.lookup_type)
+                                .is_maximum_priority_for_lookup_type(state.lookup_type)
                         {
                             might_be_extra = false;
                         }

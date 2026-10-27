@@ -7,12 +7,22 @@ use smallvec::SmallVec;
 
 use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, PathItemString};
 
-/// Flat paths can discard lower-priority matches permanently. Nested paths must retain
-/// alternatives because replacing a parent can remove the preferred match.
+/// Maps JSON object keys to the lookup paths of the fields (names and aliases), so that JSON objects
+/// can be validated in a single pass over their keys.
+///
+/// Built once from the fields, using the simplest representation they allow.
 #[derive(Debug)]
 pub enum LookupTree {
+    /// No field has an alias: each key maps to the index of the field with that name.
     NoAliases(AHashMap<PathItemString, usize>),
+    /// Some fields have aliases, but none is an `AliasPath`: each key maps to the matching lookup paths.
+    ///
+    /// The best match for a field can be selected as keys are seen, discarding lower-priority ones.
     Flat(FlatLookup),
+    /// Some aliases are `AliasPath`s: keys map to a tree of nested object keys and array indices.
+    ///
+    /// All matches must be retained until the end, as a later duplicate key can replace the
+    /// parent of the preferred match (e.g. `{"a": {"b": 1}, "a": 2}` with `AliasPath('a', 'b')`).
     Nested(NestedLookup),
 }
 
@@ -119,10 +129,29 @@ impl FlatLookup {
     }
 }
 
-/// When resolving data for a field, aliases are preferred over names, and earlier aliases are preferred over later ones.
+/// The priority of a lookup path of a field, i.e. whether it is the field name or one of its aliases (and which one).
+///
+/// When multiple lookup paths of the same field match the input, this is used to decide which input to use:
+/// aliases are preferred over names, and earlier aliases are preferred over later ones.
+///
+/// For example, with the following field:
+///
+/// ```python
+/// a: int = Field(validation_alias=AliasChoices('b', 'c'))
+/// ```
+///
+/// `2` is used, as `b` comes before `c` in the alias choices (regardless of the input order):
+///
+/// ```json
+/// {"c": 1, "b": 2}
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LookupFieldPriority {
+    /// The kind of lookup this path is used for.
     lookup_type: LookupType,
+    /// The index of this path within the field's aliases (e.g. `1` for `c` in `AliasChoices('b', 'c')`).
+    ///
+    /// Lower is higher priority. Only meaningful when `lookup_type` is `Alias`, `0` otherwise.
     alias_index: usize,
 }
 
@@ -148,9 +177,20 @@ impl LookupFieldPriority {
     }
 }
 
+/// A lookup path of a field, as stored in the lookup tree.
 #[derive(Debug, Clone, Copy)]
 pub struct LookupFieldInfo {
+    /// The index (in the `fields` of the schema) of the field this lookup path belongs to.
+    ///
+    /// For example, both the `b` and `c` paths have index `1` in the following model:
+    ///
+    /// ```python
+    /// class Model(BaseModel):
+    ///     a: int
+    ///     b: int = Field(alias='c')
+    /// ```
     pub field_index: usize,
+    /// The priority of this path among the field's other lookup paths.
     pub lookup_priority: LookupFieldPriority,
 }
 
@@ -176,6 +216,27 @@ impl LookupFieldInfo {
             None
         }
     }
+}
+
+/// Offer `value` as the input for the field of `info`, keeping it only if it matches `lookup_type`
+/// and the field doesn't already have a higher priority input. Returns whether it was kept.
+pub fn offer_field_input<'a, 'j>(
+    field_inputs: &mut [Option<(LookupFieldInfo, &'a JsonValue<'j>)>],
+    info: &LookupFieldInfo,
+    value: &'a JsonValue<'j>,
+    lookup_type: LookupType,
+) -> bool {
+    if !info.matches_lookup(lookup_type) {
+        return false;
+    }
+    let field_input = &mut field_inputs[info.field_index];
+    if let Some((existing, _)) = field_input
+        && existing.lookup_priority.is_higher_priority_than(&info.lookup_priority)
+    {
+        return false;
+    }
+    *field_input = Some((*info, value));
+    true
 }
 
 #[derive(Default)]
@@ -259,17 +320,9 @@ impl NestedLookup {
         }
 
         for (info, value) in self.paths.iter().zip(candidates) {
-            let Some(value) = value else { continue };
-            if !info.matches_lookup(lookup_type) {
-                continue;
+            if let Some(value) = value {
+                offer_field_input(field_inputs, info, value, lookup_type);
             }
-            let field_input = &mut field_inputs[info.field_index];
-            if let Some((existing, _)) = field_input
-                && existing.lookup_priority.is_higher_priority_than(&info.lookup_priority)
-            {
-                continue;
-            }
-            *field_input = Some((*info, value));
         }
     }
 }
