@@ -1306,6 +1306,40 @@ def test_bytesize_conversions(input_value, output, human_bin, human_dec, human_s
     assert m.size.human_readable(separator=' ') == human_sep
 
 
+@pytest.mark.parametrize(
+    'size,decimal,separator,expected',
+    (
+        # One byte short of each binary unit boundary:
+        pytest.param(2**20 - 1, False, '', '1.0MiB', id='just-under-1-mib'),
+        pytest.param(2**30 - 1, False, '', '1.0GiB', id='just-under-1-gib'),
+        pytest.param(2**40 - 1, False, '', '1.0TiB', id='just-under-1-tib'),
+        pytest.param(2**50 - 1, False, '', '1.0PiB', id='just-under-1-pib'),
+        # A single byte below 1 EiB / 1 EB is not representable as a float, so a
+        # larger offset is used to reach the final unit through the loop exit:
+        pytest.param(2**60 - 2**20, False, '', '1.0EiB', id='just-under-1-eib'),
+        # One byte short of each decimal unit boundary:
+        pytest.param(10**6 - 1, True, '', '1.0MB', id='just-under-1-mb'),
+        pytest.param(10**9 - 1, True, '', '1.0GB', id='just-under-1-gb'),
+        pytest.param(10**12 - 1, True, '', '1.0TB', id='just-under-1-tb'),
+        pytest.param(10**15 - 1, True, '', '1.0PB', id='just-under-1-pb'),
+        pytest.param(10**18 - 10**12, True, '', '1.0EB', id='just-under-1-eb'),
+        # `separator` and negative values are affected as well:
+        pytest.param(2**20 - 1, False, ' ', '1.0 MiB', id='just-under-1-mib-separator'),
+        pytest.param(10**6 - 1, True, ' ', '1.0 MB', id='just-under-1-mb-separator'),
+        pytest.param(-(2**20) + 1, False, '', '-1.0MiB', id='just-under-1-mib-negative'),
+        # Values that don't round up to the next unit keep the smaller unit:
+        pytest.param(2**20 - 52, False, '', '1023.9KiB', id='rounds-down-kib'),
+        pytest.param(10**6 - 51, True, '', '999.9KB', id='rounds-down-kb'),
+    ),
+)
+def test_bytesize_human_readable_unit_boundary(size, decimal, separator, expected):
+    """A value that rounds up to the next unit when printed should use that unit.
+
+    https://github.com/pydantic/pydantic/issues/14056
+    """
+    assert ByteSize(size).human_readable(decimal=decimal, separator=separator) == expected
+
+
 def test_bytesize_to():
     class Model(BaseModel):
         size: ByteSize
