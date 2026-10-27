@@ -441,7 +441,8 @@ impl ModelFieldsValidator {
                         }
 
                         // Unknown / extra field
-                        self.state.validate_extra_key_value(self.py, &cow, value)?;
+                        self.state
+                            .validate_extra_key_value(self.py, &cow, raw_key.borrow_input(), value)?;
                     }
                     Ok(())
                 }
@@ -570,7 +571,7 @@ impl ModelFieldsValidator {
                 // this key was consumed by a field input, so we don't want to treat it as extra
                 continue;
             }
-            state.validate_extra_key_value(py, key, value)?;
+            state.validate_extra_key_value(py, key, key, value)?;
         }
 
         Ok(())
@@ -674,7 +675,18 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
         }
     }
 
-    fn validate_extra_key_value<Value>(&mut self, py: Python<'py>, key: &str, value: Value) -> ValResult<()>
+    /// Validate an extra key and its value.
+    ///
+    /// `key` is the string representation of the key (used for error locations, and as the key of
+    /// the extra data if there is no keys validator), while `key_input` is the original key input,
+    /// provided to the keys validator.
+    fn validate_extra_key_value<Value>(
+        &mut self,
+        py: Python<'py>,
+        key: &str,
+        key_input: &(impl Input<'py> + ?Sized),
+        value: Value,
+    ) -> ValResult<()>
     where
         Value: BorrowInput<'py>,
     {
@@ -704,7 +716,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                 // Buffer `validated_key` in an option to allow for validation of the value even if the
                 // key is invalid.
                 let validated_key = if let Some(validator) = keys_validator {
-                    match validator.validate(py, key, state) {
+                    match validator.validate(py, key_input, state) {
                         Ok(value) => Some(value),
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {

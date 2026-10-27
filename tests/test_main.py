@@ -3493,6 +3493,20 @@ def test_extra_validator_keys(py_and_json) -> None:
     assert exc_info.value.errors()[0]['type'] == 'string_too_long'
 
 
+def test_extra_validator_keys_strict() -> None:
+    """Extra keys are validated like `dict` keys: JSON object keys are strings, and can be parsed even in strict mode."""
+
+    class Model(BaseModel, extra='allow'):
+        __pydantic_extra__: dict[Annotated[int, Field(strict=True)], int]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'123': 1})
+
+    assert exc_info.value.errors()[0]['type'] == 'int_type'
+
+    assert Model.model_validate_json('{"123": 1}').__pydantic_extra__ == {123: 1}
+
+
 def test_extra_validator_field(py_and_json) -> None:
     class Model(BaseModel, extra='allow'):
         # use Field(init=False) to ensure this is not treated as a field by dataclass_transform
