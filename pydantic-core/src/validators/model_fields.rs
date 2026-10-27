@@ -17,12 +17,11 @@ use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
-use crate::input::{BorrowInput, Input, ValidatedDict};
+use crate::input::{BorrowInput, EitherString, Input, ValidatedDict};
 use crate::lookup_key::LookupPath;
 use crate::lookup_key::LookupPathCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
-use crate::tools::new_py_string;
 use crate::validators::shared::lookup_tree::LookupFieldInfo;
 use crate::validators::shared::lookup_tree::LookupTree;
 use crate::validators::shared::lookup_tree::offer_field_input;
@@ -442,7 +441,7 @@ impl ModelFieldsValidator {
 
                         // Unknown / extra field
                         self.state
-                            .validate_extra_key_value(self.py, &cow, raw_key.borrow_input(), value)?;
+                            .validate_extra_key_value(self.py, &either_str, raw_key.borrow_input(), value)?;
                     }
                     Ok(())
                 }
@@ -571,7 +570,7 @@ impl ModelFieldsValidator {
                 // this key was consumed by a field input, so we don't want to treat it as extra
                 continue;
             }
-            state.validate_extra_key_value(py, key, key, value)?;
+            state.validate_extra_key_value(py, &key.into(), key, value)?;
         }
 
         Ok(())
@@ -681,18 +680,20 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
     /// Validate an extra key and its value.
     ///
     /// `key` is the string representation of the key (used for error locations, and as the key of
-    /// the extra data if there is no keys validator), while `key_input` is the original key input,
-    /// provided to the keys validator.
+    /// the extra data if there is no keys validator, reusing the original Python string if any),
+    /// while `key_input` is the original key input, provided to the keys validator.
     fn validate_extra_key_value<Value>(
         &mut self,
         py: Python<'py>,
-        key: &str,
+        key: &EitherString<'_, 'py>,
         key_input: &(impl Input<'py> + ?Sized),
         value: Value,
     ) -> ValResult<()>
     where
         Value: BorrowInput<'py>,
     {
+        let key_str = key.as_cow()?;
+        let key_str = key_str.as_ref();
         let Self {
             extra_validator,
             state,
@@ -706,7 +707,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                 errors.push(ValLineError::new_with_loc(
                     ErrorTypeDefaults::ExtraForbidden,
                     value,
-                    key,
+                    key_str,
                 ));
                 Ok(())
             }
@@ -723,21 +724,21 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                         Ok(value) => Some(value),
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {
-                                errors.push(err.with_outer_location(key));
+                                errors.push(err.with_outer_location(key_str));
                             }
                             None
                         }
                         Err(err) => return Err(err),
                     }
                 } else {
-                    Some(new_py_string(py, key, state.cache_str()).into_any().unbind())
+                    Some(key.as_py_string(py, state.cache_str()).into_any().unbind())
                 };
                 let validated_value = if let Some(validator) = values_validator {
                     match validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => value,
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {
-                                errors.push(err.with_outer_location(key));
+                                errors.push(err.with_outer_location(key_str));
                             }
                             return Ok(());
                         }
