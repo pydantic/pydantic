@@ -16,7 +16,8 @@ use crate::input::{Input, ValidationMatch};
 use crate::py_gc::PyGcTraverse;
 use crate::tools::SchemaDict;
 
-use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::none::is_none_json_key;
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator};
 
 #[derive(Debug, Clone, Default)]
 struct BoolLiteral {
@@ -182,6 +183,26 @@ impl<T: Debug> LiteralLookup<T> {
         Ok(None)
     }
 
+    /// Used for JSON object keys, where non-string values can only be represented as strings
+    /// (e.g. `{"1": ...}` for `dict[Literal[1], ...]`). Should only be called once [`Self::validate`]
+    /// failed to find an exact match, so that string values take precedence (e.g. for `Literal[1, '1']`).
+    pub fn validate_json_key<'py, I: Input<'py> + ?Sized>(&self, py: Python<'py>, input: &I) -> ValResult<Option<&T>> {
+        if let Some(v) = self.validate_int(py, input, false)? {
+            return Ok(Some(v));
+        }
+        if let Some(v) = self.validate_float(py, input, false)? {
+            return Ok(Some(v));
+        }
+        if let Some(expected_py_dict) = &self.expected_py_dict
+            && is_none_json_key(input)
+            && let Ok(Some(v)) = expected_py_dict.bind(py).get_item(py.None())
+        {
+            let id: usize = v.extract().unwrap();
+            return Ok(Some(&self.values[id]));
+        }
+        Ok(None)
+    }
+
     /// Used by int enums
     pub fn validate_int<'a, 'py, I: Input<'py> + ?Sized>(
         &self,
@@ -278,10 +299,20 @@ impl Validator for LiteralValidator {
         &self,
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
-        _state: &mut ValidationState<'_, 'py>,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        match self.lookup.validate(py, input)? {
-            Some((_, v)) => Ok(v.clone()),
+        if let Some((_, v)) = self.lookup.validate(py, input)? {
+            return Ok(v.clone());
+        }
+        let json_key_value = match state.is_json_key() {
+            true => self.lookup.validate_json_key(py, input)?,
+            false => None,
+        };
+        match json_key_value {
+            Some(v) => {
+                state.floor_exactness(Exactness::Lax);
+                Ok(v.clone())
+            }
             None => Err(ValError::new(
                 ErrorType::LiteralError {
                     expected: self.expected_repr.clone(),
