@@ -316,14 +316,22 @@ def test_forbidden_extra_success():
     assert m.foo == 'whatever'
 
 
-def test_forbidden_extra_fails():
+def test_forbidden_extra_fails(py_and_json):
     class ForbiddenExtra(BaseModel):
         model_config = ConfigDict(extra='forbid')
-        foo: str = 'whatever'
+        foo: int = 0
 
+    adapter = py_and_json(ForbiddenExtra)
     with pytest.raises(ValidationError) as exc_info:
-        ForbiddenExtra(foo='ok', bar='wrong', spam='xx')
+        # field errors are reported before extra errors, regardless of the input order:
+        adapter.validate_test({'bar': 'wrong', 'foo': 'not_an_int', 'spam': 'xx'})
     assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('foo',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
         {
             'type': 'extra_forbidden',
             'loc': ('bar',),
@@ -1951,16 +1959,18 @@ def test_default_factory_validated_data_not_called_if_validate_default_validatio
     ]
 
 
-def test_default_factory_validated_data_not_called_if_missing_value_validation_error(container_class) -> None:
+def test_default_factory_validated_data_not_called_if_missing_value_validation_error(
+    container_class, py_and_json
+) -> None:
 
     class Model(container_class):
         a: int
         b: Annotated[int, Field(default_factory=lambda data: data['a'])]
 
-    ta = TypeAdapter(Model)
+    adapter = py_and_json(Model)
 
     with pytest.raises(ValidationError) as exc:
-        ta.validate_python({})
+        adapter.validate_test({})
 
     assert exc.value.errors(include_url=False) == [
         {
@@ -3544,6 +3554,29 @@ def test_extra_validator_named(py_and_json) -> None:
         'title': 'Child',
         'type': 'object',
     }
+
+
+def test_extra_validator_info_data(py_and_json) -> None:
+    data: list[Any] = []
+
+    def record_data(value: Any, info: ValidationInfo) -> Any:
+        # `info.data` is mutated as fields are validated, so take a snapshot:
+        data.append(deepcopy(info.data))
+        return value
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        __pydantic_extra__: dict[
+            Annotated[str, AfterValidator(record_data)], Annotated[int, AfterValidator(record_data)]
+        ]
+
+        a: int
+
+    adapter = py_and_json(Model)
+    adapter.validate_test({'z': 1, 'a': 2})
+
+    # extras are validated after fields, so validated fields are available:
+    assert data == [{'a': 2}, {'a': 2}]
 
 
 def test_extra_behavior_not_a_dict() -> None:
