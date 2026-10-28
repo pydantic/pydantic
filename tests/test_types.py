@@ -1,5 +1,4 @@
 import itertools
-import json
 import math
 import os
 import re
@@ -277,11 +276,9 @@ def test_constrained_list_unique_items(value, unique):
 
 @pytest.mark.timeout(1)
 def test_constrained_list_unique_items_linear_time():
-    class ConListModelUnique(BaseModel):
-        v: conlist(int, unique_items=True)
-
+    # call the validator directly, as validating each item is slow when not compiled and with coverage enabled:
     value = list(range(100_000))
-    assert ConListModelUnique.parse_raw(json.dumps({'v': value})).v == value
+    assert conlist(int, unique_items=True).unique_items_validator(value) == value
 
 
 def test_constrained_list_not_unique_unhashable_items():
