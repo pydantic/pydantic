@@ -1,4 +1,5 @@
 import itertools
+import json
 import math
 import os
 import re
@@ -247,6 +248,40 @@ def test_constrained_list_not_unique_hashable_items():
             'type': 'value_error.list.unique_items',
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'value,unique',
+    [
+        ([1, 2, 3], True),
+        ([1, 2, 1], False),
+        (['a', b'a', None, 1.5], True),
+        (['a', 'a'], False),
+        ([1, True], False),
+        ([1, 1.0], False),
+        ([[1], [2]], True),
+        ([[1], [1]], False),
+        ([1, [1], 1], False),
+    ],
+)
+def test_constrained_list_unique_items(value, unique):
+    class ConListModelUnique(BaseModel):
+        v: conlist(Any, unique_items=True)
+
+    if unique:
+        assert ConListModelUnique(v=value).v == value
+    else:
+        with pytest.raises(ValidationError, match='the list has duplicated items'):
+            ConListModelUnique(v=value)
+
+
+@pytest.mark.timeout(1)
+def test_constrained_list_unique_items_linear_time():
+    class ConListModelUnique(BaseModel):
+        v: conlist(int, unique_items=True)
+
+    value = list(range(100_000))
+    assert ConListModelUnique.parse_raw(json.dumps({'v': value})).v == value
 
 
 def test_constrained_list_not_unique_unhashable_items():

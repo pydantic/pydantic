@@ -9,6 +9,7 @@ pytest==7.4.3
 pytest-cov==4.0.0
 pytest-mock==3.10.0
 pytest-sugar==0.9.6
+pytest-timeout==2.4.0
 # pin typing-extensions to minimum requirement - see #4885
 typing-extensions==4.6.0
 # used in FastAPI tests, pin to avoid warnings in newer version

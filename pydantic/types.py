@@ -572,6 +572,9 @@ def confrozenset(
 
 
 # This types superclass should be List[T], but cython chokes on that...
+_HASHABLE_SCALAR_TYPES = {int, float, str, bytes, bool, type(None)}
+
+
 class ConstrainedList(list):  # type: ignore
     # Needed for pydantic to detect that this is a list
     __origin__ = list
@@ -613,9 +616,14 @@ class ConstrainedList(list):  # type: ignore
         if v is None:
             return None
 
-        for i, value in enumerate(v, start=1):
-            if value in v[i:]:
-                raise errors.ListUniqueItemsError()
+        if all(type(value) in _HASHABLE_SCALAR_TYPES for value in v):
+            # builtin scalars have well-behaved hashing, duplicates can be detected in linear time:
+            has_duplicates = len(set(v)) != len(v)
+        else:
+            has_duplicates = any(value in v[i:] for i, value in enumerate(v, start=1))
+
+        if has_duplicates:
+            raise errors.ListUniqueItemsError()
 
         return v
 
