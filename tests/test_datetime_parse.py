@@ -212,6 +212,9 @@ def test_parse_python_format(delta):
         ('PT5S', timedelta(seconds=5)),
         ('PT0.000005S', timedelta(microseconds=5)),
         (b'PT0.000005S', timedelta(microseconds=5)),
+        # invalid decimal separators
+        ('P0,5D', errors.DurationError),
+        ('PT10S3H', errors.DurationError),
     ],
 )
 def test_parse_durations(value, result):
@@ -220,6 +223,22 @@ def test_parse_durations(value, result):
             parse_duration(value)
     else:
         assert parse_duration(value) == result
+
+
+@pytest.mark.timeout(1)
+@pytest.mark.parametrize(
+    'value',
+    [
+        pytest.param('P' + '9' * 50_000, id='long_digits'),
+        pytest.param(
+            'P' + '1' * 50 + 'DT' + '1' * 50 + 'H' + '1' * 50 + 'M' + '1' * 50 + 'X',
+            id='long_digits_all_units',
+        ),
+    ],
+)
+def test_parse_duration_no_catastrophic_backtracking(value):
+    with pytest.raises(errors.DurationError):
+        parse_duration(value)
 
 
 @pytest.mark.parametrize(
