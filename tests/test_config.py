@@ -736,6 +736,54 @@ def test_config_model_defer_build(defer_build: bool, generate_schema_calls: Call
     assert generate_schema_calls.count == 1, 'Should not build duplicated core schemas'
 
 
+def test_mock_val_ser_copy_and_dunder_lookup() -> None:
+    """Test that MockValSer supports copy, deepcopy, and doesn't recurse on dunder/slot lookups.
+
+    Fixes https://github.com/pydantic/pydantic/issues/14089
+    """
+    import copy
+
+    class MyModel(BaseModel):
+        model_config = ConfigDict(defer_build=True)
+        x: int
+
+    val = MyModel.__pydantic_validator__
+    ser = MyModel.__pydantic_serializer__
+
+    assert isinstance(val, MockValSer)
+    assert isinstance(ser, MockValSer)
+
+    # 1. copy.copy and copy.deepcopy on validator and serializer mock
+    c_val = copy.copy(val)
+    assert isinstance(c_val, MockValSer)
+    assert c_val._code == val._code
+    assert c_val._val_or_ser == val._val_or_ser
+
+    dc_val = copy.deepcopy(val)
+    assert isinstance(dc_val, MockValSer)
+    assert dc_val._code == val._code
+
+    c_ser = copy.copy(ser)
+    assert isinstance(c_ser, MockValSer)
+    assert c_ser._code == ser._code
+
+    dc_ser = copy.deepcopy(ser)
+    assert isinstance(dc_ser, MockValSer)
+
+    # 2. Dunder attribute access raises AttributeError rather than recursing
+    assert not hasattr(val, '__setstate__')
+    assert not hasattr(ser, '__setstate__')
+    assert not hasattr(val, '__nonexistent__')
+
+    # 3. Uninitialized half-built instance does not trigger infinite recursion
+    empty = MockValSer.__new__(MockValSer)
+    assert not hasattr(empty, '__setstate__')
+    assert not hasattr(empty, '_attempt_rebuild')
+    assert getattr(empty, 'validate_python', None) is None
+    copy.copy(empty)
+    copy.deepcopy(empty)
+
+
 @pytest.mark.parametrize('defer_build', [True, False])
 def test_config_dataclass_defer_build(defer_build: bool, generate_schema_calls: CallCounter) -> None:
     config = ConfigDict(defer_build=defer_build)

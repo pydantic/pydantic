@@ -95,14 +95,59 @@ class MockValSer(Generic[ValSer]):
 
     def __getattr__(self, item: str) -> None:
         __tracebackhide__ = True
-        if self._attempt_rebuild:
-            val_ser = self._attempt_rebuild()
+        if item.startswith('__') and item.endswith('__'):
+            raise AttributeError(item)
+        if item in self.__slots__:
+            raise AttributeError(item)
+
+        try:
+            attempt_rebuild = object.__getattribute__(self, '_attempt_rebuild')
+        except AttributeError:
+            raise AttributeError(item) from None
+
+        if attempt_rebuild:
+            val_ser = attempt_rebuild()
             if val_ser is not None:
                 return getattr(val_ser, item)
 
-        # raise an AttributeError if `item` doesn't exist
-        getattr(self._val_or_ser, item)
-        raise PydanticUserError(self._error_message, code=self._code)
+        # raise an AttributeError if item doesn't exist
+        val_or_ser = object.__getattribute__(self, '_val_or_ser')
+        getattr(val_or_ser, item)
+        err_msg = object.__getattribute__(self, '_error_message')
+        code = object.__getattribute__(self, '_code')
+        raise PydanticUserError(err_msg, code=code)
+
+    def __copy__(self) -> MockValSer[ValSer]:
+        cls = self.__class__
+        new = cls.__new__(cls)
+        for slot in self.__slots__:
+            self._copy_slot(new, slot)
+        return new
+
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> MockValSer[ValSer]:
+
+        cls = self.__class__
+        new = cls.__new__(cls)
+        if memo is not None:
+            memo[id(self)] = new
+        for slot in self.__slots__:
+            self._deepcopy_slot(new, slot, memo)
+        return new
+
+    def _copy_slot(self, target: object, slot: str) -> None:
+        try:
+            setattr(target, slot, object.__getattribute__(self, slot))
+        except AttributeError:
+            pass
+
+    def _deepcopy_slot(self, target: object, slot: str, memo: dict[int, Any] | None) -> None:
+        import copy
+
+        try:
+            val = object.__getattribute__(self, slot)
+            setattr(target, slot, copy.deepcopy(val, memo))
+        except AttributeError:
+            pass
 
     def rebuild(self, *, parent_namespace_depth: int = 5) -> ValSer | None:
         if self._attempt_rebuild:
