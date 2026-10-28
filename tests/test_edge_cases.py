@@ -2925,6 +2925,68 @@ def test_eq_with_cached_property():
     assert obj1 == obj2
 
 
+def test_eq_with_cached_property_non_bool_comparable():
+    """Test BaseModel.__eq__ with cached_property returning non-bool-comparable objects (e.g. numpy arrays).
+
+    See GH-14068: https://github.com/pydantic/pydantic/issues/14068
+    """
+
+    class ArrayLike:
+        def __init__(self, items):
+            self.items = items
+
+        def __eq__(self, other):
+            return self
+
+        def __bool__(self):
+            raise ValueError('The truth value of an array with more than one element is ambiguous.')
+
+    class Model(BaseModel):
+        attr: int
+
+        @functools.cached_property
+        def cached(self):
+            return ArrayLike([self.attr, self.attr])
+
+    obj1 = Model(attr=1)
+    obj2 = Model(attr=1)
+    assert obj1 == obj2
+
+    # Access cached_property on one instance
+    _ = obj1.cached
+    assert obj1 == obj2
+
+    # Access cached_property on both instances (triggers __dict__ == __dict__ with non-bool-comparable values)
+    _ = obj2.cached
+    assert obj1 == obj2
+
+    # Different attribute values should still compare unequal
+    obj3 = Model(attr=2)
+    _ = obj3.cached
+    assert obj1 != obj3
+
+    # Also test when cached property raises TypeError on comparison
+    class TypeErrorLike:
+        def __eq__(self, other):
+            raise TypeError('unorderable types')
+
+    class ModelTypeError(BaseModel):
+        attr: int
+
+        @functools.cached_property
+        def cached(self):
+            return TypeErrorLike()
+
+    t1 = ModelTypeError(attr=1)
+    t2 = ModelTypeError(attr=1)
+    _ = t1.cached
+    _ = t2.cached
+    assert t1 == t2
+    t3 = ModelTypeError(attr=2)
+    _ = t3.cached
+    assert t1 != t3
+
+
 def test_model_metaclass_on_other_class() -> None:
     """Test that `ModelMetaclass` can be used as a metaclass on an unrelated class.
 
