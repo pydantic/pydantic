@@ -249,6 +249,38 @@ def test_constrained_list_not_unique_hashable_items():
     ]
 
 
+@pytest.mark.parametrize(
+    'value,unique',
+    [
+        ([1, 2, 3], True),
+        ([1, 2, 1], False),
+        (['a', b'a', None, 1.5], True),
+        (['a', 'a'], False),
+        ([1, True], False),
+        ([1, 1.0], False),
+        ([[1], [2]], True),
+        ([[1], [1]], False),
+        ([1, [1], 1], False),
+    ],
+)
+def test_constrained_list_unique_items(value, unique):
+    class ConListModelUnique(BaseModel):
+        v: conlist(Any, unique_items=True)
+
+    if unique:
+        assert ConListModelUnique(v=value).v == value
+    else:
+        with pytest.raises(ValidationError, match='the list has duplicated items'):
+            ConListModelUnique(v=value)
+
+
+@pytest.mark.timeout(1)
+def test_constrained_list_unique_items_linear_time():
+    # call the validator directly, as validating each item is slow when not compiled and with coverage enabled:
+    value = list(range(100_000))
+    assert conlist(int, unique_items=True).unique_items_validator(value) == value
+
+
 def test_constrained_list_not_unique_unhashable_items():
     class ConListModelUnique(BaseModel):
         v: conlist(Set[int], unique_items=True)
