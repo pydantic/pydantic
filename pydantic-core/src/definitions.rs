@@ -89,13 +89,13 @@ impl<T: Debug> Debug for Definitions<T> {
         // Formatted as a list for backwards compatibility; in principle
         // this could be formatted as a map. Maybe change in a future
         // minor release of pydantic.
-        write![f, "["]?;
+        write!(f, "[")?;
         let mut first = true;
         for def in self.0.values() {
-            write![f, "{sep}{def:?}", sep = if first { "" } else { ", " }]?;
+            write!(f, "{sep}{def:?}", sep = if first { "" } else { ", " })?;
             first = false;
         }
-        write![f, "]"]?;
+        write!(f, "]")?;
         Ok(())
     }
 }
