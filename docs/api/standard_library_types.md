@@ -809,6 +809,19 @@ using [`list`][] or [`tuple`][] will allow most other iterables as input, with b
     When applying [strict mode](../concepts/strict_mode.md) on collection types, strictness will *not* apply
     to the inner types. This may change in the future, see [this issue](https://github.com/pydantic/pydantic/issues/12319).
 
+!!! warning "Hash collisions with untrusted input"
+    Building a [set](#sets) or [dictionary](#dictionaries) from crafted values can take quadratic time, as some hashes
+    (most notably for integers) aren't randomized in CPython. If the input is untrusted and this is a concern, the number
+    of items can be bounded using the `max_length` constraint:
+
+    ```python
+    from typing import Annotated
+
+    from pydantic import Field, TypeAdapter
+
+    ta = TypeAdapter(Annotated[dict[int, int], Field(max_length=100)])
+    ```
+
 ### Lists
 
 Built-in type: [`list`][] (deprecated alias: [`typing.List`][]).

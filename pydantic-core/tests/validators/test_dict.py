@@ -214,7 +214,7 @@ def test_mapping_error_yield_1(mapping_items):
         (
             {'max_length': 3},
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
-            Err('Dictionary should have at most 3 items after validation, not 4 [type=too_long,'),
+            Err('Dictionary should have at most 3 items after validation, not more [type=too_long,'),
         ),
     ],
 )

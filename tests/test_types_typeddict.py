@@ -1099,6 +1099,32 @@ def test_typeddict_extraitems_overridden() -> None:
     assert TypeAdapter(Child).json_schema()['additionalProperties'] == {'type': 'integer'}
 
 
+def test_typeddict_extra_field_override_ignored(py_and_json) -> None:
+    @with_config(ConfigDict(extra='allow'))
+    class TD(TypedDict):
+        a: Annotated[int, Field(alias='b')]
+
+    @with_config(ConfigDict(extra='allow'))
+    class NotRequiredTD(TypedDict):
+        a: NotRequired[Annotated[int, Field(alias='b')]]
+
+    class ExtraItemsTD(TypedDict, extra_items=str):
+        a: Annotated[int, Field(alias='b')]
+
+    assert py_and_json(TD).validate_test({'b': 1, 'a': 'not_an_int', 'c': 2}) == {'a': 1, 'c': 2}
+    assert py_and_json(NotRequiredTD).validate_test({'a': 'not_an_int'}) == {}
+    assert py_and_json(ExtraItemsTD).validate_test({'b': 1, 'a': 'not_an_int', 'c': 'd'}) == {'a': 1, 'c': 'd'}
+
+
+def test_typeddict_runtime_extra_allow_cannot_override_field() -> None:
+    class TD(TypedDict):
+        a: Annotated[int, Field(alias='b')]
+
+    ta = TypeAdapter(TD)
+    assert ta.validate_python({'b': 1, 'a': 'not_an_int', 'c': 2}, extra='allow') == {'a': 1, 'c': 2}
+    assert ta.validate_json('{"b": 1, "a": "not_an_int", "c": 2}', extra='allow') == {'a': 1, 'c': 2}
+
+
 def test_typeddict_extraitems_never() -> None:
     class TD(TypedDict, extra_items=Never):
         f: int
