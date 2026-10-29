@@ -1,0 +1,33 @@
+pydantic-core/src/validators/model_fields.rs
+  s_a6a2a864ddd798::t_62a43f7e1d0960 14,496-499,547-548
+pydantic/_internal/_generate_schema.py
+  s_a6a2a864ddd798::t_d9a3e339f68687 145-156,438-457,476,532
+pydantic/main.py
+  s_a6a2a864ddd798::t_f295b25137263d 437,1057-1058,1061
+pydantic/root_model.py
+  s_a6a2a864ddd798::t_c6018702e2e93b 118-119,122
+tests/test_construction.py
+  s_a6a2a864ddd798::t_946c1f192f05b5 2,395-429
+tests/test_root_model.py
+  s_a6a2a864ddd798::t_958a2c44a5293e 5,676-687
+tests/types/test_fixed_schema_handlers.py
+  s_a6a2a864ddd798::t_29d9f5d33f54ae 1-40
+tests/types/test_scalar_schema_copy.py
+  s_a6a2a864ddd798::t_1fbdf8c9955d6e 1-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7551f1afc2303384f089e6b2518522c14f076a17",
+  "prompts": {},
+  "sessions": {
+    "s_a6a2a864ddd798": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1888a-f3cc-72c0-bf38-c18b933879cf",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
