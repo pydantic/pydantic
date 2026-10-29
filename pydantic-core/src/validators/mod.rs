@@ -143,9 +143,9 @@ impl SchemaValidator {
     /// building a `JsonValue` tree first. Answers "is my model on the fast path", and lets a
     /// differential test tell "both paths agree" apart from "only one path ran".
     #[getter]
-    fn _stream_plan_accepted(&self) -> bool {
+    fn _stream_plan_accepted(&self, py: Python<'_>) -> bool {
         let root = model_fields::unwrap_prebuilt(&self.validator);
-        stream_array_of_models(root).is_some() || model_fields::root_plan(root).is_some()
+        stream_array_of_models(py, root).is_some() || model_fields::root_plan(py, root).is_some()
     }
 
     #[new]
@@ -584,12 +584,12 @@ impl SchemaValidator {
 
         let root = model_fields::unwrap_prebuilt(&self.validator);
 
-        let models = stream_array_of_models(root);
+        let models = stream_array_of_models(py, root);
 
         // anything else the plan understands, taken as a single value
         let value_plan = match models {
             Some(_) => None,
-            None => Some(model_fields::root_plan(root)?),
+            None => Some(model_fields::root_plan(py, root)?),
         };
 
         let mut recursion_guard = RecursionState::default();
@@ -654,7 +654,7 @@ type StreamArrayOfModels<'a> = (
     model_fields::ModelPlan<'a>,
 );
 
-fn stream_array_of_models(root: &CombinedValidator) -> Option<StreamArrayOfModels<'_>> {
+fn stream_array_of_models<'v>(py: Python<'_>, root: &'v CombinedValidator) -> Option<StreamArrayOfModels<'v>> {
     let CombinedValidator::List(list) = root else {
         return None;
     };
@@ -668,11 +668,11 @@ fn stream_array_of_models(root: &CombinedValidator) -> Option<StreamArrayOfModel
     let CombinedValidator::Model(model_v) = item else {
         return None;
     };
-    let (class, inner) = model_v.stream_parts()?;
+    let (class, inner) = model_v.stream_parts(py)?;
     let CombinedValidator::ModelFields(mf) = &**inner else {
         return None;
     };
-    Some((class, item, mf, mf.stream_plan()?))
+    Some((class, item, mf, mf.stream_plan(py)?))
 }
 
 pub trait BuildValidator: Sized {

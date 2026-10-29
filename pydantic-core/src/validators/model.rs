@@ -67,7 +67,7 @@ pub struct ModelValidator {
 impl ModelValidator {
     /// Prototype support for the streaming json path: the shapes it can handle, and the pieces it
     /// needs to build an instance itself.
-    pub(crate) fn stream_parts(&self) -> Option<(&Py<PyType>, &Arc<CombinedValidator>)> {
+    pub(crate) fn stream_parts(&self, _py: Python<'_>) -> Option<(&Py<PyType>, &Arc<CombinedValidator>)> {
         if self.custom_init || self.root_model || self.post_init.is_some() || self.frozen {
             return None;
         }

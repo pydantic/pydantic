@@ -353,23 +353,23 @@ pub(crate) fn unwrap_prebuilt(validator: &CombinedValidator) -> &CombinedValidat
     current
 }
 
-fn classify(validator: &CombinedValidator, depth: u8) -> FieldPlan<'_> {
+fn classify<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8) -> FieldPlan<'v> {
     match unwrap_prebuilt(validator) {
         // null is an answer for the field however the rest of it is validated
         CombinedValidator::Nullable(nullable) => FieldPlan {
             nullable: true,
-            ..classify(nullable.stream_inner(), depth)
+            ..classify(py, nullable.stream_inner(), depth)
         },
         // a field that is present is validated by the inner validator alone
-        CombinedValidator::WithDefault(with_default) => classify(with_default.stream_inner(), depth),
+        CombinedValidator::WithDefault(with_default) => classify(py, with_default.stream_inner(), depth),
         _ => FieldPlan {
-            fast: classify_fast(validator, depth),
+            fast: classify_fast(py, validator, depth),
             nullable: false,
         },
     }
 }
 
-fn classify_fast(validator: &CombinedValidator, depth: u8) -> Fast<'_> {
+fn classify_fast<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8) -> Fast<'v> {
     match unwrap_prebuilt(validator) {
         CombinedValidator::Str(_) => Fast::Str,
         CombinedValidator::Bool(_) => Fast::Bool,
@@ -380,20 +380,20 @@ fn classify_fast(validator: &CombinedValidator, depth: u8) -> Fast<'_> {
         CombinedValidator::List(list) => match list.stream_list() {
             // `fail_fast` only decides how errors are collected, and a streamed list that
             // produces any error is handed back whole, so it makes no difference here
-            Some(list) => match container_plan(list.items, list.min_length, list.max_length, depth) {
+            Some(list) => match container_plan(py, list.items, list.min_length, list.max_length, depth) {
                 Some(plan) => Fast::List(Box::new(plan)),
                 None => Fast::No,
             },
             None => Fast::No,
         },
         CombinedValidator::Dict(dict) => match dict.stream_str_values() {
-            Some((values, min, max)) => match container_plan(values, min, max, depth) {
+            Some((values, min, max)) => match container_plan(py, values, min, max, depth) {
                 Some(plan) => Fast::Dict(Box::new(plan)),
                 None => Fast::No,
             },
             None => Fast::No,
         },
-        CombinedValidator::Model(model) if depth < MAX_PLAN_DEPTH => match nested_model(model, depth) {
+        CombinedValidator::Model(model) if depth < MAX_PLAN_DEPTH => match nested_model(py, model, depth) {
             Some(nested) => Fast::Model(Box::new(nested)),
             None => Fast::No,
         },
@@ -401,13 +401,14 @@ fn classify_fast(validator: &CombinedValidator, depth: u8) -> Fast<'_> {
     }
 }
 
-fn container_plan(
-    element: &CombinedValidator,
+fn container_plan<'v>(
+    py: Python<'_>,
+    element: &'v CombinedValidator,
     min_length: Option<usize>,
     max_length: Option<usize>,
     depth: u8,
-) -> Option<ContainerPlan<'_>> {
-    let element = classify(element, depth);
+) -> Option<ContainerPlan<'v>> {
+    let element = classify(py, element, depth);
     if matches!(element.fast, Fast::No) {
         return None;
     }
@@ -418,15 +419,15 @@ fn container_plan(
     })
 }
 
-fn nested_model(model: &ModelValidator, depth: u8) -> Option<NestedModel<'_>> {
-    let (class, inner) = model.stream_parts()?;
+fn nested_model<'v>(py: Python<'_>, model: &'v ModelValidator, depth: u8) -> Option<NestedModel<'v>> {
+    let (class, inner) = model.stream_parts(py)?;
     let CombinedValidator::ModelFields(fields) = &**inner else {
         return None;
     };
     Some(NestedModel {
         class,
         fields,
-        plan: fields.stream_plan_at(depth + 1)?,
+        plan: fields.stream_plan_at(py, depth + 1)?,
     })
 }
 
@@ -460,8 +461,8 @@ fn build_model<'py>(
 }
 
 /// A plan for a whole document, for a root the model shapes do not cover.
-pub(crate) fn root_plan(validator: &CombinedValidator) -> Option<FieldPlan<'_>> {
-    let plan = classify(validator, 0);
+pub(crate) fn root_plan<'v>(py: Python<'_>, validator: &'v CombinedValidator) -> Option<FieldPlan<'v>> {
+    let plan = classify(py, validator, 0);
     (!matches!(plan.fast, Fast::No)).then_some(plan)
 }
 
@@ -881,11 +882,11 @@ impl ModelFieldsValidator {
     /// Worked out once per document rather than once per record: with no aliases anywhere the name
     /// path is the only one that can match, whatever the caller configures, so there is no alias
     /// priority to resolve and a key can be handled the moment it is read.
-    pub(crate) fn stream_plan(&self) -> Option<ModelPlan<'_>> {
-        self.stream_plan_at(0)
+    pub(crate) fn stream_plan(&self, py: Python<'_>) -> Option<ModelPlan<'_>> {
+        self.stream_plan_at(py, 0)
     }
 
-    fn stream_plan_at(&self, depth: u8) -> Option<ModelPlan<'_>> {
+    fn stream_plan_at(&self, py: Python<'_>, depth: u8) -> Option<ModelPlan<'_>> {
         let streamable = matches!(self.extra_behavior, ExtraBehavior::Ignore | ExtraBehavior::Forbid)
             && self.extras_validator.is_none()
             && self.fields.iter().all(|field| {
@@ -899,7 +900,7 @@ impl ModelFieldsValidator {
             fields: self
                 .fields
                 .iter()
-                .map(|field| classify(&field.validator, depth))
+                .map(|field| classify(py, &field.validator, depth))
                 .collect(),
             names_only: self
                 .fields
