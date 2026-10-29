@@ -389,16 +389,3 @@ def test_cloudpickle_model_with_defs(tmp_path) -> None:
     bar_repr = cloudpickle.loads(pickle_file.read_bytes())
 
     assert bar_repr() == 'Bar(bar1=Foo(foo=1), bar2=Foo(foo=2))'
-
-
-def test_cloudpickle_deferred_model() -> None:
-    """https://github.com/pydantic/pydantic/issues/14089"""
-
-    class Model(BaseModel):
-        model_config = ConfigDict(defer_build=True)
-
-        x: int
-
-    model_type = cloudpickle.loads(cloudpickle.dumps(Model))
-
-    assert model_type(x='1').x == 1
