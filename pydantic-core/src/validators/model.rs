@@ -64,6 +64,72 @@ pub struct ModelValidator {
     name: String,
 }
 
+impl ModelValidator {
+    /// Prototype support for the streaming json path: the shapes it can handle, and the pieces it
+    /// needs to build an instance itself.
+    pub(crate) fn stream_parts(&self, py: Python<'_>) -> Option<(&Py<PyType>, &Arc<CombinedValidator>)> {
+        if self.custom_init || self.root_model || self.post_init.is_some() || self.frozen {
+            return None;
+        }
+        if !matches!(self.revalidate, Revalidate::Never) {
+            return None;
+        }
+        let class = self.class.bind(py);
+        #[cfg(not(PyPy))]
+        {
+            // Speculative instances may be discarded before JSON parsing finishes. Inspect
+            // current slots without invoking attribute hooks, including inherited hooks.
+            // SAFETY: both bound classes are valid types and these are valid type slots.
+            let has_python_hooks = unsafe {
+                !ffi::PyType_GetSlot(class.as_type_ptr(), ffi::Py_tp_finalize).is_null()
+                    || ffi::PyType_GetSlot(class.as_type_ptr(), ffi::Py_tp_new)
+                        != ffi::PyType_GetSlot(py.get_type::<PyAny>().as_type_ptr(), ffi::Py_tp_new)
+            };
+            if has_python_hooks {
+                return None;
+            }
+        }
+        #[cfg(PyPy)]
+        {
+            // PyPy shares tp_new wrappers across Python classes, so compare the first
+            // __new__ definition in the MRO instead. Read type dictionaries directly to
+            // avoid executing custom metaclass attribute hooks.
+            // SAFETY: ready Python types have tuple tp_mro and dict tp_dict entries.
+            let (mro, object_dict) = unsafe {
+                (
+                    Bound::from_borrowed_ptr_or_opt(py, (*class.as_type_ptr()).tp_mro)?
+                        .cast_into::<PyTuple>()
+                        .ok()?,
+                    Bound::from_borrowed_ptr_or_opt(py, (*py.get_type::<PyAny>().as_type_ptr()).tp_dict)?
+                        .cast_into::<PyDict>()
+                        .ok()?,
+                )
+            };
+            let object_new = object_dict.get_item(intern!(py, "__new__")).ok()??;
+            let mut found_new = false;
+            for base in mro {
+                let base = base.cast_into::<PyType>().ok()?;
+                // SAFETY: each MRO entry is a ready type with a dict tp_dict entry.
+                let namespace = unsafe {
+                    Bound::from_borrowed_ptr_or_opt(py, (*base.as_type_ptr()).tp_dict)?
+                        .cast_into::<PyDict>()
+                        .ok()?
+                };
+                if namespace.contains(intern!(py, "__del__")).ok()? {
+                    return None;
+                }
+                if !found_new && let Some(new) = namespace.get_item(intern!(py, "__new__")).ok()? {
+                    if !new.is(&object_new) {
+                        return None;
+                    }
+                    found_new = true;
+                }
+            }
+        }
+        Some((&self.class, &self.validator))
+    }
+}
+
 impl BuildValidator for ModelValidator {
     const EXPECTED_TYPE: &'static str = "model";
 
@@ -363,7 +429,7 @@ impl ModelValidator {
 
 /// based on the following but with the second argument of new_func set to an empty tuple as required
 /// https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
-pub(super) fn create_class<'py>(class: &Bound<'py, PyType>) -> PyResult<Bound<'py, PyAny>> {
+pub(crate) fn create_class<'py>(class: &Bound<'py, PyType>) -> PyResult<Bound<'py, PyAny>> {
     let py = class.py();
     let args = PyTuple::empty(py);
     let raw_type = class.as_type_ptr();
@@ -382,7 +448,7 @@ pub(super) fn create_class<'py>(class: &Bound<'py, PyType>) -> PyResult<Bound<'p
     }
 }
 
-fn set_model_attrs(
+pub(crate) fn set_model_attrs(
     instance: &Bound<'_, PyAny>,
     model_dict: &Bound<'_, PyAny>,
     model_extra: &Bound<'_, PyAny>,
