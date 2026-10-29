@@ -10,17 +10,33 @@ import pytest
 IMPORT_ALL_MODULES = """\
 import importlib
 import pkgutil
+from types import ModuleType
+
+from pydantic import BaseModel
+
+modules: list[ModuleType] = []
 
 def import_all(name: str) -> None:
     if name in {excluded!r} or name.rsplit('.', 1)[-1] in ('__main__', 'cli'):
         return
     module = importlib.import_module(name)
+    modules.append(module)
     if hasattr(module, '__path__'):
         for child in pkgutil.iter_modules(module.__path__, module.__name__ + '.'):
             import_all(child.name)
 
 for name in {packages!r}:
     import_all(name)
+
+# Wait for all modules so forward references can resolve before building schemas.
+models = {{
+    value
+    for module in modules
+    for value in vars(module).values()
+    if isinstance(value, type) and issubclass(value, BaseModel) and value is not BaseModel
+}}
+for model in sorted(models, key=lambda cls: (cls.__module__, cls.__qualname__)):
+    model.model_rebuild()
 """
 
 # Distributions pinned in the `benchmark-startup` dependency group, mapped to the code

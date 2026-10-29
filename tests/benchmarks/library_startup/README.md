@@ -2,20 +2,24 @@
 
 These benchmarks measure the startup time of libraries built on Pydantic. Each
 sample starts a fresh Python interpreter from the current environment, recursively
-imports the library's modules (including all model definitions), and waits for the
-process to exit. A failed import fails the benchmark.
+imports the library's modules (including all model definitions), eagerly builds
+every discovered model's schema, and waits for the process to exit. A failed import
+or schema build fails the benchmark.
 
 CLI entry points are excluded, along with explicitly listed compatibility shims
 and optional integrations without model definitions. MCP includes both `mcp` and
 `mcp_types`, covering server and authentication models as well as every protocol
-version. These workloads measure eager loading of all models, even when ordinary
-library startup uses lazy imports.
+version. These workloads measure eager loading and schema building for all models,
+even when ordinary library startup uses lazy imports or defers schema building.
+After all imports finish, each unique Pydantic model exposed by the imported
+modules is passed to `model_rebuild()`. This resolves forward references after all
+modules are available and leaves already completed schemas alone.
 
 OpenAI includes every module under `openai.types` and the rest of the SDK,
 including streaming event and pagination models. Optional audio and WebSocket
-integrations without model definitions are excluded. SDK defaults such as deferred
-schema building are preserved: importing every model does not force deferred
-schemas to be built.
+integrations without model definitions are excluded. Deferred schemas are built
+before the child interpreter exits, so their construction is included in the
+measurement.
 
 Anthropic likewise includes every module under `anthropic.types`, plus pagination,
 streaming, tool-runner, and other SDK models. Its optional aiohttp transport is
