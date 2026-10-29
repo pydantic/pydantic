@@ -634,9 +634,12 @@ fn take_peeked<'py>(
             Taken::Ready(pyo3::types::PyBool::new(py, b).to_owned().into_any())
         }
         (Fast::Float, _) if scalar => {
-            // an int literal is a valid float under both strict and lax, and this is the same
-            // conversion the float validator would do, so the decoder can hand back either
-            let f = jiter.known_float(peek)?;
+            // Preserve the ordinary parser's integer conversion, including -0 becoming +0.
+            let f = match jiter.known_number(peek)? {
+                jiter::NumberAny::Float(f) => f,
+                jiter::NumberAny::Int(jiter::NumberInt::Int(i)) => i as f64,
+                jiter::NumberAny::Int(_) => return Err(StreamStop::Cursor),
+            };
             if f.is_finite() {
                 Taken::Ready(f.into_pyobject(py)?.into_any())
             } else {

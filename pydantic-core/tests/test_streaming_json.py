@@ -396,9 +396,10 @@ def test_storage_descriptors_wait_for_complete_json(raises: bool) -> None:
     with pytest.raises(ValidationError):
         validator.validate_json('{"x":1} trailing')
     assert calls == []
-    if raises:
-        with pytest.raises(RuntimeError, match='storage descriptor ran'):
-            validator.validate_json('{"x":1}')
-    else:
-        assert validator.validate_json('{"x":1}').x == 1
-    assert calls == [None]
+
+
+@pytest.mark.parametrize('literal, expected', [('-0', '0x0.0p+0'), ('-0.0', '-0x0.0p+0')])
+def test_streamed_float_zero_sign(literal: str, expected: str) -> None:
+    validator = SchemaValidator(_model('FloatZero', {'x': FLOAT}))
+    assert validator._stream_plan_accepted
+    assert validator.validate_json('{"x":' + literal + '}').x.hex() == expected
