@@ -95,6 +95,10 @@ class MockValSer(Generic[ValSer]):
 
     def __getattr__(self, item: str) -> None:
         __tracebackhide__ = True
+        # A slot name only reaches `__getattr__()` if it was never set, i.e. the instance was created without `__init__()`
+        # (when copying/unpickling).
+        if item in MockValSer.__slots__:
+            raise AttributeError(item)
         if self._attempt_rebuild:
             val_ser = self._attempt_rebuild()
             if val_ser is not None:
