@@ -340,6 +340,10 @@ impl ModelFieldsSet {
     }
 }
 
+// Note that the mutating methods (e.g. `update()`, `intersection_update()`) hold a mutable borrow of the set
+// while iterating over their argument or calling its `__contains__()`. If the argument mutates the same set
+// in the process, PyO3 raises a `RuntimeError: Already borrowed`. This is explicitly not supported, as
+// it requires defining a contrived set class.
 #[pymethods]
 impl ModelFieldsSet {
     /// Creates a new set from the elements of `iterable`, for a model with the provided `field_names`.
