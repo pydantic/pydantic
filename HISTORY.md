@@ -37,6 +37,7 @@
 * Fix `Self` resolution in parametrized generics by @Viicos in [#14065](https://github.com/pydantic/pydantic/pull/14065)
 * Ignore extra data matching a field name in `TypedDict` and dataclasses with `extra=allow` by @Viicos in [#14090](https://github.com/pydantic/pydantic/pull/14090)
 * Check mapping `max_length` constraint during validation by @Viicos in [#14092](https://github.com/pydantic/pydantic/pull/14092)
+* Fix deep copy of self-referential models by @Viicos in [#14116](https://github.com/pydantic/pydantic/pull/14116)
 
 ## v2.14.1 (2026-10-11)
 
