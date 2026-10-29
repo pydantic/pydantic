@@ -1010,13 +1010,13 @@ of given args for the constrained function types.</p>
     <span class="c1"># Hypothesis calls this test function many times with varied Models,</span>
     <span class="c1"># so you can write a test that should pass given *any* instance.</span>
     <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span>
-    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="s1">&#39;@&#39;</span> <span class="ow">in</span> <span class="n">email</span> <span class="k">for</span> <span class="n">email</span> <span class="ow">in</span> <span class="n">instance</span><span class="o">.</span><span class="n">users</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="s1">'@'</span> <span class="ow">in</span> <span class="n">email</span> <span class="k">for</span> <span class="n">email</span> <span class="ow">in</span> <span class="n">instance</span><span class="o">.</span><span class="n">users</span><span class="p">)</span>
 
 
 <span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">floats</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_with_discount</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
     <span class="c1"># This test shows how you can override specific fields,</span>
-    <span class="c1"># and let Hypothesis fill in any you don&#39;t care about.</span>
+    <span class="c1"># and let Hypothesis fill in any you don't care about.</span>
     <span class="k">assert</span> <span class="mi">100</span> <span class="o">&lt;=</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span> <span class="o">&lt;=</span> <span class="mi">200</span>
 </code></pre></div>
 </div>
@@ -1036,13 +1036,13 @@ of given args for the constrained function types.</p>
     <span class="c1"># Hypothesis calls this test function many times with varied Models,</span>
     <span class="c1"># so you can write a test that should pass given *any* instance.</span>
     <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span>
-    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="s1">&#39;@&#39;</span> <span class="ow">in</span> <span class="n">email</span> <span class="k">for</span> <span class="n">email</span> <span class="ow">in</span> <span class="n">instance</span><span class="o">.</span><span class="n">users</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="s1">'@'</span> <span class="ow">in</span> <span class="n">email</span> <span class="k">for</span> <span class="n">email</span> <span class="ow">in</span> <span class="n">instance</span><span class="o">.</span><span class="n">users</span><span class="p">)</span>
 
 
 <span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">floats</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_with_discount</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
     <span class="c1"># This test shows how you can override specific fields,</span>
-    <span class="c1"># and let Hypothesis fill in any you don&#39;t care about.</span>
+    <span class="c1"># and let Hypothesis fill in any you don't care about.</span>
     <span class="k">assert</span> <span class="mi">100</span> <span class="o">&lt;=</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span> <span class="o">&lt;=</span> <span class="mi">200</span>
 </code></pre></div>
 </div>

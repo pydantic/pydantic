@@ -978,7 +978,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <p>Questions, feature requests and bug reports are all welcome as <a href="https://github.com/pydantic/pydantic/issues/new/choose">discussions or issues</a>. <strong>However, to report a security
 vulnerability, please see our <a href="https://github.com/pydantic/pydantic/security/policy">security policy</a>.</strong></p>
 <p>To make it as simple as possible for us to help you, please include the output of the following call in your issue:</p>
-<p><div class="highlight"><pre><span></span><code>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import pydantic.utils; print(pydantic.utils.version_info())&quot;</span>
+<p><div class="highlight"><pre><span></span><code>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import pydantic.utils; print(pydantic.utils.version_info())"</span>
 </code></pre></div>
 If you're using <em>pydantic</em> prior to <strong>v1.3</strong> (when <code>version_info()</code> was added), please manually include OS, Python
 version and pydantic version.</p>
@@ -1006,7 +1006,7 @@ git<span class="w"> </span>clone<span class="w"> </span>git@github.com:&lt;your<
 <span class="c1"># 2. Set up a virtualenv for running tests</span>
 virtualenv<span class="w"> </span>-p<span class="w"> </span><span class="sb">`</span>which<span class="w"> </span>python3.8<span class="sb">`</span><span class="w"> </span>env
 <span class="nb">source</span><span class="w"> </span>env/bin/activate
-<span class="c1"># Building docs requires 3.8. If you don&#39;t need to build docs you can use</span>
+<span class="c1"># Building docs requires 3.8. If you don't need to build docs you can use</span>
 <span class="c1"># whichever version; 3.7 will work too.</span>
 
 <span class="c1"># 3. Install pydantic, dependencies, test dependencies and doc dependencies</span>

@@ -1078,49 +1078,49 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <span class="n">password1</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">password2</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'name'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name_must_contain_space</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s1">&#39; &#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;must contain a space&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">' '</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'must contain a space'</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;password2&#39;</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'password2'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s1">&#39;password1&#39;</span> <span class="ow">in</span> <span class="n">values</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">values</span><span class="p">[</span><span class="s1">&#39;password1&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;passwords do not match&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">'password1'</span> <span class="ow">in</span> <span class="n">values</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">values</span><span class="p">[</span><span class="s1">'password1'</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'passwords do not match'</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'username'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">username_alphanumeric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">isalnum</span><span class="p">(),</span> <span class="s1">&#39;must be alphanumeric&#39;</span>
+        <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">isalnum</span><span class="p">(),</span> <span class="s1">'must be alphanumeric'</span>
         <span class="k">return</span> <span class="n">v</span>
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">UserModel</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;samuel colvin&#39;</span><span class="p">,</span>
-    <span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span>
-    <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
-    <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'samuel colvin'</span><span class="p">,</span>
+    <span class="n">username</span><span class="o">=</span><span class="s1">'scolvin'</span><span class="p">,</span>
+    <span class="n">password1</span><span class="o">=</span><span class="s1">'zxcvbn'</span><span class="p">,</span>
+    <span class="n">password2</span><span class="o">=</span><span class="s1">'zxcvbn'</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; name=&#39;Samuel Colvin&#39; username=&#39;scolvin&#39; password1=&#39;zxcvbn&#39; password2=&#39;zxcvbn&#39;</span>
+<span class="c1">#&gt; name='Samuel Colvin' username='scolvin' password1='zxcvbn' password2='zxcvbn'</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">UserModel</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;samuel&#39;</span><span class="p">,</span>
-        <span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span>
-        <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
-        <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn2&#39;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">'samuel'</span><span class="p">,</span>
+        <span class="n">username</span><span class="o">=</span><span class="s1">'scolvin'</span><span class="p">,</span>
+        <span class="n">password1</span><span class="o">=</span><span class="s1">'zxcvbn'</span><span class="p">,</span>
+        <span class="n">password2</span><span class="o">=</span><span class="s1">'zxcvbn2'</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    2 validation errors for UserModel</span>
 <span class="sd">    name</span>
 <span class="sd">      must contain a space (type=value_error)</span>
 <span class="sd">    password2</span>
 <span class="sd">      passwords do not match (type=value_error)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>
@@ -1175,35 +1175,35 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
     <span class="n">square_numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">cube_numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="c1"># &#39;*&#39; is the same as &#39;cube_numbers&#39;, &#39;square_numbers&#39; here:</span>
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># '*' is the same as 'cube_numbers', 'square_numbers' here:</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'*'</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">split_str</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'|'</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="s1">&#39;square_numbers&#39;</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'cube_numbers'</span><span class="p">,</span> <span class="s1">'square_numbers'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_sum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">42</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;sum of numbers greater than 42&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'sum of numbers greater than 42'</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;square_numbers&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'square_numbers'</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_squares</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a square number&#39;</span>
+        <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a square number'</span>
         <span class="k">return</span> <span class="n">v</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'cube_numbers'</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_cubes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="c1"># 64 ** (1 / 3) == 3.9999999999999996 (!)</span>
         <span class="c1"># this is not a good way of checking cubes</span>
-        <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a cubed number&#39;</span>
+        <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a cubed number'</span>
         <span class="k">return</span> <span class="n">v</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">]))</span>
 <span class="c1">#&gt; square_numbers=[1, 4, 9] cube_numbers=[]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="s1">&#39;1|4|16&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="s1">'1|4|16'</span><span class="p">))</span>
 <span class="c1">#&gt; square_numbers=[1, 4, 16] cube_numbers=[]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">16</span><span class="p">],</span> <span class="n">cube_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">27</span><span class="p">]))</span>
 <span class="c1">#&gt; square_numbers=[16] cube_numbers=[8, 27]</span>
@@ -1211,21 +1211,21 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
     <span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for DemoModel</span>
 <span class="sd">    square_numbers -&gt; 2</span>
 <span class="sd">      2 is not a square number (type=assertion_error)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">DemoModel</span><span class="p">(</span><span class="n">cube_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">27</span><span class="p">,</span> <span class="mi">27</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for DemoModel</span>
 <span class="sd">    cube_numbers</span>
 <span class="sd">      sum of numbers greater than 42 (type=value_error)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1236,35 +1236,35 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
     <span class="n">square_numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">cube_numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="c1"># &#39;*&#39; is the same as &#39;cube_numbers&#39;, &#39;square_numbers&#39; here:</span>
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># '*' is the same as 'cube_numbers', 'square_numbers' here:</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'*'</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">split_str</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'|'</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="s1">&#39;square_numbers&#39;</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'cube_numbers'</span><span class="p">,</span> <span class="s1">'square_numbers'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_sum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">42</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;sum of numbers greater than 42&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'sum of numbers greater than 42'</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;square_numbers&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'square_numbers'</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_squares</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a square number&#39;</span>
+        <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a square number'</span>
         <span class="k">return</span> <span class="n">v</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'cube_numbers'</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_cubes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="c1"># 64 ** (1 / 3) == 3.9999999999999996 (!)</span>
         <span class="c1"># this is not a good way of checking cubes</span>
-        <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a cubed number&#39;</span>
+        <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a cubed number'</span>
         <span class="k">return</span> <span class="n">v</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">]))</span>
 <span class="c1">#&gt; square_numbers=[1, 4, 9] cube_numbers=[]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="s1">&#39;1|4|16&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="s1">'1|4|16'</span><span class="p">))</span>
 <span class="c1">#&gt; square_numbers=[1, 4, 16] cube_numbers=[]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">16</span><span class="p">],</span> <span class="n">cube_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">27</span><span class="p">]))</span>
 <span class="c1">#&gt; square_numbers=[16] cube_numbers=[8, 27]</span>
@@ -1272,21 +1272,21 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
     <span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for DemoModel</span>
 <span class="sd">    square_numbers -&gt; 2</span>
 <span class="sd">      2 is not a square number (type=assertion_error)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">DemoModel</span><span class="p">(</span><span class="n">cube_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">27</span><span class="p">,</span> <span class="mi">27</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for DemoModel</span>
 <span class="sd">    cube_numbers</span>
 <span class="sd">      sum of numbers greater than 42 (type=value_error)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>
@@ -1315,39 +1315,39 @@ cause the validator not to run; instead, the list must be iterated over programm
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ChildModel</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'names'</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Empty strings are not allowed.&#39;</span>
+        <span class="k">assert</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">'Empty strings are not allowed.'</span>
         <span class="k">return</span> <span class="n">v</span>
 
 
 <span class="c1"># This will NOT raise a ValidationError because the validator was not called</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">child</span> <span class="o">=</span> <span class="n">ChildModel</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span> <span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <span class="s1">&#39;Eve&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">])</span>
+    <span class="n">child</span> <span class="o">=</span> <span class="n">ChildModel</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">'Alice'</span><span class="p">,</span> <span class="s1">'Bob'</span><span class="p">,</span> <span class="s1">'Eve'</span><span class="p">,</span> <span class="s1">''</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No ValidationError caught.&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'No ValidationError caught.'</span><span class="p">)</span>
     <span class="c1">#&gt; No ValidationError caught.</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ChildModel2</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'names'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Empty strings are not allowed.&#39;</span>
+            <span class="k">assert</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">'Empty strings are not allowed.'</span>
         <span class="k">return</span> <span class="n">v</span>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">child</span> <span class="o">=</span> <span class="n">ChildModel2</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span> <span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <span class="s1">&#39;Eve&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">])</span>
+    <span class="n">child</span> <span class="o">=</span> <span class="n">ChildModel2</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">'Alice'</span><span class="p">,</span> <span class="s1">'Bob'</span><span class="p">,</span> <span class="s1">'Eve'</span><span class="p">,</span> <span class="s1">''</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for ChildModel2</span>
 <span class="sd">    names</span>
 <span class="sd">      Empty strings are not allowed. (type=assertion_error)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1359,39 +1359,39 @@ cause the validator not to run; instead, the list must be iterated over programm
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ChildModel</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'names'</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Empty strings are not allowed.&#39;</span>
+        <span class="k">assert</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">'Empty strings are not allowed.'</span>
         <span class="k">return</span> <span class="n">v</span>
 
 
 <span class="c1"># This will NOT raise a ValidationError because the validator was not called</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">child</span> <span class="o">=</span> <span class="n">ChildModel</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span> <span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <span class="s1">&#39;Eve&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">])</span>
+    <span class="n">child</span> <span class="o">=</span> <span class="n">ChildModel</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">'Alice'</span><span class="p">,</span> <span class="s1">'Bob'</span><span class="p">,</span> <span class="s1">'Eve'</span><span class="p">,</span> <span class="s1">''</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No ValidationError caught.&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'No ValidationError caught.'</span><span class="p">)</span>
     <span class="c1">#&gt; No ValidationError caught.</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ChildModel2</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'names'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Empty strings are not allowed.&#39;</span>
+            <span class="k">assert</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">'Empty strings are not allowed.'</span>
         <span class="k">return</span> <span class="n">v</span>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">child</span> <span class="o">=</span> <span class="n">ChildModel2</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span> <span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <span class="s1">&#39;Eve&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">])</span>
+    <span class="n">child</span> <span class="o">=</span> <span class="n">ChildModel2</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">'Alice'</span><span class="p">,</span> <span class="s1">'Bob'</span><span class="p">,</span> <span class="s1">'Eve'</span><span class="p">,</span> <span class="s1">''</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for ChildModel2</span>
 <span class="sd">    names</span>
 <span class="sd">      Empty strings are not allowed. (type=assertion_error)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>
@@ -1412,14 +1412,14 @@ to set a dynamic default value.</p>
 <span class="k">class</span><span class="w"> </span><span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;ts&#39;</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'ts'</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_ts_now</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">v</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">())</span>
-<span class="c1">#&gt; ts=datetime.datetime(2025, 12, 18, 15, 46, 8, 188468)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">ts</span><span class="o">=</span><span class="s1">&#39;2017-11-08T14:00&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; ts=datetime.datetime(2026, 10, 29, 15, 25, 24, 688984)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">ts</span><span class="o">=</span><span class="s1">'2017-11-08T14:00'</span><span class="p">))</span>
 <span class="c1">#&gt; ts=datetime.datetime(2017, 11, 8, 14, 0)</span>
 </code></pre></div>
 </div>
@@ -1441,27 +1441,27 @@ boiler plate code. To circumvent this, the <code>allow_reuse</code> parameter ha
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">))</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Producer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 
     <span class="c1"># validators</span>
-    <span class="n">_normalize_name</span> <span class="o">=</span> <span class="n">validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">allow_reuse</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">normalize</span><span class="p">)</span>
+    <span class="n">_normalize_name</span> <span class="o">=</span> <span class="n">validator</span><span class="p">(</span><span class="s1">'name'</span><span class="p">,</span> <span class="n">allow_reuse</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">normalize</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Consumer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 
     <span class="c1"># validators</span>
-    <span class="n">_normalize_name</span> <span class="o">=</span> <span class="n">validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">allow_reuse</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">normalize</span><span class="p">)</span>
+    <span class="n">_normalize_name</span> <span class="o">=</span> <span class="n">validator</span><span class="p">(</span><span class="s1">'name'</span><span class="p">,</span> <span class="n">allow_reuse</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">normalize</span><span class="p">)</span>
 
 
-<span class="n">jane_doe</span> <span class="o">=</span> <span class="n">Producer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;JaNe DOE&#39;</span><span class="p">)</span>
-<span class="n">john_doe</span> <span class="o">=</span> <span class="n">Consumer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;joHN dOe&#39;</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">jane_doe</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Jane Doe&#39;</span>
-<span class="k">assert</span> <span class="n">john_doe</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;John Doe&#39;</span>
+<span class="n">jane_doe</span> <span class="o">=</span> <span class="n">Producer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'JaNe DOE'</span><span class="p">)</span>
+<span class="n">john_doe</span> <span class="o">=</span> <span class="n">Consumer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'joHN dOe'</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">jane_doe</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">'Jane Doe'</span>
+<span class="k">assert</span> <span class="n">john_doe</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">'John Doe'</span>
 </code></pre></div>
 </div>
 </div>
@@ -1490,43 +1490,43 @@ over again.</p>
 
     <span class="nd">@root_validator</span><span class="p">(</span><span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_card_number_omitted</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="s1">&#39;card_number&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">values</span><span class="p">,</span> <span class="s1">&#39;card_number should not be included&#39;</span>
+        <span class="k">assert</span> <span class="s1">'card_number'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">values</span><span class="p">,</span> <span class="s1">'card_number should not be included'</span>
         <span class="k">return</span> <span class="n">values</span>
 
     <span class="nd">@root_validator</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
-        <span class="n">pw1</span><span class="p">,</span> <span class="n">pw2</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password1&#39;</span><span class="p">),</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password2&#39;</span><span class="p">)</span>
+        <span class="n">pw1</span><span class="p">,</span> <span class="n">pw2</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'password1'</span><span class="p">),</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'password2'</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">pw1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw1</span> <span class="o">!=</span> <span class="n">pw2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;passwords do not match&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'passwords do not match'</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">values</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; username=&#39;scolvin&#39; password1=&#39;zxcvbn&#39; password2=&#39;zxcvbn&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">'scolvin'</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">'zxcvbn'</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">'zxcvbn'</span><span class="p">))</span>
+<span class="c1">#&gt; username='scolvin' password1='zxcvbn' password2='zxcvbn'</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn2&#39;</span><span class="p">)</span>
+    <span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">'scolvin'</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">'zxcvbn'</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">'zxcvbn2'</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for UserModel</span>
 <span class="sd">    __root__</span>
 <span class="sd">      passwords do not match (type=value_error)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">UserModel</span><span class="p">(</span>
-        <span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span>
-        <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
-        <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
-        <span class="n">card_number</span><span class="o">=</span><span class="s1">&#39;1234&#39;</span><span class="p">,</span>
+        <span class="n">username</span><span class="o">=</span><span class="s1">'scolvin'</span><span class="p">,</span>
+        <span class="n">password1</span><span class="o">=</span><span class="s1">'zxcvbn'</span><span class="p">,</span>
+        <span class="n">password2</span><span class="o">=</span><span class="s1">'zxcvbn'</span><span class="p">,</span>
+        <span class="n">card_number</span><span class="o">=</span><span class="s1">'1234'</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for UserModel</span>
 <span class="sd">    __root__</span>
 <span class="sd">      card_number should not be included (type=assertion_error)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>
@@ -1559,14 +1559,14 @@ In this case you should set <code>check_fields=False</code> on the validator.</p
 <span class="k">class</span><span class="w"> </span><span class="nc">DemoDataclass</span><span class="p">:</span>
     <span class="n">ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;ts&#39;</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">'ts'</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_ts_now</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">v</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoDataclass</span><span class="p">())</span>
-<span class="c1">#&gt; DemoDataclass(ts=datetime.datetime(2025, 12, 18, 15, 46, 8, 196329))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoDataclass</span><span class="p">(</span><span class="n">ts</span><span class="o">=</span><span class="s1">&#39;2017-11-08T14:00&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; DemoDataclass(ts=datetime.datetime(2026, 10, 29, 15, 25, 24, 696754))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">DemoDataclass</span><span class="p">(</span><span class="n">ts</span><span class="o">=</span><span class="s1">'2017-11-08T14:00'</span><span class="p">))</span>
 <span class="c1">#&gt; DemoDataclass(ts=datetime.datetime(2017, 11, 8, 14, 0))</span>
 </code></pre></div>
 </div>

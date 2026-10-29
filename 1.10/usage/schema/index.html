@@ -1109,29 +1109,29 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Gender</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
-    <span class="n">male</span> <span class="o">=</span> <span class="s1">&#39;male&#39;</span>
-    <span class="n">female</span> <span class="o">=</span> <span class="s1">&#39;female&#39;</span>
-    <span class="n">other</span> <span class="o">=</span> <span class="s1">&#39;other&#39;</span>
-    <span class="n">not_given</span> <span class="o">=</span> <span class="s1">&#39;not_given&#39;</span>
+    <span class="n">male</span> <span class="o">=</span> <span class="s1">'male'</span>
+    <span class="n">female</span> <span class="o">=</span> <span class="s1">'female'</span>
+    <span class="n">other</span> <span class="o">=</span> <span class="s1">'other'</span>
+    <span class="n">not_given</span> <span class="o">=</span> <span class="s1">'not_given'</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MainModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This is the description of the main model</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">foo_bar</span><span class="p">:</span> <span class="n">FooBar</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
-    <span class="n">gender</span><span class="p">:</span> <span class="n">Gender</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;Gender&#39;</span><span class="p">)</span>
+    <span class="n">gender</span><span class="p">:</span> <span class="n">Gender</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">'Gender'</span><span class="p">)</span>
     <span class="n">snap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="mi">42</span><span class="p">,</span>
-        <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The Snap&#39;</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;this is the value of snap&#39;</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="s1">'The Snap'</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">'this is the value of snap'</span><span class="p">,</span>
         <span class="n">gt</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
         <span class="n">lt</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
-        <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Main&#39;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s1">'Main'</span>
 
 
 <span class="c1"># this is equivalent to json.dumps(MainModel.schema(), indent=2):</span>
@@ -1143,56 +1143,56 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <p><em>(This script is complete, it should run "as is")</em></p>
 <p>Outputs:
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Main&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;This is the description of the main model&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;foo_bar&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;$ref&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#/definitions/FooBar&quot;</span>
+<span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Main"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is the description of the main model"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"foo_bar"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/definitions/FooBar"</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;Gender&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;$ref&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#/definitions/Gender&quot;</span>
+<span class="w">    </span><span class="nt">"Gender"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/definitions/Gender"</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;snap&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The Snap&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;this is the value of snap&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;exclusiveMinimum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;exclusiveMaximum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span>
+<span class="w">    </span><span class="nt">"snap"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The Snap"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"this is the value of snap"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"default"</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"exclusiveMinimum"</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"exclusiveMaximum"</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;foo_bar&quot;</span>
+<span class="w">  </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">"foo_bar"</span>
 <span class="w">  </span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;definitions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;FooBar&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FooBar&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;count&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Count&quot;</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span>
+<span class="w">  </span><span class="nt">"definitions"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"FooBar"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FooBar"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Count"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span>
 <span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="nt">&quot;size&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Size&quot;</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number&quot;</span>
+<span class="w">        </span><span class="nt">"size"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Size"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"number"</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">      </span><span class="p">},</span>
-<span class="w">      </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;count&quot;</span>
+<span class="w">      </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"count"</span>
 <span class="w">      </span><span class="p">]</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;Gender&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Gender&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;An enumeration.&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;enum&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;male&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;female&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;other&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;not_given&quot;</span>
+<span class="w">    </span><span class="nt">"Gender"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Gender"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"An enumeration."</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"enum"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"male"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"female"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"other"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"not_given"</span>
 <span class="w">      </span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
@@ -1231,82 +1231,82 @@ but work with arbitrary pydantic-compatible types.</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">'cat'</span><span class="p">]</span>
     <span class="n">cat_name</span><span class="p">:</span> <span class="nb">str</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">'dog'</span><span class="p">]</span>
     <span class="n">dog_name</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="n">Pet</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)]</span>
+<span class="n">Pet</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">'pet_type'</span><span class="p">)]</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">schema_json_of</span><span class="p">(</span><span class="n">Pet</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The Pet Schema&#39;</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">schema_json_of</span><span class="p">(</span><span class="n">Pet</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'The Pet Schema'</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">  &quot;title&quot;: &quot;The Pet Schema&quot;,</span>
-<span class="sd">  &quot;discriminator&quot;: {</span>
-<span class="sd">    &quot;propertyName&quot;: &quot;pet_type&quot;,</span>
-<span class="sd">    &quot;mapping&quot;: {</span>
-<span class="sd">      &quot;cat&quot;: &quot;#/definitions/Cat&quot;,</span>
-<span class="sd">      &quot;dog&quot;: &quot;#/definitions/Dog&quot;</span>
+<span class="sd">  "title": "The Pet Schema",</span>
+<span class="sd">  "discriminator": {</span>
+<span class="sd">    "propertyName": "pet_type",</span>
+<span class="sd">    "mapping": {</span>
+<span class="sd">      "cat": "#/definitions/Cat",</span>
+<span class="sd">      "dog": "#/definitions/Dog"</span>
 <span class="sd">    }</span>
 <span class="sd">  },</span>
-<span class="sd">  &quot;oneOf&quot;: [</span>
+<span class="sd">  "oneOf": [</span>
 <span class="sd">    {</span>
-<span class="sd">      &quot;$ref&quot;: &quot;#/definitions/Cat&quot;</span>
+<span class="sd">      "$ref": "#/definitions/Cat"</span>
 <span class="sd">    },</span>
 <span class="sd">    {</span>
-<span class="sd">      &quot;$ref&quot;: &quot;#/definitions/Dog&quot;</span>
+<span class="sd">      "$ref": "#/definitions/Dog"</span>
 <span class="sd">    }</span>
 <span class="sd">  ],</span>
-<span class="sd">  &quot;definitions&quot;: {</span>
-<span class="sd">    &quot;Cat&quot;: {</span>
-<span class="sd">      &quot;title&quot;: &quot;Cat&quot;,</span>
-<span class="sd">      &quot;type&quot;: &quot;object&quot;,</span>
-<span class="sd">      &quot;properties&quot;: {</span>
-<span class="sd">        &quot;pet_type&quot;: {</span>
-<span class="sd">          &quot;title&quot;: &quot;Pet Type&quot;,</span>
-<span class="sd">          &quot;enum&quot;: [</span>
-<span class="sd">            &quot;cat&quot;</span>
+<span class="sd">  "definitions": {</span>
+<span class="sd">    "Cat": {</span>
+<span class="sd">      "title": "Cat",</span>
+<span class="sd">      "type": "object",</span>
+<span class="sd">      "properties": {</span>
+<span class="sd">        "pet_type": {</span>
+<span class="sd">          "title": "Pet Type",</span>
+<span class="sd">          "enum": [</span>
+<span class="sd">            "cat"</span>
 <span class="sd">          ],</span>
-<span class="sd">          &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">          "type": "string"</span>
 <span class="sd">        },</span>
-<span class="sd">        &quot;cat_name&quot;: {</span>
-<span class="sd">          &quot;title&quot;: &quot;Cat Name&quot;,</span>
-<span class="sd">          &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">        "cat_name": {</span>
+<span class="sd">          "title": "Cat Name",</span>
+<span class="sd">          "type": "string"</span>
 <span class="sd">        }</span>
 <span class="sd">      },</span>
-<span class="sd">      &quot;required&quot;: [</span>
-<span class="sd">        &quot;pet_type&quot;,</span>
-<span class="sd">        &quot;cat_name&quot;</span>
+<span class="sd">      "required": [</span>
+<span class="sd">        "pet_type",</span>
+<span class="sd">        "cat_name"</span>
 <span class="sd">      ]</span>
 <span class="sd">    },</span>
-<span class="sd">    &quot;Dog&quot;: {</span>
-<span class="sd">      &quot;title&quot;: &quot;Dog&quot;,</span>
-<span class="sd">      &quot;type&quot;: &quot;object&quot;,</span>
-<span class="sd">      &quot;properties&quot;: {</span>
-<span class="sd">        &quot;pet_type&quot;: {</span>
-<span class="sd">          &quot;title&quot;: &quot;Pet Type&quot;,</span>
-<span class="sd">          &quot;enum&quot;: [</span>
-<span class="sd">            &quot;dog&quot;</span>
+<span class="sd">    "Dog": {</span>
+<span class="sd">      "title": "Dog",</span>
+<span class="sd">      "type": "object",</span>
+<span class="sd">      "properties": {</span>
+<span class="sd">        "pet_type": {</span>
+<span class="sd">          "title": "Pet Type",</span>
+<span class="sd">          "enum": [</span>
+<span class="sd">            "dog"</span>
 <span class="sd">          ],</span>
-<span class="sd">          &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">          "type": "string"</span>
 <span class="sd">        },</span>
-<span class="sd">        &quot;dog_name&quot;: {</span>
-<span class="sd">          &quot;title&quot;: &quot;Dog Name&quot;,</span>
-<span class="sd">          &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">        "dog_name": {</span>
+<span class="sd">          "title": "Dog Name",</span>
+<span class="sd">          "type": "string"</span>
 <span class="sd">        }</span>
 <span class="sd">      },</span>
-<span class="sd">      &quot;required&quot;: [</span>
-<span class="sd">        &quot;pet_type&quot;,</span>
-<span class="sd">        &quot;dog_name&quot;</span>
+<span class="sd">      "required": [</span>
+<span class="sd">        "pet_type",</span>
+<span class="sd">        "dog_name"</span>
 <span class="sd">      ]</span>
 <span class="sd">    }</span>
 <span class="sd">  }</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1318,82 +1318,82 @@ but work with arbitrary pydantic-compatible types.</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">'cat'</span><span class="p">]</span>
     <span class="n">cat_name</span><span class="p">:</span> <span class="nb">str</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">'dog'</span><span class="p">]</span>
     <span class="n">dog_name</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="n">Pet</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)]</span>
+<span class="n">Pet</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">'pet_type'</span><span class="p">)]</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">schema_json_of</span><span class="p">(</span><span class="n">Pet</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The Pet Schema&#39;</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">schema_json_of</span><span class="p">(</span><span class="n">Pet</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'The Pet Schema'</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">  &quot;title&quot;: &quot;The Pet Schema&quot;,</span>
-<span class="sd">  &quot;discriminator&quot;: {</span>
-<span class="sd">    &quot;propertyName&quot;: &quot;pet_type&quot;,</span>
-<span class="sd">    &quot;mapping&quot;: {</span>
-<span class="sd">      &quot;cat&quot;: &quot;#/definitions/Cat&quot;,</span>
-<span class="sd">      &quot;dog&quot;: &quot;#/definitions/Dog&quot;</span>
+<span class="sd">  "title": "The Pet Schema",</span>
+<span class="sd">  "discriminator": {</span>
+<span class="sd">    "propertyName": "pet_type",</span>
+<span class="sd">    "mapping": {</span>
+<span class="sd">      "cat": "#/definitions/Cat",</span>
+<span class="sd">      "dog": "#/definitions/Dog"</span>
 <span class="sd">    }</span>
 <span class="sd">  },</span>
-<span class="sd">  &quot;oneOf&quot;: [</span>
+<span class="sd">  "oneOf": [</span>
 <span class="sd">    {</span>
-<span class="sd">      &quot;$ref&quot;: &quot;#/definitions/Cat&quot;</span>
+<span class="sd">      "$ref": "#/definitions/Cat"</span>
 <span class="sd">    },</span>
 <span class="sd">    {</span>
-<span class="sd">      &quot;$ref&quot;: &quot;#/definitions/Dog&quot;</span>
+<span class="sd">      "$ref": "#/definitions/Dog"</span>
 <span class="sd">    }</span>
 <span class="sd">  ],</span>
-<span class="sd">  &quot;definitions&quot;: {</span>
-<span class="sd">    &quot;Cat&quot;: {</span>
-<span class="sd">      &quot;title&quot;: &quot;Cat&quot;,</span>
-<span class="sd">      &quot;type&quot;: &quot;object&quot;,</span>
-<span class="sd">      &quot;properties&quot;: {</span>
-<span class="sd">        &quot;pet_type&quot;: {</span>
-<span class="sd">          &quot;title&quot;: &quot;Pet Type&quot;,</span>
-<span class="sd">          &quot;enum&quot;: [</span>
-<span class="sd">            &quot;cat&quot;</span>
+<span class="sd">  "definitions": {</span>
+<span class="sd">    "Cat": {</span>
+<span class="sd">      "title": "Cat",</span>
+<span class="sd">      "type": "object",</span>
+<span class="sd">      "properties": {</span>
+<span class="sd">        "pet_type": {</span>
+<span class="sd">          "title": "Pet Type",</span>
+<span class="sd">          "enum": [</span>
+<span class="sd">            "cat"</span>
 <span class="sd">          ],</span>
-<span class="sd">          &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">          "type": "string"</span>
 <span class="sd">        },</span>
-<span class="sd">        &quot;cat_name&quot;: {</span>
-<span class="sd">          &quot;title&quot;: &quot;Cat Name&quot;,</span>
-<span class="sd">          &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">        "cat_name": {</span>
+<span class="sd">          "title": "Cat Name",</span>
+<span class="sd">          "type": "string"</span>
 <span class="sd">        }</span>
 <span class="sd">      },</span>
-<span class="sd">      &quot;required&quot;: [</span>
-<span class="sd">        &quot;pet_type&quot;,</span>
-<span class="sd">        &quot;cat_name&quot;</span>
+<span class="sd">      "required": [</span>
+<span class="sd">        "pet_type",</span>
+<span class="sd">        "cat_name"</span>
 <span class="sd">      ]</span>
 <span class="sd">    },</span>
-<span class="sd">    &quot;Dog&quot;: {</span>
-<span class="sd">      &quot;title&quot;: &quot;Dog&quot;,</span>
-<span class="sd">      &quot;type&quot;: &quot;object&quot;,</span>
-<span class="sd">      &quot;properties&quot;: {</span>
-<span class="sd">        &quot;pet_type&quot;: {</span>
-<span class="sd">          &quot;title&quot;: &quot;Pet Type&quot;,</span>
-<span class="sd">          &quot;enum&quot;: [</span>
-<span class="sd">            &quot;dog&quot;</span>
+<span class="sd">    "Dog": {</span>
+<span class="sd">      "title": "Dog",</span>
+<span class="sd">      "type": "object",</span>
+<span class="sd">      "properties": {</span>
+<span class="sd">        "pet_type": {</span>
+<span class="sd">          "title": "Pet Type",</span>
+<span class="sd">          "enum": [</span>
+<span class="sd">            "dog"</span>
 <span class="sd">          ],</span>
-<span class="sd">          &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">          "type": "string"</span>
 <span class="sd">        },</span>
-<span class="sd">        &quot;dog_name&quot;: {</span>
-<span class="sd">          &quot;title&quot;: &quot;Dog Name&quot;,</span>
-<span class="sd">          &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">        "dog_name": {</span>
+<span class="sd">          "title": "Dog Name",</span>
+<span class="sd">          "type": "string"</span>
 <span class="sd">        }</span>
 <span class="sd">      },</span>
-<span class="sd">      &quot;required&quot;: [</span>
-<span class="sd">        &quot;pet_type&quot;,</span>
-<span class="sd">        &quot;dog_name&quot;</span>
+<span class="sd">      "required": [</span>
+<span class="sd">        "pet_type",</span>
+<span class="sd">        "dog_name"</span>
 <span class="sd">      ]</span>
 <span class="sd">    }</span>
 <span class="sd">  }</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 </code></pre></div>
 </div>
 </div>
@@ -1478,18 +1478,18 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PositiveInt</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="c1"># this won&#39;t work since PositiveInt takes precedence over the</span>
-    <span class="c1"># constraints defined in Field meaning they&#39;re ignored</span>
+    <span class="c1"># this won't work since PositiveInt takes precedence over the</span>
+    <span class="c1"># constraints defined in Field meaning they're ignored</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">foo</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    On field &quot;foo&quot; the following field constraints are set but not enforced:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    On field "foo" the following field constraints are set but not enforced:</span>
 <span class="sd">    lt.</span>
 <span class="sd">    For more details see https://docs.pydantic.dev/usage/schema/#unenforced-</span>
 <span class="sd">    field-constraints</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 
 <span class="c1"># but you can set the schema attribute directly:</span>
@@ -1499,21 +1499,21 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">schema</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;title&#39;: &#39;Model&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;foo&#39;: {</span>
-<span class="sd">            &#39;title&#39;: &#39;Foo&#39;,</span>
-<span class="sd">            &#39;exclusiveMaximum&#39;: 10,</span>
-<span class="sd">            &#39;exclusiveMinimum&#39;: 0,</span>
-<span class="sd">            &#39;type&#39;: &#39;integer&#39;,</span>
+<span class="sd">    'title': 'Model',</span>
+<span class="sd">    'type': 'object',</span>
+<span class="sd">    'properties': {</span>
+<span class="sd">        'foo': {</span>
+<span class="sd">            'title': 'Foo',</span>
+<span class="sd">            'exclusiveMaximum': 10,</span>
+<span class="sd">            'exclusiveMinimum': 0,</span>
+<span class="sd">            'type': 'integer',</span>
 <span class="sd">        },</span>
 <span class="sd">    },</span>
-<span class="sd">    &#39;required&#39;: [&#39;foo&#39;],</span>
+<span class="sd">    'required': ['foo'],</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="c1"># if you find yourself needing this, an alternative is to declare</span>
@@ -1526,21 +1526,21 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">schema</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;title&#39;: &#39;Model&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;foo&#39;: {</span>
-<span class="sd">            &#39;title&#39;: &#39;Foo&#39;,</span>
-<span class="sd">            &#39;exclusiveMinimum&#39;: 0,</span>
-<span class="sd">            &#39;exclusiveMaximum&#39;: 10,</span>
-<span class="sd">            &#39;type&#39;: &#39;integer&#39;,</span>
+<span class="sd">    'title': 'Model',</span>
+<span class="sd">    'type': 'object',</span>
+<span class="sd">    'properties': {</span>
+<span class="sd">        'foo': {</span>
+<span class="sd">            'title': 'Foo',</span>
+<span class="sd">            'exclusiveMinimum': 0,</span>
+<span class="sd">            'exclusiveMaximum': 10,</span>
+<span class="sd">            'type': 'integer',</span>
 <span class="sd">        },</span>
 <span class="sd">    },</span>
-<span class="sd">    &#39;required&#39;: [&#39;foo&#39;],</span>
+<span class="sd">    'required': ['foo'],</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 </code></pre></div>
 </div>
 </div>
@@ -1559,7 +1559,7 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
-    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;Bar&#39;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">'Bar'</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1571,7 +1571,7 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
-    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;Bar&#39;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">'Bar'</span>
 </code></pre></div>
 </div>
 </div>
@@ -1603,9 +1603,9 @@ included.</p>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
-        <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;alphabet&#39;</span><span class="p">]</span>
+        <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">'alphabet'</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">alphabet</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">'</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
@@ -1613,12 +1613,12 @@ included.</p>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">field_schema</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">field</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ModelField</span><span class="p">]</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">field</span><span class="p">:</span>
-            <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;alphabet&#39;</span><span class="p">]</span>
-            <span class="n">field_schema</span><span class="p">[</span><span class="s1">&#39;examples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">]</span>
+            <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">'alphabet'</span><span class="p">]</span>
+            <span class="n">field_schema</span><span class="p">[</span><span class="s1">'examples'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">value</span><span class="p">:</span> <span class="n">RestrictedAlphabetStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alphabet</span><span class="o">=</span><span class="s1">&#39;ABC&#39;</span><span class="p">)</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">RestrictedAlphabetStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alphabet</span><span class="o">=</span><span class="s1">'ABC'</span><span class="p">)</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="o">.</span><span class="n">schema_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
@@ -1639,9 +1639,9 @@ included.</p>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
-        <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;alphabet&#39;</span><span class="p">]</span>
+        <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">'alphabet'</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">alphabet</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">'</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
@@ -1649,12 +1649,12 @@ included.</p>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">field_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">field</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ModelField</span><span class="p">]</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">field</span><span class="p">:</span>
-            <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;alphabet&#39;</span><span class="p">]</span>
-            <span class="n">field_schema</span><span class="p">[</span><span class="s1">&#39;examples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">]</span>
+            <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">'alphabet'</span><span class="p">]</span>
+            <span class="n">field_schema</span><span class="p">[</span><span class="s1">'examples'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">value</span><span class="p">:</span> <span class="n">RestrictedAlphabetStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alphabet</span><span class="o">=</span><span class="s1">&#39;ABC&#39;</span><span class="p">)</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">RestrictedAlphabetStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alphabet</span><span class="o">=</span><span class="s1">'ABC'</span><span class="p">)</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="o">.</span><span class="n">schema_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
@@ -1675,9 +1675,9 @@ included.</p>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
-        <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;alphabet&#39;</span><span class="p">]</span>
+        <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">'alphabet'</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">alphabet</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">'</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
@@ -1685,12 +1685,12 @@ included.</p>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">field_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">field</span><span class="p">:</span>
-            <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;alphabet&#39;</span><span class="p">]</span>
-            <span class="n">field_schema</span><span class="p">[</span><span class="s1">&#39;examples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">]</span>
+            <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">'alphabet'</span><span class="p">]</span>
+            <span class="n">field_schema</span><span class="p">[</span><span class="s1">'examples'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">value</span><span class="p">:</span> <span class="n">RestrictedAlphabetStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alphabet</span><span class="o">=</span><span class="s1">&#39;ABC&#39;</span><span class="p">)</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">RestrictedAlphabetStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alphabet</span><span class="o">=</span><span class="s1">'ABC'</span><span class="p">)</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="o">.</span><span class="n">schema_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
@@ -1701,22 +1701,22 @@ included.</p>
 <p><em>(This script is complete, it should run "as is")</em></p>
 <p>Outputs:
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MyModel&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Value&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;alphabet&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ABC&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;examples&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;AAA&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;BBB&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;CCC&quot;</span>
+<span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"MyModel"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Value"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"alphabet"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ABC"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"examples"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"AAA"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"BBB"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"CCC"</span>
 <span class="w">      </span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;value&quot;</span>
+<span class="w">  </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">"value"</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div></p>
@@ -2820,7 +2820,7 @@ sub-models in its <code>definitions</code>:</p>
     <span class="n">c</span><span class="p">:</span> <span class="nb">int</span>
 
 
-<span class="n">top_level_schema</span> <span class="o">=</span> <span class="n">schema</span><span class="p">([</span><span class="n">Model</span><span class="p">,</span> <span class="n">Bar</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;My Schema&#39;</span><span class="p">)</span>
+<span class="n">top_level_schema</span> <span class="o">=</span> <span class="n">schema</span><span class="p">([</span><span class="n">Model</span><span class="p">,</span> <span class="n">Bar</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s1">'My Schema'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">top_level_schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 </code></pre></div>
 </div>
@@ -2829,41 +2829,41 @@ sub-models in its <code>definitions</code>:</p>
 <p><em>(This script is complete, it should run "as is")</em></p>
 <p>Outputs:
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;My Schema&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;definitions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;Foo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;a&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"My Schema"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"definitions"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"Foo"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Foo"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"a"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">      </span><span class="p">}</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;Model&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;b&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;$ref&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#/definitions/Foo&quot;</span>
+<span class="w">    </span><span class="nt">"Model"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Model"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"b"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/definitions/Foo"</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">      </span><span class="p">},</span>
-<span class="w">      </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;b&quot;</span>
+<span class="w">      </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"b"</span>
 <span class="w">      </span><span class="p">]</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;Bar&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Bar&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;c&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;C&quot;</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span>
+<span class="w">    </span><span class="nt">"Bar"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Bar"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"c"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"C"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">      </span><span class="p">},</span>
-<span class="w">      </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;c&quot;</span>
+<span class="w">      </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"c"</span>
 <span class="w">      </span><span class="p">]</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
@@ -2890,7 +2890,7 @@ sub-models in its <code>definitions</code>:</p>
 
 
 <span class="c1"># Default location for OpenAPI</span>
-<span class="n">top_level_schema</span> <span class="o">=</span> <span class="n">schema</span><span class="p">([</span><span class="n">Model</span><span class="p">],</span> <span class="n">ref_prefix</span><span class="o">=</span><span class="s1">&#39;#/components/schemas/&#39;</span><span class="p">)</span>
+<span class="n">top_level_schema</span> <span class="o">=</span> <span class="n">schema</span><span class="p">([</span><span class="n">Model</span><span class="p">],</span> <span class="n">ref_prefix</span><span class="o">=</span><span class="s1">'#/components/schemas/'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">top_level_schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 </code></pre></div>
 </div>
@@ -2899,30 +2899,30 @@ sub-models in its <code>definitions</code>:</p>
 <p><em>(This script is complete, it should run "as is")</em></p>
 <p>Outputs:
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;definitions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;Foo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;a&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span>
+<span class="w">  </span><span class="nt">"definitions"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"Foo"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Foo"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"a"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">      </span><span class="p">},</span>
-<span class="w">      </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;a&quot;</span>
+<span class="w">      </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"a"</span>
 <span class="w">      </span><span class="p">]</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;Model&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;a&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;$ref&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#/components/schemas/Foo&quot;</span>
+<span class="w">    </span><span class="nt">"Model"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Model"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"a"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/components/schemas/Foo"</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">      </span><span class="p">},</span>
-<span class="w">      </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;a&quot;</span>
+<span class="w">      </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"a"</span>
 <span class="w">      </span><span class="p">]</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
@@ -2943,10 +2943,10 @@ sub-models in its <code>definitions</code>:</p>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">schema_extra</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;examples&#39;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s1">'examples'</span><span class="p">:</span> <span class="p">[</span>
                 <span class="p">{</span>
-                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;John Doe&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+                    <span class="s1">'name'</span><span class="p">:</span> <span class="s1">'John Doe'</span><span class="p">,</span>
+                    <span class="s1">'age'</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">]</span>
         <span class="p">}</span>
@@ -2960,26 +2960,26 @@ sub-models in its <code>definitions</code>:</p>
 <p><em>(This script is complete, it should run "as is")</em></p>
 <p>Outputs:
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Person&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Name&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Person"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Name"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;age&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Age&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span>
+<span class="w">    </span><span class="nt">"age"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Age"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;name&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;age&quot;</span>
+<span class="w">  </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">"name"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"age"</span>
 <span class="w">  </span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;examples&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">"examples"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John Doe&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;age&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span>
+<span class="w">      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"John Doe"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"age"</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
@@ -3003,9 +3003,9 @@ The callable is expected to mutate the schema dictionary <em>in-place</em>; the 
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@staticmethod</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">schema_extra</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s1">&#39;Person&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;properties&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                <span class="n">prop</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">schema_extra</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s1">'Person'</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'properties'</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">'title'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Person</span><span class="o">.</span><span class="n">schema_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
@@ -3022,9 +3022,9 @@ The callable is expected to mutate the schema dictionary <em>in-place</em>; the 
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@staticmethod</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">schema_extra</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s1">&#39;Person&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;properties&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                <span class="n">prop</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">schema_extra</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s1">'Person'</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'properties'</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">'title'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Person</span><span class="o">.</span><span class="n">schema_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
@@ -3035,19 +3035,19 @@ The callable is expected to mutate the schema dictionary <em>in-place</em>; the 
 <p><em>(This script is complete, it should run "as is")</em></p>
 <p>Outputs:
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Person&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Person"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;age&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span>
+<span class="w">    </span><span class="nt">"age"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;name&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;age&quot;</span>
+<span class="w">  </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">"name"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"age"</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div></p>

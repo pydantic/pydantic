@@ -1240,28 +1240,28 @@ on <a href="https://github.com/pydantic/pydantic/issues/1205">#1205</a> or creat
 
 
 <span class="nd">@validate_arguments</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">repeat</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">separator</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">repeat</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">separator</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">''</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">b</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">))</span>
 
 
-<span class="n">a</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-<span class="c1">#&gt; b&#39;hellohellohello&#39;</span>
+<span class="c1">#&gt; b'hellohellohello'</span>
 
-<span class="n">b</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="s1">'x'</span><span class="p">,</span> <span class="s1">'4'</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">' '</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
-<span class="c1">#&gt; b&#39;x x x x&#39;</span>
+<span class="c1">#&gt; b'x x x x'</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">c</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;wrong&#39;</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">,</span> <span class="s1">'wrong'</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for Repeat</span>
 <span class="sd">    count</span>
 <span class="sd">      value is not a valid integer (type=type_error.integer)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>
@@ -1284,7 +1284,7 @@ As with the rest of <em>pydantic</em>, types can be coerced by the decorator bef
 
 <span class="nd">@validate_arguments</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">DirectoryPath</span><span class="p">,</span> <span class="n">regex</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*&#39;</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">'**/*'</span><span class="p">)):</span>
         <span class="k">if</span> <span class="nb">max</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">regex</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">path</span><span class="p">))):</span>
@@ -1294,10 +1294,10 @@ As with the rest of <em>pydantic</em>, types can be coerced by the decorator bef
 <span class="c1"># note: this_dir is a string here</span>
 <span class="n">this_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^validation.*&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; /home/runner/work/pydantic/pydantic/docs/examples/validation_decorator_parame</span>
-<span class="c1">#&gt; ter_types.py</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^foobar.*&#39;</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">'^validation.*'</span><span class="p">))</span>
+<span class="c1">#&gt; /home/runner/work/pydantic/pydantic/docs/examples/validation_decorator_field.</span>
+<span class="c1">#&gt; py</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">'^foobar.*'</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
 <span class="c1">#&gt; None</span>
 </code></pre></div>
 </div>
@@ -1312,7 +1312,7 @@ As with the rest of <em>pydantic</em>, types can be coerced by the decorator bef
 
 <span class="nd">@validate_arguments</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">DirectoryPath</span><span class="p">,</span> <span class="n">regex</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*&#39;</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">'**/*'</span><span class="p">)):</span>
         <span class="k">if</span> <span class="nb">max</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">regex</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">path</span><span class="p">))):</span>
@@ -1322,10 +1322,10 @@ As with the rest of <em>pydantic</em>, types can be coerced by the decorator bef
 <span class="c1"># note: this_dir is a string here</span>
 <span class="n">this_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^validation.*&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">'^validation.*'</span><span class="p">))</span>
 <span class="c1">#&gt; /home/runner/work/pydantic/pydantic/docs/.tmp_examples/upgraded/validation_de</span>
-<span class="c1">#&gt; corator_types_3_10.py</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^foobar.*&#39;</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+<span class="c1">#&gt; corator_types_3_9.py</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">'^foobar.*'</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
 <span class="c1">#&gt; None</span>
 </code></pre></div>
 </div>
@@ -1339,7 +1339,7 @@ As with the rest of <em>pydantic</em>, types can be coerced by the decorator bef
 
 <span class="nd">@validate_arguments</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">DirectoryPath</span><span class="p">,</span> <span class="n">regex</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*&#39;</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">'**/*'</span><span class="p">)):</span>
         <span class="k">if</span> <span class="nb">max</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">regex</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">path</span><span class="p">))):</span>
@@ -1349,10 +1349,10 @@ As with the rest of <em>pydantic</em>, types can be coerced by the decorator bef
 <span class="c1"># note: this_dir is a string here</span>
 <span class="n">this_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^validation.*&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">'^validation.*'</span><span class="p">))</span>
 <span class="c1">#&gt; /home/runner/work/pydantic/pydantic/docs/.tmp_examples/upgraded/validation_de</span>
-<span class="c1">#&gt; corator_types_3_10.py</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^foobar.*&#39;</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+<span class="c1">#&gt; corator_types_3_9.py</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">'^foobar.*'</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
 <span class="c1">#&gt; None</span>
 </code></pre></div>
 </div>
@@ -1386,7 +1386,7 @@ combinations of these:</p>
 
 <span class="nd">@validate_arguments</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">pos_or_kw</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">'a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">'</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">pos_or_kw</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
@@ -1401,7 +1401,7 @@ combinations of these:</p>
 
 <span class="nd">@validate_arguments</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">kw_only</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">'a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">'</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">kw_only</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
@@ -1412,7 +1412,7 @@ combinations of these:</p>
 
 <span class="nd">@validate_arguments</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">pos_only</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># python 3.8 only</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">'a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">'</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">pos_only</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
@@ -1440,9 +1440,9 @@ combinations of these:</p>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">var_kwargs</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-<span class="c1">#&gt; {&#39;a&#39;: 1}</span>
+<span class="c1">#&gt; {'a': 1}</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">var_kwargs</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="c1">#&gt; {&#39;a&#39;: 1, &#39;b&#39;: 2}</span>
+<span class="c1">#&gt; {'a': 1, 'b': 2}</span>
 
 
 <span class="nd">@validate_arguments</span>
@@ -1456,13 +1456,13 @@ combinations of these:</p>
     <span class="n">f</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">g</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1"> c=</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1"> d=</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1"> e=</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1"> f=</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1"> g=</span><span class="si">{</span><span class="n">g</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">'a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1"> c=</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1"> d=</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1"> e=</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1"> f=</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1"> g=</span><span class="si">{</span><span class="n">g</span><span class="si">}</span><span class="s1">'</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">armageddon</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
 <span class="c1">#&gt; a=1 b=2 c=None d=() e=3 f=None g={}</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">armageddon</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">spam</span><span class="o">=</span><span class="mi">11</span><span class="p">))</span>
-<span class="c1">#&gt; a=1 b=2 c=3 d=(4, 5, 6) e=8 f=9 g={&#39;g&#39;: 10, &#39;spam&#39;: 11}</span>
+<span class="c1">#&gt; a=1 b=2 c=3 d=(4, 5, 6) e=8 f=9 g={'g': 10, 'spam': 11}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1490,12 +1490,12 @@ as the default value of the field:</p>
     <span class="n">how_many</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for HowMany</span>
 <span class="sd">    num</span>
 <span class="sd">      ensure this value is greater than 10 (type=value_error.number.not_gt;</span>
 <span class="sd">    limit_value=10)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 
 <span class="nd">@validate_arguments</span>
@@ -1504,7 +1504,7 @@ as the default value of the field:</p>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">when</span><span class="p">()))</span>
-<span class="c1">#&gt; &lt;class &#39;datetime.datetime&#39;&gt;</span>
+<span class="c1">#&gt; &lt;class 'datetime.datetime'&gt;</span>
 </code></pre></div>
 </div>
 </div>
@@ -1519,7 +1519,7 @@ as the default value of the field:</p>
 
 
 <span class="nd">@validate_arguments</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">how_many</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;number&#39;</span><span class="p">)]):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">how_many</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">'number'</span><span class="p">)]):</span>
     <span class="k">return</span> <span class="n">num</span>
 
 
@@ -1546,7 +1546,7 @@ To do that you can call the <code>validate</code> method bound to the decorated 
 
 <span class="nd">@validate_arguments</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">slow_sum</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Called with a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1">, b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Called with a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1">, b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="c1">#&gt; Called with a=1, b=1</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
 
@@ -1556,14 +1556,14 @@ To do that you can call the <code>validate</code> method bound to the decorated 
 <span class="n">slow_sum</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">slow_sum</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)</span>
+    <span class="n">slow_sum</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for SlowSum</span>
 <span class="sd">    b</span>
 <span class="sd">      value is not a valid integer (type=type_error.integer)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>
@@ -1579,18 +1579,18 @@ arguments and want to call the function in the most performant way (see <a href=
 
 
 <span class="nd">@validate_arguments</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">repeat</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">separator</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">repeat</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">separator</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">''</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">b</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">))</span>
 
 
-<span class="n">a</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-<span class="c1">#&gt; b&#39;hellohellohello&#39;</span>
+<span class="c1">#&gt; b'hellohellohello'</span>
 
-<span class="n">b</span> <span class="o">=</span> <span class="n">repeat</span><span class="o">.</span><span class="n">raw_function</span><span class="p">(</span><span class="s1">&#39;good bye&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;, &#39;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">repeat</span><span class="o">.</span><span class="n">raw_function</span><span class="p">(</span><span class="s1">'good bye'</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="sa">b</span><span class="s1">', '</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
-<span class="c1">#&gt; b&#39;good bye, good bye&#39;</span>
+<span class="c1">#&gt; b'good bye, good bye'</span>
 </code></pre></div>
 </div>
 </div>
@@ -1608,9 +1608,9 @@ arguments and want to call the function in the most performant way (see <a href=
 <span class="nd">@validate_arguments</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_user_email</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="n">PositiveInt</span><span class="p">):</span>
     <span class="c1"># `conn` is some fictional connection to a database</span>
-    <span class="n">email</span> <span class="o">=</span> <span class="k">await</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;select email from users where id=$1&#39;</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
+    <span class="n">email</span> <span class="o">=</span> <span class="k">await</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">'select email from users where id=$1'</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">email</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;user not found&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'user not found'</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">email</span>
 
@@ -1623,16 +1623,16 @@ arguments and want to call the function in the most performant way (see <a href=
         <span class="k">await</span> <span class="n">get_user_email</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        [</span>
 <span class="sd">            {</span>
-<span class="sd">                &#39;loc&#39;: (&#39;user_id&#39;,),</span>
-<span class="sd">                &#39;msg&#39;: &#39;ensure this value is greater than 0&#39;,</span>
-<span class="sd">                &#39;type&#39;: &#39;value_error.number.not_gt&#39;,</span>
-<span class="sd">                &#39;ctx&#39;: {&#39;limit_value&#39;: 0},</span>
+<span class="sd">                'loc': ('user_id',),</span>
+<span class="sd">                'msg': 'ensure this value is greater than 0',</span>
+<span class="sd">                'type': 'value_error.number.not_gt',</span>
+<span class="sd">                'ctx': {'limit_value': 0},</span>
 <span class="sd">            },</span>
 <span class="sd">        ]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
 
 <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
@@ -1661,11 +1661,11 @@ or a dict of properties which are converted to a class later.</p>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">v</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">&#39;Foobar&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1"> + </span><span class="si">{</span><span class="n">other</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">'Foobar'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1"> + </span><span class="si">{</span><span class="n">other</span><span class="si">}</span><span class="s1">'</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Foobar(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">'Foobar(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="si">}</span><span class="s1">)'</span>
 
 
 <span class="nd">@validate_arguments</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">arbitrary_types_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
@@ -1673,7 +1673,7 @@ or a dict of properties which are converted to a class later.</p>
     <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
 
 
-<span class="n">c</span> <span class="o">=</span> <span class="n">add_foobars</span><span class="p">(</span><span class="n">Foobar</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="n">Foobar</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">))</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">add_foobars</span><span class="p">(</span><span class="n">Foobar</span><span class="p">(</span><span class="s1">'a'</span><span class="p">),</span> <span class="n">Foobar</span><span class="p">(</span><span class="s1">'b'</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
 <span class="c1">#&gt; Foobar(a) + Foobar(b)</span>
 
@@ -1681,7 +1681,7 @@ or a dict of properties which are converted to a class later.</p>
     <span class="n">add_foobars</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    2 validation errors for AddFoobars</span>
 <span class="sd">    a</span>
 <span class="sd">      instance of Foobar expected (type=type_error.arbitrary_type;</span>
@@ -1689,7 +1689,7 @@ or a dict of properties which are converted to a class later.</p>
 <span class="sd">    b</span>
 <span class="sd">      instance of Foobar expected (type=type_error.arbitrary_type;</span>
 <span class="sd">    expected_arbitrary_type=Foobar)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>

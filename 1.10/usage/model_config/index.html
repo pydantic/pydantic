@@ -1042,19 +1042,19 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">max_anystr_length</span> <span class="o">=</span> <span class="mi">10</span>
         <span class="n">error_msg_templates</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;value_error.any_str.max_length&#39;</span><span class="p">:</span> <span class="s1">&#39;max_length:</span><span class="si">{limit_value}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">'value_error.any_str.max_length'</span><span class="p">:</span> <span class="s1">'max_length:</span><span class="si">{limit_value}</span><span class="s1">'</span><span class="p">,</span>
         <span class="p">}</span>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="s1">&#39;x&#39;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="s1">'x'</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for Model</span>
 <span class="sd">    v</span>
 <span class="sd">      max_length:10 (type=value_error.any_str.max_length; limit_value=10)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>
@@ -1072,14 +1072,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;spam&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;oh no&#39;</span><span class="p">)</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">'spam'</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">'oh no'</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for Model</span>
 <span class="sd">    b</span>
 <span class="sd">      extra fields not permitted (type=value_error.extra)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>
@@ -1099,27 +1099,27 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <span class="n">max_anystr_length</span> <span class="o">=</span> <span class="mi">10</span>
     <span class="n">validate_assignment</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">error_msg_templates</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;value_error.any_str.max_length&#39;</span><span class="p">:</span> <span class="s1">&#39;max_length:</span><span class="si">{limit_value}</span><span class="s1">&#39;</span><span class="p">,</span>
+        <span class="s1">'value_error.any_str.max_length'</span><span class="p">:</span> <span class="s1">'max_length:</span><span class="si">{limit_value}</span><span class="s1">'</span><span class="p">,</span>
     <span class="p">}</span>
 
 
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">MyConfig</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">:</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'John Doe'</span>
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
 
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">,</span> <span class="n">signup_ts</span><span class="o">=</span><span class="s1">&#39;2032-06-21T12:00&#39;</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">'42'</span><span class="p">,</span> <span class="n">signup_ts</span><span class="o">=</span><span class="s1">'2032-06-21T12:00'</span><span class="p">)</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;x&#39;</span> <span class="o">*</span> <span class="mi">20</span>
+    <span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'x'</span> <span class="o">*</span> <span class="mi">20</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    1 validation error for User</span>
 <span class="sd">    name</span>
 <span class="sd">      max_length:10 (type=value_error.any_str.max_length; limit_value=10)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </code></pre></div>
 </div>
 </div>
@@ -1242,7 +1242,7 @@ with custom <code>Config</code> since the config is inherited</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MyClass</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A random class&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A random class"""</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -1262,7 +1262,7 @@ you can automatically generate aliases using <code>alias_generator</code>:</p>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">to_camel</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'_'</span><span class="p">))</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Voice</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -1273,11 +1273,11 @@ you can automatically generate aliases using <code>alias_generator</code>:</p>
         <span class="n">alias_generator</span> <span class="o">=</span> <span class="n">to_camel</span>
 
 
-<span class="n">voice</span> <span class="o">=</span> <span class="n">Voice</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="s1">&#39;Filiz&#39;</span><span class="p">,</span> <span class="n">LanguageCode</span><span class="o">=</span><span class="s1">&#39;tr-TR&#39;</span><span class="p">)</span>
+<span class="n">voice</span> <span class="o">=</span> <span class="n">Voice</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="s1">'Filiz'</span><span class="p">,</span> <span class="n">LanguageCode</span><span class="o">=</span><span class="s1">'tr-TR'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">voice</span><span class="o">.</span><span class="n">language_code</span><span class="p">)</span>
 <span class="c1">#&gt; tr-TR</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">voice</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="c1">#&gt; {&#39;Name&#39;: &#39;Filiz&#39;, &#39;LanguageCode&#39;: &#39;tr-TR&#39;}</span>
+<span class="c1">#&gt; {'Name': 'Filiz', 'LanguageCode': 'tr-TR'}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1315,7 +1315,7 @@ on a field in a parent model.</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Voice</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;ActorName&#39;</span><span class="p">)</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">'ActorName'</span><span class="p">)</span>
     <span class="n">language_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">mood</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -1324,27 +1324,27 @@ on a field in a parent model.</p>
     <span class="n">act</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
-        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;language_code&#39;</span><span class="p">:</span> <span class="s1">&#39;lang&#39;</span><span class="p">}</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'language_code'</span><span class="p">:</span> <span class="s1">'lang'</span><span class="p">}</span>
 
         <span class="nd">@classmethod</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">alias_generator</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
             <span class="c1"># this is the same as `alias_generator = to_camel` above</span>
-            <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'_'</span><span class="p">))</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Character</span><span class="o">.</span><span class="n">schema</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;title&#39;: &#39;Character&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;ActorName&#39;: {&#39;title&#39;: &#39;Actorname&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;lang&#39;: {&#39;title&#39;: &#39;Lang&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;Mood&#39;: {&#39;title&#39;: &#39;Mood&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;Act&#39;: {&#39;title&#39;: &#39;Act&#39;, &#39;default&#39;: 1, &#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">    'title': 'Character',</span>
+<span class="sd">    'type': 'object',</span>
+<span class="sd">    'properties': {</span>
+<span class="sd">        'ActorName': {'title': 'Actorname', 'type': 'string'},</span>
+<span class="sd">        'lang': {'title': 'Lang', 'type': 'string'},</span>
+<span class="sd">        'Mood': {'title': 'Mood', 'type': 'string'},</span>
+<span class="sd">        'Act': {'title': 'Act', 'default': 1, 'type': 'integer'},</span>
 <span class="sd">    },</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 </code></pre></div>
 </div>
 </div>
@@ -1375,7 +1375,7 @@ So sometimes you may have unexpected coerced data.</p>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">Bar</span><span class="p">()))</span>
-<span class="c1">#&gt; x=&#39;1&#39; y=Foo()</span>
+<span class="c1">#&gt; x='1' y=Foo()</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1396,7 +1396,7 @@ So sometimes you may have unexpected coerced data.</p>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">Bar</span><span class="p">()))</span>
-<span class="c1">#&gt; x=&#39;1&#39; y=Foo()</span>
+<span class="c1">#&gt; x='1' y=Foo()</span>
 </code></pre></div>
 </div>
 </div>
@@ -1477,12 +1477,12 @@ This option will be improved further once a strict mode is added in <em>pydantic
 
 
 <span class="c1"># Expected coercion</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[&#39;1&#39;, &#39;2&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">]))</span>
+<span class="c1">#&gt; x=['1', '2']</span>
 
 <span class="c1"># Unexpected coercion</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[&#39;1&#39;, &#39;2&#39;]</span>
+<span class="c1">#&gt; x=['1', '2']</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1496,12 +1496,12 @@ This option will be improved further once a strict mode is added in <em>pydantic
 
 
 <span class="c1"># Expected coercion</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[&#39;1&#39;, &#39;2&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">]))</span>
+<span class="c1">#&gt; x=['1', '2']</span>
 
 <span class="c1"># Unexpected coercion</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[&#39;1&#39;, &#39;2&#39;]</span>
+<span class="c1">#&gt; x=['1', '2']</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1513,12 +1513,12 @@ This option will be improved further once a strict mode is added in <em>pydantic
 
 
 <span class="c1"># Expected coercion</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[&#39;1&#39;, &#39;2&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">]))</span>
+<span class="c1">#&gt; x=['1', '2']</span>
 
 <span class="c1"># Unexpected coercion</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[&#39;1&#39;, &#39;2&#39;]</span>
+<span class="c1">#&gt; x=['1', '2']</span>
 </code></pre></div>
 </div>
 </div>

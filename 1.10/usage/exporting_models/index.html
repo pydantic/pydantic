@@ -1195,21 +1195,21 @@ and exported in a number of ways:</p>
     <span class="n">bar</span><span class="p">:</span> <span class="n">BarModel</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">'hello'</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">'whatever'</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
 
 <span class="c1"># returns a dictionary:</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;banana&#39;: 3.14,</span>
-<span class="sd">    &#39;foo&#39;: &#39;hello&#39;,</span>
-<span class="sd">    &#39;bar&#39;: {&#39;whatever&#39;: 123},</span>
+<span class="sd">    'banana': 3.14,</span>
+<span class="sd">    'foo': 'hello',</span>
+<span class="sd">    'bar': {'whatever': 123},</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">}))</span>
-<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">}))</span>
-<span class="c1">#&gt; {&#39;banana&#39;: 3.14}</span>
+<span class="sd">"""</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">'foo'</span><span class="p">,</span> <span class="s1">'bar'</span><span class="p">}))</span>
+<span class="c1">#&gt; {'foo': 'hello', 'bar': {'whatever': 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">'foo'</span><span class="p">,</span> <span class="s1">'bar'</span><span class="p">}))</span>
+<span class="c1">#&gt; {'banana': 3.14}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1236,20 +1236,20 @@ returned, so sub-models will not be converted to dictionaries.</p>
     <span class="n">bar</span><span class="p">:</span> <span class="n">BarModel</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">'hello'</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">'whatever'</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;banana&#39;: 3.14,</span>
-<span class="sd">    &#39;foo&#39;: &#39;hello&#39;,</span>
-<span class="sd">    &#39;bar&#39;: BarModel(</span>
+<span class="sd">    'banana': 3.14,</span>
+<span class="sd">    'foo': 'hello',</span>
+<span class="sd">    'bar': BarModel(</span>
 <span class="sd">        whatever=123,</span>
 <span class="sd">    ),</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">m</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="c1">#&gt; banana: 3.14</span>
     <span class="c1">#&gt; foo: hello</span>
     <span class="c1">#&gt; bar: whatever=123</span>
@@ -1284,19 +1284,19 @@ returned, so sub-models will not be converted to dictionaries.</p>
     <span class="n">bar</span><span class="p">:</span> <span class="n">BarModel</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">'hello'</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">'whatever'</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">}))</span>
-<span class="c1">#&gt; foo=&#39;hello&#39; bar=BarModel(whatever=123)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">'foo'</span><span class="p">,</span> <span class="s1">'bar'</span><span class="p">}))</span>
+<span class="c1">#&gt; foo='hello' bar=BarModel(whatever=123)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">'foo'</span><span class="p">,</span> <span class="s1">'bar'</span><span class="p">}))</span>
 <span class="c1">#&gt; banana=3.14</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;banana&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}))</span>
-<span class="c1">#&gt; banana=0 foo=&#39;hello&#39; bar=BarModel(whatever=123)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s1">'banana'</span><span class="p">:</span> <span class="mi">0</span><span class="p">}))</span>
+<span class="c1">#&gt; banana=0 foo='hello' bar=BarModel(whatever=123)</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bar</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">bar</span><span class="p">))</span>
-<span class="c1">#&gt; 140408946194896 140408946194896</span>
+<span class="c1">#&gt; 139727465594736 139727465594736</span>
 <span class="c1"># normal copy gives the same object reference for `bar`</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bar</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">bar</span><span class="p">))</span>
-<span class="c1">#&gt; 140408946194896 140408946186256</span>
+<span class="c1">#&gt; 139727465594736 139727465589984</span>
 <span class="c1"># deep copy gives a new object reference for `bar`</span>
 </code></pre></div>
 </div>
@@ -1340,9 +1340,9 @@ fail with a simple <code>json.dumps(foobar)</code>.</p>
     <span class="n">bar</span><span class="p">:</span> <span class="n">BarModel</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2032</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2032</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">'whatever'</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;foo&quot;: &quot;2032-06-01T12:13:14&quot;, &quot;bar&quot;: {&quot;whatever&quot;: 123}}</span>
+<span class="c1">#&gt; {"foo": "2032-06-01T12:13:14", "bar": {"whatever": 123}}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1372,7 +1372,7 @@ the values should be functions which serialise that type (see the example below)
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">WithCustomEncoders</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2032</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">diff</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;dt&quot;: 1969660800.0, &quot;diff&quot;: &quot;P4DT4H0M0.000000S&quot;}</span>
+<span class="c1">#&gt; {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1409,7 +1409,7 @@ encoders taking precedence over the parent one.</p>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">ChildClassWithEncoders</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2032</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">diff</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;dt&quot;: 1969660800.0, &quot;diff&quot;: &quot;P4DT4H0M0.000000S&quot;}</span>
+<span class="c1">#&gt; {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1436,29 +1436,29 @@ In case of forward references, you can use a string with the class name instead 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">address</span><span class="p">:</span> <span class="n">Address</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">friends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="s1">'User'</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">json_encoders</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">Address</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;User&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> &#39;</span>
-                              <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
+            <span class="n">Address</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)'</span><span class="p">,</span>
+            <span class="s1">'User'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> '</span>
+                              <span class="sa">f</span><span class="s1">'(</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)'</span><span class="p">,</span>
         <span class="p">}</span>
 
 
 <span class="n">User</span><span class="o">.</span><span class="n">update_forward_refs</span><span class="p">()</span>
 
 <span class="n">wolfgang</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Wolfgang&#39;</span><span class="p">,</span>
-    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;Berlin&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;Deutschland&#39;</span><span class="p">),</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'Wolfgang'</span><span class="p">,</span>
+    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">'Berlin'</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">'Deutschland'</span><span class="p">),</span>
     <span class="n">friends</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Pierre&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;Paris&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;France&#39;</span><span class="p">)),</span>
-        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;London&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;UK&#39;</span><span class="p">)),</span>
+        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Pierre'</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">'Paris'</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">'France'</span><span class="p">)),</span>
+        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'John'</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">'London'</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">'UK'</span><span class="p">)),</span>
     <span class="p">],</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">wolfgang</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">models_as_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-<span class="c1">#&gt; {&quot;name&quot;: &quot;Wolfgang&quot;, &quot;address&quot;: &quot;Berlin (Deutschland)&quot;, &quot;friends&quot;: [&quot;Pierre</span>
-<span class="c1">#&gt; in Paris (FR)&quot;, &quot;John in London (UK)&quot;]}</span>
+<span class="c1">#&gt; {"name": "Wolfgang", "address": "Berlin (Deutschland)", "friends": ["Pierre</span>
+<span class="c1">#&gt; in Paris (FR)", "John in London (UK)"]}</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1475,29 +1475,29 @@ In case of forward references, you can use a string with the class name instead 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">address</span><span class="p">:</span> <span class="n">Address</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">friends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="s1">'User'</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">json_encoders</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">Address</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;User&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> &#39;</span>
-                              <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
+            <span class="n">Address</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)'</span><span class="p">,</span>
+            <span class="s1">'User'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> '</span>
+                              <span class="sa">f</span><span class="s1">'(</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)'</span><span class="p">,</span>
         <span class="p">}</span>
 
 
 <span class="n">User</span><span class="o">.</span><span class="n">update_forward_refs</span><span class="p">()</span>
 
 <span class="n">wolfgang</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Wolfgang&#39;</span><span class="p">,</span>
-    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;Berlin&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;Deutschland&#39;</span><span class="p">),</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'Wolfgang'</span><span class="p">,</span>
+    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">'Berlin'</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">'Deutschland'</span><span class="p">),</span>
     <span class="n">friends</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Pierre&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;Paris&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;France&#39;</span><span class="p">)),</span>
-        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;London&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;UK&#39;</span><span class="p">)),</span>
+        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Pierre'</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">'Paris'</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">'France'</span><span class="p">)),</span>
+        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'John'</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">'London'</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">'UK'</span><span class="p">)),</span>
     <span class="p">],</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">wolfgang</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">models_as_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-<span class="c1">#&gt; {&quot;name&quot;: &quot;Wolfgang&quot;, &quot;address&quot;: &quot;Berlin (Deutschland)&quot;, &quot;friends&quot;: [&quot;Pierre</span>
-<span class="c1">#&gt; in Paris (FR)&quot;, &quot;John in London (UK)&quot;]}</span>
+<span class="c1">#&gt; {"name": "Wolfgang", "address": "Berlin (Deutschland)", "friends": ["Pierre</span>
+<span class="c1">#&gt; in Paris (FR)", "John in London (UK)"]}</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1512,29 +1512,29 @@ In case of forward references, you can use a string with the class name instead 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">address</span><span class="p">:</span> <span class="n">Address</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s1">'User'</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">json_encoders</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">Address</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;User&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> &#39;</span>
-                              <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
+            <span class="n">Address</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)'</span><span class="p">,</span>
+            <span class="s1">'User'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> '</span>
+                              <span class="sa">f</span><span class="s1">'(</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)'</span><span class="p">,</span>
         <span class="p">}</span>
 
 
 <span class="n">User</span><span class="o">.</span><span class="n">update_forward_refs</span><span class="p">()</span>
 
 <span class="n">wolfgang</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Wolfgang&#39;</span><span class="p">,</span>
-    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;Berlin&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;Deutschland&#39;</span><span class="p">),</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'Wolfgang'</span><span class="p">,</span>
+    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">'Berlin'</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">'Deutschland'</span><span class="p">),</span>
     <span class="n">friends</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Pierre&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;Paris&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;France&#39;</span><span class="p">)),</span>
-        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;London&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;UK&#39;</span><span class="p">)),</span>
+        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Pierre'</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">'Paris'</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">'France'</span><span class="p">)),</span>
+        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'John'</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">'London'</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">'UK'</span><span class="p">)),</span>
     <span class="p">],</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">wolfgang</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">models_as_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-<span class="c1">#&gt; {&quot;name&quot;: &quot;Wolfgang&quot;, &quot;address&quot;: &quot;Berlin (Deutschland)&quot;, &quot;friends&quot;: [&quot;Pierre</span>
-<span class="c1">#&gt; in Paris (FR)&quot;, &quot;John in London (UK)&quot;]}</span>
+<span class="c1">#&gt; {"name": "Wolfgang", "address": "Berlin (Deutschland)", "friends": ["Pierre</span>
+<span class="c1">#&gt; in Paris (FR)", "John in London (UK)"]}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1556,10 +1556,10 @@ In case of forward references, you can use a string with the class name instead 
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">DayThisYear</span><span class="p">(</span><span class="n">date</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Contrived example of a special type of date that</span>
 <span class="sd">    takes an int and interprets it as a day in the current year</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">__get_validators__</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
@@ -1577,7 +1577,7 @@ In case of forward references, you can use a string with the class name instead 
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">FooModel</span><span class="p">(</span><span class="n">date</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;date&quot;: &quot;2025-10-28&quot;}</span>
+<span class="c1">#&gt; {"date": "2026-10-28"}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1597,17 +1597,17 @@ In case of forward references, you can use a string with the class name instead 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">'John Doe'</span>
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">json_loads</span> <span class="o">=</span> <span class="n">ujson</span><span class="o">.</span><span class="n">loads</span>
 
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">parse_raw</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;: 123,&quot;signup_ts&quot;:1234567890,&quot;name&quot;:&quot;John Doe&quot;}&#39;</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">parse_raw</span><span class="p">(</span><span class="s1">'{"id": 123,"signup_ts":1234567890,"name":"John Doe"}'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
 <span class="c1">#&gt; id=123 signup_ts=datetime.datetime(2009, 2, 13, 23, 31, 30,</span>
-<span class="c1">#&gt; tzinfo=datetime.timezone.utc) name=&#39;John Doe&#39;</span>
+<span class="c1">#&gt; tzinfo=datetime.timezone.utc) name='John Doe'</span>
 </code></pre></div>
 </div>
 </div>
@@ -1631,7 +1631,7 @@ not accept a <code>default</code> fallback function argument. To do this, you ma
 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">'John Doe'</span>
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
@@ -1639,9 +1639,9 @@ not accept a <code>default</code> fallback function argument. To do this, you ma
         <span class="n">json_dumps</span> <span class="o">=</span> <span class="n">orjson_dumps</span>
 
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">parse_raw</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;:123,&quot;signup_ts&quot;:1234567890,&quot;name&quot;:&quot;John Doe&quot;}&#39;</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">parse_raw</span><span class="p">(</span><span class="s1">'{"id":123,"signup_ts":1234567890,"name":"John Doe"}'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;id&quot;:123,&quot;signup_ts&quot;:&quot;2009-02-13T23:31:30+00:00&quot;,&quot;name&quot;:&quot;John Doe&quot;}</span>
+<span class="c1">#&gt; {"id":123,"signup_ts":"2009-02-13T23:31:30+00:00","name":"John Doe"}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1663,20 +1663,20 @@ meaning you cannot always customise the encoding using <code>Config.json_encoder
     <span class="n">b</span><span class="p">:</span> <span class="nb">int</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">'hello'</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; a=&#39;hello&#39; b=123</span>
+<span class="c1">#&gt; a='hello' b=123</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">b&#39;\x80\x04\x95\x8e\x00\x00\x00\x00\x00\x00\x00\x8c\x17exporting_models_pickle</span>
+<span class="sd">"""</span>
+<span class="sd">b'\x80\x04\x95\x8e\x00\x00\x00\x00\x00\x00\x00\x8c\x17exporting_models_pickle</span>
 <span class="sd">\x94\x8c\x0bFooBarModel\x94\x93\x94)\x81\x94}\x94(\x8c\x08__dict__\x94}\x94(\</span>
 <span class="sd">x8c\x01a\x94\x8c\x05hello\x94\x8c\x01b\x94K{u\x8c\x0e__fields_set__\x94\x8f\x</span>
-<span class="sd">94(h\th\x07\x90\x8c\x1c__private_attribute_values__\x94}\x94ub.&#39;</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">94(h\th\x07\x90\x8c\x1c__private_attribute_values__\x94}\x94ub.'</span>
+<span class="sd">"""</span>
 <span class="n">m2</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span>
-<span class="c1">#&gt; a=&#39;hello&#39; b=123</span>
+<span class="c1">#&gt; a='hello' b=123</span>
 </code></pre></div>
 </div>
 </div>
@@ -1704,25 +1704,25 @@ sets or dictionaries. This allows nested selection of which fields to export:</p
 
 
 <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span>
-    <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span>
+    <span class="nb">id</span><span class="o">=</span><span class="s1">'1234567890'</span><span class="p">,</span>
     <span class="n">user</span><span class="o">=</span><span class="n">User</span><span class="p">(</span>
         <span class="nb">id</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
-        <span class="n">username</span><span class="o">=</span><span class="s1">&#39;JohnDoe&#39;</span><span class="p">,</span>
-        <span class="n">password</span><span class="o">=</span><span class="s1">&#39;hashedpassword&#39;</span>
+        <span class="n">username</span><span class="o">=</span><span class="s1">'JohnDoe'</span><span class="p">,</span>
+        <span class="n">password</span><span class="o">=</span><span class="s1">'hashedpassword'</span>
     <span class="p">),</span>
     <span class="n">value</span><span class="o">=</span><span class="mi">9876543210</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># using a set:</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">}))</span>
-<span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">'user'</span><span class="p">,</span> <span class="s1">'value'</span><span class="p">}))</span>
+<span class="c1">#&gt; {'id': '1234567890'}</span>
 
 <span class="c1"># using a dict:</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">},</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}))</span>
-<span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">'user'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'username'</span><span class="p">,</span> <span class="s1">'password'</span><span class="p">},</span> <span class="s1">'value'</span><span class="p">:</span> <span class="kc">True</span><span class="p">}))</span>
+<span class="c1">#&gt; {'id': '1234567890', 'user': {'id': 42}}</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">}}))</span>
-<span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">'id'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'id'</span><span class="p">}}))</span>
+<span class="c1">#&gt; {'id': '1234567890', 'user': {'id': 42}}</span>
 </code></pre></div>
 </div>
 </div>
@@ -1771,12 +1771,12 @@ member of a list or tuple, the dictionary key <code>'__all__'</code> can be used
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
-    <span class="n">first_name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span>
-    <span class="n">second_name</span><span class="o">=</span><span class="s1">&#39;Doe&#39;</span><span class="p">,</span>
+    <span class="n">first_name</span><span class="o">=</span><span class="s1">'John'</span><span class="p">,</span>
+    <span class="n">second_name</span><span class="o">=</span><span class="s1">'Doe'</span><span class="p">,</span>
     <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span>
         <span class="n">post_code</span><span class="o">=</span><span class="mi">123456</span><span class="p">,</span>
         <span class="n">country</span><span class="o">=</span><span class="n">Country</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">'USA'</span><span class="p">,</span>
             <span class="n">phone_code</span><span class="o">=</span><span class="mi">1</span>
         <span class="p">)</span>
     <span class="p">),</span>
@@ -1785,58 +1785,58 @@ member of a list or tuple, the dictionary key <code>'__all__'</code> can be used
         <span class="n">expires</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="p">),</span>
     <span class="n">hobbies</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">Hobby</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Programming&#39;</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s1">&#39;Writing code and stuff&#39;</span><span class="p">),</span>
-        <span class="n">Hobby</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Gaming&#39;</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s1">&#39;Hell Yeah!!!&#39;</span><span class="p">),</span>
+        <span class="n">Hobby</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Programming'</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s1">'Writing code and stuff'</span><span class="p">),</span>
+        <span class="n">Hobby</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Gaming'</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s1">'Hell Yeah!!!'</span><span class="p">),</span>
     <span class="p">],</span>
 <span class="p">)</span>
 
 <span class="n">exclude_keys</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;second_name&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="s1">&#39;address&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;post_code&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;country&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;phone_code&#39;</span><span class="p">}},</span>
-    <span class="s1">&#39;card_details&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s1">'second_name'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s1">'address'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'post_code'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">'country'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'phone_code'</span><span class="p">}},</span>
+    <span class="s1">'card_details'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="c1"># You can exclude fields from specific members of a tuple/list by index:</span>
-    <span class="s1">&#39;hobbies&#39;</span><span class="p">:</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;info&#39;</span><span class="p">}},</span>
+    <span class="s1">'hobbies'</span><span class="p">:</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s1">'info'</span><span class="p">}},</span>
 <span class="p">}</span>
 
 <span class="n">include_keys</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;first_name&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="s1">&#39;address&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;country&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">}},</span>
-    <span class="s1">&#39;hobbies&#39;</span><span class="p">:</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">}},</span>
+    <span class="s1">'first_name'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s1">'address'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'country'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">}},</span>
+    <span class="s1">'hobbies'</span><span class="p">:</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">}},</span>
 <span class="p">}</span>
 
 <span class="c1"># would be the same as user.dict(exclude=exclude_keys) in this case:</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="n">include_keys</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;first_name&#39;: &#39;John&#39;,</span>
-<span class="sd">    &#39;address&#39;: {&#39;country&#39;: {&#39;name&#39;: &#39;USA&#39;}},</span>
-<span class="sd">    &#39;hobbies&#39;: [</span>
+<span class="sd">    'first_name': 'John',</span>
+<span class="sd">    'address': {'country': {'name': 'USA'}},</span>
+<span class="sd">    'hobbies': [</span>
 <span class="sd">        {</span>
-<span class="sd">            &#39;name&#39;: &#39;Programming&#39;,</span>
-<span class="sd">            &#39;info&#39;: &#39;Writing code and stuff&#39;,</span>
+<span class="sd">            'name': 'Programming',</span>
+<span class="sd">            'info': 'Writing code and stuff',</span>
 <span class="sd">        },</span>
-<span class="sd">        {&#39;name&#39;: &#39;Gaming&#39;},</span>
+<span class="sd">        {'name': 'Gaming'},</span>
 <span class="sd">    ],</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
-<span class="c1"># To exclude a field from all members of a nested list or tuple, use &quot;__all__&quot;:</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;hobbies&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;__all__&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;info&#39;</span><span class="p">}}}))</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># To exclude a field from all members of a nested list or tuple, use "__all__":</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">'hobbies'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'__all__'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'info'</span><span class="p">}}}))</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;first_name&#39;: &#39;John&#39;,</span>
-<span class="sd">    &#39;second_name&#39;: &#39;Doe&#39;,</span>
-<span class="sd">    &#39;address&#39;: {</span>
-<span class="sd">        &#39;post_code&#39;: 123456,</span>
-<span class="sd">        &#39;country&#39;: {&#39;name&#39;: &#39;USA&#39;, &#39;phone_code&#39;: 1},</span>
+<span class="sd">    'first_name': 'John',</span>
+<span class="sd">    'second_name': 'Doe',</span>
+<span class="sd">    'address': {</span>
+<span class="sd">        'post_code': 123456,</span>
+<span class="sd">        'country': {'name': 'USA', 'phone_code': 1},</span>
 <span class="sd">    },</span>
-<span class="sd">    &#39;card_details&#39;: {</span>
-<span class="sd">        &#39;number&#39;: SecretStr(&#39;**********&#39;),</span>
-<span class="sd">        &#39;expires&#39;: datetime.date(2020, 5, 1),</span>
+<span class="sd">    'card_details': {</span>
+<span class="sd">        'number': SecretStr('**********'),</span>
+<span class="sd">        'expires': datetime.date(2020, 5, 1),</span>
 <span class="sd">    },</span>
-<span class="sd">    &#39;hobbies&#39;: [{&#39;name&#39;: &#39;Programming&#39;}, {&#39;name&#39;: &#39;Gaming&#39;}],</span>
+<span class="sd">    'hobbies': [{'name': 'Programming'}, {'name': 'Gaming'}],</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1874,12 +1874,12 @@ member of a list or tuple, the dictionary key <code>'__all__'</code> can be used
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
-    <span class="n">first_name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span>
-    <span class="n">second_name</span><span class="o">=</span><span class="s1">&#39;Doe&#39;</span><span class="p">,</span>
+    <span class="n">first_name</span><span class="o">=</span><span class="s1">'John'</span><span class="p">,</span>
+    <span class="n">second_name</span><span class="o">=</span><span class="s1">'Doe'</span><span class="p">,</span>
     <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span>
         <span class="n">post_code</span><span class="o">=</span><span class="mi">123456</span><span class="p">,</span>
         <span class="n">country</span><span class="o">=</span><span class="n">Country</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">'USA'</span><span class="p">,</span>
             <span class="n">phone_code</span><span class="o">=</span><span class="mi">1</span>
         <span class="p">)</span>
     <span class="p">),</span>
@@ -1888,58 +1888,58 @@ member of a list or tuple, the dictionary key <code>'__all__'</code> can be used
         <span class="n">expires</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="p">),</span>
     <span class="n">hobbies</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">Hobby</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Programming&#39;</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s1">&#39;Writing code and stuff&#39;</span><span class="p">),</span>
-        <span class="n">Hobby</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Gaming&#39;</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s1">&#39;Hell Yeah!!!&#39;</span><span class="p">),</span>
+        <span class="n">Hobby</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Programming'</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s1">'Writing code and stuff'</span><span class="p">),</span>
+        <span class="n">Hobby</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Gaming'</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s1">'Hell Yeah!!!'</span><span class="p">),</span>
     <span class="p">],</span>
 <span class="p">)</span>
 
 <span class="n">exclude_keys</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;second_name&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="s1">&#39;address&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;post_code&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;country&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;phone_code&#39;</span><span class="p">}},</span>
-    <span class="s1">&#39;card_details&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s1">'second_name'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s1">'address'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'post_code'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">'country'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'phone_code'</span><span class="p">}},</span>
+    <span class="s1">'card_details'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="c1"># You can exclude fields from specific members of a tuple/list by index:</span>
-    <span class="s1">&#39;hobbies&#39;</span><span class="p">:</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;info&#39;</span><span class="p">}},</span>
+    <span class="s1">'hobbies'</span><span class="p">:</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s1">'info'</span><span class="p">}},</span>
 <span class="p">}</span>
 
 <span class="n">include_keys</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;first_name&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="s1">&#39;address&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;country&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">}},</span>
-    <span class="s1">&#39;hobbies&#39;</span><span class="p">:</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">}},</span>
+    <span class="s1">'first_name'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s1">'address'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'country'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">}},</span>
+    <span class="s1">'hobbies'</span><span class="p">:</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">}},</span>
 <span class="p">}</span>
 
 <span class="c1"># would be the same as user.dict(exclude=exclude_keys) in this case:</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="n">include_keys</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;first_name&#39;: &#39;John&#39;,</span>
-<span class="sd">    &#39;address&#39;: {&#39;country&#39;: {&#39;name&#39;: &#39;USA&#39;}},</span>
-<span class="sd">    &#39;hobbies&#39;: [</span>
+<span class="sd">    'first_name': 'John',</span>
+<span class="sd">    'address': {'country': {'name': 'USA'}},</span>
+<span class="sd">    'hobbies': [</span>
 <span class="sd">        {</span>
-<span class="sd">            &#39;name&#39;: &#39;Programming&#39;,</span>
-<span class="sd">            &#39;info&#39;: &#39;Writing code and stuff&#39;,</span>
+<span class="sd">            'name': 'Programming',</span>
+<span class="sd">            'info': 'Writing code and stuff',</span>
 <span class="sd">        },</span>
-<span class="sd">        {&#39;name&#39;: &#39;Gaming&#39;},</span>
+<span class="sd">        {'name': 'Gaming'},</span>
 <span class="sd">    ],</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
-<span class="c1"># To exclude a field from all members of a nested list or tuple, use &quot;__all__&quot;:</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;hobbies&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;__all__&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;info&#39;</span><span class="p">}}}))</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># To exclude a field from all members of a nested list or tuple, use "__all__":</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">'hobbies'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'__all__'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'info'</span><span class="p">}}}))</span>
+<span class="sd">"""</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;first_name&#39;: &#39;John&#39;,</span>
-<span class="sd">    &#39;second_name&#39;: &#39;Doe&#39;,</span>
-<span class="sd">    &#39;address&#39;: {</span>
-<span class="sd">        &#39;post_code&#39;: 123456,</span>
-<span class="sd">        &#39;country&#39;: {&#39;name&#39;: &#39;USA&#39;, &#39;phone_code&#39;: 1},</span>
+<span class="sd">    'first_name': 'John',</span>
+<span class="sd">    'second_name': 'Doe',</span>
+<span class="sd">    'address': {</span>
+<span class="sd">        'post_code': 123456,</span>
+<span class="sd">        'country': {'name': 'USA', 'phone_code': 1},</span>
 <span class="sd">    },</span>
-<span class="sd">    &#39;card_details&#39;: {</span>
-<span class="sd">        &#39;number&#39;: SecretStr(&#39;**********&#39;),</span>
-<span class="sd">        &#39;expires&#39;: datetime.date(2020, 5, 1),</span>
+<span class="sd">    'card_details': {</span>
+<span class="sd">        'number': SecretStr('**********'),</span>
+<span class="sd">        'expires': datetime.date(2020, 5, 1),</span>
 <span class="sd">    },</span>
-<span class="sd">    &#39;hobbies&#39;: [{&#39;name&#39;: &#39;Programming&#39;}, {&#39;name&#39;: &#39;Gaming&#39;}],</span>
+<span class="sd">    'hobbies': [{'name': 'Programming'}, {'name': 'Gaming'}],</span>
 <span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 </code></pre></div>
 </div>
 </div>
@@ -1962,25 +1962,25 @@ member of a list or tuple, the dictionary key <code>'__all__'</code> can be used
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">})</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">'username'</span><span class="p">})</span>
     <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
-        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;exclude&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}}</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'value'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'exclude'</span><span class="p">:</span> <span class="kc">True</span><span class="p">}}</span>
 
 
 <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span>
-    <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span>
+    <span class="nb">id</span><span class="o">=</span><span class="s1">'1234567890'</span><span class="p">,</span>
     <span class="n">user</span><span class="o">=</span><span class="n">User</span><span class="p">(</span>
         <span class="nb">id</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
-        <span class="n">username</span><span class="o">=</span><span class="s1">&#39;JohnDoe&#39;</span><span class="p">,</span>
-        <span class="n">password</span><span class="o">=</span><span class="s1">&#39;hashedpassword&#39;</span>
+        <span class="n">username</span><span class="o">=</span><span class="s1">'JohnDoe'</span><span class="p">,</span>
+        <span class="n">password</span><span class="o">=</span><span class="s1">'hashedpassword'</span>
     <span class="p">),</span>
     <span class="n">value</span><span class="o">=</span><span class="mi">9876543210</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
+<span class="c1">#&gt; {'id': '1234567890', 'user': {'id': 42}}</span>
 </code></pre></div>
 </div>
 </div>
@@ -2012,17 +2012,17 @@ member of a list or tuple, the dictionary key <code>'__all__'</code> can be used
 
 
 <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span>
-    <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span>
+    <span class="nb">id</span><span class="o">=</span><span class="s1">'1234567890'</span><span class="p">,</span>
     <span class="n">user</span><span class="o">=</span><span class="n">User</span><span class="p">(</span>
         <span class="nb">id</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
-        <span class="n">username</span><span class="o">=</span><span class="s1">&#39;JohnDoe&#39;</span><span class="p">,</span>
-        <span class="n">password</span><span class="o">=</span><span class="s1">&#39;hashedpassword&#39;</span>
+        <span class="n">username</span><span class="o">=</span><span class="s1">'JohnDoe'</span><span class="p">,</span>
+        <span class="n">password</span><span class="o">=</span><span class="s1">'hashedpassword'</span>
     <span class="p">),</span>
     <span class="n">value</span><span class="o">=</span><span class="mi">9876543210</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">}}))</span>
-<span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">'value'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'username'</span><span class="p">}}))</span>
+<span class="c1">#&gt; {'id': '1234567890', 'user': {'id': 42}}</span>
 </code></pre></div>
 </div>
 </div>
@@ -2048,17 +2048,17 @@ member of a list or tuple, the dictionary key <code>'__all__'</code> can be used
 
 
 <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span>
-    <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span>
+    <span class="nb">id</span><span class="o">=</span><span class="s1">'1234567890'</span><span class="p">,</span>
     <span class="n">user</span><span class="o">=</span><span class="n">User</span><span class="p">(</span>
         <span class="nb">id</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
-        <span class="n">username</span><span class="o">=</span><span class="s1">&#39;JohnDoe&#39;</span><span class="p">,</span>
-        <span class="n">password</span><span class="o">=</span><span class="s1">&#39;hashedpassword&#39;</span>
+        <span class="n">username</span><span class="o">=</span><span class="s1">'JohnDoe'</span><span class="p">,</span>
+        <span class="n">password</span><span class="o">=</span><span class="s1">'hashedpassword'</span>
     <span class="p">),</span>
     <span class="n">value</span><span class="o">=</span><span class="mi">9876543210</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">}}))</span>
-<span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">'id'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'id'</span><span class="p">}}))</span>
+<span class="c1">#&gt; {'id': '1234567890', 'user': {'id': 42}}</span>
 </code></pre></div>
 </div>
 </div>

@@ -1005,13 +1005,13 @@ required fields:</p>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">'John'</span>
     <span class="n">last_name</span><span class="p">:</span> <span class="n">NoneStr</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">list_of_ints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">])</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">,</span> <span class="sa">b</span><span class="s1">'3'</span><span class="p">])</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
 <span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
 </code></pre></div>
@@ -1024,13 +1024,13 @@ required fields:</p>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">'John'</span>
     <span class="n">last_name</span><span class="p">:</span> <span class="n">NoneStr</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">])</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">,</span> <span class="sa">b</span><span class="s1">'3'</span><span class="p">])</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
 <span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
 </code></pre></div>
@@ -1042,13 +1042,13 @@ required fields:</p>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">'John'</span>
     <span class="n">last_name</span><span class="p">:</span> <span class="n">NoneStr</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">])</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">,</span> <span class="sa">b</span><span class="s1">'3'</span><span class="p">])</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
 <span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
 </code></pre></div>
@@ -1064,7 +1064,7 @@ required fields:</p>
 <span class="w">  </span>pydantic_mypy_test.py
 </code></pre></div>
 <p>If you call mypy on the example code above, you should see mypy detect the attribute access error:
-<div class="highlight"><pre><span></span><code>13: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;
+<div class="highlight"><pre><span></span><code>13: error: "Model" has no attribute "middle_name"
 </code></pre></div></p>
 <h2 id="strict-optional">Strict Optional<a class="headerlink" href="#strict-optional" title="Permanent link">&para;</a></h2>
 <p>For your code to pass with <code>--strict-optional</code>, you need to to use <code>Optional[]</code> or an alias of <code>Optional[]</code>

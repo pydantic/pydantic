@@ -1289,7 +1289,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'blue'</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Quest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -1298,8 +1298,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </span>
 
 <span class="n">quest</span> <span class="o">=</span> <span class="n">Quest</span><span class="p">(</span>
-    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;To seek the Holy Grail&#39;</span><span class="p">,</span>
-<span class="hll">    <span class="n">knight</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">}</span>
+    <span class="n">title</span><span class="o">=</span><span class="s1">'To seek the Holy Grail'</span><span class="p">,</span>
+<span class="hll">    <span class="n">knight</span><span class="o">=</span><span class="p">{</span><span class="s1">'title'</span><span class="p">:</span> <span class="s1">'Sir Lancelot'</span><span class="p">,</span> <span class="s1">'age'</span><span class="p">:</span> <span class="mi">23</span><span class="p">}</span>
 </span><span class="p">)</span>
 </code></pre></div>
 <p>The type of the field <code>knight</code> is declared with the class <code>Knight</code> (a <em>pydantic</em> model) and the code is passing a literal <code>dict</code> instead. This is still valid for <em>pydantic</em>, and the <code>dict</code> would be automatically converted to a <code>Knight</code> instance.</p>
@@ -1322,10 +1322,10 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'blue'</span>
 
 
-<span class="hll"><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;23&#39;</span><span class="p">)</span>  <span class="c1"># pyright: ignore</span>
+<span class="hll"><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Sir Lancelot'</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">'23'</span><span class="p">)</span>  <span class="c1"># pyright: ignore</span>
 </span></code></pre></div>
 <p>that way Pylance and mypy will ignore errors in that line.</p>
 <p><strong>Pros</strong>: it's a simple change in that line to remove errors there.</p>
@@ -1339,11 +1339,11 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'blue'</span>
 
 
-<span class="hll"><span class="n">age_str</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s1">&#39;23&#39;</span>
-</span><span class="hll"><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">age_str</span><span class="p">)</span>
+<span class="hll"><span class="n">age_str</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s1">'23'</span>
+</span><span class="hll"><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Sir Lancelot'</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">age_str</span><span class="p">)</span>
 </span></code></pre></div>
 <p>that way Pylance and mypy will interpret the variable <code>age_str</code> as if they didn't know its type, instead of knowing it has a type of <code>str</code> when an <code>int</code> was expected (and then showing the corresponding error).</p>
 <p><strong>Pros</strong>: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments.</p>
@@ -1358,10 +1358,10 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'blue'</span>
 
 
-<span class="hll"><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">))</span>
+<span class="hll"><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Sir Lancelot'</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="s1">'23'</span><span class="p">))</span>
 </span></code></pre></div>
 <p><code>cast(Any, '23')</code> doesn't affect the value, it's still just <code>'23'</code>, but now Pylance and mypy will assume it is of type <code>Any</code>, which means, they will act as if they didn't know the type of the value.</p>
 <p>So, this is the equivalent of the previous example, without the additional variable.</p>
@@ -1376,7 +1376,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'blue'</span>
 
 <span class="hll">    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
 </span><span class="hll">        <span class="n">frozen</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1388,7 +1388,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="hll"><span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 </span>    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'blue'</span>
 </code></pre></div>
 <p>The specific configuration <strong><code>frozen</code></strong> (in beta) has a special meaning.</p>
 <p>It prevents other code from changing a model instance once it's created, keeping it <strong>"frozen"</strong>.</p>
@@ -1414,10 +1414,10 @@ reasons behind this, and why we can't avoid the problem.</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">)</span>  <span class="c1"># this is okay</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">'Sir Lancelot'</span><span class="p">)</span>  <span class="c1"># this is okay</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">23</span><span class="p">)</span>  <span class="c1"># this works fine at runtime but will case an error for pyright</span>
 
-<span class="n">lance</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">()</span>  <span class="c1"># error: Argument missing for parameter &quot;age&quot; </span>
+<span class="n">lance</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">()</span>  <span class="c1"># error: Argument missing for parameter "age" </span>
 </code></pre></div>
 <p>Like the issue with <code>BaseSettings</code>, this is a limitation of dataclass transforms and cannot be fixed in pydantic.</p>
 <h2 id="technical-details">Technical Details<a class="headerlink" href="#technical-details" title="Permanent link">&para;</a></h2>

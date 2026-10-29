@@ -1226,7 +1226,7 @@ See <a href="/">the docs</a> for examples of Pydantic at work.</p>
 <p>Your feedback will be a critical part of ensuring that we have made the right tradeoffs with the API changes in V2.</p>
 <p>To get started with the Pydantic V2 alpha, install it from PyPI. 
 We recommend using a virtual environment to isolate your testing environment:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--pre<span class="w"> </span>-U<span class="w"> </span><span class="s2">&quot;pydantic&gt;=2.0a1&quot;</span>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--pre<span class="w"> </span>-U<span class="w"> </span><span class="s2">"pydantic&gt;=2.0a1"</span>
 </code></pre></div>
 <p>Note that there are still some rough edges and incomplete features, and while trying out the Pydantic V2 alpha releases you may experience errors. 
 We encourage you to try out the alpha releases in a test environment and not in production. 
@@ -1371,9 +1371,9 @@ In Pydantic V2 this is <em>a lot</em> easier: the <code>AnalyzedType</code> clas
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalyzedType</span>
 
 <span class="n">validator</span> <span class="o">=</span> <span class="n">AnalyzedType</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
-<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">'1'</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">,</span> <span class="s1">'3'</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">validator</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
-<span class="c1"># {&#39;type&#39;: &#39;array&#39;, &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}}</span>
+<span class="c1"># {'type': 'array', 'items': {'type': 'integer'}}</span>
 </code></pre></div>
 <p>Note that this API is provisional and may change before the final release of Pydantic V2.</p>
 
