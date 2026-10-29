@@ -438,6 +438,9 @@ def test_streamed_skips_share_json_depth_budget(kind: str, depth: int, leaf: str
         assert validator.validate_json(document).__dict__ == expected.__dict__
 
 
+@pytest.mark.skipif(
+    sys.implementation.name == 'pypy', reason='Deep schema construction exhausts the native stack on PyPy debug builds'
+)
 @pytest.mark.parametrize('kind', ['list', 'dict'])
 @pytest.mark.parametrize('depth', [199, 200, 201])
 @pytest.mark.parametrize('empty', [False, True])
