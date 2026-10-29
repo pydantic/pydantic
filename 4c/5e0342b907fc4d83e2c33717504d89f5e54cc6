@@ -1,0 +1,19 @@
+tests/benchmarks/test_json_escapes.py
+  s_a7430aec8d08b9::t_de1dcb62afc067 1-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4c5e0342b907fc4d83e2c33717504d89f5e54cc6",
+  "prompts": {},
+  "sessions": {
+    "s_a7430aec8d08b9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1873f-b7f3-7253-9707-2a2ed6be2f05",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
