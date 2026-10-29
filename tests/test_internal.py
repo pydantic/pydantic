@@ -541,3 +541,52 @@ def test_pure_annotation_schema_cache_none_annotations():
     assert B(w=[None], x=(2, None)).x == (2, None)
     with pytest.raises(ValidationError):
         B(v=1)
+
+
+@pytest.mark.parametrize(
+    'legacy,modern',
+    [
+        ('Tuple', 'tuple'),
+        ('Tuple[()]', 'tuple[()]'),
+        ('Tuple[int]', 'tuple[int]'),
+        ('Tuple[int, ...]', 'tuple[int, ...]'),
+        ('List', 'list'),
+        ('Set', 'set'),
+        ('FrozenSet', 'frozenset'),
+        ('Dict', 'dict'),
+        ('List[Tuple]', 'list[tuple]'),
+        ('List[Tuple[()]]', 'list[tuple[()]]'),
+    ],
+)
+def test_pure_annotation_cache_key_deprecated_aliases(legacy: str, modern: str) -> None:
+    import typing
+
+    from pydantic._internal._generate_schema import _NOT_PURE, _pure_annotation_cache_key
+
+    key = _pure_annotation_cache_key(eval(legacy, vars(typing)))
+    assert key is not _NOT_PURE
+    assert key == _pure_annotation_cache_key(eval(modern))
+    assert _pure_annotation_cache_key(typing.Tuple) != _pure_annotation_cache_key(tuple[()])  # noqa: UP006
+
+
+@pytest.mark.parametrize(
+    'annotation,args,expected',
+    [
+        (tuple, (), None),
+        ('bare', (), None),
+        (tuple[()], (), ()),
+        ('empty', ((),), ()),
+        (tuple[int], (int,), (int,)),
+        (tuple[int, ...], (int, Ellipsis), (int, Ellipsis)),
+    ],
+)
+def test_normalize_tuple_args(annotation: Any, args: tuple[Any, ...], expected: tuple[Any, ...] | None) -> None:
+    import typing
+
+    from pydantic._internal._generate_schema import _normalize_tuple_args
+
+    if annotation == 'bare':
+        annotation = typing.Tuple  # noqa: UP006
+    elif annotation == 'empty':
+        annotation = typing.Tuple[()]  # noqa: UP006
+    assert _normalize_tuple_args(annotation, args) == expected

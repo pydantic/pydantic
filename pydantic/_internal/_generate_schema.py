@@ -226,8 +226,13 @@ def _pure_annotation_cache_key(tp: Any) -> Any:
     guaranteed by the identity-based membership tests), so it is always hashable. Callers still
     guard against `TypeError` in case an unhashable annotation reaches a `get_args()` call.
     """
-    if id(tp) in _PURE_LEAF_TYPE_IDS:
+    type_id = id(tp)
+    if type_id in _PURE_LEAF_TYPE_IDS:
         return tp
+    # Match schema dispatch's normalization of bare deprecated aliases, preserving
+    # the distinction between `typing.Tuple` (arbitrary length) and `Tuple[()]`.
+    if aliased_type := typing_objects.DEPRECATED_ALIASES_IDS.get(type_id):
+        return aliased_type if id(aliased_type) in _PURE_LEAF_TYPE_IDS else _NOT_PURE
     origin = get_origin(tp)
     if origin is None:
         return _NOT_PURE
@@ -247,7 +252,12 @@ def _pure_annotation_cache_key(tp: Any) -> Any:
     else:
         return _NOT_PURE
 
-    for arg in get_args(tp):
+    args = get_args(tp)
+    if origin is tuple:
+        args = _normalize_tuple_args(tp, args)
+        if args is None:
+            return tuple
+    for arg in args:
         if arg is Ellipsis:
             arg_keys.append(Ellipsis)
             continue
