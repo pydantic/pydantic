@@ -1,0 +1,4 @@
+# Backport configuration, read by `.github/workflows/backport.yml`.
+# Maps a PR label to the branch the PR gets backported to.
+branches:
+  backport-2.14: v2.14-fixes

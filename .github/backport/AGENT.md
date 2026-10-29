@@ -46,11 +46,9 @@ maintenance branch. Code may have been moved, renamed or removed on `main`.
 - Tests: the test suite may have been reorganized on `main`. Add the PR tests to the equivalent test module on
   `$TARGET_BRANCH`, and adapt them to V2 behavior and APIs.
 
-<!-- Add more V3 specific conflicts below as they are encountered. -->
-
 ## Running tests
 
-Pydantic and `pydantic-core` (in the `pydantic-core/` directory) are installed from source:
+Pydantic and `pydantic-core` are installed from source:
 
 ```bash
 uv sync --frozen --all-groups --all-packages --all-extras
