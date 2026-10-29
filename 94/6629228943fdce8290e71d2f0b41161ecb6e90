@@ -1,0 +1,19 @@
+pydantic-core/src/validators/shared/lookup_tree.rs
+  s_140477777b1c97::t_c07fe0ff44eac7 294-295
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "946629228943fdce8290e71d2f0b41161ecb6e90",
+  "prompts": {},
+  "sessions": {
+    "s_140477777b1c97": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18844-25d3-7f41-999c-a93300201843",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
