@@ -8,14 +8,6 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_serializer
 from pydantic._internal._generate_schema import GenerateSchema, _simple_schema_cache_key
 
 
-@pytest.mark.parametrize('annotation', [str, bytes, int, float, bool, complex, None, type(None)])
-def test_scalar_cache_isolation(annotation: Any) -> None:
-    first = TypeAdapter(annotation).core_schema
-    expected_type = first['type']
-    first['type'] = 'any'
-    assert TypeAdapter(annotation).core_schema['type'] == expected_type
-
-
 @pytest.mark.parametrize(
     ('annotation', 'expected'),
     [

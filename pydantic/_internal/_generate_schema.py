@@ -145,23 +145,11 @@ TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 
 _CACHEABLE_SCALARS = (str, bytes, int, float, bool, complex, NoneType)
 _CACHEABLE_SCALARS_BY_ID = {id(scalar): scalar for scalar in _CACHEABLE_SCALARS}
-_STR_SCHEMA = core_schema.str_schema()
-_BYTES_SCHEMA = core_schema.bytes_schema()
-_INT_SCHEMA = core_schema.int_schema()
-_FLOAT_SCHEMA = core_schema.float_schema()
-_BOOL_SCHEMA = core_schema.bool_schema()
-_COMPLEX_SCHEMA = core_schema.complex_schema()
-_NONE_SCHEMA = core_schema.none_schema()
 
 
 def _simple_schema_cache_key(obj: Any, origin: Any) -> tuple[type, ...] | None:
-    """Return an order-sensitive key only for builtin scalars and their flat unions."""
-    if origin is None:
-        if obj is None:
-            return (NoneType,)
-        if _CACHEABLE_SCALARS_BY_ID.get(id(obj)) is obj:
-            return (obj,)
-    elif is_union_origin(origin):
+    """Return an order-sensitive key only for flat unions of builtin scalars."""
+    if is_union_origin(origin):
         args = get_args(obj)
         if len(args) >= 2 and all(_CACHEABLE_SCALARS_BY_ID.get(id(arg)) is arg for arg in args):
             return args
@@ -435,12 +423,12 @@ class GenerateSchema:
     # The handler lambdas take the `GenerateSchema` instance as their first argument, so that
     # the dicts can be built once at class creation time and shared by all instances:
     _handlers: ClassVar[dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]]] = {
-        str: lambda self, obj, schema=_STR_SCHEMA: schema.copy(),
-        bytes: lambda self, obj, schema=_BYTES_SCHEMA: schema.copy(),
-        int: lambda self, obj, schema=_INT_SCHEMA: schema.copy(),
-        float: lambda self, obj, schema=_FLOAT_SCHEMA: schema.copy(),
-        bool: lambda self, obj, schema=_BOOL_SCHEMA: schema.copy(),
-        complex: lambda self, obj, schema=_COMPLEX_SCHEMA: schema.copy(),
+        str: lambda self, obj: core_schema.str_schema(),
+        bytes: lambda self, obj: core_schema.bytes_schema(),
+        int: lambda self, obj: core_schema.int_schema(),
+        float: lambda self, obj: core_schema.float_schema(),
+        bool: lambda self, obj: core_schema.bool_schema(),
+        complex: lambda self, obj: core_schema.complex_schema(),
         object: lambda self, obj: core_schema.any_schema(),
         datetime.date: lambda self, obj: core_schema.date_schema(),
         datetime.datetime: lambda self, obj: core_schema.datetime_schema(),
@@ -451,8 +439,8 @@ class GenerateSchema:
         Url: lambda self, obj: core_schema.url_schema(),
         Fraction: lambda self, obj: core_schema.fraction_schema(),
         MultiHostUrl: lambda self, obj: core_schema.multi_host_url_schema(),
-        None: lambda self, obj, schema=_NONE_SCHEMA: schema.copy(),
-        NoneType: lambda self, obj, schema=_NONE_SCHEMA: schema.copy(),
+        None: lambda self, obj: core_schema.none_schema(),
+        NoneType: lambda self, obj: core_schema.none_schema(),
         MISSING: lambda self, obj: core_schema.missing_sentinel_schema(),
         EllipsisType: lambda self, obj: core_schema.ellipsis_schema(),
         type: lambda self, obj: self._type_schema(),
