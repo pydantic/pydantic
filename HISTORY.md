@@ -1,3 +1,10 @@
+## v1.10.27 (2026-10-29)
+
+* Check `unique_items` in linear time for builtin scalar types by @Viicos in https://github.com/pydantic/pydantic/pull/14101
+* Ignore internal `__pydantic` attributes when setting extra values on dataclasses by @Viicos in https://github.com/pydantic/pydantic/pull/14103
+* Only accept `.` as the decimal separator in ISO 8601 durations by @Viicos in https://github.com/pydantic/pydantic/pull/14096
+* Fix compatibility with Cython 3.3 by @Viicos in https://github.com/pydantic/pydantic/pull/14102
+
 ## v1.10.26 (2025-12-18)
 
 * Fix syntax error under Python 3.7 by @Viicos in https://github.com/pydantic/pydantic/pull/12643
