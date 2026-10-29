@@ -67,11 +67,17 @@ pub struct ModelValidator {
 impl ModelValidator {
     /// Prototype support for the streaming json path: the shapes it can handle, and the pieces it
     /// needs to build an instance itself.
-    pub(crate) fn stream_parts(&self, _py: Python<'_>) -> Option<(&Py<PyType>, &Arc<CombinedValidator>)> {
+    pub(crate) fn stream_parts(&self, py: Python<'_>) -> Option<(&Py<PyType>, &Arc<CombinedValidator>)> {
         if self.custom_init || self.root_model || self.post_init.is_some() || self.frozen {
             return None;
         }
         if !matches!(self.revalidate, Revalidate::Never) {
+            return None;
+        }
+        // Speculative instances may be discarded before JSON parsing finishes. Inspect the
+        // current slot without invoking attribute hooks, including inherited or added __del__.
+        // SAFETY: the bound class is a valid type and Py_tp_finalize is a valid type slot.
+        if !unsafe { ffi::PyType_GetSlot(self.class.bind(py).as_type_ptr(), ffi::Py_tp_finalize) }.is_null() {
             return None;
         }
         Some((&self.class, &self.validator))

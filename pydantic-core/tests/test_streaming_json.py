@@ -14,6 +14,7 @@ Two things make this a real test rather than a green light:
 
 from __future__ import annotations
 
+import gc
 import json
 import os
 import subprocess
@@ -542,3 +543,47 @@ def test_streaming_cyclic_default_factory() -> None:
     assert validator._stream_plan_accepted
     value = validator.validate_json('{}').value
     assert value[0] is value
+
+
+@pytest.mark.parametrize('finalizer_kind', ['direct', 'inherited', 'added_later'])
+@pytest.mark.parametrize('shape', ['root', 'array', 'nested', 'mapping'])
+def test_streaming_excludes_models_with_finalizers(finalizer_kind: str, shape: str) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    finalized: list[str] = []
+
+    def finalize(self: object) -> None:
+        finalized.append('finalized')
+
+    cls = _cls('Finalized')
+    if finalizer_kind != 'added_later':
+        cls.__del__ = finalize
+    if finalizer_kind == 'inherited':
+        cls = type('Child', (cls,), {})
+    schema = core_schema.model_schema(cls, core_schema.model_fields_schema({'a': core_schema.model_field(INT)}))
+    document = '{"a": 1}'
+    if shape == 'array':
+        schema = core_schema.list_schema(schema)
+        document = '[' + document + ']'
+    elif shape == 'nested':
+        schema = _model('Outer', {'item': schema})
+        document = '{"item": ' + document + '}'
+    elif shape == 'mapping':
+        schema = core_schema.dict_schema(STR, schema)
+        document = '{"item": ' + document + '}'
+    validator = SchemaValidator(schema)
+    if finalizer_kind == 'added_later':
+        assert validator._stream_plan_accepted
+        cls.__del__ = finalize
+    if shape != 'nested':
+        assert not validator._stream_plan_accepted
+
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        validator.validate_json(document + ' trailing')
+    gc.collect()
+    assert finalized == []
+
+    value = validator.validate_json(document)
+    assert finalized == []
+    del value
+    gc.collect()
+    assert finalized == ['finalized']
