@@ -64,7 +64,7 @@ def test_cache_reuses_only_supported_shapes(monkeypatch: pytest.MonkeyPatch) -> 
     assert calls == 5
 
 
-def test_cache_key_rejects_custom_types_without_equality() -> None:
+def test_cache_key_rejects_custom_types_without_equality(monkeypatch: pytest.MonkeyPatch) -> None:
     class TrickyMeta(type):
         def __eq__(cls, other: object) -> bool:
             raise AssertionError('equality must not be checked')
@@ -73,9 +73,10 @@ def test_cache_key_rejects_custom_types_without_equality() -> None:
         pass
 
     assert _simple_schema_cache_key(Tricky, None) is None
-    assert _simple_schema_cache_key(int | Tricky, Union) is None
     assert _simple_schema_cache_key(int | str, Union) == (int, str)
     assert _simple_schema_cache_key(str | int, Union) == (str, int)
+    monkeypatch.setattr('pydantic._internal._generate_schema.get_args', lambda obj: (int, Tricky))
+    assert _simple_schema_cache_key(object(), Union) is None
 
 
 def test_field_customization_stays_independent() -> None:
