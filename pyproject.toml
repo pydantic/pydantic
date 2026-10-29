@@ -86,6 +86,7 @@ dev = [
 benchmark-startup = [
     # Note: bumping deps here can change benchmarks results (see tests/benchmarks/library_startup/README.md):
     'mcp==2.3.0',
+    'openai==3.41.0',
 ]
 coverage = [
     'coverage[toml]',

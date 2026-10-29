@@ -31,6 +31,16 @@ LIBRARIES = {
         # Migration-error shim with no model definitions.
         excluded=('mcp.server.fastmcp',),
     ),
+    'openai': IMPORT_ALL_MODULES.format(
+        packages=('openai',),
+        # Optional audio/WebSocket integrations; none defines Pydantic models.
+        excluded=(
+            'openai._vendor.httpx_aiohttp',
+            'openai.helpers',
+            'openai.lib._azure_websocket',
+            'openai.lib._websocket',
+        ),
+    ),
 }
 
 

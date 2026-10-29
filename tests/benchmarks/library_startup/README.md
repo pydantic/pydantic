@@ -11,6 +11,12 @@ and optional integrations without model definitions. MCP includes both `mcp` and
 version. These workloads measure eager loading of all models, even when ordinary
 library startup uses lazy imports.
 
+OpenAI includes every module under `openai.types` and the rest of the SDK,
+including streaming event and pagination models. Optional audio and WebSocket
+integrations without model definitions are excluded. SDK defaults such as deferred
+schema building are preserved: importing every model does not force deferred
+schemas to be built.
+
 The result includes Python startup, all of the library's dependencies, Pydantic
 model building, and interpreter shutdown. It measures elapsed time for the whole
 process, rather than attributing time specifically to Pydantic. Every sample has
