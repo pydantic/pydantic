@@ -1144,14 +1144,15 @@ jobs:
       - name: Verify pydantic-core dist artifacts provenance
         if: steps.check-pypi.outputs.already_published != 'true'
         run: |
-          for f in pydantic-core-dist/*; do
-            gh attestation verify "$f" \
-              --repo "$GITHUB_REPOSITORY" \
-              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/ci.yml" \
-              --source-ref "$GITHUB_REF" \
-              --source-digest "$GITHUB_SHA" \
-              --deny-self-hosted-runners
-          done
+          # Fetch the trusted root once, as `gh attestation verify` otherwise fetches it on every call:
+          gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"
+          printf '%s\0' pydantic-core-dist/* | xargs -0 -P 8 -I {} gh attestation verify {} \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/ci.yml" \
+            --source-ref "$GITHUB_REF" \
+            --source-digest "$GITHUB_SHA" \
+            --deny-self-hosted-runners \
+            --custom-trusted-root "$RUNNER_TEMP/trusted-root.jsonl"
         env:
           GH_TOKEN: ${{ github.token }}
 
