@@ -2,6 +2,38 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.14.2 (2026-10-29)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.2)
+
+### What's Changed
+
+#### Packaging
+
+* Bump PyO3 to 0.30.1, jiter to 0.18.0, use `PyFrozenDict` by @Viicos in [#14003](https://github.com/pydantic/pydantic/pull/14003)
+* Bump speedate to v0.18.0 by @Viicos in [#14007](https://github.com/pydantic/pydantic/pull/14007)
+* Publish `pydantic-core` wheels for PyPy 8.0 (`pp80` ABI) by @Viicos in [#14083](https://github.com/pydantic/pydantic/pull/14083)
+
+#### Performance
+
+* Lazily call repr of values during nested union serialization by @Viicos in [#14082](https://github.com/pydantic/pydantic/pull/14082)
+
+#### Fixes
+
+* Fix unpickling of generic classes defined in separate module by @Viicos in [#13994](https://github.com/pydantic/pydantic/pull/13994)
+* Support explicit `by_alias` overriding `validate_by_alias` in validation JSON schemas by @Viicos in [#13997](https://github.com/pydantic/pydantic/pull/13997)
+* Fix mypy plugin crash on deferred empty model by @ilevkivskyi in [#14027](https://github.com/pydantic/pydantic/pull/14027)
+* Fix infinite recursion when validating an invalid default with `PydanticUseDefault` by @Viicos in [#14028](https://github.com/pydantic/pydantic/pull/14028)
+* Implement recursion guard for `validate_strings()` by @Viicos in [#14029](https://github.com/pydantic/pydantic/pull/14029)
+* Support named tuples in `Sequence` serialization by @Viicos in [#14033](https://github.com/pydantic/pydantic/pull/14033)
+* Take `preserve_empty_path` into account in URL types equality by @Viicos in [#14035](https://github.com/pydantic/pydantic/pull/14035)
+* Fix pickling of `PydanticCustomError` and `ValidationError`s containing custom errors by @Viicos in [#14051](https://github.com/pydantic/pydantic/pull/14051)
+* Do not extract attribute docstrings from nested classes and functions by @Viicos in [#14052](https://github.com/pydantic/pydantic/pull/14052)
+* Fix forward annotations evaluation and type variables substitution when rebuilding parametrized generic models by @Viicos in [#14054](https://github.com/pydantic/pydantic/pull/14054)
+* Fix `Self` resolution in parametrized generics by @Viicos in [#14065](https://github.com/pydantic/pydantic/pull/14065)
+* Ignore extra data matching a field name in `TypedDict` and dataclasses with `extra=allow` by @Viicos in [#14090](https://github.com/pydantic/pydantic/pull/14090)
+* Check mapping `max_length` constraint during validation by @Viicos in [#14092](https://github.com/pydantic/pydantic/pull/14092)
+
 ## v2.14.1 (2026-10-11)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.1)
