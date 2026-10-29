@@ -1,6 +1,6 @@
 __all__ = 'compiled', 'VERSION', 'version_info'
 
-VERSION = '1.10.26'
+VERSION = '1.10.27'
 
 try:
     import cython  # type: ignore
