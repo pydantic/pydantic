@@ -141,6 +141,14 @@ ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 
+_STR_SCHEMA = core_schema.str_schema()
+_BYTES_SCHEMA = core_schema.bytes_schema()
+_INT_SCHEMA = core_schema.int_schema()
+_FLOAT_SCHEMA = core_schema.float_schema()
+_BOOL_SCHEMA = core_schema.bool_schema()
+_COMPLEX_SCHEMA = core_schema.complex_schema()
+_NONE_SCHEMA = core_schema.none_schema()
+
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
 ValidateCallSupportedTypes: TypeAlias = LambdaType | FunctionType | MethodType | partial
@@ -382,12 +390,12 @@ class GenerateSchema:
     # The handler lambdas take the `GenerateSchema` instance as their first argument, so that
     # the dicts can be built once at class creation time and shared by all instances:
     _handlers: ClassVar[dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]]] = {
-        str: lambda self, obj: core_schema.str_schema(),
-        bytes: lambda self, obj: core_schema.bytes_schema(),
-        int: lambda self, obj: core_schema.int_schema(),
-        float: lambda self, obj: core_schema.float_schema(),
-        bool: lambda self, obj: core_schema.bool_schema(),
-        complex: lambda self, obj: core_schema.complex_schema(),
+        str: lambda self, obj, schema=_STR_SCHEMA: schema.copy(),
+        bytes: lambda self, obj, schema=_BYTES_SCHEMA: schema.copy(),
+        int: lambda self, obj, schema=_INT_SCHEMA: schema.copy(),
+        float: lambda self, obj, schema=_FLOAT_SCHEMA: schema.copy(),
+        bool: lambda self, obj, schema=_BOOL_SCHEMA: schema.copy(),
+        complex: lambda self, obj, schema=_COMPLEX_SCHEMA: schema.copy(),
         object: lambda self, obj: core_schema.any_schema(),
         datetime.date: lambda self, obj: core_schema.date_schema(),
         datetime.datetime: lambda self, obj: core_schema.datetime_schema(),
@@ -398,8 +406,8 @@ class GenerateSchema:
         Url: lambda self, obj: core_schema.url_schema(),
         Fraction: lambda self, obj: core_schema.fraction_schema(),
         MultiHostUrl: lambda self, obj: core_schema.multi_host_url_schema(),
-        None: lambda self, obj: core_schema.none_schema(),
-        NoneType: lambda self, obj: core_schema.none_schema(),
+        None: lambda self, obj, schema=_NONE_SCHEMA: schema.copy(),
+        NoneType: lambda self, obj, schema=_NONE_SCHEMA: schema.copy(),
         MISSING: lambda self, obj: core_schema.missing_sentinel_schema(),
         EllipsisType: lambda self, obj: core_schema.ellipsis_schema(),
         type: lambda self, obj: self._type_schema(),
