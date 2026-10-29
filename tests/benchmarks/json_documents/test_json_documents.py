@@ -1,6 +1,6 @@
 """Benchmarks over JSON documents chosen for what they are made of.
 
-`test_north_star.py` gauges overall pydantic performance across many field types, and most of
+`../test_north_star.py` gauges overall pydantic performance across many field types, and most of
 its cost is in those types: only about a tenth of `test_north_star_validate_json` is the JSON
 parse itself, the rest being UUID, `Decimal`, date/time and discriminated-union work. It is a
 good instrument for what it measures and a poor one for everything else `validate_json` does.
@@ -32,9 +32,9 @@ import pytest
 
 from pydantic import BaseModel, TypeAdapter
 
-from .vendored_documents import DOCUMENTS, check_vendored_documents, load_vendored
+from .vendored import DOCUMENTS, check_vendored_documents, load_vendored
 
-_BENCHMARK_DIR = Path(__file__).parent
+_DATA_DIR = Path(__file__).parent / 'data'
 
 
 # --------------------------------------------------------------------------------- documents
@@ -47,11 +47,11 @@ def _generated_bytes(name: str) -> bytes:
     escapes, which take the escape path through the parser rather than the UTF-8 path, and the
     document stops measuring what it was chosen to measure. Real producers emit UTF-8.
     """
-    from .generate_json_shape_data import catalog, event_log, i18n_users
+    from .generate_data import catalog, event_log, i18n_users
 
     generator = {'i18n_users': i18n_users, 'catalog': catalog, 'event_log': event_log}[name]
     current = json.dumps(generator(), ensure_ascii=False).encode('utf-8')
-    path = _BENCHMARK_DIR / f'{name}_data.json'
+    path = _DATA_DIR / f'{name}.json'
     if not path.exists() or path.read_bytes() != current:
         path.write_bytes(current)
     return current
@@ -89,7 +89,7 @@ def event_log_data_bytes() -> bytes:
 
 def test_vendored_documents_match_upstream():
     """The vendored documents are committed compressed, so nothing about them is readable in a
-    diff. This pins what is actually in them to the hashes recorded in `vendored_documents`,
+    diff. This pins what is actually in them to the hashes recorded in `vendored`,
     which also records the URL each came from and can rebuild them byte for byte.
     """
     assert check_vendored_documents() == []
@@ -97,12 +97,12 @@ def test_vendored_documents_match_upstream():
 
 
 def test_generated_data_replaces_stale_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from . import generate_json_shape_data
+    from . import generate_data
 
-    cached = tmp_path / 'event_log_data.json'
+    cached = tmp_path / 'event_log.json'
     cached.write_bytes(b'[]')
-    monkeypatch.setattr('tests.benchmarks.test_json_shapes._BENCHMARK_DIR', tmp_path)
-    monkeypatch.setattr(generate_json_shape_data, 'event_log', lambda: [{'event': 'changed'}])
+    monkeypatch.setattr('tests.benchmarks.json_documents.test_json_documents._DATA_DIR', tmp_path)
+    monkeypatch.setattr(generate_data, 'event_log', lambda: [{'event': 'changed'}])
 
     expected = b'[{"event": "changed"}]'
     assert _generated_bytes('event_log') == expected

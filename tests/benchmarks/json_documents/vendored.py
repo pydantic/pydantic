@@ -7,11 +7,11 @@ the upstream URL, the SHA-256 of the document, and the SHA-256 of the compressed
 
 Check the committed files against those hashes, without network access:
 
-    python -m tests.benchmarks.vendored_documents --check
+    python -m tests.benchmarks.json_documents.vendored --check
 
 Rebuild them from upstream and confirm the result is byte-for-byte what is committed:
 
-    python -m tests.benchmarks.vendored_documents
+    python -m tests.benchmarks.json_documents.vendored
 
 Add `--write` to that to actually replace the files. Compression is `lzma` at preset 9 with a
 CRC-64 check, which is reproducible: the same input gives the same bytes on Linux x86_64 and

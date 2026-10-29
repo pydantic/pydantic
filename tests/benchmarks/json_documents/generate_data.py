@@ -1,8 +1,8 @@
-"""Deterministic data for the benchmarks in `test_json_shapes.py`.
+"""Deterministic data for the benchmarks in `test_json_documents.py`.
 
 Each generator produces a document chosen for what it is *made of* — the proportion of
 non-ASCII text, the length of its strings, the number of distinct keys — rather than for the
-variety of field types it exercises, which is what `generate_north_star_data.py` covers.
+variety of field types it exercises, which is what `../generate_north_star_data.py` covers.
 
 Every generator reseeds before it runs, so the documents are byte-identical between runs and
 independent of the order they are generated in.
