@@ -1,0 +1,47 @@
+pydantic-core/tests/test_streaming_json.py
+  s_7f9a33e3bcbe81::t_3b5bd33edae47c 336,342
+  s_7f9a33e3bcbe81::t_2bcb3c813eca02 1-335,337-341,343-358
+pydantic-core/src/validators/model_fields.rs
+  s_7f9a33e3bcbe81::t_3c7eebb78856b7 444,486,510,522,552,564,632,651,659,664-667
+  s_7f9a33e3bcbe81::t_45d0488bc72157 401-408
+  s_7f9a33e3bcbe81::t_8ca24265199795 529,531,587,589,599,601,933
+  s_7f9a33e3bcbe81::t_aebc767ce44489 8,14,26,31-32,258-357,362-400,409-439,441-443,445-485,487-498,500-509,511-521,523-528,530,532-533,535-551,553-563,565-586,588,590-591,593-598,600,602-604,606-631,633-650,652-658,660-663,668-669,872-901,903-904,906-907,917,919-932,934-937,1243-1292
+  s_7f9a33e3bcbe81::t_c47f76e825413a 902,908-916,918
+  s_7f9a33e3bcbe81::t_57cd3ec4b0568e 358-361,440,499,534,592,605,905
+pydantic-core/src/validators/list.rs
+  s_7f9a33e3bcbe81::t_a467dba6a4fe5f 24-40
+pydantic-core/src/validators/mod.rs
+  s_7f9a33e3bcbe81::t_7ca0558091a5a9 148,587
+  s_7f9a33e3bcbe81::t_d74df67c70af6d 142-147,149-150,493-537,556-586,588-613
+  s_7f9a33e3bcbe81::t_74b60b6c242aa6 614
+pydantic-core/Cargo.toml
+  s_7f9a33e3bcbe81::t_126cdc2764c531 27-31
+pydantic-core/src/lib.rs
+  s_7f9a33e3bcbe81::t_aba14fd6b34cec 27-28
+pydantic-core/src/stream_verify.rs
+  s_7f9a33e3bcbe81::t_d40bb764c5d0a6 1-234
+pydantic-core/src/validators/dict.rs
+  s_7f9a33e3bcbe81::t_cf4643c6a9ff2f 30-40
+pydantic-core/src/validators/model.rs
+  s_7f9a33e3bcbe81::t_4ff2e4c834037d 67-132,432,451
+pydantic-core/src/validators/nullable.rs
+  s_7f9a33e3bcbe81::t_92ff0a5b23e94c 37-43
+pydantic-core/src/validators/prebuilt.rs
+  s_7f9a33e3bcbe81::t_2e13e3554da489 43-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6bbb90a5b93c64ae871e43c41a259e8f522e8eb7",
+  "prompts": {},
+  "sessions": {
+    "s_7f9a33e3bcbe81": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18850-6974-7833-82c9-899c7c6e78a7",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
