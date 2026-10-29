@@ -140,14 +140,17 @@ GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], 
 ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None]
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
-
-_STR_SCHEMA = core_schema.str_schema()
-_BYTES_SCHEMA = core_schema.bytes_schema()
-_INT_SCHEMA = core_schema.int_schema()
-_FLOAT_SCHEMA = core_schema.float_schema()
-_BOOL_SCHEMA = core_schema.bool_schema()
-_COMPLEX_SCHEMA = core_schema.complex_schema()
 _NONE_SCHEMA = core_schema.none_schema()
+
+
+def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
+    """Return fresh copies of a fixed schema made only of immutable values."""
+
+    def handler(self: GenerateSchema, obj: Any) -> CoreSchema:
+        return schema.copy()
+
+    return handler
+
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
@@ -390,12 +393,12 @@ class GenerateSchema:
     # The handler lambdas take the `GenerateSchema` instance as their first argument, so that
     # the dicts can be built once at class creation time and shared by all instances:
     _handlers: ClassVar[dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]]] = {
-        str: lambda self, obj, schema=_STR_SCHEMA: schema.copy(),
-        bytes: lambda self, obj, schema=_BYTES_SCHEMA: schema.copy(),
-        int: lambda self, obj, schema=_INT_SCHEMA: schema.copy(),
-        float: lambda self, obj, schema=_FLOAT_SCHEMA: schema.copy(),
-        bool: lambda self, obj, schema=_BOOL_SCHEMA: schema.copy(),
-        complex: lambda self, obj, schema=_COMPLEX_SCHEMA: schema.copy(),
+        str: _copy_schema_handler(core_schema.str_schema()),
+        bytes: _copy_schema_handler(core_schema.bytes_schema()),
+        int: _copy_schema_handler(core_schema.int_schema()),
+        float: _copy_schema_handler(core_schema.float_schema()),
+        bool: _copy_schema_handler(core_schema.bool_schema()),
+        complex: _copy_schema_handler(core_schema.complex_schema()),
         object: lambda self, obj: core_schema.any_schema(),
         datetime.date: lambda self, obj: core_schema.date_schema(),
         datetime.datetime: lambda self, obj: core_schema.datetime_schema(),
@@ -406,8 +409,8 @@ class GenerateSchema:
         Url: lambda self, obj: core_schema.url_schema(),
         Fraction: lambda self, obj: core_schema.fraction_schema(),
         MultiHostUrl: lambda self, obj: core_schema.multi_host_url_schema(),
-        None: lambda self, obj, schema=_NONE_SCHEMA: schema.copy(),
-        NoneType: lambda self, obj, schema=_NONE_SCHEMA: schema.copy(),
+        None: _copy_schema_handler(_NONE_SCHEMA),
+        NoneType: _copy_schema_handler(_NONE_SCHEMA),
         MISSING: lambda self, obj: core_schema.missing_sentinel_schema(),
         EllipsisType: lambda self, obj: core_schema.ellipsis_schema(),
         type: lambda self, obj: self._type_schema(),
