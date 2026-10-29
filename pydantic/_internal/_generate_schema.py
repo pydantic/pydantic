@@ -891,14 +891,15 @@ class GenerateSchema:
 
                 decorators = cls.__pydantic_decorators__
                 computed_fields = decorators.computed_fields
-                check_decorator_fields_exist(
-                    chain(
-                        decorators.field_validators.values(),
-                        decorators.field_serializers.values(),
-                        decorators.validators.values(),
-                    ),
-                    {*fields.keys(), *computed_fields.keys()},
-                )
+                if decorators.field_validators or decorators.field_serializers or decorators.validators:
+                    check_decorator_fields_exist(
+                        chain(
+                            decorators.field_validators.values(),
+                            decorators.field_serializers.values(),
+                            decorators.validators.values(),
+                        ),
+                        {*fields.keys(), *computed_fields.keys()},
+                    )
 
                 model_validators = decorators.model_validators.values()
 
