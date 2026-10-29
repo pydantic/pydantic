@@ -115,8 +115,11 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
 
     def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
         """Returns a deep copy of the model."""
+        if memo is None:
+            memo = {}
         cls = type(self)
         m = cls.__new__(cls)
+        memo[id(self)] = m
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
         # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
         # and attempting a deepcopy would be marginally slower.

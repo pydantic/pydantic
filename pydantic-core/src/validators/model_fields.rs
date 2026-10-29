@@ -11,6 +11,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PySet, PyType};
+use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
@@ -492,8 +493,10 @@ impl ModelFieldsValidator {
         //
         // Once the iteration is complete, the highest priority input for each field
         // is validated and the rest are propagated into extra (if necessary).
-        let mut field_inputs: Vec<Option<(LookupFieldInfo, &JsonValue)>> =
-            (0..self.fields.len()).map(|_| None).collect();
+        // Keep scratch inputs inline for small models; wider models use the heap.
+        let mut field_inputs: SmallVec<[Option<(LookupFieldInfo, &JsonValue)>; 16]> =
+            SmallVec::with_capacity(self.fields.len());
+        field_inputs.resize(self.fields.len(), None);
 
         // Buffer for possible extra data, `None` if ignoring extra. Extra data
         // is validated in order of appearance after all fields have been processed.
@@ -541,8 +544,8 @@ impl ModelFieldsValidator {
             }
         }
 
-        // handle all inputs for fields
-        for (field, field_input) in std::iter::zip(&self.fields, field_inputs) {
+        // Iterate in place to avoid moving the inline buffer into an owning iterator.
+        for (field, field_input) in std::iter::zip(&self.fields, field_inputs.iter().copied()) {
             let field_input_with_lookup_path = field_input.map(|(field_info, value)| {
                 let lookup_path = if let Some(alias_index) = field_info.alias_index() {
                     &field.lookup_path_collection.by_alias[alias_index]
