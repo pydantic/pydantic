@@ -29,7 +29,7 @@ from uuid import UUID
 import pytest
 from annotated_types import Interval
 from dirty_equals import HasRepr
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import TypeAliasType, TypedDict, deprecated
 
@@ -174,6 +174,51 @@ def test_validate_by_alias_false_is_scoped_to_its_own_model():
     assert list(json_schema['$defs']['Inner']['properties']) == ['inner_field']
 
     assert Outer.model_validate({'outerAlias': 'x', 'inner': {'inner_field': 'y'}}).outer_field == 'x'
+
+
+def test_explicit_by_alias_overrides_validate_by_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/13993"""
+
+    class Inner(BaseModel):
+        model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
+        inner_field: str = Field(alias='innerAlias')
+
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
+        with_alias: str = Field(alias='withAlias')
+        with_validation_alias: str = Field(validation_alias='withValidationAlias')
+        inner: Inner
+
+    json_schema = Model.model_json_schema(by_alias=True)
+    assert list(json_schema['properties']) == ['withAlias', 'withValidationAlias', 'inner']
+    assert list(json_schema['$defs']['Inner']['properties']) == ['innerAlias']
+    assert list(TypeAdapter(Model).json_schema(by_alias=True)['properties']) == [
+        'withAlias',
+        'withValidationAlias',
+        'inner',
+    ]
+
+    # Consistent with the `by_alias` validation runtime setting:
+    Model.model_validate(
+        {'withAlias': 'a', 'withValidationAlias': 'b', 'inner': {'innerAlias': 'c'}},
+        by_alias=True,
+        by_name=False,
+    )
+
+    assert list(Model.model_json_schema(by_alias=False)['properties']) == [
+        'with_alias',
+        'with_validation_alias',
+        'inner',
+    ]
+
+
+def test_explicit_by_alias_false_overrides_validate_by_alias() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+        my_field: str = Field(alias='myAlias')
+
+    assert list(Model.model_json_schema()['properties']) == ['myAlias']
+    assert list(Model.model_json_schema(by_alias=False)['properties']) == ['my_field']
 
 
 def test_ref_template():
@@ -6546,6 +6591,55 @@ def test_json_schema_mode_override():
     assert SerializationModel.model_json_schema(mode='validation') == Model.model_json_schema(mode='serialization')
 
 
+@pytest.mark.parametrize('reverse', [False, True])
+def test_json_schema_mode_override_nested_cache_key(reverse: bool) -> None:
+    """https://github.com/pydantic/pydantic/issues/13971"""
+
+    class Inner(BaseModel):
+        a: int = 0
+
+        @computed_field
+        @property
+        def c(self) -> int:
+            return 1
+
+    class Outer(BaseModel):
+        model_config = ConfigDict(json_schema_mode_override='validation')
+
+        inner: Inner
+
+    inputs: list[tuple[type[BaseModel], JsonSchemaMode]] = [(Outer, 'serialization'), (Inner, 'validation')]
+    if reverse:
+        inputs.reverse()
+
+    mapping, schema = models_json_schema(inputs)
+
+    assert mapping[(Inner, 'validation')] == {'$ref': '#/$defs/Inner-Input'}
+    assert schema['$defs']['Inner-Input'] == Inner.model_json_schema(mode='validation')
+    # `Inner` doesn't set `json_schema_mode_override`, so it uses the mode the generation was requested with:
+    assert schema['$defs']['Outer']['properties']['inner'] == {'$ref': '#/$defs/Inner-Output'}
+    assert schema['$defs']['Inner-Output'] == Inner.model_json_schema(mode='serialization')
+
+
+def test_json_schema_mode_override_typed_dict_computed_fields() -> None:
+    class TD(TypedDict):
+        __pydantic_config__ = ConfigDict(json_schema_mode_override='validation')  # pyright: ignore[reportGeneralTypeIssues]
+
+        a: int
+
+    td_schema = TypeAdapter(TD).core_schema
+    assert td_schema['type'] == 'typed-dict'
+    # Computed fields can't be defined on typed dictionaries, add one manually:
+    td_schema['computed_fields'] = [core_schema.computed_field('c', return_schema=core_schema.int_schema())]
+
+    assert GenerateJsonSchema().generate(td_schema, mode='serialization') == {
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'title': 'TD',
+        'type': 'object',
+    }
+
+
 def test_models_json_schema_generics() -> None:
     class G(BaseModel, Generic[T]):
         foo: T
@@ -6991,6 +7085,70 @@ def test_plain_serializer_does_not_apply_with_unless_none() -> None:
         },
         'title': 'Model',
         'type': 'object',
+    }
+
+
+def test_unless_none_serializer_on_wrapped_nullable_schema() -> None:
+    """Test that `null` is kept when a serializer with `when_used` set to `'unless-none'` or `'json-unless-none'`
+    is applied on a schema wrapping the `nullable` schema (e.g. a default or validator schema)."""
+
+    class Model(BaseModel):
+        with_default: Decimal | None = None
+        with_validator: Decimal | None
+        annotated_with_validator: Annotated[
+            Decimal | None,
+            AfterValidator(lambda v: v),
+            PlainSerializer(float, return_type=float, when_used='json-unless-none'),
+        ]
+
+        @field_validator('with_validator')
+        @classmethod
+        def validate_with_validator(cls, v: Decimal | None) -> Decimal | None:
+            return v
+
+        @field_serializer('with_default', 'with_validator', when_used='unless-none')
+        def serialize_decimal(self, v: Decimal) -> float:
+            return float(v)
+
+    properties = Model.model_json_schema(mode='serialization')['properties']
+
+    assert properties['with_default']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+    assert properties['with_validator']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+    assert properties['annotated_with_validator']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+
+    assert Model(with_validator=None, annotated_with_validator=None).model_dump(mode='json') == {
+        'with_default': None,
+        'with_validator': None,
+        'annotated_with_validator': None,
+    }
+
+
+@pytest.mark.parametrize(
+    'wrap',
+    [
+        pytest.param(
+            lambda s, ser: core_schema.chain_schema([core_schema.any_schema(), s], serialization=ser), id='chain'
+        ),
+        pytest.param(lambda s, ser: core_schema.lax_or_strict_schema(s, s, serialization=ser), id='lax-or-strict'),
+        pytest.param(lambda s, ser: core_schema.json_or_python_schema(s, s, serialization=ser), id='json-or-python'),
+    ],
+)
+@pytest.mark.parametrize('when_used', ['unless-none', 'json-unless-none'])
+def test_unless_none_serializer_on_nullable_schema_in_wrapper(wrap: Any, when_used: str) -> None:
+    """Test that `null` is kept when a serializer with `when_used` set to `'unless-none'` or `'json-unless-none'`
+    is applied on a schema wrapping the `nullable` schema in the branch used for serialization."""
+    ser = core_schema.plain_serializer_function_ser_schema(
+        str, return_schema=core_schema.str_schema(), when_used=when_used
+    )
+    schema = wrap(core_schema.nullable_schema(core_schema.int_schema()), ser)
+
+    assert SchemaValidator(schema).validate_python(None) is None
+    serializer = SchemaSerializer(schema)
+    assert serializer.to_python(None, mode='json') is None
+    assert serializer.to_python(1, mode='json') == '1'
+
+    assert GenerateJsonSchema().generate(schema, mode='serialization') == {
+        'anyOf': [{'type': 'null'}, {'type': 'string'}]
     }
 
 

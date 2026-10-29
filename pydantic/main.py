@@ -434,7 +434,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             copied = self.__copy__()
 
             # As we make separate `deepcopy()` calls, use a shared memo:
-            memo: dict[int, Any] = {}
+            memo: dict[int, Any] = {id(self): copied}
 
             # Selectively deepcopy fields that are not being updated:
             for k, v in copied.__dict__.items():
@@ -607,7 +607,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     def model_json_schema(
         cls,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
@@ -617,7 +617,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """Generates a JSON schema for a model class.
 
         Args:
-            by_alias: Whether to use attribute aliases or not.
+            by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+                aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+                schemas). An explicit value takes precedence over the configuration.
             ref_template: The reference template.
             union_format: The format to use when combining schemas from unions together. Can be one of:
 
@@ -1053,8 +1055,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     def __deepcopy__(self, memo: Dict[int, Any] | None = None) -> Self:  # noqa: UP006
         """Returns a deep copy of the model."""
+        if memo is None:
+            memo = {}
         cls = type(self)
         m = cls.__new__(cls)
+        memo[id(self)] = m
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
         _object_setattr(m, '__pydantic_extra__', deepcopy(self.__pydantic_extra__, memo=memo))
         # This next line doesn't need a deepcopy because __pydantic_fields_set__ only contains strings,
@@ -1237,7 +1242,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 if not (
                     self_type is other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
-                    # We need to assume `None` and `{}` are equivalent, because extra behavior
+                    # We need to assume `None` and `{}` are equivalent, because extra behavior
                     # can be controlled at validation time:
                     and (self.__pydantic_extra__ or {}) == (other.__pydantic_extra__ or {})
                 ):

@@ -1750,12 +1750,14 @@ except ValidationError as exc:
 
     For example, the following would yield the `none_required` validation error since the field `int` is set to a default value of `None` and has the exact same name as its type, which causes problems with validation.
 
-    ```python {test="skip"}
+    ```python {test="skip" lint="skip" upgrade="skip"}
+    from typing import Optional
+
     from pydantic import BaseModel
 
 
     class M1(BaseModel):
-        int: int | None = None
+        int: Optional[int] = None
 
 
     m = M1(int=123)  # errors

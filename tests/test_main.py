@@ -26,8 +26,9 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import pydantic_core
 import pytest
-from pydantic_core import CoreSchema, ModelFieldsSet, PydanticUndefined, core_schema
+from pydantic_core import CoreSchema, ModelFieldsSet, PydanticOmit, PydanticUndefined, core_schema
 
 from pydantic import (
     AfterValidator,
@@ -315,14 +316,22 @@ def test_forbidden_extra_success():
     assert m.foo == 'whatever'
 
 
-def test_forbidden_extra_fails():
+def test_forbidden_extra_fails(py_and_json):
     class ForbiddenExtra(BaseModel):
         model_config = ConfigDict(extra='forbid')
-        foo: str = 'whatever'
+        foo: int = 0
 
+    adapter = py_and_json(ForbiddenExtra)
     with pytest.raises(ValidationError) as exc_info:
-        ForbiddenExtra(foo='ok', bar='wrong', spam='xx')
+        # field errors are reported before extra errors, regardless of the input order:
+        adapter.validate_test({'bar': 'wrong', 'foo': 'not_an_int', 'spam': 'xx'})
     assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('foo',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
         {
             'type': 'extra_forbidden',
             'loc': ('bar',),
@@ -1950,16 +1959,18 @@ def test_default_factory_validated_data_not_called_if_validate_default_validatio
     ]
 
 
-def test_default_factory_validated_data_not_called_if_missing_value_validation_error(container_class) -> None:
+def test_default_factory_validated_data_not_called_if_missing_value_validation_error(
+    container_class, py_and_json
+) -> None:
 
     class Model(container_class):
         a: int
         b: Annotated[int, Field(default_factory=lambda data: data['a'])]
 
-    ta = TypeAdapter(Model)
+    adapter = py_and_json(Model)
 
     with pytest.raises(ValidationError) as exc:
-        ta.validate_python({})
+        adapter.validate_test({})
 
     assert exc.value.errors(include_url=False) == [
         {
@@ -1968,6 +1979,29 @@ def test_default_factory_validated_data_not_called_if_missing_value_validation_e
             'msg': 'Field required',
             'input': {},
         },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+
+def test_default_factory_validated_data_not_called_if_omitted(py_and_json) -> None:
+    class Model(BaseModel):
+        a: int
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+        @field_validator('a', mode='before')
+        @classmethod
+        def omit(cls, value: Any) -> Any:
+            raise PydanticOmit
+
+    with pytest.raises(ValidationError) as exc:
+        py_and_json(Model).validate_test({'a': 1})
+
+    assert exc.value.errors(include_url=False) == [
         {
             'input': PydanticUndefined,
             'loc': ('b',),
@@ -3090,6 +3124,35 @@ def test_recursion_loop_error():
     )
 
 
+def test_recursion_loop_error_validate_strings_cyclic() -> None:
+    class Model(BaseModel):
+        x: Optional['Model'] = None
+
+    data = {}
+    data['x'] = data
+
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
+        Model.model_validate_strings(data)
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+def test_recursion_loop_error_validate_strings_deep() -> None:
+    class Model(BaseModel):
+        x: Optional['Model'] = None
+
+    # deeper than the recursion guard limit (at most 255), but not too deep as freeing
+    # deeply nested dicts can exhaust the stack on Pyodide:
+    data = {}
+    for _ in range(1_000):
+        data = {'x': data}
+
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
+        Model.model_validate_strings(data)
+
+
 def test_protected_namespace_default():
     with pytest.warns(
         UserWarning, match="Field 'model_dump_something' in 'Model' conflicts with protected namespace 'model_dump'"
@@ -3422,14 +3485,15 @@ def test_resolve_def_schema_from_core_schema() -> None:
     assert Outer.model_validate({'inner': {'x': 1}}).inner.x == 2
 
 
-def test_extra_validator_scalar() -> None:
+def test_extra_validator_scalar(py_and_json) -> None:
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
 
     class Child(Model):
         __pydantic_extra__: dict[str, int]
 
-    m = Child(a='1')
+    adapter = py_and_json(Child)
+    m = adapter.validate_test({'a': '1'})
     assert m.__pydantic_extra__ == {'a': 1}
 
     # insert_assert(Child.model_json_schema())
@@ -3441,26 +3505,43 @@ def test_extra_validator_scalar() -> None:
     }
 
 
-def test_extra_validator_keys() -> None:
+def test_extra_validator_keys(py_and_json) -> None:
     class Model(BaseModel, extra='allow'):
         __pydantic_extra__: dict[Annotated[str, Field(max_length=3)], int]
 
+    adapter = py_and_json(Model)
     with pytest.raises(ValidationError) as exc_info:
-        Model(extra_too_long=1)
+        adapter.validate_test({'extra_too_long': 1})
 
     assert exc_info.value.errors()[0]['type'] == 'string_too_long'
 
 
-def test_extra_validator_field() -> None:
+def test_extra_validator_keys_strict() -> None:
+    """Extra keys are validated like `dict` keys: JSON object keys are strings, and can be parsed even in strict mode."""
+
+    class Model(BaseModel, extra='allow'):
+        __pydantic_extra__: dict[Annotated[int, Field(strict=True)], int]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'123': 1})
+
+    assert exc_info.value.errors()[0]['type'] == 'int_type'
+
+    assert Model.model_validate_json('{"123": 1}').__pydantic_extra__ == {123: 1}
+
+
+def test_extra_validator_field(py_and_json) -> None:
     class Model(BaseModel, extra='allow'):
         # use Field(init=False) to ensure this is not treated as a field by dataclass_transform
         __pydantic_extra__: dict[str, int] = Field(init=False)
 
-    m = Model(a='1')
+    adapter = py_and_json(Model)
+    m = adapter.validate_test({'a': '1'})
     assert m.__pydantic_extra__ == {'a': 1}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='a')
+        adapter.validate_test({'a': 'a'})
+
     assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
@@ -3479,7 +3560,7 @@ def test_extra_validator_field() -> None:
     }
 
 
-def test_extra_validator_named() -> None:
+def test_extra_validator_named(py_and_json) -> None:
     class Foo(BaseModel):
         x: int
 
@@ -3490,7 +3571,8 @@ def test_extra_validator_named() -> None:
     class Child(Model):
         y: int
 
-    m = Child(a={'x': '1'}, y=2)
+    adapter = py_and_json(Child)
+    m = adapter.validate_test({'a': {'x': '1'}, 'y': 2})
     assert m.__pydantic_extra__ == {'a': Foo(x=1)}
 
     # insert_assert(Child.model_json_schema())
@@ -3509,6 +3591,29 @@ def test_extra_validator_named() -> None:
         'title': 'Child',
         'type': 'object',
     }
+
+
+def test_extra_validator_info_data(py_and_json) -> None:
+    data: list[Any] = []
+
+    def record_data(value: Any, info: ValidationInfo) -> Any:
+        # `info.data` is mutated as fields are validated, so take a snapshot:
+        data.append(deepcopy(info.data))
+        return value
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        __pydantic_extra__: dict[
+            Annotated[str, AfterValidator(record_data)], Annotated[int, AfterValidator(record_data)]
+        ]
+
+        a: int
+
+    adapter = py_and_json(Model)
+    adapter.validate_test({'z': 1, 'a': 2})
+
+    # extras are validated after fields, so validated fields are available:
+    assert data == [{'a': 2}, {'a': 2}]
 
 
 def test_extra_behavior_not_a_dict() -> None:

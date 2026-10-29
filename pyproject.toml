@@ -47,7 +47,7 @@ dependencies = [
     'typing-extensions>=4.16.0',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.49.0',
+    'pydantic-core==2.50.0',
     'typing-inspection>=0.4.4',
 ]
 dynamic = ['version', 'readme']
@@ -82,6 +82,13 @@ dev = [
     'packaging',
     'jsonschema',
     'time-machine; platform_python_implementation != "PyPy"',
+]
+benchmark-startup = [
+    # Note: bumping deps here can change benchmarks results (see tests/benchmarks/library_startup/README.md):
+    'mcp==2.3.0',
+    'openai==3.41.0',
+    'anthropic==2.3.0',
+    'google-genai==2.34.0; python_version >= "3.11"',
 ]
 coverage = [
     'coverage[toml]',
@@ -129,7 +136,7 @@ typechecking = [
     'pydantic-settings',
 ]
 build = [
-    'build',
+    'build>=1.6',
     'twine',
 ]
 pyodide-build = [
@@ -203,7 +210,7 @@ markers = [
 
 [tool.uv]
 default-groups = ['dev']
-required-version = '>=0.8.4'
+required-version = '>=0.13.0'
 
 [tool.uv.sources]
 pydantic-core = { workspace = true }

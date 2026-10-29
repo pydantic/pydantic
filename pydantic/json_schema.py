@@ -247,7 +247,9 @@ class GenerateJsonSchema:
         definitions: Definitions in the schema.
 
     Args:
-        by_alias: Whether to use field aliases in the generated schemas.
+        by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+            aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+            schemas). An explicit value takes precedence over the configuration.
         ref_template: The format string to use when generating reference names.
         union_format: The format to use when combining schemas from unions together. Can be one of:
 
@@ -270,11 +272,13 @@ class GenerateJsonSchema:
 
     def __init__(
         self,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     ) -> None:
-        self.by_alias = by_alias
+        # `None` means "not explicitly set": aliases are used, unless disabled by the config (e.g. `validate_by_alias`)
+        self._by_alias = by_alias
+        self.by_alias = by_alias is not False
         self.ref_template = ref_template
         self.union_format: Literal['any_of', 'primitive_type_array'] = union_format
 
@@ -372,16 +376,6 @@ class GenerateJsonSchema:
         Raises:
             PydanticUserError: Raised if the JSON schema generator has already been used to generate a JSON schema.
         """
-        return self._generate_definitions([(key, mode, schema, None) for key, mode, schema in inputs])
-
-    def _generate_definitions(
-        self, inputs: Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema, ConfigDict | None]]
-    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], dict[DefsRef, JsonSchemaValue]]:
-        """Same as `generate_definitions()`, but with an additional config for each input.
-
-        This config is used for core schemas that don't carry their own config (e.g. the core schema
-        of a type adapter).
-        """
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
@@ -389,18 +383,16 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
-        for _, mode, schema, config in inputs:
+        for _, mode, schema in inputs:
             self._mode = mode
-            with self._config_wrapper_stack.push(config):
-                self.generate_inner(schema)
+            self.generate_inner(schema)
 
         definitions_remapping = self._build_definitions_remapping()
 
         json_schemas_map: dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef] = {}
-        for key, mode, schema, config in inputs:
+        for key, mode, schema in inputs:
             self._mode = mode
-            with self._config_wrapper_stack.push(config):
-                json_schema = self.generate_inner(schema)
+            json_schema = self.generate_inner(schema)
             json_schemas_map[(key, mode)] = definitions_remapping.remap_json_schema(json_schema)
 
         json_schema = {'$defs': self.definitions}
@@ -457,7 +449,7 @@ class GenerateJsonSchema:
         self._used = True
         return self.sort(json_schema)
 
-    def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
+    def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:
         """Generates a JSON schema for a given core schema.
 
         Args:
@@ -465,8 +457,16 @@ class GenerateJsonSchema:
 
         Returns:
             The generated JSON schema.
+        """
+        if schema['type'] in ('model', 'dataclass', 'typed-dict'):
+            # The class config (and in particular `json_schema_mode_override`) must be pushed *before*
+            # the definitions cache lookup, so that the JSON Schema is cached under the mode it was generated with:
+            with self._config_wrapper_stack.push(_get_class_config(schema)):  # pyright: ignore[reportArgumentType]
+                return self._generate_inner(schema)
+        return self._generate_inner(schema)
 
-        TODO: the nested function definitions here seem like bad practice, I'd like to unpack these
+    def _generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
+        """TODO: the nested function definitions here seem like bad practice, I'd like to unpack these
         in a future PR. It'd be great if we could shorten the call stack a bit for JSON schema generation,
         and I think there's potential for that here.
         """
@@ -515,11 +515,12 @@ class GenerateJsonSchema:
                 json_schema = self.ser_schema(ser_schema)
 
                 # It might be that the 'serialization'` is skipped depending on `when_used`.
-                # This is only relevant for `nullable` schemas though, so we special case here.
+                # This is only relevant for `nullable` schemas though (possibly wrapped, e.g. when
+                # using a field serializer on a field with a default value), so we special case here.
                 if (
                     json_schema is not None
                     and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
-                    and schema_or_field['type'] == 'nullable'
+                    and _is_nullable_schema(schema_or_field)
                 ):
                     json_schema = self.get_union_of_schemas([{'type': 'null'}, json_schema])
             if json_schema is None:
@@ -1626,7 +1627,7 @@ class GenerateJsonSchema:
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
         cls = schema.get('cls')
-        config = _get_typed_dict_config(cls)
+        config = _get_class_config(schema)
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
@@ -1696,7 +1697,8 @@ class GenerateJsonSchema:
         if field['type'] == 'computed-field':
             alias: Any = field.get('alias', name)
         elif self.mode == 'validation':
-            alias = name if not self._config.validate_by_alias else field.get('validation_alias', name)
+            use_alias = self._config.validate_by_alias if self._by_alias is None else self._by_alias
+            alias = field.get('validation_alias', name) if use_alias else name
         else:
             alias = field.get('serialization_alias', name)
         if isinstance(alias, str):
@@ -1980,8 +1982,7 @@ class GenerateJsonSchema:
         """
 
         cls = schema['cls']
-        # If (stdlib) dataclass doesn't have config, the parent's config is used (as during core schema generation):
-        config = cast('ConfigDict | None', getattr(cls, '__pydantic_config__', None))
+        config = _get_class_config(schema)
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
@@ -2732,7 +2733,7 @@ class GenerateJsonSchema:
 
 def model_json_schema(
     cls: type[BaseModel] | type[PydanticDataclass],
-    by_alias: bool = True,
+    by_alias: bool | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
@@ -2742,8 +2743,9 @@ def model_json_schema(
 
     Args:
         cls: The model class to generate a JSON Schema for.
-        by_alias: If `True` (the default), fields will be serialized according to their alias.
-            If `False`, fields will be serialized according to their attribute name.
+        by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+            aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+            schemas). An explicit value takes precedence over the configuration.
         ref_template: The template to use for generating JSON Schema references.
         union_format: The format to use when combining schemas from unions together. Can be one of:
 
@@ -2781,7 +2783,7 @@ def model_json_schema(
 def models_json_schema(
     models: Sequence[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode]],
     *,
-    by_alias: bool = True,
+    by_alias: bool | None = None,
     title: str | None = None,
     description: str | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
@@ -2792,7 +2794,9 @@ def models_json_schema(
 
     Args:
         models: A sequence of tuples of the form (model, mode).
-        by_alias: Whether field aliases should be used as keys in the generated JSON Schema.
+        by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+            aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+            schemas). An explicit value takes precedence over the configuration.
         title: The title of the generated JSON Schema.
         description: The description of the generated JSON Schema.
         ref_template: The reference template to use for generating JSON Schema references.
@@ -3239,10 +3243,17 @@ else:
             return hash(type(self))
 
 
-def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict | None:
-    # If typed dictionary doesn't have config, the parent's config is used (as during core schema generation),
-    # hence a default of `None`:
-    if cls is not None:
+def _get_class_config(
+    schema: core_schema.ModelSchema | core_schema.DataclassSchema | core_schema.TypedDictSchema,
+) -> ConfigDict | None:
+    """Get the config of the class a model, dataclass or typed dictionary schema was built from."""
+    if schema['type'] == 'model':
+        return cast('type[BaseModel]', schema['cls']).model_config
+    # If a (stdlib) dataclass or typed dictionary doesn't have config, the parent's config is used
+    # (as during core schema generation), hence a default of `None`:
+    if schema['type'] == 'dataclass':
+        return getattr(schema['cls'], '__pydantic_config__', None)
+    if (cls := schema.get('cls')) is not None:
         try:
             return _decorators.get_attribute_from_bases(cls, '__pydantic_config__')
         except AttributeError:
@@ -3263,3 +3274,22 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
         return cast('core_schema.PlainSerializerFunctionSerSchema', ser_schema)
     if _core_utils.is_function_with_inner_schema(schema):
         return _get_ser_schema_for_default_value(schema['schema'])
+
+
+def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
+    """Whether the schema is a `'nullable'` schema, possibly wrapped in default, validator function, chain,
+    lax-or-strict and JSON-or-Python schemas.
+
+    For the latter three, the same inner schema as the one used to generate the serialization JSON Schema
+    is checked (see the corresponding `GenerateJsonSchema` methods).
+    """
+    if schema['type'] == 'default' or _core_utils.is_function_with_inner_schema(schema):
+        return _is_nullable_schema(schema['schema'])
+    if schema['type'] == 'chain':
+        return _is_nullable_schema(schema['steps'][-1])
+    if schema['type'] == 'lax-or-strict':
+        # See TODO in `GenerateJsonSchema.lax_or_strict_schema()`:
+        return _is_nullable_schema(schema['strict_schema'] if schema.get('strict', False) else schema['lax_schema'])
+    if schema['type'] == 'json-or-python':
+        return _is_nullable_schema(schema['json_schema'])
+    return schema['type'] == 'nullable'

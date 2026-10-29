@@ -562,7 +562,7 @@ class TypeAdapter(Generic[T]):
             by_alias: Whether to use alias names for field names.
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
-            exclude_none: Whether to exclude fields with None values.
+            exclude_none: Whether to exclude fields with a value of `None`.
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
@@ -623,12 +623,12 @@ class TypeAdapter(Generic[T]):
         Serialize an instance of the adapted type to JSON.
 
         Args:
-            instance: The instance to be serialized.
+            instance: The Python object to serialize.
             indent: Number of spaces for JSON indentation.
             ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
                 If `False` (the default), these characters will be output as-is.
-            include: Fields to include.
-            exclude: Fields to exclude.
+            include: Fields to include in the output.
+            exclude: Fields to exclude from the output.
             by_alias: Whether to use alias names for field names.
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
@@ -636,7 +636,7 @@ class TypeAdapter(Generic[T]):
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
-            round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
+            round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             fallback: A function to call when an unknown value is encountered. If not provided,
@@ -670,7 +670,7 @@ class TypeAdapter(Generic[T]):
     def json_schema(
         self,
         *,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
@@ -679,7 +679,9 @@ class TypeAdapter(Generic[T]):
         """Generate a JSON schema for the adapted type.
 
         Args:
-            by_alias: Whether to use alias names for field names.
+            by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+                aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+                schemas). An explicit value takes precedence over the configuration.
             ref_template: The format string used for generating $ref strings.
             union_format: The format to use when combining schemas from unions together. Can be one of:
 
@@ -712,7 +714,7 @@ class TypeAdapter(Generic[T]):
         inputs: Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]],
         /,
         *,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         title: str | None = None,
         description: str | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
@@ -725,7 +727,9 @@ class TypeAdapter(Generic[T]):
             inputs: Inputs to schema generation. The first two items will form the keys of the (first)
                 output mapping; the type adapters will provide the core schemas that get converted into
                 definitions in the output JSON schema.
-            by_alias: Whether to use alias names.
+            by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+                aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+                schemas). An explicit value takes precedence over the configuration.
             title: The title for the schema.
             description: The description for the schema.
             ref_template: The format string used for generating $ref strings.
@@ -761,11 +765,9 @@ class TypeAdapter(Generic[T]):
                 assert not isinstance(adapter.core_schema, _mock_val_ser.MockCoreSchema), (
                     'this is a bug! please report it'
                 )
-            # The configuration provided to the type adapter (if any) is not part of the core schema,
-            # so we need to explicitly make it available to the JSON Schema generator:
-            inputs_.append((key, mode, adapter.core_schema, adapter._config))
+            inputs_.append((key, mode, adapter.core_schema))
 
-        json_schemas_map, definitions = schema_generator_instance._generate_definitions(inputs_)
+        json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)
 
         json_schema: dict[str, Any] = {}
         if definitions:

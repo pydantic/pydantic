@@ -98,6 +98,7 @@ from ._decorators import (
     inspect_field_serializer,
     inspect_model_serializer,
     inspect_validator,
+    mro,
 )
 from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import (
@@ -108,7 +109,7 @@ from ._fields import (
     update_field_from_config,
 )
 from ._forward_ref import PydanticRecursiveRef
-from ._generics import get_standard_typevars_map, replace_types
+from ._generics import get_model_typevars_map, get_standard_typevars_map, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
@@ -315,6 +316,37 @@ GENERATE_SCHEMA_ERRORS = (
     PydanticUndefinedAnnotation,
 )
 """Errors raised during core schema generation. This does *not* include `InvalidSchemaError`, which is raised during schema cleaning."""
+
+
+def _get_typed_dict_extra_items(typed_dict_cls: type[Any]) -> tuple[bool, Any, bool]:
+    """Return whether the TypedDict class is closed, the type of its extra items and whether
+    they are read-only (as per PEP 728).
+
+    The `__closed__` and `__extra_items__` attributes only reflect the arguments passed to the class itself,
+    so the first class in the (virtual) MRO explicitly specifying one of them is used.
+    `extra_items=Never` is normalized to `closed=True`, and the `ReadOnly` qualifier is stripped.
+    """
+    for base in mro(typed_dict_cls):
+        # `__closed__` is `None` when not specified:
+        closed = base.__dict__.get('__closed__')
+        extra_items = base.__dict__.get('__extra_items__', typing_extensions.NoExtraItems)
+        if closed is not None or not typing_objects.is_noextraitems(extra_items):
+            break
+    else:
+        return False, typing_extensions.NoExtraItems, False
+
+    if closed is not None:
+        # `closed` and `extra_items` can't be used together:
+        return closed, typing_extensions.NoExtraItems, False
+
+    readonly = typing_objects.is_readonly(get_origin(extra_items))
+    if readonly:
+        extra_items = get_args(extra_items)[0]
+    # TODO: `Never` wrapped in a type alias (e.g. `type NoExtras = Never`) or in `Annotated` isn't detected here,
+    # and fails during schema generation. Unwrapping should only apply to this check (to preserve alias handling).
+    if typing_objects.is_never(extra_items):
+        return True, typing_extensions.NoExtraItems, False
+    return False, extra_items, readonly
 
 
 class InvalidSchemaError(Exception):
@@ -852,21 +884,22 @@ class GenerateSchema:
                             cls,
                             config_wrapper=self._config_wrapper,
                             ns_resolver=self._ns_resolver,
-                            typevars_map=self._typevars_map or {},
+                            typevars_map=get_model_typevars_map(cls),
                         )
                     except NameError as e:
                         raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
                 decorators = cls.__pydantic_decorators__
                 computed_fields = decorators.computed_fields
-                check_decorator_fields_exist(
-                    chain(
-                        decorators.field_validators.values(),
-                        decorators.field_serializers.values(),
-                        decorators.validators.values(),
-                    ),
-                    {*fields.keys(), *computed_fields.keys()},
-                )
+                if decorators.field_validators or decorators.field_serializers or decorators.validators:
+                    check_decorator_fields_exist(
+                        chain(
+                            decorators.field_validators.values(),
+                            decorators.field_serializers.values(),
+                            decorators.validators.values(),
+                        ),
+                        {*fields.keys(), *computed_fields.keys()},
+                    )
 
                 model_validators = decorators.model_validators.values()
 
@@ -1066,6 +1099,9 @@ class GenerateSchema:
     def _generate_schema_inner(self, obj: Any, origin: Any | None = PydanticUndefined) -> core_schema.CoreSchema:
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
+            # The resolved type can be a parametrized generic (e.g. `GenericDataclass[int]`),
+            # so the origin provided by the caller (computed on `Self`) is stale:
+            origin = get_origin(obj)
 
         origin = origin if origin is not PydanticUndefined else get_origin(obj)
 
@@ -1482,15 +1518,20 @@ class GenerateSchema:
                 extra_behavior: core_schema.ExtraBehavior = 'ignore'
                 extras_schema: CoreSchema | None = None  # For 'allow', equivalent to `Any` - no validation performed.
 
-                # `__closed__` is `None` when not specified (equivalent to `False`):
-                is_closed = bool(getattr(typed_dict_cls, '__closed__', False))
-                extra_items = getattr(typed_dict_cls, '__extra_items__', typing_extensions.NoExtraItems)
+                is_closed, extra_items, extra_items_readonly = _get_typed_dict_extra_items(typed_dict_cls)
                 if is_closed:
                     extra_behavior = 'forbid'
                     extras_schema = None
                 elif not typing_objects.is_noextraitems(extra_items):
                     extra_behavior = 'allow'
                     extras_schema = self.generate_schema(replace_types(extra_items, typevars_map))
+
+                if extra_items_readonly:
+                    warnings.warn(
+                        f'Extra items on TypedDict class {typed_dict_cls.__name__!r} are using the `ReadOnly` qualifier. '
+                        'Pydantic will not protect items from any mutation on dictionary instances.',
+                        UserWarning,
+                    )
 
                 if (config_extra := self._config_wrapper.extra) in ('allow', 'forbid'):
                     if is_closed and config_extra == 'allow':
@@ -2305,7 +2346,7 @@ class GenerateSchema:
                 # with its subclasses and their annotations:
                 and type(metadata) is FieldInfo
             ):
-                for attr, value in (unsupported_attributes := self._get_unsupported_field_info_attributes(metadata)):
+                for attr, value in self._get_unsupported_field_info_attributes(metadata):
                     warnings.warn(
                         f'The {attr!r} attribute with value {value!r} was provided to the `Field()` function, '
                         f'which has no effect in the context it was used. {attr!r} is field-specific metadata, '
@@ -2315,11 +2356,8 @@ class GenerateSchema:
                         category=UnsupportedFieldAttributeWarning,
                     )
 
-                if (
-                    metadata.default_factory_takes_validated_data
-                    and self.model_type_stack.get() is None
-                    and 'defaut_factory' not in unsupported_attributes
-                ):
+                # Inside a model, a standalone `default_factory` is already reported as unsupported above:
+                if metadata.default_factory_takes_validated_data and self.model_type_stack.get() is None:
                     warnings.warn(
                         "A 'default_factory' taking validated data as an argument was provided to the `Field()` function, "
                         'but no validated data is available in the context it was used.',
