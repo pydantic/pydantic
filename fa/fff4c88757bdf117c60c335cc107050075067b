@@ -1,0 +1,30 @@
+tests/test_internal.py
+  s_8a694308512838::t_f24e57b2f8f416 596
+  s_8a694308512838::t_94390b04aab223 593-595,597-624
+tests/types/test_literal.py
+  s_8a694308512838::t_94390b04aab223 7,58-101,104,106-124
+  s_8a694308512838::t_ffd488c442950f 102-103,105
+pydantic/_internal/_generate_schema.py
+  s_8a694308512838::t_e4f7f15116ab8e 193,197-201,216-220,253,257-269,273-274,284-285,290,314
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fafff4c88757bdf117c60c335cc107050075067b",
+  "prompts": {},
+  "humans": {
+    "h_d9dd17644dded9": {
+      "author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8a694308512838": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a187a9-dc16-7b22-b5ed-3576519f7d2b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
