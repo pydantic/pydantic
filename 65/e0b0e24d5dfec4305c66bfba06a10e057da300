@@ -1,0 +1,22 @@
+tests/benchmarks/library_startup/test_library_startup.py
+  s_d2048087fae648::t_d5587fc15b812f 14
+  s_d2048087fae648::t_7ebc0b32b688a5 10-13,15-25,29-33
+tests/benchmarks/library_startup/README.md
+  s_d2048087fae648::t_7ebc0b32b688a5 4-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "65e0b0e24d5dfec4305c66bfba06a10e057da300",
+  "prompts": {},
+  "sessions": {
+    "s_d2048087fae648": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1879e-e690-7f10-ad52-bd8f926e9fa3",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
