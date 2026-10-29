@@ -138,8 +138,6 @@ ModifyCoreSchemaWrapHandler: TypeAlias = GetCoreSchemaHandler
 GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
 ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None]
 
-TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
-
 # The leaf types of "pure" annotations (see `_pure_annotation_cache_key()`). These are immutable
 # C types only, guaranteeing that no custom `__get_pydantic_core_schema__`/`__get_pydantic_json_schema__`
 # hook can ever be attached to them.
@@ -195,6 +193,19 @@ _PURE_LITERAL_VALUE_TYPE_IDS = _ids(_PURE_LITERAL_VALUE_TYPES)
 # Returned by `_pure_annotation_cache_key()` for annotations that aren't pure. A dedicated sentinel
 # is required as `None` is itself a valid (and pure) annotation, and so a valid cache key:
 _NOT_PURE: Any = object()
+
+
+def _normalize_tuple_args(tuple_type: Any, args: tuple[Any, ...] | None) -> tuple[Any, ...] | None:
+    """Return tuple element annotations, or `None` for a bare, arbitrary-length tuple.
+
+    An empty tuple of arguments denotes a fixed-length empty tuple. On Python 3.10,
+    `typing.Tuple[()]` instead supplies `((),)`, which is normalized to the same shape.
+    """
+    if not args:
+        return None if tuple_type is tuple or tuple_type is typing.Tuple else ()  # noqa: UP006
+    if len(args) == 1 and args[0] == ():
+        return ()
+    return args
 
 
 def _pure_annotation_cache_key(tp: Any) -> Any:
@@ -1844,24 +1855,17 @@ class GenerateSchema:
         if typevars_map and params:
             params = tuple(replace_types(param, typevars_map) for param in params)
 
-        # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
-        # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
-        if not params:
-            if tuple_type in TUPLE_TYPES:
-                return core_schema.tuple_schema([core_schema.any_schema()], variadic_item_index=0)
-            else:
-                # special case for `tuple[()]` which means `tuple[]` - an empty tuple
-                return core_schema.tuple_schema([])
+        params = _normalize_tuple_args(tuple_type, params)
+        if params is None:
+            return core_schema.tuple_schema([core_schema.any_schema()], variadic_item_index=0)
+        elif not params:
+            return core_schema.tuple_schema([])
         elif params[-1] is Ellipsis:
             if len(params) == 2:
                 return core_schema.tuple_schema([self.generate_schema(params[0])], variadic_item_index=0)
             else:
                 # TODO: something like https://github.com/pydantic/pydantic/issues/5952
                 raise ValueError('Variable tuples can only have one type')
-        elif len(params) == 1 and params[0] == ():
-            # special case for `tuple[()]` which means `tuple[]` - an empty tuple
-            # NOTE: This conditional can be removed when we drop support for Python 3.10.
-            return core_schema.tuple_schema([])
         else:
             return core_schema.tuple_schema([self.generate_schema(param) for param in params])
 
