@@ -333,9 +333,9 @@ pub(crate) struct NestedModel<'v> {
     plan: ModelPlan<'v>,
 }
 
-/// How far down the plan follows nested models. A self-referential schema would otherwise plan
-/// forever, and each level down accounts for less of the document than the one above it.
-const MAX_PLAN_DEPTH: u8 = 4;
+/// The root model's fields have depth 1. A model in one of those fields has fields at depth 2;
+/// another model below that is left to ordinary validation.
+const MAX_PLAN_DEPTH: u8 = 2;
 
 /// A validator that a model class already had built is reused through a `Prebuilt` wrapper
 /// which only delegates, and real pydantic schemas are made almost entirely of them.
@@ -398,11 +398,13 @@ fn classify_fast<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8
     }
 }
 
-fn simple_fast(fast: &Fast<'_>) -> bool {
+fn simple_fast(fast: &Fast<'_>, model_depth: u8) -> bool {
     match fast {
         Fast::Str | Fast::Bool | Fast::Int | Fast::Float => true,
-        Fast::List(plan) | Fast::Dict(plan) => simple_fast(&plan.element.fast),
-        Fast::Model(_) | Fast::No => false,
+        Fast::List(plan) | Fast::Dict(plan) => simple_fast(&plan.element.fast, model_depth),
+        // Only the root model may contain a nested model. Its own plan has already been checked.
+        Fast::Model(_) => model_depth == 1,
+        Fast::No => false,
     }
 }
 
@@ -887,7 +889,7 @@ impl ModelFieldsValidator {
             && self.extras_validator.is_none()
             && self.fields.iter().all(|field| {
                 field.lookup_path_collection.by_alias.is_empty()
-                    && simple_fast(&classify(py, &field.validator, depth).fast)
+                    && simple_fast(&classify(py, &field.validator, depth).fast, depth)
             });
         streamable.then(|| ModelPlan {
             fields: self
