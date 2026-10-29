@@ -141,6 +141,7 @@ ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 _NONE_SCHEMA = core_schema.none_schema()
+_CALLABLE_SCHEMA = core_schema.callable_schema()
 
 
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
@@ -399,7 +400,7 @@ class GenerateSchema:
         float: _copy_schema_handler(core_schema.float_schema()),
         bool: _copy_schema_handler(core_schema.bool_schema()),
         complex: _copy_schema_handler(core_schema.complex_schema()),
-        object: lambda self, obj: core_schema.any_schema(),
+        object: _copy_schema_handler(core_schema.any_schema()),
         datetime.date: _copy_schema_handler(core_schema.date_schema()),
         datetime.datetime: _copy_schema_handler(core_schema.datetime_schema()),
         datetime.time: _copy_schema_handler(core_schema.time_schema()),
@@ -411,8 +412,8 @@ class GenerateSchema:
         MultiHostUrl: _copy_schema_handler(core_schema.multi_host_url_schema()),
         None: _copy_schema_handler(_NONE_SCHEMA),
         NoneType: _copy_schema_handler(_NONE_SCHEMA),
-        MISSING: lambda self, obj: core_schema.missing_sentinel_schema(),
-        EllipsisType: lambda self, obj: core_schema.ellipsis_schema(),
+        MISSING: _copy_schema_handler(core_schema.missing_sentinel_schema()),
+        EllipsisType: _copy_schema_handler(core_schema.ellipsis_schema()),
         type: lambda self, obj: self._type_schema(),
         dict: lambda self, obj: self._dict_schema(Any, Any),
         tuple: lambda self, obj: self._tuple_schema(obj),
@@ -431,7 +432,7 @@ class GenerateSchema:
         collections.OrderedDict: lambda self, obj: self._ordered_dict_schema(Any, Any),
         collections.defaultdict: lambda self, obj: self._mapping_schema(obj, Any, Any),
         collections.Counter: lambda self, obj: self._counter_schema(Any),
-        collections.abc.Callable: lambda self, obj: core_schema.callable_schema(),
+        collections.abc.Callable: _copy_schema_handler(_CALLABLE_SCHEMA),
         collections.abc.Hashable: lambda self, obj: self._hashable_schema(),
         IPv4Address: lambda self, obj: self._ip_schema(obj),
         IPv4Interface: lambda self, obj: self._ip_schema(obj),
@@ -487,7 +488,7 @@ class GenerateSchema:
         collections.abc.Iterable: lambda self, obj: self._iterable_schema(obj),
         collections.abc.Generator: lambda self, obj: self._iterable_schema(obj),
         re.Pattern: lambda self, obj: self._pattern_schema(obj),
-        collections.abc.Callable: lambda self, obj: core_schema.callable_schema(),
+        collections.abc.Callable: _copy_schema_handler(_CALLABLE_SCHEMA),
     }
 
     if sys.version_info >= (3, 15):
