@@ -3258,6 +3258,7 @@ def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
     if schema['type'] == 'chain':
         return _is_nullable_schema(schema['steps'][-1])
     if schema['type'] == 'lax-or-strict':
+        # See TODO in `GenerateJsonSchema.lax_or_strict_schema()`:
         return _is_nullable_schema(schema['strict_schema'] if schema.get('strict', False) else schema['lax_schema'])
     if schema['type'] == 'json-or-python':
         return _is_nullable_schema(schema['json_schema'])
