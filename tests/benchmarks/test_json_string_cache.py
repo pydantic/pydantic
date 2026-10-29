@@ -23,7 +23,7 @@ def test_json_string_cache(
     cache_strings: Literal['all', 'keys', 'none'],
     api: str,
 ) -> None:
-    expected = [{'name': f'user-{i:04d}' if unique else 'user', 'role': 'reader'} for i in range(256)]
+    expected = [{'name': f'user-{i:04d}' if unique else 'user-0000', 'role': 'reader'} for i in range(256)]
     data = json.dumps(expected).encode()
     if api == 'from_json':
         assert from_json(data, cache_strings=cache_strings) == expected
