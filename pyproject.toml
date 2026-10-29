@@ -83,6 +83,10 @@ dev = [
     'jsonschema',
     'time-machine; platform_python_implementation != "PyPy"',
 ]
+benchmark-imports = [
+    # Keep the SDK workload fixed; uv.lock also pins its transitive dependencies.
+    'mcp==2.0.0',
+]
 coverage = [
     'coverage[toml]',
 ]
