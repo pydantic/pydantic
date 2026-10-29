@@ -610,7 +610,7 @@ jobs:
       matrix:
         python-version:
           - '3.14'
-          - 'pypy3.11'
+          # pypy3.11 is not tested as the interpreter randomly aborts ('Fatal Python error: Aborted') with a debug build
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
