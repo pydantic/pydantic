@@ -140,6 +140,17 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
             '{"at_least_two": ["a", "b"], "at_most_two": [], "map": {"k": "v", "k": "w"}}',
         ],
     ),
+    'bounded_dict': (
+        core_schema.dict_schema(keys_schema=STR, values_schema=ADDRESS, max_length=1),
+        True,
+        [
+            '{}',
+            '{"a": {"street": "s", "city": "c"}}',
+            '{"a": {"street": "s", "city": "c"}, "a": {"street": "t", "city": "d"}}',
+            '{"a": {"street": "s", "city": "c"}, "b": {"street": "t", "city": "d"}}',
+            '{"a": {"street": "s", "city": "c"}, "b": {"street": 1}}',
+        ],
+    ),
     'optional': (
         _model(
             'Optional',
@@ -478,3 +489,35 @@ def test_streaming_rejects_invalid_json_before_callbacks(use_factory: bool, docu
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
         validator.validate_json(document)
     assert calls == []
+
+
+@pytest.mark.parametrize('container', ['list', 'dict'])
+@pytest.mark.parametrize('max_length', [0, 1])
+def test_streaming_container_limits_bound_default_factory_calls(container: str, max_length: int) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412369252"""
+    calls: list[int] = []
+
+    def factory() -> list[int]:
+        calls.append(1)
+        return [0] * 1000
+
+    item = _model(
+        'Item',
+        {
+            'payload': core_schema.with_default_schema(
+                core_schema.list_schema(INT),
+                default_factory=factory,
+            )
+        },
+    )
+    if container == 'list':
+        schema = core_schema.list_schema(item, max_length=max_length)
+        document = '[' + ','.join('{}' for _ in range(1000)) + ']'
+    else:
+        schema = core_schema.dict_schema(STR, item, max_length=max_length)
+        document = '{' + ','.join(f'"{i}":{{}}' for i in range(1000)) + '}'
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'too_long'):
+        validator.validate_json(document)
+    assert len(calls) <= max_length + 1

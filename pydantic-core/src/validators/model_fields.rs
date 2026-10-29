@@ -496,13 +496,14 @@ fn take_list<'j, 'py>(
     let mut all_ready = true;
     let mut next = jiter.known_array()?;
     while let Some(peek) = next {
-        if all_ready {
+        if all_ready && plan.max_length.is_none_or(|max| items.len() < max) {
             match take_peeked(py, jiter, element, peek, state)? {
                 Taken::Ready(value) => items.push(value),
                 Taken::Raw(_) => all_ready = false,
             }
         } else {
-            // consume the rest so the object around it can carry on
+            // Once the bound is exceeded, stop constructing values and consume the rest.
+            all_ready = false;
             jiter.known_skip(peek)?;
         }
         next = jiter.array_step()?;
@@ -533,9 +534,16 @@ fn take_dict<'j, 'py>(
             // the key borrows the cursor, so it has to become a python string before the value
             // is read
             let k = new_py_string(py, k, state.cache_str());
-            match take_fast(py, jiter, value_plan, state)? {
-                Taken::Ready(value) => dict.set_item(k, value)?,
-                Taken::Raw(_) => all_ready = false,
+            if plan.max_length.is_some_and(|max| dict.len() >= max) && !dict.contains(&k)? {
+                // Repeated keys do not increase length. A new key beyond the bound does,
+                // so avoid constructing its value or any remaining values.
+                all_ready = false;
+                jiter.next_skip()?;
+            } else {
+                match take_fast(py, jiter, value_plan, state)? {
+                    Taken::Ready(value) => dict.set_item(k, value)?,
+                    Taken::Raw(_) => all_ready = false,
+                }
             }
         } else {
             jiter.next_skip()?;
