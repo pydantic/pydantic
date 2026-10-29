@@ -434,7 +434,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             copied = self.__copy__()
 
             # As we make separate `deepcopy()` calls, use a shared memo:
-            memo: dict[int, Any] = {}
+            memo: dict[int, Any] = {id(self): copied}
 
             # Selectively deepcopy fields that are not being updated:
             for k, v in copied.__dict__.items():
@@ -1054,8 +1054,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     def __deepcopy__(self, memo: Dict[int, Any] | None = None) -> Self:  # noqa: UP006
         """Returns a deep copy of the model."""
+        if memo is None:
+            memo = {}
         cls = type(self)
         m = cls.__new__(cls)
+        memo[id(self)] = m
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
         _object_setattr(m, '__pydantic_extra__', deepcopy(self.__pydantic_extra__, memo=memo))
         # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
