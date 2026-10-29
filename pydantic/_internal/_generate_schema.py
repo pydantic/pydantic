@@ -12,6 +12,7 @@ import re
 import sys
 import typing
 import warnings
+from collections import OrderedDict
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from copy import copy
@@ -23,6 +24,7 @@ from inspect import Parameter, _ParameterKind
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
+from threading import Lock
 from types import EllipsisType, FunctionType, GenericAlias, LambdaType, MethodType, NoneType
 from typing import (
     TYPE_CHECKING,
@@ -140,6 +142,43 @@ GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], 
 ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None]
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
+
+_CACHEABLE_SCALARS = (str, bytes, int, float, bool, complex, NoneType)
+_CACHEABLE_SCALARS_BY_ID = {id(scalar): scalar for scalar in _CACHEABLE_SCALARS}
+_STR_SCHEMA = core_schema.str_schema()
+_BYTES_SCHEMA = core_schema.bytes_schema()
+_INT_SCHEMA = core_schema.int_schema()
+_FLOAT_SCHEMA = core_schema.float_schema()
+_BOOL_SCHEMA = core_schema.bool_schema()
+_COMPLEX_SCHEMA = core_schema.complex_schema()
+_NONE_SCHEMA = core_schema.none_schema()
+
+
+def _simple_schema_cache_key(obj: Any, origin: Any) -> tuple[type, ...] | None:
+    """Return an order-sensitive key only for builtin scalars and their flat unions."""
+    if origin is None:
+        if obj is None:
+            return (NoneType,)
+        if _CACHEABLE_SCALARS_BY_ID.get(id(obj)) is obj:
+            return (obj,)
+    elif is_union_origin(origin):
+        args = get_args(obj)
+        if len(args) >= 2 and all(_CACHEABLE_SCALARS_BY_ID.get(id(arg)) is arg for arg in args):
+            return args
+    return None
+
+
+def _copy_flat_schema(schema: CoreSchema) -> CoreSchema:
+    """Copy every mutable node in a scalar or flat-union schema."""
+    result = schema.copy()
+    inner = cast(core_schema.NullableSchema, result)['schema'].copy() if result['type'] == 'nullable' else result
+    if inner['type'] == 'union':
+        union = cast(core_schema.UnionSchema, inner)
+        union['choices'] = [cast(CoreSchema, choice).copy() for choice in union['choices']]
+    if inner is not result:
+        cast(core_schema.NullableSchema, result)['schema'] = inner
+    return result
+
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
@@ -365,6 +404,20 @@ class GenerateSchema:
         'defs',
     )
 
+    _simple_schema_cache: ClassVar[OrderedDict[tuple[type, ...], CoreSchema]] = OrderedDict()
+    _simple_schema_cache_lock = Lock()
+    _simple_schema_cache_maxsize: ClassVar[int] = 128
+
+    @classmethod
+    def _remember_simple_schema(cls, key: tuple[type, ...], schema: CoreSchema) -> None:
+        """Keep a private snapshot, bounded independently of user annotation objects."""
+        snapshot = _copy_flat_schema(schema)
+        with cls._simple_schema_cache_lock:
+            cls._simple_schema_cache[key] = snapshot
+            cls._simple_schema_cache.move_to_end(key)
+            if len(cls._simple_schema_cache) > cls._simple_schema_cache_maxsize:
+                cls._simple_schema_cache.popitem(last=False)
+
     def __init__(
         self,
         config_wrapper: ConfigWrapper,
@@ -382,12 +435,12 @@ class GenerateSchema:
     # The handler lambdas take the `GenerateSchema` instance as their first argument, so that
     # the dicts can be built once at class creation time and shared by all instances:
     _handlers: ClassVar[dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]]] = {
-        str: lambda self, obj: core_schema.str_schema(),
-        bytes: lambda self, obj: core_schema.bytes_schema(),
-        int: lambda self, obj: core_schema.int_schema(),
-        float: lambda self, obj: core_schema.float_schema(),
-        bool: lambda self, obj: core_schema.bool_schema(),
-        complex: lambda self, obj: core_schema.complex_schema(),
+        str: lambda self, obj, schema=_STR_SCHEMA: schema.copy(),
+        bytes: lambda self, obj, schema=_BYTES_SCHEMA: schema.copy(),
+        int: lambda self, obj, schema=_INT_SCHEMA: schema.copy(),
+        float: lambda self, obj, schema=_FLOAT_SCHEMA: schema.copy(),
+        bool: lambda self, obj, schema=_BOOL_SCHEMA: schema.copy(),
+        complex: lambda self, obj, schema=_COMPLEX_SCHEMA: schema.copy(),
         object: lambda self, obj: core_schema.any_schema(),
         datetime.date: lambda self, obj: core_schema.date_schema(),
         datetime.datetime: lambda self, obj: core_schema.datetime_schema(),
@@ -398,8 +451,8 @@ class GenerateSchema:
         Url: lambda self, obj: core_schema.url_schema(),
         Fraction: lambda self, obj: core_schema.fraction_schema(),
         MultiHostUrl: lambda self, obj: core_schema.multi_host_url_schema(),
-        None: lambda self, obj: core_schema.none_schema(),
-        NoneType: lambda self, obj: core_schema.none_schema(),
+        None: lambda self, obj, schema=_NONE_SCHEMA: schema.copy(),
+        NoneType: lambda self, obj, schema=_NONE_SCHEMA: schema.copy(),
         MISSING: lambda self, obj: core_schema.missing_sentinel_schema(),
         EllipsisType: lambda self, obj: core_schema.ellipsis_schema(),
         type: lambda self, obj: self._type_schema(),
@@ -1106,7 +1159,16 @@ class GenerateSchema:
         origin = origin if origin is not PydanticUndefined else get_origin(obj)
 
         if is_union_origin(origin):
-            return self._union_schema(obj)
+            # Union members pass through generate_schema(), which applies configured JSON encoders.
+            cache_key = _simple_schema_cache_key(obj, origin) if not self._config_wrapper.json_encoders else None
+            if cache_key is not None:
+                cached = self._simple_schema_cache.get(cache_key)
+                if cached is not None:
+                    return _copy_flat_schema(cached)
+            schema = self._union_schema(obj)
+            if cache_key is not None:
+                self._remember_simple_schema(cache_key, schema)
+            return schema
 
         if typing_objects.is_annotated(origin):
             return self._annotated_schema(obj)
