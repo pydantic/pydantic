@@ -190,9 +190,14 @@ _PURE_LEAF_TYPE_IDS = _ids(_PURE_LEAF_TYPES)
 _PURE_CONTAINER_ORIGIN_IDS = _ids(_PURE_CONTAINER_ORIGINS)
 _PURE_LITERAL_VALUE_TYPE_IDS = _ids(_PURE_LITERAL_VALUE_TYPES)
 
-# Returned by `_pure_annotation_cache_key()` for annotations that aren't pure. A dedicated sentinel
+# Returned by `_pure_annotation_cache_key()` for annotations that aren't cacheable. A dedicated sentinel
 # is required as `None` is itself a valid (and pure) annotation, and so a valid cache key:
 _NOT_PURE: Any = object()
+
+# Bound the combined literal payload retained by each entry, including nested literals.
+# Together with the entry cap, this limits cached literal payload to roughly 4 MiB,
+# excluding the additional memory used by schema and key containers.
+_PURE_ANNOTATION_MAX_LITERAL_BYTES = 8 * 1024
 
 
 def _normalize_tuple_args(tuple_type: Any, args: tuple[Any, ...] | None) -> tuple[Any, ...] | None:
@@ -208,8 +213,11 @@ def _normalize_tuple_args(tuple_type: Any, args: tuple[Any, ...] | None) -> tupl
     return args
 
 
-def _pure_annotation_cache_key(tp: Any) -> Any:
-    """Return a cache key for the annotation if it is "pure", `_NOT_PURE` otherwise.
+def _pure_annotation_cache_key(tp: Any, literal_bytes: list[int] | None = None) -> Any:
+    """Return a cache key for a pure annotation within the literal budget, `_NOT_PURE` otherwise.
+
+    `literal_bytes` accumulates the combined literal payload across a recursive traversal.
+    It is allocated only for compound annotations, keeping leaf lookups unchanged.
 
     An annotation is pure if it is composed only of immutable C leaf types and of typing
     constructs (unions, literals of primitive values, builtin containers) of pure annotations.
@@ -242,12 +250,28 @@ def _pure_annotation_cache_key(tp: Any) -> Any:
         arg_keys = [origin]
     elif typing_objects.is_literal(origin):
         arg_keys = ['literal']
+        size = literal_bytes[0] if literal_bytes is not None else 0
         for arg in get_args(tp):
             if id(type(arg)) not in _PURE_LITERAL_VALUE_TYPE_IDS:
+                return _NOT_PURE
+            value_size = sys.getsizeof(arg, 0)
+            if not value_size:
+                # PyPy cannot report object sizes. Use conservative estimates there,
+                # accounting for wide Unicode strings and arbitrary-precision integers.
+                if isinstance(arg, (str, bytes)):
+                    value_size = 80 + len(arg) * (4 if isinstance(arg, str) else 1)
+                elif isinstance(arg, int):
+                    value_size = 32 + 4 * ((arg.bit_length() + 29) // 30)
+                else:
+                    value_size = 32
+            size += value_size
+            if size > _PURE_ANNOTATION_MAX_LITERAL_BYTES:
                 return _NOT_PURE
             # The type is included to discriminate between equal values of different
             # types (e.g. `Literal[1]` and `Literal[True]`):
             arg_keys.append((type(arg), arg))
+        if literal_bytes is not None:
+            literal_bytes[0] = size
         return tuple(arg_keys)
     else:
         return _NOT_PURE
@@ -257,11 +281,13 @@ def _pure_annotation_cache_key(tp: Any) -> Any:
         args = _normalize_tuple_args(tp, args)
         if args is None:
             return tuple
+    if literal_bytes is None:
+        literal_bytes = [0]
     for arg in args:
         if arg is Ellipsis:
             arg_keys.append(Ellipsis)
             continue
-        arg_key = _pure_annotation_cache_key(arg)
+        arg_key = _pure_annotation_cache_key(arg, literal_bytes)
         if arg_key is _NOT_PURE:
             return _NOT_PURE
         arg_keys.append(arg_key)
@@ -285,8 +311,7 @@ def _copy_pure_schema(schema: Any) -> Any:
 # A process-wide cache of the core schemas generated for pure field annotations, keyed by
 # `_pure_annotation_cache_key()` keys. Values are the pristine generated schemas — they are
 # never handed out directly, only `_copy_pure_schema()` copies of them are. Keys only ever
-# hold (small) typing constructs and builtin types, so entries are cheap and can't keep user
-# classes alive:
+# hold builtin types and size-limited literal values, and can't keep user classes alive:
 _pure_annotation_schema_cache: dict[Any, core_schema.CoreSchema] = {}
 
 # The number of entries above which `_pure_annotation_schema_cache` is reset. The set of pure

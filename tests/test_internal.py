@@ -590,3 +590,35 @@ def test_normalize_tuple_args(annotation: Any, args: tuple[Any, ...], expected: 
     elif annotation == 'empty':
         annotation = typing.Tuple[()]  # noqa: UP006
     assert _normalize_tuple_args(annotation, args) == expected
+
+
+@pytest.mark.thread_unsafe
+@pytest.mark.parametrize('value', ['abc', b'abc', 42, True, None], ids=['str', 'bytes', 'int', 'bool', 'none'])
+@pytest.mark.parametrize('estimated', [False, True])
+def test_literal_cache_budget_boundary(value: Any, estimated: bool, monkeypatch: pytest.MonkeyPatch) -> None:
+    from typing import Literal
+
+    from pydantic._internal import _generate_schema
+
+    if isinstance(value, (str, bytes)):
+        estimate = 80 + len(value) * (4 if isinstance(value, str) else 1)
+    elif isinstance(value, int):
+        estimate = 32 + 4 * ((value.bit_length() + 29) // 30)
+    else:
+        estimate = 32
+    size = sys.getsizeof(value, estimate)
+    if estimated:
+        monkeypatch.setattr(sys, 'getsizeof', lambda value, default: default)
+        size = estimate
+    monkeypatch.setattr(_generate_schema, '_PURE_ANNOTATION_MAX_LITERAL_BYTES', size)
+    assert _generate_schema._pure_annotation_cache_key(Literal[value]) is not _generate_schema._NOT_PURE
+    monkeypatch.setattr(_generate_schema, '_PURE_ANNOTATION_MAX_LITERAL_BYTES', size - 1)
+    assert _generate_schema._pure_annotation_cache_key(Literal[value]) is _generate_schema._NOT_PURE
+
+
+def test_large_integer_literal_bypasses_schema_cache() -> None:
+    from typing import Literal
+
+    from pydantic._internal._generate_schema import _NOT_PURE, _pure_annotation_cache_key
+
+    assert _pure_annotation_cache_key(Literal[1 << 80_000]) is _NOT_PURE
