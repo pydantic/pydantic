@@ -45,11 +45,11 @@ standard_duration_re = re.compile(
 iso8601_duration_re = re.compile(
     r'^(?P<sign>[-+]?)'
     r'P'
-    r'(?:(?P<days>\d+(.\d+)?)D)?'
+    r'(?:(?P<days>\d+(\.\d+)?)D)?'
     r'(?:T'
-    r'(?:(?P<hours>\d+(.\d+)?)H)?'
-    r'(?:(?P<minutes>\d+(.\d+)?)M)?'
-    r'(?:(?P<seconds>\d+(.\d+)?)S)?'
+    r'(?:(?P<hours>\d+(\.\d+)?)H)?'
+    r'(?:(?P<minutes>\d+(\.\d+)?)M)?'
+    r'(?:(?P<seconds>\d+(\.\d+)?)S)?'
     r')?'
     r'$'
 )
