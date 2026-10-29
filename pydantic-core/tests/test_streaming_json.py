@@ -17,6 +17,7 @@ from __future__ import annotations
 import gc
 import json
 import os
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -549,14 +550,19 @@ def test_streaming_cyclic_default_factory() -> None:
 @pytest.mark.parametrize('shape', ['root', 'array', 'nested', 'mapping'])
 def test_streaming_excludes_models_with_finalizers(finalizer_kind: str, shape: str) -> None:
     """https://github.com/pydantic/pydantic/pull/13884"""
+    from .conftest import assert_gc
+
     finalized: list[str] = []
 
     def finalize(self: object) -> None:
         finalized.append('finalized')
 
-    cls = _cls('Finalized')
-    if finalizer_kind != 'added_later':
-        cls.__del__ = finalize
+    if finalizer_kind == 'added_later':
+        if platform.python_implementation() == 'PyPy':
+            pytest.skip('PyPy does not support adding finalizers to existing types')
+        cls = _cls('Finalized')
+    else:
+        cls = type('Finalized', (_cls('Base'),), {'__slots__': (), '__del__': finalize})
     if finalizer_kind == 'inherited':
         cls = type('Child', (cls,), {})
     schema = core_schema.model_schema(cls, core_schema.model_fields_schema({'a': core_schema.model_field(INT)}))
@@ -585,8 +591,7 @@ def test_streaming_excludes_models_with_finalizers(finalizer_kind: str, shape: s
     value = validator.validate_json(document)
     assert finalized == []
     del value
-    gc.collect()
-    assert finalized == ['finalized']
+    assert_gc(lambda: finalized == ['finalized'])
 
 
 @pytest.mark.parametrize('new_kind', ['direct', 'inherited', 'added_later'])
@@ -625,5 +630,12 @@ def test_streaming_excludes_models_with_custom_new(new_kind: str, shape: str) ->
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
         validator.validate_json(document + ' trailing')
     assert allocated == []
+    # PyPy's C-API type slots do not always reflect __new__ changes after the
+    # validator was built. Compare against the ordinary path on this interpreter.
+    validator.validate_python(json.loads(document))
+    expected = allocated.copy()
+    if new_kind != 'added_later' or platform.python_implementation() != 'PyPy':
+        assert expected == ['allocated']
+    allocated.clear()
     validator.validate_json(document)
-    assert allocated == ['allocated']
+    assert allocated == expected

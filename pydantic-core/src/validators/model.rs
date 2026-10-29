@@ -74,21 +74,57 @@ impl ModelValidator {
         if !matches!(self.revalidate, Revalidate::Never) {
             return None;
         }
-        // Speculative instances may be discarded before JSON parsing finishes. Inspect the
-        // current slot without invoking attribute hooks, including inherited or added __del__.
-        // SAFETY: the bound class is a valid type and Py_tp_finalize is a valid type slot.
         let class = self.class.bind(py);
-        if !unsafe { ffi::PyType_GetSlot(class.as_type_ptr(), ffi::Py_tp_finalize) }.is_null() {
-            return None;
+        #[cfg(not(PyPy))]
+        {
+            // Speculative instances may be discarded before JSON parsing finishes. Inspect
+            // current slots without invoking attribute hooks, including inherited hooks.
+            // SAFETY: both bound classes are valid types and these are valid type slots.
+            let has_python_hooks = unsafe {
+                !ffi::PyType_GetSlot(class.as_type_ptr(), ffi::Py_tp_finalize).is_null()
+                    || ffi::PyType_GetSlot(class.as_type_ptr(), ffi::Py_tp_new)
+                        != ffi::PyType_GetSlot(py.get_type::<PyAny>().as_type_ptr(), ffi::Py_tp_new)
+            };
+            if has_python_hooks {
+                return None;
+            }
         }
-        // Custom __new__ hooks must also wait until the whole document is known to be valid.
-        // SAFETY: both bound classes are valid types and Py_tp_new is a valid type slot.
-        let has_custom_new = unsafe {
-            ffi::PyType_GetSlot(class.as_type_ptr(), ffi::Py_tp_new)
-                != ffi::PyType_GetSlot(py.get_type::<PyAny>().as_type_ptr(), ffi::Py_tp_new)
-        };
-        if has_custom_new {
-            return None;
+        #[cfg(PyPy)]
+        {
+            // PyPy shares tp_new wrappers across Python classes, so compare the first
+            // __new__ definition in the MRO instead. Read type dictionaries directly to
+            // avoid executing custom metaclass attribute hooks.
+            // SAFETY: ready Python types have tuple tp_mro and dict tp_dict entries.
+            let (mro, object_dict) = unsafe {
+                (
+                    Bound::from_borrowed_ptr_or_opt(py, (*class.as_type_ptr()).tp_mro)?
+                        .cast_into::<PyTuple>()
+                        .ok()?,
+                    Bound::from_borrowed_ptr_or_opt(py, (*py.get_type::<PyAny>().as_type_ptr()).tp_dict)?
+                        .cast_into::<PyDict>()
+                        .ok()?,
+                )
+            };
+            let object_new = object_dict.get_item(intern!(py, "__new__")).ok()??;
+            let mut found_new = false;
+            for base in mro {
+                let base = base.cast_into::<PyType>().ok()?;
+                // SAFETY: each MRO entry is a ready type with a dict tp_dict entry.
+                let namespace = unsafe {
+                    Bound::from_borrowed_ptr_or_opt(py, (*base.as_type_ptr()).tp_dict)?
+                        .cast_into::<PyDict>()
+                        .ok()?
+                };
+                if namespace.contains(intern!(py, "__del__")).ok()? {
+                    return None;
+                }
+                if !found_new && let Some(new) = namespace.get_item(intern!(py, "__new__")).ok()? {
+                    if !new.is(&object_new) {
+                        return None;
+                    }
+                    found_new = true;
+                }
+            }
         }
         Some((&self.class, &self.validator))
     }
