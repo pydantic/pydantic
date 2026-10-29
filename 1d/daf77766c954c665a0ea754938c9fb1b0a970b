@@ -1,0 +1,20 @@
+pydantic-core/tests/benchmarks/test_json_nested_models.py
+  s_629bbbd6524d1d::t_b8e41ad07781d5 1-72
+  s_629bbbd6524d1d::t_f9db4e79b089de 73-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1ddaf77766c954c665a0ea754938c9fb1b0a970b",
+  "prompts": {},
+  "sessions": {
+    "s_629bbbd6524d1d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1887c-b79d-7b33-a619-aba5fa98b8ff",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
