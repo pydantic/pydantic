@@ -72,6 +72,6 @@ def test_library_startup(benchmark: Callable[[Callable[[], None]], None], librar
         pytest.skip(f'Install the benchmark-startup dependency group to benchmark {library!r} startup')
 
     def run() -> None:
-        subprocess.run([sys.executable, '-c', code], check=True)
+        subprocess.run([sys.executable, '-X', 'perf', '-c', code], check=True)
 
     benchmark(run)
