@@ -1,27 +1,14 @@
-"""Benchmarks over JSON documents chosen for what they are made of.
+"""JSON benchmarks over documents dominated by one property of the input.
 
-`../test_north_star.py` gauges overall pydantic performance across many field types, and most of
-its cost is in those types: only about a tenth of `test_north_star_validate_json` is the JSON
-parse itself, the rest being UUID, `Decimal`, date/time and discriminated-union work. It is a
-good instrument for what it measures and a poor one for everything else `validate_json` does.
+- `twitter`: real API output, partly non-ASCII
+- `i18n_users`: text in eight scripts
+- `catalog`: long prose fields
+- `event_log`: short repeated keys and values
+- `canada`: almost only floats
+- `citm_catalog`: large, deeply nested object graph
 
-These documents complement it along a different axis. Each is dominated by one property of the
-*input* rather than by the schema, and the models are deliberately plain, so the cost lands in
-handling the document rather than in the field types:
-
-- `twitter`       real API output, 5.6% non-ASCII; the model reads a subset of the fields, as
-                  application code does
-- `i18n_users`    eight scripts, ~20% non-ASCII, the shape of a product with international users
-- `catalog`       long prose fields, mostly ASCII with an accented minority
-- `event_log`     short repeated keys and short ASCII values, the shape of log ingestion
-- `canada`        GeoJSON, ~111k floats and almost nothing else
-- `citm_catalog`  a large, deeply nested object graph of small models
-
-Before this, no benchmark in the repository contained a single non-ASCII character, none had
-long text fields, and none was dominated by floats.
-
-`validate_json` and `from_json` are both measured for each: they take different paths, and a
-change can move one without the other.
+Models are kept plain so that the cost is in handling the document. Each document is measured
+with both `validate_json` and `from_json`.
 """
 
 import json
@@ -41,15 +28,11 @@ _DATA_DIR = Path(__file__).parent / 'data'
 
 
 def _generated_bytes(name: str) -> bytes:
-    """Return the current generated document, replacing a stale local copy.
-
-    `ensure_ascii=False` matters: with the default, non-ASCII text is written as `\\uXXXX`
-    escapes, which take the escape path through the parser rather than the UTF-8 path, and the
-    document stops measuring what it was chosen to measure. Real producers emit UTF-8.
-    """
+    """Return the generated document, refreshing the cached copy if it is stale."""
     from .generate_data import catalog, event_log, i18n_users
 
     generator = {'i18n_users': i18n_users, 'catalog': catalog, 'event_log': event_log}[name]
+    # Keep non-ASCII text as UTF-8 rather than `\uXXXX` escapes.
     current = json.dumps(generator(), ensure_ascii=False).encode('utf-8')
     path = _DATA_DIR / f'{name}.json'
     if not path.exists() or path.read_bytes() != current:
@@ -88,10 +71,6 @@ def event_log_data_bytes() -> bytes:
 
 
 def test_vendored_documents_match_upstream():
-    """The vendored documents are committed compressed, so nothing about them is readable in a
-    diff. This pins what is actually in them to the hashes recorded in `vendored`,
-    which also records the URL each came from and can rebuild them byte for byte.
-    """
     assert check_vendored_documents() == []
     assert set(DOCUMENTS) == {'twitter', 'canada', 'citm_catalog'}
 

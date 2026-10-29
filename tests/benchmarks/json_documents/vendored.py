@@ -1,21 +1,12 @@
-"""The vendored benchmark documents in `data/`, and how to check or rebuild them.
+"""Source and hashes of the vendored documents in `data/`.
 
-Three documents come from nativejson-benchmark rather than being generated, because they are
-real and because other JSON projects benchmark on the same bytes. They are committed
-compressed, which makes them opaque, so everything needed to prove what is in them lives here:
-the upstream URL, the SHA-256 of the document, and the SHA-256 of the compressed file.
-
-Check the committed files against those hashes, without network access:
+Check the committed files:
 
     python -m tests.benchmarks.json_documents.vendored --check
 
-Rebuild them from upstream and confirm the result is byte-for-byte what is committed:
+Rebuild them from upstream:
 
     python -m tests.benchmarks.json_documents.vendored
-
-Add `--write` to that to actually replace the files. Compression is `lzma` at preset 9 with a
-CRC-64 check, which is reproducible: the same input gives the same bytes on Linux x86_64 and
-macOS arm64, and matches `xz -9`.
 """
 
 from __future__ import annotations
@@ -31,8 +22,6 @@ DATA_DIR = Path(__file__).parent / 'data'
 
 _UPSTREAM = 'https://raw.githubusercontent.com/miloyip/nativejson-benchmark/master/data'
 
-# Compression parameters are pinned here rather than taken from a CLI's defaults, so that the
-# committed bytes do not depend on which version of xz happens to be installed.
 _FILTERS = [{'id': lzma.FILTER_LZMA2, 'preset': 9}]
 
 
