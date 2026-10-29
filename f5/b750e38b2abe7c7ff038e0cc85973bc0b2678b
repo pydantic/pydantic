@@ -1,0 +1,19 @@
+tests/benchmarks/test_model_json_streaming.py
+  s_7cffef7cffed16::t_b345d982f036ca 1-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f5b750e38b2abe7c7ff038e0cc85973bc0b2678b",
+  "prompts": {},
+  "sessions": {
+    "s_7cffef7cffed16": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a188ea-d10b-75f1-978d-9dd4a87d4503",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
