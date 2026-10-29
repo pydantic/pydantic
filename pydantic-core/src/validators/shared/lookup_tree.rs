@@ -156,6 +156,16 @@ pub struct LookupFieldPriority {
 }
 
 impl LookupFieldPriority {
+    /// Whether data found through this lookup should replace what a previous lookup already put
+    /// in the field. Later data wins unless what is there came from a higher priority alias.
+    ///
+    /// Both ways of reading an object have to agree on this, so both call it: the tree walk in
+    /// `validate_json_by_iteration` and the cursor scan in `scan_aliased`.
+    pub fn replaces(&self, existing: Option<Self>) -> bool {
+        !existing.is_some_and(|existing| existing.is_higher_priority_than(self))
+    }
+
+    /// Returns `true` if `self` has higher priority than `other`, i.e. data from this lookup should be used over data from `other`.
     pub fn is_higher_priority_than(&self, other: &Self) -> bool {
         if self.lookup_type == LookupType::Name {
             false
@@ -230,8 +240,9 @@ pub fn offer_field_input<'a, 'j>(
         return false;
     }
     let field_input = &mut field_inputs[info.field_index];
-    if let Some((existing, _)) = field_input
-        && existing.lookup_priority.is_higher_priority_than(&info.lookup_priority)
+    if !info
+        .lookup_priority
+        .replaces(field_input.as_ref().map(|(existing, _)| existing.lookup_priority))
     {
         return false;
     }
@@ -327,6 +338,55 @@ impl NestedLookup {
     }
 }
 
+#[cfg(test)]
+mod priority_tests {
+    use super::*;
+
+    fn alias(index: usize) -> LookupFieldPriority {
+        LookupFieldPriority {
+            lookup_type: LookupType::Alias,
+            alias_index: index,
+        }
+    }
+
+    fn name() -> LookupFieldPriority {
+        LookupFieldPriority {
+            lookup_type: LookupType::Name,
+            alias_index: 0,
+        }
+    }
+
+    /// A field with no alias at all is recorded as matching either kind of lookup.
+    fn plain() -> LookupFieldPriority {
+        LookupFieldPriority {
+            lookup_type: LookupType::Both,
+            alias_index: 0,
+        }
+    }
+
+    /// Expectations here come from the documented rule — an alias outranks the field name
+    /// wherever it appears, an earlier alias outranks a later one, and otherwise later data in
+    /// the object wins — not from what the implementation currently returns.
+    #[test]
+    fn replaces_follows_the_alias_priority_rule() {
+        // nothing there yet
+        assert!(name().replaces(None));
+        assert!(alias(0).replaces(None));
+
+        // an alias outranks the field's own name, whichever came first in the object
+        assert!(alias(0).replaces(Some(name())));
+        assert!(!name().replaces(Some(alias(0))));
+
+        // among aliases the earlier one in the choices wins, wherever it appears
+        assert!(!alias(1).replaces(Some(alias(0))));
+        assert!(alias(0).replaces(Some(alias(1))));
+
+        // equal standing, including a repeated key: the later value in the object wins
+        assert!(alias(0).replaces(Some(alias(0))));
+        assert!(name().replaces(Some(name())));
+        assert!(plain().replaces(Some(plain())));
+    }
+}
 #[derive(Debug)]
 struct NestedLookupNode {
     // Paths and internal nodes are numbered depth-first, so invalidation needs no descendant lists.

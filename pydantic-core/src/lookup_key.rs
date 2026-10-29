@@ -56,6 +56,13 @@ pub(crate) struct LookupPath {
     rest: Vec<PathItem>,
 }
 
+impl LookupPath {
+    /// Whether this path is a single key, so that matching it needs nothing from the value.
+    pub(crate) fn is_single_key(&self) -> bool {
+        self.rest.is_empty()
+    }
+}
+
 impl fmt::Display for LookupPath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{first_key}", first_key = self.first_item)?;
