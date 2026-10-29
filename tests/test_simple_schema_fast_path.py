@@ -3,7 +3,7 @@ from typing import Annotated, Any, ForwardRef, Literal, Optional, TypeVar, Union
 import pytest
 from pydantic_core import core_schema
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_serializer, field_validator
 from pydantic._internal import _generate_schema
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
@@ -101,6 +101,14 @@ def test_json_encoders_follow_general_path(monkeypatch: pytest.MonkeyPatch) -> N
         adapter = TypeAdapter(int | str, config=ConfigDict(json_encoders={int: lambda value: f'number:{value}'}))
     assert called
     assert adapter.dump_json(7) == b'"number:7"'
+
+
+def test_strict_configuration_applies_to_simple_union() -> None:
+    adapter = TypeAdapter(int | str, config=ConfigDict(strict=True))
+    assert adapter.validate_python(7) == 7
+    assert adapter.validate_python('7') == '7'
+    with pytest.raises(ValidationError):
+        adapter.validate_python(b'7')
 
 
 def test_unsupported_shapes_use_general_path(monkeypatch: pytest.MonkeyPatch) -> None:
