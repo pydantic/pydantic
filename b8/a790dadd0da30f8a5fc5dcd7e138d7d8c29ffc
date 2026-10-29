@@ -1,0 +1,19 @@
+pydantic-core/src/definitions.rs
+  s_24892abdc3937e::t_32a27c21c54a33 92,95,98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b8a790dadd0da30f8a5fc5dcd7e138d7d8c29ffc",
+  "prompts": {},
+  "sessions": {
+    "s_24892abdc3937e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1875e-83ce-7681-b5f9-f00c8df89771",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
