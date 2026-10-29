@@ -41,19 +41,20 @@ _BENCHMARK_DIR = Path(__file__).parent
 
 
 def _generated_bytes(name: str) -> bytes:
-    """Read a generated document, writing it first if this is the first run.
+    """Return the current generated document, replacing a stale local copy.
 
     `ensure_ascii=False` matters: with the default, non-ASCII text is written as `\\uXXXX`
     escapes, which take the escape path through the parser rather than the UTF-8 path, and the
     document stops measuring what it was chosen to measure. Real producers emit UTF-8.
     """
-    path = _BENCHMARK_DIR / f'{name}_data.json'
-    if not path.exists():
-        from .generate_json_shape_data import catalog, event_log, i18n_users
+    from .generate_json_shape_data import catalog, event_log, i18n_users
 
-        generator = {'i18n_users': i18n_users, 'catalog': catalog, 'event_log': event_log}[name]
-        path.write_text(json.dumps(generator(), ensure_ascii=False), encoding='utf-8')
-    return path.read_bytes()
+    generator = {'i18n_users': i18n_users, 'catalog': catalog, 'event_log': event_log}[name]
+    current = json.dumps(generator(), ensure_ascii=False).encode('utf-8')
+    path = _BENCHMARK_DIR / f'{name}_data.json'
+    if not path.exists() or path.read_bytes() != current:
+        path.write_bytes(current)
+    return current
 
 
 @pytest.fixture(scope='module')
@@ -93,6 +94,19 @@ def test_vendored_documents_match_upstream():
     """
     assert check_vendored_documents() == []
     assert set(DOCUMENTS) == {'twitter', 'canada', 'citm_catalog'}
+
+
+def test_generated_data_replaces_stale_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from . import generate_json_shape_data
+
+    cached = tmp_path / 'event_log_data.json'
+    cached.write_bytes(b'[]')
+    monkeypatch.setattr('tests.benchmarks.test_json_shapes._BENCHMARK_DIR', tmp_path)
+    monkeypatch.setattr(generate_json_shape_data, 'event_log', lambda: [{'event': 'changed'}])
+
+    expected = b'[{"event": "changed"}]'
+    assert _generated_bytes('event_log') == expected
+    assert cached.read_bytes() == expected
 
 
 # ----------------------------------------------------------------------------------- schemas
