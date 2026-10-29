@@ -2,6 +2,7 @@ import importlib.util
 import inspect
 import pickle
 import typing
+from copy import deepcopy
 from datetime import date, datetime
 from typing import Annotated, Any, Generic, Literal, TypeVar
 
@@ -670,6 +671,18 @@ def test_root_model_deep_copy() -> None:
     assert original.root is not copied.root
     assert original.root[0] is not copied.root[0]
     assert original.root == copied.root
+
+
+def test_root_model_deepcopy_self_referential() -> None:
+    class Nodes(RootModel[list[Any]]):
+        pass
+
+    original = Nodes([])
+    original.root.append(original)
+
+    for copied in (deepcopy(original), original.model_copy(deep=True)):
+        assert copied is not original
+        assert copied.root[0] is copied
 
 
 @pytest.mark.parametrize(
