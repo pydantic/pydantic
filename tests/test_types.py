@@ -1319,6 +1319,37 @@ def test_bytesize_to():
     assert m.size.to('kbit') == pytest.approx(8589934.592)
 
 
+def test_bytesize_human_readable_boundary() -> None:
+    """https://github.com/pydantic/pydantic/issues/14056"""
+    # Binary boundaries
+    assert ByteSize(1024 - 1).human_readable() == '1023B'
+    assert ByteSize(1024 * 1024 - 1).human_readable() == '1.0MiB'
+    assert ByteSize(1024**3 - 1).human_readable() == '1.0GiB'
+    assert ByteSize(1024**4 - 1).human_readable() == '1.0TiB'
+    assert ByteSize(1024**5 - 1).human_readable() == '1.0PiB'
+    assert ByteSize(1024**6 - 1).human_readable() == '1.0EiB'
+
+    # Decimal boundaries
+    assert ByteSize(1000 - 1).human_readable(decimal=True) == '999B'
+    assert ByteSize(1000 * 1000 - 1).human_readable(decimal=True) == '1.0MB'
+    assert ByteSize(1000**3 - 1).human_readable(decimal=True) == '1.0GB'
+    assert ByteSize(1000**4 - 1).human_readable(decimal=True) == '1.0TB'
+    assert ByteSize(1000**5 - 1).human_readable(decimal=True) == '1.0PB'
+    assert ByteSize(1000**6 - 1).human_readable(decimal=True) == '1.0EB'
+
+    # Separator parameter
+    assert ByteSize(1024 * 1024 - 1).human_readable(separator=' ') == '1.0 MiB'
+    assert ByteSize(1000 * 1000 - 1).human_readable(decimal=True, separator=' ') == '1.0 MB'
+
+    # Rounding threshold
+    assert ByteSize(1048524).human_readable() == '1023.9KiB'
+    assert ByteSize(1048525).human_readable() == '1.0MiB'
+
+    # Negative values
+    assert ByteSize(-(1024 * 1024 - 1)).human_readable() == '-1.0MiB'
+    assert ByteSize(-(1000 * 1000 - 1)).human_readable(decimal=True) == '-1.0MB'
+
+
 def test_bytesize_raises():
     class Model(BaseModel):
         size: ByteSize
