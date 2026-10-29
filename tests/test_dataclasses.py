@@ -1338,6 +1338,21 @@ def test_allow_extra_subclass():
     assert bar.__dict__ == {'x': 1, 'y': 2, 'z': '3', '__pydantic_initialised__': True}
 
 
+def test_allow_extra_internal_attributes():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
+    class Foo:
+        x: int
+
+    with pytest.raises(ValidationError):
+        Foo(**{'x': 'not an int', '__pydantic_initialised__': True})
+
+    with pytest.raises(ValidationError):
+        pydantic.parse_raw_as(Foo, '{"x": "not an int", "__pydantic_initialised__": true}')
+
+    foo = Foo(**{'x': '1', 'y': '2', '__pydantic_initialised__': True})
+    assert foo.__dict__ == {'x': 1, 'y': '2', '__pydantic_initialised__': True}
+
+
 def test_forbid_extra():
     @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
     class Foo:

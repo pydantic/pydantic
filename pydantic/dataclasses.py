@@ -295,7 +295,9 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
 
         elif config.extra == Extra.allow:
             for k, v in kwargs.items():
-                self.__dict__.setdefault(k, v)
+                # internal attributes are not valid extra fields, and should not be set from user input:
+                if not k.startswith('__pydantic'):
+                    self.__dict__.setdefault(k, v)
             init(self, *args, **{k: v for k, v in kwargs.items() if k in self.__dataclass_fields__})
 
         else:
