@@ -1,4 +1,5 @@
 import pickle
+from copy import deepcopy
 from typing import Annotated, Any
 
 import pytest
@@ -389,6 +390,41 @@ def test_model_copy_deep_update_with_private_attributes() -> None:
     assert m2.a == 2
     assert m2._private == {'modified'}
     assert m2._private is not m._private
+
+
+def test_deepcopy_self_referential_model() -> None:
+    class Node(BaseModel, extra='allow'):
+        child: 'Node | None' = None
+        _private: Any = PrivateAttr(None)
+
+    original = Node()
+    original.child = original
+    original.extra_child = original
+    original._private = original
+
+    for copied in (
+        deepcopy(original),
+        original.model_copy(deep=True),
+        original.model_copy(deep=True, update={'extra_child': None}),
+    ):
+        assert copied is not original
+        assert copied.child is copied
+        assert copied._private is copied
+
+
+def test_deepcopy_mutually_referential_models() -> None:
+    class Node(BaseModel):
+        other: 'Node | None' = None
+
+    a = Node()
+    b = Node(other=a)
+    a.other = b
+
+    copied = deepcopy(a)
+
+    assert copied is not a
+    assert copied.other is not b
+    assert copied.other.other is copied
 
 
 def test_copy_set_fields(ModelTwo, copy_method):
