@@ -12,13 +12,19 @@ NUM_THREADS?=1
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
 install: .uv
-	uv sync --frozen --all-groups --all-packages --all-extras
+	uv sync --frozen --all-groups --no-group pyodide-build --all-packages --all-extras
 	uv pip install pre-commit
 	uv run pre-commit install --install-hooks
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
 rebuild-lockfiles: .uv
 	uv lock --upgrade
+
+.PHONY: build-constraints  ## Generate the hashed constraints file for build dependencies
+build-constraints: .uv
+	uv run --no-project python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['build-system']['requires']))" \
+		| uv pip compile - --universal --python-version 3.10 --generate-hashes --upgrade \
+			--custom-compile-command 'make build-constraints' -o .github/build-constraints.txt
 
 .PHONY: .rust  # Check that Rust is installed
 .rust:

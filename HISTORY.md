@@ -2,6 +2,53 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.14.0 (2026-10-08)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.0)
+
+### What's Changed
+
+The highlights of the v2.14 release are available in the [blog post](https://pydantic.dev/articles/pydantic-v2-14-release).
+Several minor changes (considered non-breaking changes according to our [versioning policy](https://pydantic.dev/docs/validation/2.14/get-started/version-policy/#pydantic-v2))
+are also included in this release. Make sure to look into them before upgrading.
+
+This release drops support for Python 3.9 and adds support for Python 3.15.
+
+#### New Features
+
+* Add support for `multiple_of` constraint in `fraction` and `timedelta` core schemas by @Viicos in [#13873](https://github.com/pydantic/pydantic/pull/13873)
+* Add `__namespace__` parameter to `create_model()` by @Viicos in [#13895](https://github.com/pydantic/pydantic/pull/13895)
+
+#### Changes
+
+* Add an `ordered-dict` core schema by @Viicos in [#13796](https://github.com/pydantic/pydantic/pull/13796)
+* Add a `counter` core schema by @Viicos in [#13824](https://github.com/pydantic/pydantic/pull/13824)
+* Do not mutate `model_config` attribute by @Viicos in [#13825](https://github.com/pydantic/pydantic/pull/13825)
+* Reject newlines in `NameEmail` validation by @Viicos in [#13897](https://github.com/pydantic/pydantic/pull/13897)
+
+#### Fixes
+
+* Call enum constructors in both validation modes by @Viicos in [#13792](https://github.com/pydantic/pydantic/pull/13792)
+* Fix documentation examples not raising and remove unused `string_sub_type` unused error code by @Viicos in [#13821](https://github.com/pydantic/pydantic/pull/13821)
+* Catch `OverflowError` during `ByteSize` validation by @Viicos in [#13850](https://github.com/pydantic/pydantic/pull/13850)
+* Require `multiple_of` constraints to be positive by @Viicos in [#13862](https://github.com/pydantic/pydantic/pull/13862)
+* Always pop field name and model type stacks during schema generation by @saquibjawedbit in [#13859](https://github.com/pydantic/pydantic/pull/13859)
+* Handle `TypeError` gracefully during docstring extraction by @Viicos in [#13874](https://github.com/pydantic/pydantic/pull/13874)
+* Fix config propagation of stdlib dataclasses and `TypedDict`s in JSON Schema by @Viicos in [#13891](https://github.com/pydantic/pydantic/pull/13891)
+* Don't apply `ser_json_timedelta` to all datetime types in serialization inference by @Viicos in [#13892](https://github.com/pydantic/pydantic/pull/13892)
+* Encode JSON Schema defaults with a consistent configuration by @Viicos in [#13893](https://github.com/pydantic/pydantic/pull/13893)
+* Propagate `init` and `kw_only=False` from `Field()` to stdlib dataclass fields by @Viicos in [#13898](https://github.com/pydantic/pydantic/pull/13898)
+* Respect propagated extra config in the JSON Schema of stdlib dataclasses by @Viicos in [#13899](https://github.com/pydantic/pydantic/pull/13899)
+* Handle OS errors during `ZoneInfo` validation by @Viicos in [#13912](https://github.com/pydantic/pydantic/pull/13912)
+* Handle exceptions during `Decimal` validation by @Viicos in [#13940](https://github.com/pydantic/pydantic/pull/13940)
+* Rebuild incomplete types during serialization inference by @Viicos in [#13922](https://github.com/pydantic/pydantic/pull/13922)
+* Reject large exponents in `Fraction` validation by @Viicos in [#13944](https://github.com/pydantic/pydantic/pull/13944)
+* Avoid validating URL prefix multiple times in multi host URLs by @Viicos in [#13945](https://github.com/pydantic/pydantic/pull/13945)
+
+### New Contributors
+
+* @saquibjawedbit made their first contribution in [#13859](https://github.com/pydantic/pydantic/pull/13859)
+
 ## v2.14.0b2 (2026-09-09)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.0b2)
@@ -14,7 +61,7 @@ making use of [`TypeForm`](https://docs.python.org/3.15/library/typing.html#typi
 
 #### New Features
 
-* Allow any `CoreSchema` to be used as serialization by @Viicos in [#13680](https://github.com/pydantic/pydantic/pull/13680)
+* Allow any `CoreSchema` to be used as serialization by @Viicos in [#13680](https://github.com/pydantic/pydantic/pull/13680)
 * Add support for [`frozendict`](https://docs.python.org/3.15/library/stdtypes.html#frozendict) type by @Viicos in [#13634](https://github.com/pydantic/pydantic/pull/13634)
 * Allow `dict`, `frozendict` and `frozenset` as `defaultdict` default factories by @Viicos in [#13623](https://github.com/pydantic/pydantic/pull/13623)
 * Add support for [`TypeForm`](https://docs.python.org/3.15/library/typing.html#typing.TypeForm) by @Viicos in [#13459](https://github.com/pydantic/pydantic/pull/13459).
@@ -39,7 +86,7 @@ making use of [`TypeForm`](https://docs.python.org/3.15/library/typing.html#typi
 * Take `ser_json_temporal` into account when generating JSON Schema by @shashiKundur1 in [#13665](https://github.com/pydantic/pydantic/pull/13665)
 * Use the field name in `__signature__` when `validate_by_alias` is`False` by @jaideeppyne in [#13730](https://github.com/pydantic/pydantic/pull/13730)
 * Add a `deque` core schema by @Viicos in [#13757](https://github.com/pydantic/pydantic/pull/13757)
-* Do not mention `MISSING` as a valid value in validation errors by @Viicos in [#13779](https://github.com/pydantic/pydantic/pull/13779)
+* Do not mention `MISSING` as a valid value in validation errors by @Viicos in [#13779](https://github.com/pydantic/pydantic/pull/13779)
 * Refactor `Decimal` JSON Schema `pattern` constraint by @Viicos in [#13672](https://github.com/pydantic/pydantic/pull/13672)
 
 #### Performance

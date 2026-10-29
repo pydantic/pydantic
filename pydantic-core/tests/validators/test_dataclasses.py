@@ -1671,11 +1671,10 @@ def test_dataclass_args_init(input_value, extra_behavior, expected):
     'input_value,extra_behavior,expected',
     [
         *init_test_cases,
-        # special case - allow override of default, even when init=False, if extra='allow'
-        # TODO: we haven't really decided if this should be allowed or not
-        # currently, it's disallowed in Pydantic to have a model with extra='allow'
-        # and a field with init=False, so this case isn't really possible at the moment
-        ({'a': 'hello', 'b': 'bye'}, 'allow', {'a': 'hello', 'b': 'bye'}),
+        # special case - extra data can't override fields, even when init=False, if extra='allow'
+        # (currently, it's disallowed in Pydantic to have a model with extra='allow'
+        # and a field with init=False, so this case isn't really possible at the moment)
+        ({'a': 'hello', 'b': 'bye'}, 'allow', {'a': 'hello', 'b': 'HELLO'}),
     ],
 )
 def test_dataclass_args_init_with_default(input_value, extra_behavior, expected):

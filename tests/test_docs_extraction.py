@@ -197,6 +197,46 @@ def test_model_generic():
     assert MyModel[int].model_fields['a'].description == 'A docs'
 
 
+def test_model_docs_nested_definitions():
+    """https://github.com/pydantic/pydantic/issues/14041"""
+
+    class Outer(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+        a: int
+        """Outer A docs"""
+
+        b: int
+
+        c: int
+
+        class Inner(BaseModel):
+            model_config = ConfigDict(use_attribute_docstrings=True)
+
+            a: int
+            """Inner A docs"""
+
+            b: int
+            """Inner B docs"""
+
+            class Deeper(BaseModel):
+                model_config = ConfigDict(use_attribute_docstrings=True)
+
+                a: int
+                """Deeper A docs"""
+
+        def method(self) -> None:
+            c: int = 1  # noqa: F841
+            """Not a docstring for the `c` field"""
+
+    assert Outer.model_fields['a'].description == 'Outer A docs'
+    assert Outer.model_fields['b'].description is None
+    assert Outer.model_fields['c'].description is None
+    assert Outer.Inner.model_fields['a'].description == 'Inner A docs'
+    assert Outer.Inner.model_fields['b'].description == 'Inner B docs'
+    assert Outer.Inner.Deeper.model_fields['a'].description == 'Deeper A docs'
+
+
 def test_dataclass_no_docs_extraction():
     @pydantic_dataclass
     class MyModel:
