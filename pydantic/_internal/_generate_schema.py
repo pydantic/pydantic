@@ -141,6 +141,21 @@ ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 
+
+def _is_simple_schema_type(obj: Any) -> bool:
+    """Recognize only builtin scalar types whose schemas need no type-specific processing."""
+    return (
+        obj is str
+        or obj is bytes
+        or obj is int
+        or obj is float
+        or obj is bool
+        or obj is complex
+        or obj is None
+        or obj is NoneType
+    )
+
+
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
 ValidateCallSupportedTypes: TypeAlias = LambdaType | FunctionType | MethodType | partial
@@ -817,7 +832,19 @@ class GenerateSchema:
         """
         origin = get_origin(obj)
         schema: CoreSchema | None = None
-        if origin is None:
+        # These exact builtin types have no custom schema hooks. Construct a new
+        # schema for each use, leaving field metadata and validators to their
+        # normal processing path.
+        if origin is None and _is_simple_schema_type(obj):
+            if not self._config_wrapper.json_encoders:
+                schema = self._handlers[obj](self, obj)
+        elif (
+            origin is not None and is_union_origin(origin) and all(_is_simple_schema_type(arg) for arg in get_args(obj))
+        ):
+            if not self._config_wrapper.json_encoders:
+                schema = self._union_schema(obj, simple_choices=True)
+
+        if schema is None and origin is None:
             # If the type has an origin, it is guaranteed to *not* be an ordinary class that could have
             # a `__get_pydantic_core_schema__()` method:
             schema = self._generate_schema_from_get_schema_method(obj, obj)
@@ -1355,7 +1382,7 @@ class GenerateSchema:
 
         return schema, core_metadata
 
-    def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
+    def _union_schema(self, union_type: Any, *, simple_choices: bool = False) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
         choices: list[CoreSchema] = []
@@ -1367,7 +1394,7 @@ class GenerateSchema:
             elif arg is MISSING:
                 allow_missing = True
             else:
-                choices.append(self.generate_schema(arg))
+                choices.append(self._handlers[arg](self, arg) if simple_choices else self.generate_schema(arg))
 
         if not choices:
             # Only `None` and `MISSING` were present in the union (e.g. `None | MISSING`):
