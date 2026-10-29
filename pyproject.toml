@@ -83,9 +83,9 @@ dev = [
     'jsonschema',
     'time-machine; platform_python_implementation != "PyPy"',
 ]
-benchmark-imports = [
-    # Keep the SDK workload fixed; uv.lock also pins its transitive dependencies.
-    'mcp==2.0.0',
+benchmark-startup = [
+    # Note: bumping deps here can change benchmarks results (see tests/benchmarks/library_startup/README.md):
+    'mcp==2.3.0',
 ]
 coverage = [
     'coverage[toml]',

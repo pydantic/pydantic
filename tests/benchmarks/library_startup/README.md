@@ -1,0 +1,37 @@
+# Library startup benchmarks
+
+These benchmarks measure the startup time of libraries built on Pydantic. Each
+sample starts a fresh Python interpreter from the current environment, imports
+the library's top-level module, and waits for the process to exit. A failed
+import fails the benchmark.
+
+The result includes Python startup, all of the library's dependencies, Pydantic
+model building, and interpreter shutdown. It measures elapsed time for the whole
+process, rather than attributing time specifically to Pydantic. Every sample has
+fresh Python module and Pydantic caches; filesystem caches and compiled Python
+files can be warm. This is not a cold-disk benchmark.
+
+## Benchmarked libraries
+
+To add a library:
+
+1. Pin it to an exact version in the `benchmark-startup` group in `pyproject.toml`
+   and update `uv.lock`.
+2. Add an entry to `LIBRARIES` in [`test_library_startup.py`](./test_library_startup.py),
+   mapping the distribution name to the code to run (typically imports of the modules
+   defining the library's Pydantic models).
+
+## Running
+
+Run locally with a release build of pydantic-core:
+
+```bash
+uv sync --all-packages --group benchmark-startup --no-editable --frozen
+uv run --no-sync pytest tests/benchmarks/library_startup --benchmark-enable
+```
+
+Or use CodSpeed's elapsed-time measurements locally:
+
+```bash
+uv run --no-sync pytest tests/benchmarks/library_startup --codspeed --codspeed-mode=walltime --codspeed-max-rounds=20
+```
