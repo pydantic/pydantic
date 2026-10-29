@@ -23,7 +23,29 @@
 
 #### Fixes
 
-* Make JSON validation by iteration consistent with Python approach by @davidhewitt in [#13275](https://github.com/pydantic/pydantic/pull/13275)
+* Make JSON validation by iteration consistent with Python approach by @davidhewitt in [#13275](https://github.com/pydantic/pydantic/pull/13275).
+
+  JSON validation now handles field lookup and extra data the same way as Python validation. In particular, keys that only match an
+  unused alias or field name are now treated as extra data, instead of being silently dropped:
+
+    ```python
+    from pydantic import BaseModel, ConfigDict
+    from pydantic.alias_generators import to_camel
+
+
+    class Page(BaseModel):
+        model_config = ConfigDict(extra='forbid', alias_generator=to_camel)
+
+        page_size: int = 10
+
+
+    Page.model_validate_json('{"page_size": 50}')
+    # Before: Page(page_size=10)
+    # After: ValidationError (extra_forbidden)
+    ```
+
+  See the [pull request](https://github.com/pydantic/pydantic/pull/13275) for the full list of behavior changes.
+
 * Fix unpickling of generic classes defined in separate module by @Viicos in [#13994](https://github.com/pydantic/pydantic/pull/13994)
 * Support explicit `by_alias` overriding `validate_by_alias` in validation JSON schemas by @Viicos in [#13997](https://github.com/pydantic/pydantic/pull/13997)
 * Fix mypy plugin crash on deferred empty model by @ilevkivskyi in [#14027](https://github.com/pydantic/pydantic/pull/14027)
