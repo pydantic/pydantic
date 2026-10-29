@@ -512,7 +512,7 @@ def test_union_serializes_list_of_model_subclass_from_definition() -> None:
     assert s.to_python([DBUser(name='John', password='secret')]) == [{'name': 'John'}]
 
 
-EXAMPLE_UUID = uuid.uuid4()
+EXAMPLE_UUID = uuid.UUID('12345678-1234-5678-1234-567812345678')
 
 
 class IntSubclass(int):

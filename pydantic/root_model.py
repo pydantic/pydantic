@@ -103,6 +103,12 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         m = cls.__new__(cls)
         new_dict = copy(self.__dict__)
         new_dict['root'] = copy(self.__dict__['root'])  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
+        # Private attributes live in `__dict__` on root models, so give the copy its own:
+        private = new_dict.get('__pydantic_private__')
+        if private is not None:
+            new_dict['__pydantic_private__'] = {  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
+                k: v for k, v in private.items() if v is not PydanticUndefined
+            }
         _object_setattr(m, '__dict__', new_dict)
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m

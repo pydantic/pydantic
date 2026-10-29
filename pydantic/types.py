@@ -3234,7 +3234,13 @@ class _AllowAnyJson:
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         python_schema = handler(source_type)
-        return core_schema.json_or_python_schema(json_schema=core_schema.any_schema(), python_schema=python_schema)
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.any_schema(),
+            python_schema=python_schema,
+            # Valid JSON values are serialized identically by inference, which avoids the overhead
+            # of the tagged union serializer (and its Python discriminator function) in Python mode:
+            serialization=core_schema.simple_ser_schema('any'),
+        )
 
 
 if TYPE_CHECKING:
