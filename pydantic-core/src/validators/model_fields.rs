@@ -337,6 +337,16 @@ pub(crate) struct NestedModel<'v> {
 /// forever, and each level down accounts for less of the document than the one above it.
 const MAX_PLAN_DEPTH: u8 = 4;
 
+// Match jiter's default JSON recursion limit. Only nonempty containers consume a level.
+const JSON_DEPTH_LIMIT: usize = 200;
+
+fn check_stream_depth(depth: usize) -> Result<(), StreamStop> {
+    if depth >= JSON_DEPTH_LIMIT {
+        return Err(StreamStop::Cursor);
+    }
+    Ok(())
+}
+
 /// A validator that a model class already had built is reused through a `Prebuilt` wrapper
 /// which only delegates, and real pydantic schemas are made almost entirely of them.
 pub(crate) fn unwrap_prebuilt(validator: &CombinedValidator) -> &CombinedValidator {
@@ -451,11 +461,14 @@ fn build_model<'py>(
     nested: &NestedModel<'_>,
     jiter: &mut Jiter<'_>,
     state: &mut ValidationState<'_, 'py>,
+    depth: usize,
 ) -> Result<Option<Bound<'py, PyAny>>, StreamStop> {
     // constructing a model is never an exact match, exactly as the ordinary path has it
     state.floor_exactness(Exactness::Strict);
     let Some((model_dict, _extra, fields_set)) =
-        nested.fields.validate_json_streaming(py, jiter, &nested.plan, state)?
+        nested
+            .fields
+            .validate_json_streaming(py, jiter, &nested.plan, state, depth)?
     else {
         return Ok(None);
     };
@@ -483,7 +496,7 @@ pub(crate) fn take_root<'py>(
     plan: &FieldPlan<'_>,
     state: &mut ValidationState<'_, 'py>,
 ) -> Result<Option<Bound<'py, PyAny>>, StreamStop> {
-    match take_fast(py, jiter, plan, state)? {
+    match take_fast(py, jiter, plan, state, 0)? {
         Taken::Ready(value) => Ok(Some(value)),
         Taken::Raw => Ok(None),
     }
@@ -498,6 +511,7 @@ fn take_list<'j, 'py>(
     jiter: &mut Jiter<'j>,
     plan: &ContainerPlan<'_>,
     state: &mut ValidationState<'_, 'py>,
+    depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
     let element = &plan.element;
     // collected first so the list is allocated once at its final size: appending into an empty
@@ -505,16 +519,19 @@ fn take_list<'j, 'py>(
     let mut items: SmallVec<[Bound<'py, PyAny>; 8]> = SmallVec::new();
     let mut all_ready = true;
     let mut next = jiter.known_array()?;
+    if next.is_some() {
+        check_stream_depth(depth)?;
+    }
     while let Some(peek) = next {
         if all_ready && plan.max_length.is_none_or(|max| items.len() < max) {
-            match take_peeked(py, jiter, element, peek, state)? {
+            match take_peeked(py, jiter, element, peek, state, depth + 1)? {
                 Taken::Ready(value) => items.push(value),
                 Taken::Raw => all_ready = false,
             }
         } else {
             // Once the bound is exceeded, stop constructing values and consume the rest.
             all_ready = false;
-            skip_peeked(jiter, peek)?;
+            skip_peeked(jiter, peek, depth + 1)?;
         }
         next = jiter.array_step()?;
     }
@@ -533,11 +550,15 @@ fn take_dict<'py>(
     jiter: &mut Jiter<'_>,
     plan: &ContainerPlan<'_>,
     state: &mut ValidationState<'_, 'py>,
+    depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
     let value_plan = &plan.element;
     let dict = PyDict::new(py);
     let mut all_ready = true;
     let mut key = jiter.known_object()?;
+    if key.is_some() {
+        check_stream_depth(depth)?;
+    }
     while let Some(k) = key {
         if all_ready {
             // the key borrows the cursor, so it has to become a python string before the value
@@ -547,15 +568,15 @@ fn take_dict<'py>(
                 // Repeated keys do not increase length. A new key beyond the bound does,
                 // so avoid constructing its value or any remaining values.
                 all_ready = false;
-                skip_unused(jiter)?;
+                skip_unused(jiter, depth + 1)?;
             } else {
-                match take_fast(py, jiter, value_plan, state)? {
+                match take_fast(py, jiter, value_plan, state, depth + 1)? {
                     Taken::Ready(value) => dict.set_item(k, value)?,
                     Taken::Raw => all_ready = false,
                 }
             }
         } else {
-            skip_unused(jiter)?;
+            skip_unused(jiter, depth + 1)?;
         }
         key = jiter.next_key()?;
     }
@@ -574,16 +595,57 @@ fn take_dict<'py>(
 /// consumes without decoding. Outside strings json is ascii, so asking whether the span is utf-8
 /// is exactly asking whether the strings inside it are, and a span that is not hands the
 /// document to the ordinary path, which says where and why.
-fn skip_unused(jiter: &mut Jiter<'_>) -> Result<(), StreamStop> {
-    let start = jiter.current_index();
-    jiter.next_skip()?;
-    check_skipped_utf8(jiter, start)
+fn skip_unused(jiter: &mut Jiter<'_>, depth: usize) -> Result<(), StreamStop> {
+    let peek = jiter.peek()?;
+    skip_peeked(jiter, peek, depth)
 }
 
-fn skip_peeked(jiter: &mut Jiter<'_>, peek: Peek) -> Result<(), StreamStop> {
+/// Walk skipped containers with the same remaining budget as streamed containers.
+/// Jiter's `known_skip` starts a fresh budget, so use it only for scalars here.
+fn skip_peeked(jiter: &mut Jiter<'_>, mut peek: Peek, depth: usize) -> Result<(), StreamStop> {
     let start = jiter.current_index();
-    jiter.known_skip(peek)?;
-    check_skipped_utf8(jiter, start)
+    // true is an object, false an array. Iteration avoids growing the Rust stack for ignored JSON.
+    let mut containers: SmallVec<[bool; 8]> = SmallVec::new();
+    loop {
+        match peek {
+            Peek::Array => {
+                if let Some(first) = jiter.known_array()? {
+                    check_stream_depth(depth + containers.len())?;
+                    containers.push(false);
+                    peek = first;
+                    continue;
+                }
+            }
+            Peek::Object => {
+                if jiter.known_object()?.is_some() {
+                    check_stream_depth(depth + containers.len())?;
+                    containers.push(true);
+                    peek = jiter.peek()?;
+                    continue;
+                }
+            }
+            _ => jiter.known_skip(peek)?,
+        }
+        loop {
+            let Some(&object) = containers.last() else {
+                return check_skipped_utf8(jiter, start);
+            };
+            let next = if object {
+                if jiter.next_key()?.is_some() {
+                    Some(jiter.peek()?)
+                } else {
+                    None
+                }
+            } else {
+                jiter.array_step()?
+            };
+            if let Some(next) = next {
+                peek = next;
+                break;
+            }
+            containers.pop();
+        }
+    }
 }
 
 fn check_skipped_utf8(jiter: &Jiter<'_>, start: usize) -> Result<(), StreamStop> {
@@ -601,9 +663,10 @@ fn take_fast<'py>(
     jiter: &mut Jiter<'_>,
     field: &FieldPlan<'_>,
     state: &mut ValidationState<'_, 'py>,
+    depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
     let peek = jiter.peek()?;
-    take_peeked(py, jiter, field, peek, state)
+    take_peeked(py, jiter, field, peek, state, depth)
 }
 
 /// The same, for a value whose peek the caller already has: an element of an array, or the value
@@ -614,6 +677,7 @@ fn take_peeked<'py>(
     field: &FieldPlan<'_>,
     peek: Peek,
     state: &mut ValidationState<'_, 'py>,
+    depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
     if field.nullable && matches!(peek, Peek::Null) {
         jiter.known_null()?;
@@ -666,16 +730,16 @@ fn take_peeked<'py>(
                 _ => Taken::Raw,
             }
         }
-        (Fast::List(plan), Peek::Array) => take_list(py, jiter, plan, state)?,
-        (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, plan, state)?,
-        (Fast::Model(nested), Peek::Object) => match build_model(py, nested, jiter, state)? {
+        (Fast::List(plan), Peek::Array) => take_list(py, jiter, plan, state, depth)?,
+        (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, plan, state, depth)?,
+        (Fast::Model(nested), Peek::Object) => match build_model(py, nested, jiter, state, depth)? {
             Some(instance) => Taken::Ready(instance),
             None => Taken::Raw,
         },
         // a field this path does not specialise, or a json type that does not match it: hand the
         // value to the field's own validator rather than giving up on the whole object
         _ => {
-            skip_unused(jiter)?;
+            skip_unused(jiter, depth)?;
             Taken::Raw
         }
     };
@@ -909,6 +973,7 @@ impl ModelFieldsValidator {
         jiter: &mut Jiter<'j>,
         plan: &ModelPlan<'_>,
         state: &mut ValidationState<'_, 'py>,
+        depth: usize,
     ) -> Result<Option<ValidatedModelFields<'py>>, StreamStop> {
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
@@ -921,11 +986,14 @@ impl ModelFieldsValidator {
             unreachable!("a streamable plan has no aliases");
         };
         let mut key = jiter.known_object()?;
+        if key.is_some() {
+            check_stream_depth(depth)?;
+        }
         while let Some(k) = key {
             let found = lookup.get(k).copied();
             match found {
-                Some(index) => slots[index] = Some(take_fast(py, jiter, &plan.fields[index], state)?),
-                None => skip_unused(jiter)?,
+                Some(index) => slots[index] = Some(take_fast(py, jiter, &plan.fields[index], state, depth + 1)?),
+                None => skip_unused(jiter, depth + 1)?,
             }
             key = jiter.next_key()?;
         }
