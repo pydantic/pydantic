@@ -26,6 +26,11 @@ for name in {packages!r}:
 # Distributions pinned in the `benchmark-startup` dependency group, mapped to the code
 # run in the child interpreter.
 LIBRARIES = {
+    'anthropic': IMPORT_ALL_MODULES.format(
+        packages=('anthropic',),
+        # Optional HTTP transport without model definitions.
+        excluded=('anthropic._vendor.httpx_aiohttp',),
+    ),
     'mcp': IMPORT_ALL_MODULES.format(
         packages=('mcp', 'mcp_types'),
         # Migration-error shim with no model definitions.
