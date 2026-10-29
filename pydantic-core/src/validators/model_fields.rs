@@ -459,6 +459,8 @@ fn build_model<'py>(
     else {
         return Ok(None);
     };
+    // Only the root model is eligible: finish parsing before storage descriptors can run.
+    jiter.finish()?;
     let instance = create_class(nested.class.bind(py))?;
     let none = py.None();
     set_model_attrs(&instance, &model_dict, none.bind(py), &fields_set)?;

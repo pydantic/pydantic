@@ -367,3 +367,38 @@ def test_model_object_hooks_decline_streaming(hook: str) -> None:
     with pytest.raises(ValidationError):
         validator.validate_json(b'{"value": 1} trailing')
     assert calls == []
+
+
+@pytest.mark.parametrize('raises', [False, True])
+def test_storage_descriptors_wait_for_complete_json(raises: bool) -> None:
+    calls: list[None] = []
+
+    class Model:
+        __slots__ = ('__dict__', '__pydantic_fields_set__', '__pydantic_private__')
+
+        @property
+        def __pydantic_extra__(self) -> None:
+            return None
+
+        @__pydantic_extra__.setter
+        def __pydantic_extra__(self, value: None) -> None:
+            calls.append(value)
+            if raises:
+                raise RuntimeError('storage descriptor ran')
+
+    validator = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
+        )
+    )
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError):
+        validator.validate_json('{"x":1} trailing')
+    assert calls == []
+    if raises:
+        with pytest.raises(RuntimeError, match='storage descriptor ran'):
+            validator.validate_json('{"x":1}')
+    else:
+        assert validator.validate_json('{"x":1}').x == 1
+    assert calls == [None]
