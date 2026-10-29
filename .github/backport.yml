@@ -1,0 +1,7 @@
+# Backport configuration, read by `.github/workflows/backport.yml`.
+#
+# Maps a PR label to the branch the PR gets backported to. When a PR to `main` carrying one of these labels
+# is merged (or when the label is added to an already merged PR), a backport PR is opened against the branch.
+# Labels not listed here are ignored.
+branches:
+  backport-2.14: v2.14-fixes
