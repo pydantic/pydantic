@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from pydantic_core import SchemaValidator, core_schema
+from pydantic_core import SchemaValidator, ValidationError, core_schema
 
 # each side has to run in its own process, because the path is chosen once per process
 pytestmark = pytest.mark.skipif(sys.platform == 'emscripten', reason='no subprocesses on emscripten')
@@ -326,3 +326,78 @@ def test_streaming_matches_the_tree_in_an_array(case: str) -> None:
 
     assert stream['accepted'] is True
     assert tree['results'] == stream['results']
+
+
+@pytest.mark.parametrize('in_array', [False, True])
+def test_streaming_does_not_replay_default_factories(in_array: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4117313910"""
+    calls: list[str] = []
+
+    def factory() -> str:
+        calls.append('default')
+        return 'default'
+
+    schema = _model(
+        'Defaults',
+        {'defaulted': core_schema.with_default_schema(STR, default_factory=factory), 'required': INT},
+    )
+    if in_array:
+        schema = core_schema.list_schema(schema)
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError):
+        validator.validate_json('[{}]' if in_array else '{}')
+    assert calls == ['default']
+
+
+@pytest.mark.parametrize('in_array', [False, True])
+def test_streaming_validated_default_field_name(in_array: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412326289"""
+    names: list[str | None] = []
+
+    def record_name(value: str, info: core_schema.ValidationInfo) -> str:
+        names.append(info.field_name)
+        return value
+
+    schema = _model(
+        'Defaults',
+        {
+            'defaulted': core_schema.with_default_schema(
+                core_schema.with_info_after_validator_function(record_name, STR),
+                default='value',
+                validate_default=True,
+            )
+        },
+    )
+    if in_array:
+        schema = core_schema.list_schema(schema)
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    validator.validate_json('[{}]' if in_array else '{}')
+    assert names == ['defaulted']
+
+
+def test_streaming_nested_default_factories_follow_schema_order() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412326296"""
+    calls: list[str] = []
+
+    def first() -> int:
+        calls.append('first')
+        return 1
+
+    def second() -> int:
+        calls.append('second')
+        return 2
+
+    validator = SchemaValidator(
+        _model(
+            'Outer',
+            {
+                'first': _model('First', {'value': core_schema.with_default_schema(INT, default_factory=first)}),
+                'second': _model('Second', {'value': core_schema.with_default_schema(INT, default_factory=second)}),
+            },
+        )
+    )
+    assert validator._stream_plan_accepted
+    validator.validate_json('{"second": {}, "first": {}}')
+    assert calls == ['first', 'second']

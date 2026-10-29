@@ -958,11 +958,15 @@ impl ModelFieldsValidator {
                         Err(_) => return Ok(None),
                     }
                 }
-                None => match field.validator.default_value(py, Some(&*field.name), state) {
-                    Ok(Some(default)) => default,
-                    // required and absent, or a default that does not simply produce a value
-                    _ => return Ok(None),
-                },
+                None => {
+                    let CombinedValidator::WithDefault(default) = &*field.validator else {
+                        return Ok(None);
+                    };
+                    let Some(default) = default.stream_default(py) else {
+                        return Ok(None);
+                    };
+                    default
+                }
             };
             model_dict.set_item(&field.name, value)?;
         }

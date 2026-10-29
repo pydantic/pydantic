@@ -149,10 +149,22 @@ impl_py_gc_traverse!(WithDefaultValidator { default, validator });
 
 impl WithDefaultValidator {
     /// The validator a present value goes through. A value taken without running the validator
-    /// cannot error, so `on_error` never comes into it; an absent field still goes through
-    /// `default_value` as before.
+    /// cannot error, so `on_error` never comes into it. Missing values use `stream_default`
+    /// only when no validation, factory, or copying is needed.
     pub(crate) fn stream_inner(&self) -> &CombinedValidator {
         &self.validator
+    }
+
+    /// A stored default that can be reused without running Python code. Anything requiring
+    /// validation, a factory, or a deep copy must wait for the ordinary validation path.
+    pub(crate) fn stream_default(&self, py: Python<'_>) -> Option<Py<PyAny>> {
+        if self.validate_default || self.copy_default {
+            return None;
+        }
+        match &self.default {
+            DefaultType::Default(value) => Some(value.clone_ref(py)),
+            DefaultType::None | DefaultType::DefaultFactory(..) => None,
+        }
     }
 }
 
