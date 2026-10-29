@@ -587,3 +587,43 @@ def test_streaming_excludes_models_with_finalizers(finalizer_kind: str, shape: s
     del value
     gc.collect()
     assert finalized == ['finalized']
+
+
+@pytest.mark.parametrize('new_kind', ['direct', 'inherited', 'added_later'])
+@pytest.mark.parametrize('shape', ['root', 'array', 'nested', 'mapping'])
+def test_streaming_excludes_models_with_custom_new(new_kind: str, shape: str) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412793124"""
+    allocated: list[str] = []
+
+    def allocate(cls: type[object]) -> object:
+        allocated.append('allocated')
+        return object.__new__(cls)
+
+    cls = _cls('CustomNew')
+    if new_kind != 'added_later':
+        cls.__new__ = staticmethod(allocate)
+    if new_kind == 'inherited':
+        cls = type('Child', (cls,), {})
+    schema = core_schema.model_schema(cls, core_schema.model_fields_schema({'a': core_schema.model_field(INT)}))
+    document = '{"a": 1}'
+    if shape == 'array':
+        schema = core_schema.list_schema(schema)
+        document = '[' + document + ']'
+    elif shape == 'nested':
+        schema = _model('Outer', {'item': schema})
+        document = '{"item": ' + document + '}'
+    elif shape == 'mapping':
+        schema = core_schema.dict_schema(STR, schema)
+        document = '{"item": ' + document + '}'
+    validator = SchemaValidator(schema)
+    if new_kind == 'added_later':
+        assert validator._stream_plan_accepted
+        cls.__new__ = staticmethod(allocate)
+    if shape != 'nested':
+        assert not validator._stream_plan_accepted
+
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        validator.validate_json(document + ' trailing')
+    assert allocated == []
+    validator.validate_json(document)
+    assert allocated == ['allocated']

@@ -77,7 +77,17 @@ impl ModelValidator {
         // Speculative instances may be discarded before JSON parsing finishes. Inspect the
         // current slot without invoking attribute hooks, including inherited or added __del__.
         // SAFETY: the bound class is a valid type and Py_tp_finalize is a valid type slot.
-        if !unsafe { ffi::PyType_GetSlot(self.class.bind(py).as_type_ptr(), ffi::Py_tp_finalize) }.is_null() {
+        let class = self.class.bind(py);
+        if !unsafe { ffi::PyType_GetSlot(class.as_type_ptr(), ffi::Py_tp_finalize) }.is_null() {
+            return None;
+        }
+        // Custom __new__ hooks must also wait until the whole document is known to be valid.
+        // SAFETY: both bound classes are valid types and Py_tp_new is a valid type slot.
+        let has_custom_new = unsafe {
+            ffi::PyType_GetSlot(class.as_type_ptr(), ffi::Py_tp_new)
+                != ffi::PyType_GetSlot(py.get_type::<PyAny>().as_type_ptr(), ffi::Py_tp_new)
+        };
+        if has_custom_new {
             return None;
         }
         Some((&self.class, &self.validator))
