@@ -7,10 +7,30 @@ from collections.abc import Callable
 
 import pytest
 
+IMPORT_ALL_MODULES = """\
+import importlib
+import pkgutil
+
+def import_all(name: str) -> None:
+    if name in {excluded!r} or name.rsplit('.', 1)[-1] in ('__main__', 'cli'):
+        return
+    module = importlib.import_module(name)
+    if hasattr(module, '__path__'):
+        for child in pkgutil.iter_modules(module.__path__, module.__name__ + '.'):
+            import_all(child.name)
+
+for name in {packages!r}:
+    import_all(name)
+"""
+
 # Distributions pinned in the `benchmark-startup` dependency group, mapped to the code
 # run in the child interpreter.
 LIBRARIES = {
-    'mcp': 'from mcp_types import _types, _v2025_11_25, _v2026_07_28',
+    'mcp': IMPORT_ALL_MODULES.format(
+        packages=('mcp', 'mcp_types'),
+        # Migration-error shim with no model definitions.
+        excluded=('mcp.server.fastmcp',),
+    ),
 }
 
 

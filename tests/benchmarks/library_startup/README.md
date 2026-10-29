@@ -1,9 +1,15 @@
 # Library startup benchmarks
 
 These benchmarks measure the startup time of libraries built on Pydantic. Each
-sample starts a fresh Python interpreter from the current environment, imports
-the library's top-level module, and waits for the process to exit. A failed
-import fails the benchmark.
+sample starts a fresh Python interpreter from the current environment, recursively
+imports the library's modules (including all model definitions), and waits for the
+process to exit. A failed import fails the benchmark.
+
+CLI entry points are excluded, along with explicitly listed compatibility shims
+and optional integrations without model definitions. MCP includes both `mcp` and
+`mcp_types`, covering server and authentication models as well as every protocol
+version. These workloads measure eager loading of all models, even when ordinary
+library startup uses lazy imports.
 
 The result includes Python startup, all of the library's dependencies, Pydantic
 model building, and interpreter shutdown. It measures elapsed time for the whole
