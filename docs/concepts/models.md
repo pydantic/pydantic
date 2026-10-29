@@ -275,12 +275,34 @@ The configuration can take three values:
 * `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
   The `__pydantic_extra__` can explicitly be annotated to provide validation for extra fields.
 
-The validation methods (e.g. [`model_validate()`][pydantic.main.BaseModel.model_validate]) have an optional `extra` argument
+The [validation methods](#validating-data) (e.g. [`model_validate()`][pydantic.main.BaseModel.model_validate]) have an optional `extra` argument
 that will override the `extra` configuration value of the model for that validation call.
 
-For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
+Any key that isn't used to populate a field is considered extra data. This includes keys matching an [alias](./alias.md#aliaspath-and-aliaschoices)
+of a field that ended up not being used, because an alias with a higher priority was provided:
+
+```python
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+
+
+class User(BaseModel):
+    model_config = ConfigDict(extra='allow')
+
+    name: str = Field(validation_alias=AliasChoices('first_name', 'fname'))
+
+
+user = User.model_validate({'fname': 'J', 'first_name': 'John'})
+print(user.name)
+#> John
+print(user.__pydantic_extra__)
+#> {'fname': 'J'}
+```
+
+Extra data is validated after all the fields (see [field ordering](#field-ordering)).
 
 Pydantic dataclasses also support extra data (see the [dataclass configuration](./dataclasses.md#dataclass-config) section).
+
+For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
 
 ## Nested models
 
@@ -1615,6 +1637,7 @@ Field order affects models in the following ways:
 * field order is preserved in the model [JSON Schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
 * field order is preserved when [serializing data](serialization.md#serializing-data)
+* fields are validated in order, and before [extra data](#extra-data)
 
 ```python
 from pydantic import BaseModel, ValidationError

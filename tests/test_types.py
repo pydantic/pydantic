@@ -2303,6 +2303,21 @@ def test_use_default_in_validated_default() -> None:
         Model(a='value')
 
 
+def test_use_default_without_default(py_and_json) -> None:
+    def use_default(value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+        raise PydanticUseDefault()
+
+    class Model(BaseModel):
+        a: Annotated[int, WrapValidator(use_default)]
+
+    with pytest.raises(ValidationError) as exc_info:
+        py_and_json(Model).validate_test({'a': 1})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('a',), 'msg': 'Field required', 'input': {'a': 1}}
+    ]
+
+
 def test_on_error_omit_top_level() -> None:
     ta = TypeAdapter(OnErrorOmit[int])
 

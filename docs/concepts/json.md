@@ -56,6 +56,20 @@ with one noticeable enhancement being that `jiter` supports deserialization of `
 In the future, `jiter` is intended to enable support validation errors to include the location
 in the original JSON input which contained the invalid value.
 
+If a key is duplicated in a JSON object, the last value is used (similarly to [`json.loads()`][json.loads]):
+
+```python
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    x: int
+
+
+print(Model.model_validate_json('{"x": 1, "x": 2}'))
+#> x=2
+```
+
 ### Partial JSON Parsing
 
 /// version-added | v2.7
