@@ -2921,6 +2921,7 @@ def test_literal_types() -> None:
     }
 
 
+@pytest.mark.skipif(sys.implementation.name == 'pypy', reason='Randomly aborts on PyPy with a debug build')
 def test_color_type():
     class Model(BaseModel):
         color: Color
