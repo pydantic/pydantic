@@ -93,4 +93,4 @@ jobs:
         with:
           # Elapsed time includes the child process; CPU simulation does not track it by default.
           mode: walltime
-          run: uv run --no-sync pytest tests/benchmarks/test_imports_mcp.py --codspeed --codspeed-max-rounds=20
+          run: uv run --no-sync pytest tests/benchmarks/test_sdk_imports.py --codspeed --codspeed-max-rounds=20

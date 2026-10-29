@@ -2,7 +2,7 @@
 
 ## SDK import time
 
-`test_imports_mcp.py` measures importing the MCP Python SDK in a fresh Python
+`test_sdk_imports.py` measures importing the MCP Python SDK in a fresh Python
 interpreter. Each sample starts the current environment's Python, imports `mcp`,
 and waits for the process to exit. A failed import fails the benchmark.
 
@@ -21,13 +21,13 @@ Run locally with a release build of pydantic-core:
 
 ```bash
 uv sync --all-packages --group benchmark-imports --no-editable --frozen
-uv run --no-sync pytest tests/benchmarks/test_imports_mcp.py --benchmark-enable
+uv run --no-sync pytest tests/benchmarks/test_sdk_imports.py --benchmark-enable
 ```
 
 Or use CodSpeed's elapsed-time measurements locally:
 
 ```bash
-uv run --no-sync pytest tests/benchmarks/test_imports_mcp.py --codspeed --codspeed-mode=walltime --codspeed-max-rounds=20
+uv run --no-sync pytest tests/benchmarks/test_sdk_imports.py --codspeed --codspeed-mode=walltime --codspeed-max-rounds=20
 ```
 
 The benchmark skips when MCP is not installed, so ordinary test and CPU benchmark
