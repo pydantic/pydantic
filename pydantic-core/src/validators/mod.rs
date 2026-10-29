@@ -1133,21 +1133,14 @@ impl<'py> Streamer<'_, 'py> {
         Some(built.map_err(Into::into))
     }
 
-    /// The same object again, validated the ordinary way from its own bytes, so that errors and
-    /// their locations are whatever the tree path would have produced.
-    fn replay(&self, span: &[u8], state: &mut ValidationState<'_, 'py>) -> Option<ValResult<Py<PyAny>>> {
-        let value = jiter::JsonValue::parse(span, true).ok()?;
-        Some(self.item.validate(self.py, &value, state))
-    }
-
     fn array(&self, state: &mut ValidationState<'_, 'py>) -> Option<ValResult<Py<PyAny>>> {
         let mut jiter = jiter::Jiter::new(self.json_data);
         if !matches!(jiter.peek().ok()?, jiter::Peek::Array) {
             return None;
         }
-        let list = pyo3::types::PyList::empty(self.py);
-        let mut errors: Vec<crate::errors::ValLineError> = Vec::new();
-        let mut index = 0usize;
+        // Parsing and speculative model construction must not run field callbacks. Retain
+        // fallback elements until the entire document has been checked, including its suffix.
+        let mut items = Vec::new();
 
         let mut peek = jiter.known_array().ok()?;
         while let Some(p) = peek {
@@ -1158,22 +1151,42 @@ impl<'py> Streamer<'_, 'py> {
                 jiter.known_skip(p).ok()?;
                 None
             };
-            match built {
-                Some(Ok(instance)) => list.append(instance).ok()?,
+            items.push(match built {
+                Some(Ok(instance)) => model_fields::Taken::Ready(instance),
                 Some(Err(err)) => return Some(Err(err)),
-                None => match self.replay(&self.json_data[start..jiter.current_index()], state)? {
-                    Ok(validated) => list.append(validated).ok()?,
-                    Err(ValError::LineErrors(line_errors)) => {
-                        errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
-                    }
-                    Err(err) => return Some(Err(err)),
-                },
-            }
-            index += 1;
+                None => model_fields::Taken::Raw(
+                    jiter::JsonValue::parse(&self.json_data[start..jiter.current_index()], true).ok()?,
+                ),
+            });
             peek = jiter.array_step().ok()?;
         }
         if jiter.finish().is_err() {
             return None;
+        }
+        // A verification build must not compare callback results by executing them twice.
+        // Mixed arrays take the ordinary path once; fully streamed arrays are still compared.
+        #[cfg(feature = "stream-verify")]
+        if items.iter().any(|item| matches!(item, model_fields::Taken::Raw(_))) {
+            return None;
+        }
+        let list = pyo3::types::PyList::empty(self.py);
+        let mut errors: Vec<crate::errors::ValLineError> = Vec::new();
+        for (index, item) in items.into_iter().enumerate() {
+            let result = match item {
+                model_fields::Taken::Ready(instance) => Ok(instance.unbind()),
+                model_fields::Taken::Raw(value) => self.item.validate(self.py, &value, state),
+            };
+            match result {
+                Ok(validated) => {
+                    if let Err(err) = list.append(validated) {
+                        return Some(Err(err.into()));
+                    }
+                }
+                Err(ValError::LineErrors(line_errors)) => {
+                    errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
+                }
+                Err(err) => return Some(Err(err)),
+            }
         }
         if !errors.is_empty() {
             return Some(Err(ValError::LineErrors(errors)));

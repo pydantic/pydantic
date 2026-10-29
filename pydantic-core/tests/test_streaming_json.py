@@ -401,3 +401,80 @@ def test_streaming_nested_default_factories_follow_schema_order() -> None:
     assert validator._stream_plan_accepted
     validator.validate_json('{"second": {}, "first": {}}')
     assert calls == ['first', 'second']
+
+
+@pytest.mark.parametrize('in_array', [False, True])
+@pytest.mark.parametrize('reject_first', [False, True])
+def test_streaming_does_not_replay_field_validators(in_array: bool, reject_first: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4117319838"""
+    calls: list[str] = []
+
+    def record(value: str) -> str:
+        calls.append(value)
+        if reject_first and len(calls) == 1:
+            raise ValueError('first call rejects')
+        return value
+
+    fields = {'value': core_schema.no_info_after_validator_function(record, STR)}
+    if not reject_first:
+        fields['required'] = INT
+    schema = _model('Callbacks', fields)
+    if in_array:
+        schema = core_schema.list_schema(schema)
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError):
+        validator.validate_json('[{"value": "x"}]' if in_array else '{"value": "x"}')
+    assert calls == ['x']
+
+
+def test_streaming_nested_field_validators_follow_schema_order() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412326296"""
+    calls: list[str] = []
+
+    def record(value: str) -> str:
+        calls.append(value)
+        return value
+
+    child = _model('Child', {'value': core_schema.no_info_after_validator_function(record, STR)})
+    validator = SchemaValidator(_model('Outer', {'first': child, 'second': child}))
+    assert validator._stream_plan_accepted
+    validator.validate_json('{"second": {"value": "second"}, "first": {"value": "first"}}')
+    assert calls == ['first', 'second']
+
+
+@pytest.mark.parametrize('use_factory', [False, True])
+@pytest.mark.parametrize(
+    'document',
+    [
+        '{"value": "x"} trailing',
+        '[{"value": "x"}] trailing',
+        '[{"value": "x"}, {"value": "y"}] trailing',
+        '[{"value": "x"}, {"value": "y", "broken": }]',
+        '[{"value": "x"},',
+    ],
+)
+def test_streaming_rejects_invalid_json_before_callbacks(use_factory: bool, document: str) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4117313915"""
+    calls: list[str] = []
+
+    def record(value: str) -> str:
+        calls.append(value)
+        return value
+
+    def factory() -> str:
+        return record('default')
+
+    fields = {'value': STR}
+    if use_factory:
+        fields['defaulted'] = core_schema.with_default_schema(STR, default_factory=factory)
+    else:
+        fields['value'] = core_schema.no_info_after_validator_function(record, STR)
+    schema = _model('Callbacks', fields)
+    if document.startswith('['):
+        schema = core_schema.list_schema(schema)
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        validator.validate_json(document)
+    assert calls == []

@@ -431,10 +431,10 @@ fn nested_model(model: &ModelValidator, depth: u8) -> Option<NestedModel<'_>> {
 }
 
 /// What came off the cursor for one field.
-enum Taken<'j, 'py> {
+pub(crate) enum Taken<'j, 'py> {
     /// the json type matched the field exactly, so this is already the answer
     Ready(Bound<'py, PyAny>),
-    /// not an exact match, so the field's own validator has to see it
+    /// not an exact match, so ordinary validation must see it after parsing the document
     Raw(JsonValue<'j>),
 }
 
@@ -938,7 +938,6 @@ impl ModelFieldsValidator {
         let model_dict = PyDict::new(py);
         let fields_set = PySet::empty(py)?;
         let mut fields_set_count: usize = 0;
-        let state = &mut state.scoped_set_data(Some(model_dict.clone()));
         for (field, slot) in std::iter::zip(&self.fields, slots) {
             let value = match slot {
                 Some(Taken::Ready(value)) => {
@@ -946,18 +945,9 @@ impl ModelFieldsValidator {
                     fields_set_count += 1;
                     value.unbind()
                 }
-                Some(Taken::Raw(json_value)) => {
-                    let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
-                    match field.validator.validate(py, &json_value, state) {
-                        Ok(value) => {
-                            fields_set.add(&field.name)?;
-                            fields_set_count += 1;
-                            value
-                        }
-                        // any error at all: the ordinary path reports it, with its own locations
-                        Err(_) => return Ok(None),
-                    }
-                }
+                // Field validation may run callbacks. Leave it to the ordinary path rather
+                // than running user code before this object and its document are committed.
+                Some(Taken::Raw(_)) => return Ok(None),
                 None => {
                     let CombinedValidator::WithDefault(default) = &*field.validator else {
                         return Ok(None);
