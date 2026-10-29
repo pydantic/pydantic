@@ -16,10 +16,14 @@
 
 #### Performance
 
+* Avoid Python tuple allocation during model fields validation by @Viicos in [#13955](https://github.com/pydantic/pydantic/pull/13955)
 * Lazily call repr of values during nested union serialization by @Viicos in [#14082](https://github.com/pydantic/pydantic/pull/14082)
+* Skip decorator field checks when no field decorators exist by @alexmojaki in [#14111](https://github.com/pydantic/pydantic/pull/14111)
+* Avoid heap allocation for small JSON model field buffers by @alexmojaki in [#14113](https://github.com/pydantic/pydantic/pull/14113)
 
 #### Fixes
 
+* Make JSON validation by iteration consistent with Python approach by @davidhewitt in [#13275](https://github.com/pydantic/pydantic/pull/13275)
 * Fix unpickling of generic classes defined in separate module by @Viicos in [#13994](https://github.com/pydantic/pydantic/pull/13994)
 * Support explicit `by_alias` overriding `validate_by_alias` in validation JSON schemas by @Viicos in [#13997](https://github.com/pydantic/pydantic/pull/13997)
 * Fix mypy plugin crash on deferred empty model by @ilevkivskyi in [#14027](https://github.com/pydantic/pydantic/pull/14027)
