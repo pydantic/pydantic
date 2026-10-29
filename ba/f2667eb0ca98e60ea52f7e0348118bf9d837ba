@@ -1,0 +1,337 @@
+.github/PULL_REQUEST_TEMPLATE.md
+  s_e0b201a02ee141::t_355c477e438d0f 6-7
+.github/actions/core-build-pgo-wheel/action.yml
+  s_e0b201a02ee141::t_420b469d5203eb 21-34,36,39-40,44,47
+.github/build-constraints.txt
+  s_e0b201a02ee141::t_cd0dc8307b42c4 1-98
+.github/pyodide/requirements.in
+  s_e0b201a02ee141::t_1ba5df5336fde7 6
+.github/workflows/ci.yml
+  s_e0b201a02ee141::t_006d5dbeba9138 8,28,32,52-56,58,67-68,72-75,85-89,127-133,137,140,143,155-160,169-171,187,191,198-214,219-220,223,232-236,246-250,267,271,298-302,311-315,327,331,365-366,368,375-379,390,423,434-445,469,499,504,536,551,570,574,616,620,657,661,698,703,728-732,737,741,749,754-755,759-762,771,775,801,805,838,842,878,882,901,905,932,936,963,967,1008,1019,1038,1042,1045-1046,1067,1102,1105,1109,1144-1157,1177,1180,1184,1196-1208,1226
+.github/workflows/codspeed.yml
+  s_e0b201a02ee141::t_832e5f246eaf30 28
+.github/workflows/coverage.yml
+  s_e0b201a02ee141::t_b502b719c404a2 22
+.github/workflows/docs-navigation.yml
+  s_e0b201a02ee141::t_c1dc44f6d9757c 1-10,13-20,22,24-26,29-33,35,37-38,41-67,69-76,78-81,83-97,99-124,126,128-131,133-134,136-147,149-150,152-155
+.github/workflows/integration.yml
+  s_e0b201a02ee141::t_ed7a22e16bbeff 23,41
+.github/workflows/third-party.yml
+  s_e0b201a02ee141::t_556f27b58874d0 1,35,55,73,93,113,158,200,247,274,300,309,370,377,379,392,424,469,490,512,533,572,597,613,633,651,691,726,753,787-788,792,812,831,851,877,897
+.pre-commit-config.yaml
+  s_e0b201a02ee141::t_138ad564116705 55-61
+AGENTS.md
+  s_e0b201a02ee141::t_bdcaeacf35d944 1
+CITATION.cff
+  s_e0b201a02ee141::t_e6fa2c9c602ce5 47
+HISTORY.md
+  s_e0b201a02ee141::t_63fdc028423eb7 5-51,64,89
+Makefile
+  s_e0b201a02ee141::t_5542364e269dcf 15,23-28
+README.md
+  s_e0b201a02ee141::t_8e0dad85f8d2a1 20-21
+SECURITY.md
+  s_e0b201a02ee141::t_abb192e8a775d5 1-201
+docs/api/standard_library_types.md
+  s_e0b201a02ee141::t_ee9ae2c8425a41 449-452,688,691,812-824,1509-1510
+docs/concepts/alias.md
+  s_e0b201a02ee141::t_7a605e3b5c0f9a 76,228-229,284-286,291
+docs/concepts/experimental.md
+  s_e0b201a02ee141::t_d1f660d5981d6b 65
+docs/concepts/json.md
+  s_e0b201a02ee141::t_c26501a229ab69 59-72
+docs/concepts/models.md
+  s_e0b201a02ee141::t_f7c25caa629c52 133-135,140,278,281-301,305-306,765,1440-1441,1444-1449,1452,1457-1459,1462-1468,1471-1473,1476,1481-1482,1486,1490-1495,1640
+docs/concepts/serialization.md
+  s_e0b201a02ee141::t_ab18bdd75d022f 212
+docs/contributing.md
+  s_e0b201a02ee141::t_b25b2b72416b4b 60,96-117,169-170,172-180,182-183,236
+docs/errors/usage_errors.md
+  s_e0b201a02ee141::t_91f30ed88d08e2 712-741
+docs/errors/validation_errors.md
+  s_e0b201a02ee141::t_686720ee67586e 1753-1755,1760
+docs/examples/custom_validators.md
+  s_e0b201a02ee141::t_86089ab9f1f1c3 38,42-43,47,49,81-84,130,136,138,163-165
+docs/integrations/mypy.md
+  s_e0b201a02ee141::t_8719eabd500285 203
+docs/internals/resolving_annotations.md
+  s_e0b201a02ee141::t_91cbddfb685fd6 140,245-262
+docs/plugins/algolia.py
+  s_e0b201a02ee141::t_a4a8910644bbc5 33
+docs/plugins/conversion_table.py
+  s_e0b201a02ee141::t_5416f6ac8beba4 6,11,122-147,160,166,205-208,214-229,251-254,260-263,268,276-288,323-324,326-331,357-360,366-369,377-378,387-388,396-397,399-405,423-426,433-434,442,449,455-465,478-481,487-490,511-520,560-566,720-725,768-773,816-821,866-872,879-881,883,929-934,984-997,1042-1043,1046,1049-1050,1053,1062,1068,1074-1075,1080,1082,1086,1089,1096-1101,1109,1116-1123,1158,1198,1200-1204,1217,1228,1235,1246,1248-1253,1288,1328,1330-1334,1347,1358,1365,1376,1378-1383,1415,1458-1461,1468-1473,1510-1516,1523,1530,1532-1544,1547-1551,1553,1556-1574,1576-1580,1583-1638
+pydantic-core/.cargo/config.toml
+  s_e0b201a02ee141::t_cc73ee9778042e 4-9
+pydantic-core/Cargo.lock
+  s_e0b201a02ee141::t_4658420d180926 28-29,31,41,43,83,95,100,102,273,297-306,315,317,341,343,351,353,360,362,384,386,445,447,454,462,484,486,501,503,510,512,520,522,527,532,534,539,565,567,577,579,594,596,604,606,613,615,619,624,626,637,639,643,645,647,661,663,670,672,677,691-701,710,811,833,897,918,938,961
+pydantic-core/Cargo.toml
+  s_e0b201a02ee141::t_aa3db88ecc1f4a 3,35-40,42-44,49,53,57,80,85
+pydantic-core/pyproject.toml
+  s_e0b201a02ee141::t_fb672f0c581a45 99,172-175
+pydantic-core/python/pydantic_core/__init__.py
+  s_e0b201a02ee141::t_d45f5b2415c02a 150
+pydantic-core/src/argument_markers.rs
+  s_e0b201a02ee141::t_4119a4724a9d86 8
+pydantic-core/src/common/frozendict.rs
+  s_e0b201a02ee141::t_381b7580b7c87b 1-5,7-12,14-63,65-72
+pydantic-core/src/common/missing_sentinel.rs
+  s_e0b201a02ee141::t_af5539a8bbc61f 6-7
+pydantic-core/src/definitions.rs
+  s_e0b201a02ee141::t_a9b003a70f6e98 92,95,98
+pydantic-core/src/errors/validation_exception.rs
+  s_e0b201a02ee141::t_b3713066b82ac6 31,402-423
+pydantic-core/src/errors/value_exception.rs
+  s_e0b201a02ee141::t_8ebb3a72572333 2,4,11,37,57,107-129,161
+pydantic-core/src/input/datetime.rs
+  s_e0b201a02ee141::t_2d5a8b6b136c6b 712-715,731
+pydantic-core/src/input/input_abstract.rs
+  s_e0b201a02ee141::t_382449df79fd9b 77-81
+pydantic-core/src/input/input_json.rs
+  s_e0b201a02ee141::t_2237735674134a 36-40,210-212,448-451
+pydantic-core/src/input/input_python.rs
+  s_e0b201a02ee141::t_78f2b01600a68c 19,103-106,182,190,286,340,369,442-443,450-451,848,850,853,855
+pydantic-core/src/input/input_string.rs
+  s_e0b201a02ee141::t_fb5b39c9d38d99 86-93
+pydantic-core/src/input/shared.rs
+  s_e0b201a02ee141::t_991cc3dc6b89cd 14-15
+pydantic-core/src/lookup_key.rs
+  s_e0b201a02ee141::t_94fa1ce23c95bc 6,121,376
+pydantic-core/src/py_gc.rs
+  s_e0b201a02ee141::t_cb25539eb3d2f7 53-55
+pydantic-core/src/schema_gather.rs
+  s_e0b201a02ee141::t_be4332c3fac4fd 15
+pydantic-core/src/serializers/config.rs
+  s_e0b201a02ee141::t_c938ae5cf6f2f3 25-26,35,45-48,58-60,62-63,66-67,158-170
+pydantic-core/src/serializers/errors.rs
+  s_e0b201a02ee141::t_b4f45a34eb7d96 4,6-7,35,77,112-120,123,132-144,148-151,175,182-195,198,217,225,269-303
+pydantic-core/src/serializers/fields.rs
+  s_e0b201a02ee141::t_6688374561faaa 190
+pydantic-core/src/serializers/infer.rs
+  s_e0b201a02ee141::t_db3adbc492be3c 17,119-121,166-167,185-188,265-266,444-448,475-478,604,667-676,678-693,704-708,764-765
+pydantic-core/src/serializers/ob_type.rs
+  s_e0b201a02ee141::t_3d42292cebae5b 12,25-26,85,167,252,358
+pydantic-core/src/serializers/polymorphism_trampoline.rs
+  s_e0b201a02ee141::t_3195e40a099c46 53
+pydantic-core/src/serializers/type_serializers/float.rs
+  s_e0b201a02ee141::t_ce55ac4f912705 77-100,119-125,129-135
+pydantic-core/src/serializers/type_serializers/frozendict.rs
+  s_e0b201a02ee141::t_6af1c4de646111 6,12,42,108
+pydantic-core/src/serializers/type_serializers/function.rs
+  s_e0b201a02ee141::t_9a293f15a3a6cc 436-439,449,451-452,592,594-595
+pydantic-core/src/serializers/type_serializers/generator.rs
+  s_e0b201a02ee141::t_9d3be08ddd7426 142-145,162,164-165
+pydantic-core/src/serializers/type_serializers/missing_sentinel.rs
+  s_e0b201a02ee141::t_1e3500274b4a3d 20,51,71,85
+pydantic-core/src/serializers/type_serializers/model.rs
+  s_e0b201a02ee141::t_c45bebcae2134d 236-239
+pydantic-core/src/serializers/type_serializers/timedelta.rs
+  s_e0b201a02ee141::t_59016380ca015d 9,28
+pydantic-core/src/serializers/type_serializers/union.rs
+  s_e0b201a02ee141::t_e5361996cce5b5 382-385
+pydantic-core/src/tools.rs
+  s_e0b201a02ee141::t_8bb89ed873d604 292
+pydantic-core/src/url.rs
+  s_e0b201a02ee141::t_70d9efaf532fea 25,41,60-61,65-69,71,197-200,202-207,291,309,408-409,435-436
+pydantic-core/src/validators/arguments_v3.rs
+  s_e0b201a02ee141::t_04f8a7d31de243 179-185
+pydantic-core/src/validators/counter.rs
+  s_e0b201a02ee141::t_4367d3aa7dce7f 17,171,177
+pydantic-core/src/validators/dataclass.rs
+  s_e0b201a02ee141::t_3ec300c23d6cf6 305-306,315-316,327-332
+pydantic-core/src/validators/decimal.rs
+  s_e0b201a02ee141::t_41a42ad9747869 21-28,255-261,338-340,343-347
+pydantic-core/src/validators/definitions.rs
+  s_e0b201a02ee141::t_71452ab136de44 86
+pydantic-core/src/validators/dict.rs
+  s_e0b201a02ee141::t_251e0ccfa7fcba 16,179,185
+pydantic-core/src/validators/fraction.rs
+  s_e0b201a02ee141::t_accf9f8340b234 6,19-20,159-191,194-199
+pydantic-core/src/validators/frozendict.rs
+  s_e0b201a02ee141::t_d30eaf56f58337 8,17,40,172,178-179
+pydantic-core/src/validators/function.rs
+  s_e0b201a02ee141::t_a898b111c428a2 553,555-556,563
+pydantic-core/src/validators/generator.rs
+  s_e0b201a02ee141::t_0325175864f7d5 366-368
+pydantic-core/src/validators/list.rs
+  s_e0b201a02ee141::t_c1c002406a59dd 117-139
+pydantic-core/src/validators/missing_sentinel.rs
+  s_e0b201a02ee141::t_1c9a35ab90e503 52
+pydantic-core/src/validators/model.rs
+  s_e0b201a02ee141::t_08778615d41d81 262-284,310,353
+pydantic-core/src/validators/model_fields.rs
+  s_e0b201a02ee141::t_1b8f669d20707a 4-5,14,22,26,30,56,148-149,663,666-667,673-677,679,684-692,695-696,698-707,709-734,736-757,759-795,798,800-807,811-812,814,818-819,824,829-830,833-834,837,852-853,855,859,862,920-922,926,989-991,998,1014-1018,1034-1051,1057-1058,1062-1073,1076-1088,1090-1103,1105-1120,1122-1133,1135-1136,1139-1143,1145-1148,1151-1152,1154-1202,1204-1215,1217,1222-1256,1258-1305,1307-1309,1311-1321,1323,1325-1330,1332-1333
+pydantic-core/src/validators/ordered_dict.rs
+  s_e0b201a02ee141::t_a283e5b97f506e 17,171,177
+pydantic-core/src/validators/shared/lookup_tree.rs
+  s_e0b201a02ee141::t_272cb346ad7c77 1-2,5,10-11,13,15-26,31-83,85-108,112-113,119,121-128,132-147,150,152-154,171,173-175,177,179-186,190,193-201,203,208-217,231-247,249-250,253-258,260-264,266-284,289-293,296-317,319-328,330-331,333-335,390-445
+pydantic-core/src/validators/typed_dict.rs
+  s_e0b201a02ee141::t_7e4c54534c8360 293,303-304,340-345,388
+pydantic-core/src/validators/url.rs
+  s_e0b201a02ee141::t_a520b7e1ab45d7 536-538,646-656,660
+pydantic-core/src/validators/with_default.rs
+  s_e0b201a02ee141::t_3b691f5c5e8689 204-205,210,212-213
+pydantic-core/tests/serializers/test_any.py
+  s_e0b201a02ee141::t_43b4a8549e166e 638,641
+pydantic-core/tests/serializers/test_simple.py
+  s_e0b201a02ee141::t_e81396ccd9cd92 5,146,149-151,153-161,164,170-171
+pydantic-core/tests/serializers/test_union.py
+  s_e0b201a02ee141::t_fbb883bdbfc95c 515
+pydantic-core/tests/test_garbage_collection.py
+  s_e0b201a02ee141::t_749382457da5d1 1,200-272
+pydantic-core/tests/validators/test_dataclasses.py
+  s_e0b201a02ee141::t_719cf2a480cd0c 1674-1677
+pydantic-core/tests/validators/test_datetime.py
+  s_e0b201a02ee141::t_79e8bfc15af2ff 540-549
+pydantic-core/tests/validators/test_decimal.py
+  s_e0b201a02ee141::t_2df844d9ec717e 5,125-148,298-311
+pydantic-core/tests/validators/test_dict.py
+  s_e0b201a02ee141::t_db12735a0b7229 217
+pydantic-core/tests/validators/test_enums.py
+  s_e0b201a02ee141::t_884ec3d11be2b4 467
+pydantic-core/tests/validators/test_url.py
+  s_e0b201a02ee141::t_d2cddc06ebe4ea 1,739-760
+pydantic-core/tests/validators/test_uuid.py
+  s_e0b201a02ee141::t_d4f8cc381020fa 233
+pydantic-core/wasm-preview/README.md
+  s_e0b201a02ee141::t_b32513c7988988 1,3,5-6,8-9
+pydantic-core/wasm-preview/index.html
+  s_e0b201a02ee141::t_12e225e018119b 2,5,42,44,57,63
+pydantic-core/wasm-preview/run_tests.py
+  s_e0b201a02ee141::t_5a4dc5a500f77a 2-3,11-30,32-40,43-44,46-48,52
+pydantic-core/wasm-preview/worker.js
+  s_e0b201a02ee141::t_f37f399ee62805 1-7,16-24,35,40,44-56,58-84,86-93,96,100-108,112-113
+pydantic/_internal/_dataclasses.py
+  s_e0b201a02ee141::t_6c8bac70c8dd72 215,223-227,241,298-303,314-315,318-319
+pydantic/_internal/_docs_extraction.py
+  s_e0b201a02ee141::t_d0f384a5386317 40-49,121-125,127
+pydantic/_internal/_fields.py
+  s_e0b201a02ee141::t_b6a24453873123 606,612-629,631-635,667,671-673,685
+pydantic/_internal/_generate_schema.py
+  s_e0b201a02ee141::t_8971e4e71204ed 101,112,321-351,887,1101-1103,1520,1528-1534
+pydantic/_internal/_generics.py
+  s_e0b201a02ee141::t_661c8eea84a4c8 122-126,159
+pydantic/_internal/_known_annotated_metadata.py
+  s_e0b201a02ee141::t_9a242ce8281d26 267-270,272
+pydantic/_internal/_mock_val_ser.py
+  s_e0b201a02ee141::t_87f5b4a60c6bbd 4,19-23,38,89,107,109,129-131,170-172,213-215
+pydantic/_internal/_serializers.py
+  s_e0b201a02ee141::t_639c852766d6bf 10-11,39-41,47,51,55,57-59
+pydantic/_internal/_typing_extra.py
+  s_e0b201a02ee141::t_d0574b850ad539 210-215
+pydantic/_internal/_validators.py
+  s_e0b201a02ee141::t_871bee553a6380 24,63-64,401,403-405,411-419,505
+pydantic/dataclasses.py
+  s_e0b201a02ee141::t_5b4a82bfc47778 190-191,193-194
+pydantic/errors.py
+  s_e0b201a02ee141::t_72449ca0b680fa 54
+pydantic/json_schema.py
+  s_e0b201a02ee141::t_37a92c87ebdaed 250-252,275,279-281,452,460-466,468-469,1629,1652,1699-1700,1984,1989-1995,2559-2565,2567-2571,2735,2745-2747,2785,2796-2798,3245-3255,3260
+pydantic/main.py
+  s_e0b201a02ee141::t_0e8d8e87f50b92 609,619-621,1241,1767-1775,1787,1804,1820,1846-1859,1872-1873,1899-1911,1923-1924
+pydantic/mypy.py
+  s_e0b201a02ee141::t_803745327028b4 552-555
+pydantic/networks.py
+  s_e0b201a02ee141::t_ea21a8c84a5092 1385-1395
+pydantic/root_model.py
+  s_e0b201a02ee141::t_42fe25171723ea 106-111
+pydantic/type_adapter.py
+  s_e0b201a02ee141::t_339049b9befd1e 565,626,630-631,639,673,682-684,717,730-732
+pydantic/types.py
+  s_e0b201a02ee141::t_d4bd6a793ca3a1 3237-3243
+pydantic/version.py
+  s_e0b201a02ee141::t_2d511438a3b123 11,22
+pyproject.toml
+  s_e0b201a02ee141::t_c3f97fb1988b13 50,132,206
+release/README.md
+  s_e0b201a02ee141::t_57ffbac4b49364 12,14-15
+release/prepare.py
+  s_e0b201a02ee141::t_8ff46212dd6a73 13,17,24-27,62-109,112,173-174,202-206,221-222,230-234
+release/shared.py
+  s_e0b201a02ee141::t_022b407e42b504 15-16
+tests/benchmarks/test_json_escapes.py
+  s_e0b201a02ee141::t_5a100c0d62055b 1-27
+tests/benchmarks/test_json_invalid.py
+  s_e0b201a02ee141::t_7ad43477465f7e 1-39
+tests/benchmarks/test_json_numbers.py
+  s_e0b201a02ee141::t_75ca77f025d65a 1-38
+tests/benchmarks/test_json_string_cache.py
+  s_e0b201a02ee141::t_cfee102ef4821b 1-34
+tests/benchmarks/test_model_extra_validation.py
+  s_e0b201a02ee141::t_d4fb60fcca3579 1,3,5,7-10,12-13,16-17,19-20,23-24,26,28-29,32-33,35-36,39-43,45-64
+tests/conftest.py
+  s_e0b201a02ee141::t_78557d88fcf3ce 3,6,17,24,236-282
+tests/mypy/modules/generics.py
+  s_e0b201a02ee141::t_e83606c455f540 75-84
+tests/test_aliases.py
+  s_e0b201a02ee141::t_c90595ce941ae7 132,137-139,141
+tests/test_construction.py
+  s_e0b201a02ee141::t_d7c4110286a4fa 2,672-694
+tests/test_create_model.py
+  s_e0b201a02ee141::t_d5ffad2be028eb 14,415-487
+tests/test_dataclasses.py
+  s_e0b201a02ee141::t_9d0c7e3cb0d70d 1548-1567,1909-1925,3046-3076
+tests/test_datetime.py
+  s_e0b201a02ee141::t_eae2be538a4077 1,4,8,358-360,375-377,426,429,431-451,563,565-567,570-572,590,592-593,596-598,606,608-610,613-615,837-887
+tests/test_docs_extraction.py
+  s_e0b201a02ee141::t_131ed5c6555ec4 200-239
+tests/test_errors.py
+  s_e0b201a02ee141::t_5baac898b6fe6b 1,3,7,10,51-117
+tests/test_experimental_arguments_schema.py
+  s_e0b201a02ee141::t_e56d92be812156 100-127
+tests/test_forward_ref.py
+  s_e0b201a02ee141::t_285d128c7dbd24 1148,1151,1177-1238,1743,1745,1747-1750,1752,1754-1755,1757,1774-1939,1955-1995
+tests/test_generics.py
+  s_e0b201a02ee141::t_8dda30725a2858 4,15,70-85,1043-1092,1097-1100,1144
+tests/test_json_schema.py
+  s_e0b201a02ee141::t_506ea6cc617e62 59,62,179-223,2027-2097,2201-2294,3010,3018,6594-6642
+tests/test_main.py
+  s_e0b201a02ee141::t_9909a720c73395 29,31,319,322,324,326-327,329-334,1962-1964,1970,1973,1991-2013,3127-3155,3488,3495-3496,3508,3512,3514,3519-3533,3538-3539,3543-3544,3563,3574-3575,3596-3618
+tests/test_networks.py
+  s_e0b201a02ee141::t_8e65bd6c6e9aa8 1038-1060,1315-1357
+tests/test_pickle.py
+  s_e0b201a02ee141::t_875f540be77fdf 116-119
+tests/test_root_model.py
+  s_e0b201a02ee141::t_75c1befb2bc7a8 650-661
+tests/test_serialize.py
+  s_e0b201a02ee141::t_ebc0e74b9712a4 6,16-21,1216-1255,1351,1361-1362,1366-1367
+tests/test_serialize_as_any.py
+  s_e0b201a02ee141::t_4450d09081f95b 212-233
+tests/test_types.py
+  s_e0b201a02ee141::t_e93a62bc04cad2 28,94-95,2215-2223,2247-2329
+tests/test_types_self.py
+  s_e0b201a02ee141::t_9ea7fdd437492f 5,13-14,179-216
+tests/test_types_typeddict.py
+  s_e0b201a02ee141::t_cd655ef6f57c9e 13,1056-1158
+tests/test_validate_call.py
+  s_e0b201a02ee141::t_ff953623122a9b 70
+tests/types/test_decimal.py
+  s_e0b201a02ee141::t_8dad5d24e748da 7,348-375
+tests/types/test_dict.py
+  s_e0b201a02ee141::t_4d48bc9b78ae82 2-4,8,45-80
+tests/types/test_fraction.py
+  s_e0b201a02ee141::t_92bb12b5c6cff1 1-2,155-212
+tests/types/test_model.py
+  s_e0b201a02ee141::t_ddbd7798c0be5d 1-3,5,8-9,11,13,16-17,94-461
+tests/types/test_sequence.py
+  s_e0b201a02ee141::t_7fa45f42db2fbe 1,204-240
+tests/types/test_zoneinfo.py
+  s_e0b201a02ee141::t_1eb4f57fb97e42 6,16-20,22-23,25,28-29,31-34,37,45-67,72
+uv.lock
+  s_e0b201a02ee141::t_972cbcd67344aa 2,7,29,42-203,327,335,337,400,407-408,413-440,445,454,456,474,476,478,896,898,900,967,969,971,1729-1730,1806-1807,2067,2110,2112,2114,2187,2189-2192,2194-2209,2371,2441,2477,2518,2757,2762,2771,2780,2782,3012-3023,3224,3230,3232,3401,3709-3710,3825,3831,3833,3897,3899,3901,3915,3920-3923,3926,3928,3977,3984-4122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "baf2667eb0ca98e60ea52f7e0348118bf9d837ba",
+  "prompts": {},
+  "sessions": {
+    "s_e0b201a02ee141": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1879b-8c2d-74e1-9e25-45bed2a3111a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
