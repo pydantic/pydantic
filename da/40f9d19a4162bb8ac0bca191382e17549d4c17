@@ -1,0 +1,32 @@
+pydantic/_internal/_generate_schema.py
+  s_71408c856d82f7::t_95a4a5e55dd944 1165
+  s_71408c856d82f7::t_c54fe3ee7c0784 1168-1171
+  s_71408c856d82f7::t_337c1a3f72a4b5 147,162,166,171-173,175,178,180-182,414,1162-1164,1166-1167
+  s_71408c856d82f7::t_950f48a1dcace8 15,27,146,155-161,163-165,167-168,170,407,409-413,415-419
+  s_71408c856d82f7::t_e6155881018129 148-154,438-443,454-455
+  s_71408c856d82f7::t_d4b7ee887fe0f7 169,408
+  s_71408c856d82f7::t_073ad6d2311136 174,176-177,179
+  s_71408c856d82f7::t_65b54c6f9f2426 420
+tests/types/unions/test_schema_cache.py
+  s_71408c856d82f7::t_8e1437e84fda3d 1-21,23,25-104,109-112,114-115
+  s_71408c856d82f7::t_a3ef24b8faa13e 22,24
+  s_71408c856d82f7::t_9cf3f95cfeacd6 105-108
+  s_71408c856d82f7::t_fd4c1faf5a988d 113,116-118
+  s_71408c856d82f7::t_cd4406b30b3e6b 119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "da40f9d19a4162bb8ac0bca191382e17549d4c17",
+  "prompts": {},
+  "sessions": {
+    "s_71408c856d82f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18849-dc38-70e0-8791-e6b654a22771",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
