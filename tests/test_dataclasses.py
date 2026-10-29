@@ -1545,6 +1545,26 @@ def test_new_not_called():
     assert pyd_instance.a == test_string
 
 
+def test_extra_allow_field_override_ignored(py_and_json) -> None:
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='allow'))
+    class Foo:
+        a: int = Field(0, alias='b')
+
+    adapter = py_and_json(Foo)
+    assert adapter.validate_test({'b': 1, 'a': 'not_an_int', 'c': 2}).__dict__ == {'a': 1, 'c': 2}
+    assert adapter.validate_test({'a': 'not_an_int'}).__dict__ == {'a': 0}
+
+
+def test_runtime_extra_allow_field_override_ignored() -> None:
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        a: int = Field(0, alias='b')
+
+    ta = TypeAdapter(Foo)
+    assert ta.validate_python({'b': 1, 'a': 'not_an_int', 'c': 2}, extra='allow').__dict__ == {'a': 1, 'c': 2}
+    assert ta.validate_json('{"b": 1, "a": "not_an_int", "c": 2}', extra='allow').__dict__ == {'a': 1, 'c': 2}
+
+
 def test_ignore_extra():
     @pydantic.dataclasses.dataclass(config=ConfigDict(extra='ignore'))
     class Foo:
