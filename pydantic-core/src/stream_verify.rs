@@ -159,6 +159,9 @@ fn deep_eq(a: &Bound<'_, PyAny>, b: &Bound<'_, PyAny>, seen: &mut HashSet<(usize
         return Ok(true);
     }
 
+    if let (Ok(fa), Ok(fb)) = (a.cast::<PyFloat>(), b.cast::<PyFloat>()) {
+        return Ok(fa.value().to_bits() == fb.value().to_bits());
+    }
     a.eq(b)
 }
 

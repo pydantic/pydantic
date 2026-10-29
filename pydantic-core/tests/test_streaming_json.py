@@ -385,3 +385,101 @@ def test_model_object_hooks_decline_streaming(hook: str, nested: bool) -> None:
     with pytest.raises(ValidationError):
         validator.validate_json(b'{"inner": {"value": 1}} trailing' if nested else b'{"value": 1} trailing')
     assert calls == []
+
+
+@pytest.mark.parametrize('raises', [False, True])
+def test_storage_descriptors_wait_for_complete_json(raises: bool) -> None:
+    calls: list[None] = []
+
+    class Model:
+        __slots__ = ('__dict__', '__pydantic_fields_set__', '__pydantic_private__')
+
+        @property
+        def __pydantic_extra__(self) -> None:
+            return None
+
+        @__pydantic_extra__.setter
+        def __pydantic_extra__(self, value: None) -> None:
+            calls.append(value)
+            if raises:
+                raise RuntimeError('storage descriptor ran')
+
+    validator = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
+        )
+    )
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError):
+        validator.validate_json('{"x":1} trailing')
+    assert calls == []
+
+
+@pytest.mark.parametrize('literal, expected', [('-0', '0x0.0p+0'), ('-0.0', '-0x0.0p+0')])
+def test_streamed_float_zero_sign(literal: str, expected: str) -> None:
+    validator = SchemaValidator(_model('FloatZero', {'x': FLOAT}))
+    assert validator._stream_plan_accepted
+    assert validator.validate_json('{"x":' + literal + '}').x.hex() == expected
+
+
+@pytest.mark.parametrize('kind', ['array', 'object', 'mixed'])
+@pytest.mark.parametrize('depth', [198, 199, 200, 201])
+@pytest.mark.parametrize('leaf', ['0', '[]', '{}', '"[{}]"'])
+@pytest.mark.parametrize('location', ['ignored', 'mismatch', 'list_remainder', 'dict_remainder'])
+def test_streamed_skips_share_json_depth_budget(kind: str, depth: int, leaf: str, location: str) -> None:
+    nested = leaf
+    for level in range(depth):
+        nested = '[' + nested + ']' if kind == 'array' or (kind == 'mixed' and level % 2) else '{"k":' + nested + '}'
+    if location == 'ignored':
+        schema = _model('Depth', {})
+        document = '{"ignored":' + nested + '}'
+    elif location == 'mismatch':
+        schema = _model('Depth', {'x': INT})
+        document = '{"x":' + nested + ',"x":1}'
+    elif location == 'list_remainder':
+        schema = _model('Depth', {'x': core_schema.list_schema(INT, max_length=1)})
+        document = '{"x":[0,' + nested + '],"x":[0]}'
+    else:
+        schema = _model('Depth', {'x': core_schema.dict_schema(STR, INT, max_length=1)})
+        document = '{"x":{"a":0,"b":' + nested + '},"x":{"a":0}}'
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    # Explicit name lookup selects ordinary validation without changing this alias-free schema.
+    try:
+        expected = validator.validate_json(document, by_name=True)
+    except ValidationError as error:
+        with pytest.raises(ValidationError) as streamed:
+            validator.validate_json(document)
+        assert streamed.value.errors(include_url=False) == error.errors(include_url=False)
+    else:
+        assert validator.validate_json(document).__dict__ == expected.__dict__
+
+
+@pytest.mark.skipif(
+    sys.implementation.name == 'pypy', reason='Deep schema construction exhausts the native stack on PyPy debug builds'
+)
+@pytest.mark.parametrize('kind', ['list', 'dict'])
+@pytest.mark.parametrize('depth', [199, 200, 201])
+@pytest.mark.parametrize('empty', [False, True])
+def test_streamed_containers_share_json_depth_budget(kind: str, depth: int, empty: bool) -> None:
+    field = INT
+    document = '0'
+    for level in range(depth):
+        if kind == 'list':
+            field = core_schema.list_schema(field)
+            document = '[]' if empty and level == 0 else '[' + document + ']'
+        else:
+            field = core_schema.dict_schema(STR, field)
+            document = '{}' if empty and level == 0 else '{"k":' + document + '}'
+    validator = SchemaValidator(_model('Depth', {'x': field}))
+    assert validator._stream_plan_accepted
+    document = '{"x":' + document + '}'
+    if depth - empty <= 199:
+        assert validator.validate_json(document).__dict__ == validator.validate_json(document, by_name=True).__dict__
+    else:
+        with pytest.raises(ValidationError) as ordinary:
+            validator.validate_json(document, by_name=True)
+        with pytest.raises(ValidationError) as streamed:
+            validator.validate_json(document)
+        assert streamed.value.errors(include_url=False) == ordinary.value.errors(include_url=False)
