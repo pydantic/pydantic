@@ -1,0 +1,28 @@
+tests/test_simple_schema_fast_path.py
+  s_15e5ec09d30569::t_edb3804d9dc7e4 6,106-111
+  s_71408c856d82f7::t_4b27a0619bb4e6 112-113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a2d6aa5187adf8b0fe1f5685410cd1e38ecd447e",
+  "prompts": {},
+  "sessions": {
+    "s_15e5ec09d30569": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18849-e791-7b13-aac3-873215f31a44",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    },
+    "s_71408c856d82f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18849-dc38-70e0-8791-e6b654a22771",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
