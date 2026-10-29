@@ -521,3 +521,24 @@ def test_streaming_container_limits_bound_default_factory_calls(container: str, 
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'too_long'):
         validator.validate_json(document)
     assert len(calls) <= max_length + 1
+
+
+def test_streaming_cyclic_default_factory() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412326390"""
+
+    def factory() -> list[object]:
+        value: list[object] = []
+        value.append(value)
+        return value
+
+    validator = SchemaValidator(
+        _model(
+            'Cyclic',
+            {
+                'value': core_schema.with_default_schema(core_schema.any_schema(), default_factory=factory),
+            },
+        )
+    )
+    assert validator._stream_plan_accepted
+    value = validator.validate_json('{}').value
+    assert value[0] is value
