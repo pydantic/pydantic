@@ -1,0 +1,21 @@
+.github/workflows/codspeed.yml
+  s_d2048087fae648::t_042b37e628f3fc 96
+tests/benchmarks/README.md
+  s_d2048087fae648::t_05a83398eb9fbf 5,24,30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b0b384a454778306301892d4101e1d603006cbb6",
+  "prompts": {},
+  "sessions": {
+    "s_d2048087fae648": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1879e-e690-7f10-ad52-bd8f926e9fa3",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
