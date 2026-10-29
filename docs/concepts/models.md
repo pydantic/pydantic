@@ -130,12 +130,14 @@ assert user.id == 321
 
     For example, the following will not behave as expected and would yield a validation error:
 
-    ```python {test="skip"}
+    ```python {test="skip" lint="skip" upgrade="skip"}
+    from typing import Optional
+
     from pydantic import BaseModel
 
 
     class Boo(BaseModel):
-        int: int | None = None
+        int: Optional[int] = None
 
 
     m = Boo(int=123)  # Will fail to validate.
@@ -273,12 +275,34 @@ The configuration can take three values:
 * `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
   The `__pydantic_extra__` can explicitly be annotated to provide validation for extra fields.
 
-The validation methods (e.g. [`model_validate()`][pydantic.main.BaseModel.model_validate]) have an optional `extra` argument
+The [validation methods](#validating-data) (e.g. [`model_validate()`][pydantic.main.BaseModel.model_validate]) have an optional `extra` argument
 that will override the `extra` configuration value of the model for that validation call.
 
-For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
+Any key that isn't used to populate a field is considered extra data. This includes keys matching an [alias](./alias.md#aliaspath-and-aliaschoices)
+of a field that ended up not being used, because an alias with a higher priority was provided:
+
+```python
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+
+
+class User(BaseModel):
+    model_config = ConfigDict(extra='allow')
+
+    name: str = Field(validation_alias=AliasChoices('first_name', 'fname'))
+
+
+user = User.model_validate({'fname': 'J', 'first_name': 'John'})
+print(user.name)
+#> John
+print(user.__pydantic_extra__)
+#> {'fname': 'J'}
+```
+
+Extra data is validated after all the fields (see [field ordering](#field-ordering)).
 
 Pydantic dataclasses also support extra data (see the [dataclass configuration](./dataclasses.md#dataclass-config) section).
+
+For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
 
 ## Nested models
 
@@ -738,7 +762,7 @@ print(anna_model)
 ??? api "API Documentation"
     [`pydantic.main.BaseModel.model_copy`][pydantic.main.BaseModel.model_copy]<br>
 
-The [`model_copy()`][pydantic.BaseModel.model_copy] method allows models to be duplicated (with optional updates),
+The [`model_copy()`][pydantic.BaseModel.model_copy] method allows models to be duplicated (with optional updates that *aren't* validated),
 which is particularly useful when working with frozen models.
 
 ```python
@@ -1413,43 +1437,61 @@ print(BarModel.model_fields.keys())
 #> dict_keys(['foo', 'bar', 'apple', 'banana'])
 ```
 
-You can also add validators by passing a dictionary to the `__validators__` argument.
+Attributes such as [validators](./validators.md), methods or [computed fields](./fields.md#the-computed_field-decorator)
+can be added to the class namespace using the `__namespace__` argument:
 
 ```python {rewrite_assert="false"}
-from pydantic import ValidationError, create_model, field_validator
+from pydantic import (
+    ValidationError,
+    computed_field,
+    create_model,
+    field_validator,
+)
 
 
-def alphanum(cls, v):
+def alphanum(cls, v: str) -> str:
     assert v.isalnum(), 'must be alphanumeric'
     return v
 
 
-validators = {
-    'username_validator': field_validator('username')(alphanum)  # (1)!
-}
+def full_name(self) -> str:
+    return f'{self.first_name} {self.last_name}'
+
 
 UserModel = create_model(
-    'UserModel', username=(str, ...), __validators__=validators
+    'UserModel',
+    first_name=str,
+    last_name=str,
+    __namespace__={  # (1)!
+        'check_alphanum': field_validator('first_name', 'last_name')(alphanum),
+        'full_name': computed_field(property(full_name)),
+    },
 )
 
-user = UserModel(username='scolvin')
-print(user)
-#> username='scolvin'
+user = UserModel(first_name='John', last_name='Doe')
+print(user.model_dump())
+#> {'first_name': 'John', 'last_name': 'Doe', 'full_name': 'John Doe'}
 
 try:
-    UserModel(username='scolvi%n')
+    UserModel(first_name='J%hn', last_name='Doe')
 except ValidationError as e:
     print(e)
     """
     1 validation error for UserModel
-    username
-      Assertion failed, must be alphanumeric [type=assertion_error, input_value='scolvi%n', input_type=str]
+    first_name
+      Assertion failed, must be alphanumeric [type=assertion_error, input_value='J%hn', input_type=str]
     """
 ```
 
-1. Make sure that the validators names do not clash with any of the field names as
+1. The keys of the namespace must not clash with any of the field names as
    internally, Pydantic gathers all members into a namespace and mimics the normal
    creation of a class using the [`types` module utilities](https://docs.python.org/3/library/types.html#dynamic-type-creation).
+
+/// version-added | v2.14
+The `__namespace__` argument. Unlike `__validators__`, it isn't restricted to validators and can be used
+to provide any attribute to the class namespace (such as computed fields, properties or methods).
+It is now recommended to use `__namespace__` instead of `__validators__`, which will be deprecated in v3.
+///
 
 !!! note
     To pickle a dynamically created model:
@@ -1595,6 +1637,7 @@ Field order affects models in the following ways:
 * field order is preserved in the model [JSON Schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
 * field order is preserved when [serializing data](serialization.md#serializing-data)
+* fields are validated in order, and before [extra data](#extra-data)
 
 ```python
 from pydantic import BaseModel, ValidationError

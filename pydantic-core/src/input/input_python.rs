@@ -16,7 +16,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 use crate::ArgsKwargs;
 use crate::common::counter::get_counter_type;
 use crate::common::deque::{deque_maxlen, get_deque_type};
-use crate::common::frozendict::get_frozendict_type;
+use crate::common::frozendict::as_frozendict;
 use crate::common::ordered_dict::get_ordered_dict_type;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::LookupPath;
@@ -100,6 +100,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Some(self)
     }
 
+    fn identity(&self) -> Option<usize> {
+        Some(self.as_ptr() as usize)
+    }
+
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
         self.cast::<PyDict>().ok().map(Bound::to_owned)
     }
@@ -175,7 +179,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     }
                 } else if coerce_numbers_to_str && !self.is_exact_instance_of::<PyBool>() && {
                     let py = self.py();
-                    let decimal_type = get_decimal_type(py);
+                    let decimal_type = get_decimal_type(py)?;
 
                     // only allow int, float, and decimal (not bool)
                     self.is_instance_of::<PyInt>()
@@ -183,7 +187,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                         || self.is_instance(decimal_type).unwrap_or_default()
                 } {
                     Ok(self.str()?.into())
-                } else if let Some(enum_val) = maybe_as_enum(self) {
+                } else if let Some(enum_val) = maybe_as_enum(self)? {
                     Ok(enum_val.str()?.into())
                 } else {
                     break 'lax;
@@ -279,7 +283,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     fraction_as_int(self, &fraction.into_inner())
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_int(self, float)
-                } else if let Some(enum_val) = maybe_as_enum(self) {
+                } else if let Some(enum_val) = maybe_as_enum(self)? {
                     Ok(EitherInt::Py(enum_val))
                 } else {
                     break 'lax;
@@ -333,7 +337,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_fraction(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
-        let fraction_type = get_fraction_type(py);
+        let fraction_type = get_fraction_type(py)?;
 
         // Fast path for existing fraction objects
         if self.is_exact_instance(fraction_type) {
@@ -362,7 +366,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
-        let decimal_type = get_decimal_type(py);
+        let decimal_type = get_decimal_type(py)?;
 
         // Fast path for existing decimal objects
         if self.is_exact_instance(decimal_type) {
@@ -435,24 +439,16 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn strict_frozendict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
-        if let Ok(frozendict_type) = get_frozendict_type(self.py())
-            && self.is_instance(frozendict_type)?
-        {
-            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
-                self.cast::<PyMapping>()?,
-            )))
+        if let Some(frozendict) = as_frozendict(self) {
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(frozendict)))
         } else {
             Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
         }
     }
 
     fn lax_frozendict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
-        if let Ok(frozendict_type) = get_frozendict_type(self.py())
-            && self.is_instance(frozendict_type)?
-        {
-            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
-                self.cast::<PyMapping>()?,
-            )))
+        if let Some(frozendict) = as_frozendict(self) {
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(frozendict)))
         } else if let Ok(dict) = self.cast_exact::<PyDict>() {
             Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)))
         } else if let Ok(mapping) = self.cast::<PyMapping>() {
@@ -849,14 +845,14 @@ fn bytearray_to_str<'py>(bytearray: &Bound<'py, PyByteArray>) -> PyResult<Bound<
 }
 
 /// Utility for extracting an enum value, if possible.
-fn maybe_as_enum<'py>(v: &Bound<'py, PyAny>) -> Option<Bound<'py, PyAny>> {
+fn maybe_as_enum<'py>(v: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
     let py = v.py();
-    let enum_meta_object = get_enum_meta_object(py);
+    let enum_meta_object = get_enum_meta_object(py)?;
     let meta_type = v.get_type().get_type();
     if meta_type.is(enum_meta_object) {
-        v.getattr(intern!(py, "value")).ok()
+        Ok(v.getattr(intern!(py, "value")).ok())
     } else {
-        None
+        Ok(None)
     }
 }
 

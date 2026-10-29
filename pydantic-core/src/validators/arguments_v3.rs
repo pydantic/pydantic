@@ -176,7 +176,13 @@ impl BuildValidator for ArgumentsV3Validator {
                 _ => false,
             };
 
-            if had_default_arg && !has_default && !had_keyword_only {
+            // Variadic parameters can't have a default, but are never required:
+            let is_variadic = matches!(
+                mode,
+                ParameterMode::VarArgs | ParameterMode::VarKwargsUniform | ParameterMode::VarKwargsUnpackedTypedDict
+            );
+
+            if had_default_arg && !has_default && !had_keyword_only && !is_variadic {
                 return py_schema_err!("Required parameter '{name}' follows parameter with default");
             } else if has_default {
                 had_default_arg = true;
