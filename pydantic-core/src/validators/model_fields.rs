@@ -512,7 +512,7 @@ fn take_list<'j, 'py>(
         } else {
             // Once the bound is exceeded, stop constructing values and consume the rest.
             all_ready = false;
-            jiter.known_skip(peek)?;
+            skip_peeked(jiter, peek)?;
         }
         next = jiter.array_step()?;
     }
@@ -545,7 +545,7 @@ fn take_dict<'py>(
                 // Repeated keys do not increase length. A new key beyond the bound does,
                 // so avoid constructing its value or any remaining values.
                 all_ready = false;
-                jiter.next_skip()?;
+                skip_unused(jiter)?;
             } else {
                 match take_fast(py, jiter, value_plan, state)? {
                     Taken::Ready(value) => dict.set_item(k, value)?,
@@ -553,7 +553,7 @@ fn take_dict<'py>(
                 }
             }
         } else {
-            jiter.next_skip()?;
+            skip_unused(jiter)?;
         }
         key = jiter.next_key()?;
     }
@@ -575,6 +575,16 @@ fn take_dict<'py>(
 fn skip_unused(jiter: &mut Jiter<'_>) -> Result<(), StreamStop> {
     let start = jiter.current_index();
     jiter.next_skip()?;
+    check_skipped_utf8(jiter, start)
+}
+
+fn skip_peeked(jiter: &mut Jiter<'_>, peek: Peek) -> Result<(), StreamStop> {
+    let start = jiter.current_index();
+    jiter.known_skip(peek)?;
+    check_skipped_utf8(jiter, start)
+}
+
+fn check_skipped_utf8(jiter: &Jiter<'_>, start: usize) -> Result<(), StreamStop> {
     if std::str::from_utf8(jiter.slice_to_current(start)).is_err() {
         return Err(StreamStop::Cursor);
     }
@@ -660,7 +670,7 @@ fn take_peeked<'py>(
         // a field this path does not specialise, or a json type that does not match it: hand the
         // value to the field's own validator rather than giving up on the whole object
         _ => {
-            jiter.next_skip()?;
+            skip_unused(jiter)?;
             Taken::Raw
         }
     };

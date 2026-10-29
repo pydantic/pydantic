@@ -81,6 +81,8 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
             '{"i": 1, "b": true, "f": 1.5}',
             '{"i": 1, "s": "x", "b": true, "f": 1.5, "unknown": [1, 2]}',
             '{"i": 1, "s": "a", "s": "b", "b": true, "f": 1.5}',
+            # A later duplicate must not hide invalid UTF-8 in a mismatched value.
+            b'{"i": "\xff", "i": 1, "s": "x", "b": true, "f": 1.5}',
             'not json',
             '[]',
         ],
@@ -138,6 +140,15 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
             '{"at_least_two": ["a", "b"], "at_most_two": [], "map": {}}',
             # a repeated key makes the object shorter than the members read
             '{"at_least_two": ["a", "b"], "at_most_two": [], "map": {"k": "v", "k": "w"}}',
+            b'{"at_least_two": ["a", "b"], "at_most_two": [1, 2, "\xff"], "at_most_two": [1], "map": {"k": "v"}}',
+        ],
+    ),
+    'bounded_field_dict': (
+        _model('BoundedMap', {'map': core_schema.dict_schema(keys_schema=STR, values_schema=STR, max_length=1)}),
+        True,
+        [
+            '{"map": {"a": "ok"}}',
+            b'{"map": {"a": "ok", "b": "\xff"}, "map": {"a": "ok"}}',
         ],
     ),
     'bounded_dict': (
