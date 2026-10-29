@@ -1,0 +1,19 @@
+tests/benchmarks/test_json_shapes.py
+  s_24892abdc3937e::t_f7dc610147cff8 44,50,52-57,99-111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "06605ba6642d3b9504277eee7c637802d9539b3c",
+  "prompts": {},
+  "sessions": {
+    "s_24892abdc3937e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1875e-83ce-7681-b5f9-f00c8df89771",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
