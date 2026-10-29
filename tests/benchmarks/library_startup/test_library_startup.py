@@ -31,6 +31,16 @@ LIBRARIES = {
         # Optional HTTP transport without model definitions.
         excluded=('anthropic._vendor.httpx_aiohttp',),
     ),
+    'google-genai': IMPORT_ALL_MODULES.format(
+        packages=('google.genai',),
+        # Bundled tests/test harness and optional tokenizers, without production models.
+        excluded=(
+            'google.genai.tests',
+            'google.genai._test_api_client',
+            'google.genai._local_tokenizer_loader',
+            'google.genai.local_tokenizer',
+        ),
+    ),
     'mcp': IMPORT_ALL_MODULES.format(
         packages=('mcp', 'mcp_types'),
         # Migration-error shim with no model definitions.

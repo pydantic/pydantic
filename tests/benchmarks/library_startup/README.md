@@ -21,6 +21,12 @@ Anthropic likewise includes every module under `anthropic.types`, plus paginatio
 streaming, tool-runner, and other SDK models. Its optional aiohttp transport is
 excluded because it contains no model definitions.
 
+Google Gen AI includes all production model modules under `google.genai`, including
+its complete types module and the nested `_gaos` models. Bundled tests, their test
+harness, and optional tokenizer modules without Pydantic models are excluded.
+Version 2.34.0 requires Python 3.11 or later, so its dependency is conditional and
+the benchmark skips on Python 3.10.
+
 The result includes Python startup, all of the library's dependencies, Pydantic
 model building, and interpreter shutdown. It measures elapsed time for the whole
 process, rather than attributing time specifically to Pydantic. Every sample has
@@ -29,8 +35,9 @@ files can be warm. This is not a cold-disk benchmark.
 
 ## Benchmarked libraries
 
-The current workloads pin MCP 2.3.0, OpenAI 3.41.0, and Anthropic 2.3.0 (the latest
-stable releases checked on 2026-10-29). The lockfile also pins their dependencies.
+The current workloads pin MCP 2.3.0, OpenAI 3.41.0, Anthropic 2.3.0, and Google
+Gen AI 2.34.0 (the latest stable releases checked on 2026-10-29). The lockfile also
+pins their dependencies.
 
 To add a library:
 
