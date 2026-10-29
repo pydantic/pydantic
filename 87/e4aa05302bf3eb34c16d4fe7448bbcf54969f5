@@ -1,0 +1,19 @@
+tests/benchmarks/data/README.md
+  s_24892abdc3937e::t_503a18a8120089 70-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "87e4aa05302bf3eb34c16d4fe7448bbcf54969f5",
+  "prompts": {},
+  "sessions": {
+    "s_24892abdc3937e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1875e-83ce-7681-b5f9-f00c8df89771",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
