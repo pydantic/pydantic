@@ -1,0 +1,19 @@
+pyproject.toml
+  s_71408c856d82f7::t_23853e34d80e5e 233
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "32ba1f342e8ff1cad2f7233ac68a73c0cd231fd5",
+  "prompts": {},
+  "sessions": {
+    "s_71408c856d82f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18849-dc38-70e0-8791-e6b654a22771",
+        "model": "unknown"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
