@@ -1,17 +1,29 @@
 """Scalar shortcuts preserve normal schema and field processing."""
 
+import datetime
+import re
+import sys
+from decimal import Decimal
+from types import EllipsisType
 from typing import Annotated, Any
+from zoneinfo import ZoneInfo
 
 import pytest
-from pydantic_core import core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_serializer, field_validator
 from pydantic._internal import _generate_schema
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
+from pydantic.json_schema import GenerateJsonSchema
+
+SPECIAL_TYPES = [datetime.date, datetime.datetime, datetime.time, datetime.timedelta, Decimal, ZoneInfo]
 
 
-@pytest.mark.parametrize('annotation', [str, bytes, int, float, bool, complex, None, type(None)])
+@pytest.mark.parametrize(
+    'annotation',
+    [str, bytes, int, float, bool, complex, None, type(None), object, EllipsisType, type, *SPECIAL_TYPES[:-1]],
+)
 @pytest.mark.parametrize('field_path', [False, True], ids=['generate', 'field'])
 def test_matches_general_path(monkeypatch: pytest.MonkeyPatch, annotation: Any, field_path: bool) -> None:
     def build() -> core_schema.CoreSchema:
@@ -100,7 +112,7 @@ def test_subclass_hooks() -> None:
     class Model(BaseModel):
         value: CustomStr
 
-    assert Model(value='12').value == 12
+    assert Model.model_validate({'value': '12'}).value == 12
 
 
 def test_identity_gate() -> None:
@@ -115,3 +127,40 @@ def test_identity_gate() -> None:
         pass
 
     assert not _generate_schema._is_simple_schema_type(Tricky)
+
+
+@pytest.mark.parametrize('annotation', [object, EllipsisType, type, re.Pattern, *SPECIAL_TYPES])
+def test_additional_type_eligibility(annotation: Any) -> None:
+    expected = annotation not in SPECIAL_TYPES or sys.implementation.name == 'cpython'
+    assert _generate_schema._is_simple_schema_type(annotation) is expected
+
+
+@pytest.mark.skipif(sys.implementation.name != 'pypy', reason='These classes are mutable on PyPy')
+@pytest.mark.parametrize('annotation', SPECIAL_TYPES)
+@pytest.mark.parametrize('field_path', [False, True], ids=['generate', 'field'])
+def test_mutable_classes_preserve_hooks(monkeypatch: pytest.MonkeyPatch, annotation: Any, field_path: bool) -> None:
+    def custom_schema(source: Any, handler: Any) -> core_schema.CoreSchema:
+        return core_schema.str_schema(min_length=3)
+
+    monkeypatch.setattr(annotation, '__get_pydantic_core_schema__', custom_schema, raising=False)
+    generator = GenerateSchema(ConfigWrapper({}))
+    schema = generator._apply_annotations(annotation, []) if field_path else generator.generate_schema(annotation)
+    assert schema == core_schema.str_schema(min_length=3)
+
+
+@pytest.mark.parametrize('annotation,value', [(re.Pattern, 'x+'), (ZoneInfo, 'UTC')])
+@pytest.mark.parametrize('field_path', [False, True], ids=['generate', 'field'])
+def test_function_schemas_match_general_path(
+    monkeypatch: pytest.MonkeyPatch, annotation: Any, value: str, field_path: bool
+) -> None:
+    def build() -> core_schema.CoreSchema:
+        generator = GenerateSchema(ConfigWrapper({}))
+        return generator._apply_annotations(annotation, []) if field_path else generator.generate_schema(annotation)
+
+    direct = build()
+    monkeypatch.setattr(_generate_schema, '_is_simple_schema_type', lambda obj: False)
+    normal = build()
+    assert GenerateJsonSchema().generate(direct) == GenerateJsonSchema().generate(normal)
+    result = SchemaValidator(direct).validate_python(value)
+    assert result == SchemaValidator(normal).validate_python(value)
+    assert SchemaSerializer(direct).to_json(result) == SchemaSerializer(normal).to_json(result)

@@ -144,18 +144,49 @@ _NONE_SCHEMA = core_schema.none_schema()
 _CALLABLE_SCHEMA = core_schema.callable_schema()
 
 
-def _is_simple_schema_type(obj: Any) -> bool:
-    """Recognize exact builtin scalars that cannot define custom schema hooks."""
-    return (
-        obj is str
-        or obj is int
-        or obj is bool
-        or obj is float
-        or obj is bytes
-        or obj is NoneType
-        or obj is None
-        or obj is complex
-    )
+if sys.implementation.name == 'cpython':
+
+    def _is_simple_schema_type(obj: Any) -> bool:
+        """Recognize exact types that cannot define custom schema hooks."""
+        return (
+            obj is str
+            or obj is int
+            or obj is bool
+            or obj is float
+            or obj is bytes
+            or obj is NoneType
+            or obj is None
+            or obj is object
+            or obj is complex
+            or obj is EllipsisType
+            or obj is type
+            or obj is re.Pattern
+            or obj is datetime.datetime
+            or obj is datetime.date
+            or obj is datetime.time
+            or obj is datetime.timedelta
+            or obj is Decimal
+            or obj is ZoneInfo
+        )
+
+else:
+    # datetime, Decimal and ZoneInfo classes can define custom hooks on PyPy.
+    def _is_simple_schema_type(obj: Any) -> bool:
+        """Recognize exact types that cannot define custom schema hooks."""
+        return (
+            obj is str
+            or obj is int
+            or obj is bool
+            or obj is float
+            or obj is bytes
+            or obj is NoneType
+            or obj is None
+            or obj is object
+            or obj is complex
+            or obj is EllipsisType
+            or obj is type
+            or obj is re.Pattern
+        )
 
 
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
