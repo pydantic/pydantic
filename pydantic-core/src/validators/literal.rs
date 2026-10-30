@@ -5,7 +5,7 @@ use std::cell::OnceCell;
 use std::sync::Arc;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyInt, PyList, PyString};
+use pyo3::types::{PyBool, PyDict, PyInt, PyList, PyString};
 use pyo3::{PyTraverseError, PyVisit, intern};
 
 use ahash::AHashMap;
@@ -37,10 +37,13 @@ pub struct LiteralLookup<T: Debug> {
     expected_py_dict: Option<Py<PyDict>>,
     // Catch all for unhashable types like list
     expected_py_values: Option<Vec<(Py<PyAny>, usize)>>,
-    // Fallback for ints, bools, and strings to use Python hash and equality checks
+    // Fallbacks for int and str subclasses (e.g. enum members) to use Python hash and equality checks
     // which we can't mix with `expected_py_dict`, as there may be conflicts
-    // for an example, see tests/test_validators/test_literal.py::test_mix_int_enum_with_int
-    expected_py_primitives: Option<Py<PyDict>>,
+    // for an example, see tests/test_validators/test_literal.py::test_mix_int_enum_with_int.
+    // Ints and strs are kept apart so that only an input of the same type can match
+    // (otherwise `2.0` would match `2`, as they have the same hash and are equal).
+    expected_py_ints: Option<Py<PyDict>>,
+    expected_py_strs: Option<Py<PyDict>>,
 
     pub values: Vec<T>,
 }
@@ -52,7 +55,8 @@ impl<T: Debug> LiteralLookup<T> {
         let mut expected_str: AHashMap<String, usize> = AHashMap::new();
         let expected_py_dict = PyDict::new(py);
         let mut expected_py_values = Vec::new();
-        let expected_py_primitives = PyDict::new(py);
+        let expected_py_ints = PyDict::new(py);
+        let expected_py_strs = PyDict::new(py);
         let mut values = Vec::new();
         for (k, v) in expected {
             let id = values.len();
@@ -64,22 +68,18 @@ impl<T: Debug> LiteralLookup<T> {
                 } else {
                     expected_bool.false_id = Some(id);
                 }
-                expected_py_primitives.set_item(&k, id)?;
-            }
-            if k.is_exact_instance_of::<PyInt>() {
+            } else if k.is_exact_instance_of::<PyInt>() {
                 if let Ok(int_64) = k.extract::<i64>() {
                     expected_int.insert(int_64, id);
-                    expected_py_primitives.set_item(&k, id)?;
-                } else {
-                    // cover the case of an int that's > i64::MAX etc.
-                    expected_py_dict.set_item(k, id)?;
                 }
+                // ints that are > i64::MAX etc. are only covered by the fallback
+                expected_py_ints.set_item(&k, id)?;
             } else if let Ok(either_str) = k.exact_str() {
                 let str = either_str
                     .as_cow()
                     .map_err(|_| py_schema_error_type!("error extracting str {k:?}"))?;
                 expected_str.insert(str.to_string(), id);
-                expected_py_primitives.set_item(&k, id)?;
+                expected_py_strs.set_item(&k, id)?;
             } else if expected_py_dict.set_item(&k, id).is_err() {
                 expected_py_values.push((k.as_unbound().clone_ref(py), id));
             }
@@ -92,7 +92,8 @@ impl<T: Debug> LiteralLookup<T> {
             expected_str: (!expected_str.is_empty()).then_some(expected_str),
             expected_py_dict: (!expected_py_dict.is_empty()).then_some(expected_py_dict.into()),
             expected_py_values: (!expected_py_values.is_empty()).then_some(expected_py_values),
-            expected_py_primitives: (!expected_py_primitives.is_empty()).then_some(expected_py_primitives.into()),
+            expected_py_ints: (!expected_py_ints.is_empty()).then_some(expected_py_ints.into()),
+            expected_py_strs: (!expected_py_strs.is_empty()).then_some(expected_py_strs.into()),
             values,
         })
     }
@@ -115,11 +116,11 @@ impl<T: Debug> LiteralLookup<T> {
         }
         if let Some(expected_ints) = &self.expected_int
             && let Ok(either_int) = input.exact_int()
+            // ints that don't fit in an i64 are handled by the fallback
+            && let Ok(int) = either_int.into_i64(py)
+            && let Some(id) = expected_ints.get(&int)
         {
-            let int = either_int.into_i64(py)?;
-            if let Some(id) = expected_ints.get(&int) {
-                return Ok(Some((input, &self.values[*id])));
-            }
+            return Ok(Some((input, &self.values[*id])));
         }
         if let Some(expected_strings) = &self.expected_str {
             let validation_result = if input.as_python().is_some() {
@@ -170,14 +171,26 @@ impl<T: Debug> LiteralLookup<T> {
 
         // this one must be last to avoid conflicts with the other lookups, think of this
         // almost as a lax fallback
-        if let Some(expected_py_primitives) = &self.expected_py_primitives
-            // We don't use ? to unpack the result of `get_item` in the next line because unhashable
-            // inputs will produce a TypeError, which in this case we just want to treat equivalently
-            // to a failed lookup
-            && let Ok(Some(v)) = expected_py_primitives.bind(py).get_item(get_py_input()?)
-        {
-            let id: usize = v.extract().unwrap();
-            return Ok(Some((input, &self.values[id])));
+        if self.expected_py_ints.is_some() || self.expected_py_strs.is_some() {
+            let py_input = get_py_input()?;
+            // bools are fully handled by `expected_bool`, and must not match int literals
+            let expected_py = if py_input.is_instance_of::<PyBool>() {
+                None
+            } else if py_input.is_instance_of::<PyInt>() {
+                self.expected_py_ints.as_ref()
+            } else if py_input.is_instance_of::<PyString>() {
+                self.expected_py_strs.as_ref()
+            } else {
+                None
+            };
+            // We don't use ? to unpack the result of `get_item` in the next line because
+            // a custom `__hash__` may raise, which we want to treat as a failed lookup
+            if let Some(expected_py) = expected_py
+                && let Ok(Some(v)) = expected_py.bind(py).get_item(py_input)
+            {
+                let id: usize = v.extract().unwrap();
+                return Ok(Some((input, &self.values[id])));
+            }
         }
         Ok(None)
     }
