@@ -1122,23 +1122,23 @@ class GenerateSchema:
             # metadata and validators still process the fresh schema normally.
             if not self._config_wrapper.json_encoders:
                 args = get_args(obj)
-                if len(args) >= 2 and all(
-                    arg is str
-                    or arg is bytes
-                    or arg is int
-                    or arg is float
-                    or arg is bool
-                    or arg is complex
-                    or arg is NoneType
-                    for arg in args
-                ):
-                    choices = [self._handlers[arg](self, arg) for arg in args if arg is not NoneType]
-                    schema: CoreSchema
-                    if len(choices) == 1:
-                        schema = choices[0]
+                if len(args) >= 2:
+                    choices: list[CoreSchema] = []
+                    nullable = False
+                    for arg in args:
+                        if arg is NoneType:
+                            nullable = True
+                        elif arg is str or arg is bytes or arg is int or arg is float or arg is bool or arg is complex:
+                            choices.append(self._handlers[arg](self, arg))
+                        else:
+                            break
                     else:
-                        schema = cast(core_schema.UnionSchema, {'type': 'union', 'choices': choices})
-                    return {'type': 'nullable', 'schema': schema} if any(arg is NoneType for arg in args) else schema
+                        schema: CoreSchema
+                        if len(choices) == 1:
+                            schema = choices[0]
+                        else:
+                            schema = cast(core_schema.UnionSchema, {'type': 'union', 'choices': choices})
+                        return {'type': 'nullable', 'schema': schema} if nullable else schema
             return self._union_schema(obj)
 
         if typing_objects.is_annotated(origin):
