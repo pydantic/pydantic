@@ -1,0 +1,19 @@
+tests/benchmarks/test_json_nested_models.py
+  s_629bbbd6524d1d::t_533bd4a30d7142 24,41-43,60,69-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d6a8ef2b60ad8c9b6af8f3bf39c1383bfd016e6d",
+  "prompts": {},
+  "sessions": {
+    "s_629bbbd6524d1d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1887c-b79d-7b33-a619-aba5fa98b8ff",
+        "model": "unknown"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
