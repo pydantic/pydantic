@@ -74,6 +74,30 @@ pub fn serialize_f64<S: Serializer>(v: f64, serializer: S, inf_nan_mode: InfNanM
     }
 }
 
+/// The JSON-compatible Python replacement for an `inf`/`nan` float, according to `inf_nan_mode`.
+///
+/// Returns `None` if no replacement is needed (finite value, or the `'constants'` mode, where
+/// Python floats are the closest equivalent to the `Infinity`/`NaN` JSON constants).
+pub(crate) fn inf_nan_to_python(py: Python<'_>, v: f64, inf_nan_mode: InfNanMode) -> Option<Py<PyAny>> {
+    if v.is_finite() {
+        return None;
+    }
+    match inf_nan_mode {
+        InfNanMode::Null => Some(py.None()),
+        InfNanMode::Constants => None,
+        InfNanMode::Strings => {
+            let s = if v.is_nan() {
+                intern!(py, "NaN")
+            } else if v.is_sign_positive() {
+                intern!(py, "Infinity")
+            } else {
+                intern!(py, "-Infinity")
+            };
+            Some(s.clone().into_any().unbind())
+        }
+    }
+}
+
 impl BuildSerializer for FloatSerializer {
     const EXPECTED_TYPE: &'static str = "float";
 
@@ -92,11 +116,23 @@ impl TypeSerializer for FloatSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match state.extra.ob_type_lookup.is_type(value, ObType::Float) {
-            IsType::Exact => Ok(value.clone().unbind()),
+            IsType::Exact => match state.extra.mode {
+                SerMode::Json => match inf_nan_to_python(py, value.extract::<f64>()?, self.inf_nan_mode) {
+                    Some(v) => Ok(v),
+                    None => Ok(value.clone().unbind()),
+                },
+                _ => Ok(value.clone().unbind()),
+            },
             IsType::Subclass => match state.check {
                 SerCheck::Strict => Err(PydanticSerializationUnexpectedValue::new_from_msg(None).to_py_err()),
                 SerCheck::Lax | SerCheck::None => match state.extra.mode {
-                    SerMode::Json => value.extract::<f64>()?.into_py_any(py),
+                    SerMode::Json => {
+                        let v = value.extract::<f64>()?;
+                        match inf_nan_to_python(py, v, self.inf_nan_mode) {
+                            Some(v) => Ok(v),
+                            None => v.into_py_any(py),
+                        }
+                    }
                     _ => infer_to_python(value, state),
                 },
             },

@@ -290,6 +290,7 @@ impl Validator for TypedDictValidator {
                 extra_behavior: ExtraBehavior,
                 partial_last_key: Option<LocItem>,
                 allow_partial: PartialMode,
+                fields: &'a [TypedDictField],
             }
 
             impl<'py, Key, Value> ConsumeIterator<ValResult<(Key, Value)>> for ValidateExtras<'_, '_, 'py>
@@ -299,6 +300,8 @@ impl Validator for TypedDictValidator {
             {
                 type Output = ValResult<()>;
                 fn consume_iterator(self, iterator: impl Iterator<Item = ValResult<(Key, Value)>>) -> ValResult<()> {
+                    // Built lazily, only if an extra key needs to be checked against it
+                    let mut field_names: Option<AHashSet<&str>> = None;
                     for item_result in iterator {
                         let (raw_key, value) = item_result?;
                         let either_str = match raw_key
@@ -334,6 +337,12 @@ impl Validator for TypedDictValidator {
                                 ));
                             }
                             ExtraBehavior::Ignore => {}
+                            // An extra key matching a field name (e.g. when validating by alias) is ignored,
+                            // as it would otherwise override the field in the output dict.
+                            ExtraBehavior::Allow
+                                if field_names
+                                    .get_or_insert_with(|| self.fields.iter().map(|field| &*field.name).collect())
+                                    .contains(cow.as_ref()) => {}
                             ExtraBehavior::Allow => {
                                 let py_key = either_str.as_py_string(self.py, self.state.cache_str());
                                 if let Some(validator) = self.extras_validator {
@@ -376,6 +385,7 @@ impl Validator for TypedDictValidator {
                 extra_behavior,
                 partial_last_key,
                 allow_partial,
+                fields: &self.fields,
             })??;
         }
 

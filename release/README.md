@@ -9,8 +9,10 @@
 
 ## Semi-automated Release Process
 
-1. Run `uv run release/prepare.py {VERSION}` from the root of the repository. This will:
+1. Run `uv run release/prepare.py --pydantic-version {VERSION} [--pydantic-core-version {CORE_VERSION}]` from the root of the repository. This will:
    * Update the version number in the `version.py` file and run `uv lock -P pydantic` to update the lock file.
+   * If `--pydantic-core-version` is provided, update the version in `pydantic-core/Cargo.toml` (and `pydantic-core/Cargo.lock`),
+     the `pydantic-core` pin in `pyproject.toml` and the compatible version checked in `version.py`.
    * Add a new section to HISTORY.md with a title containing the version number tag and current date.
    * If you just want to see the effect of the script without making any changes, you can add the `--dry-run` flag.
 2. Curate the changes in HISTORY.md:

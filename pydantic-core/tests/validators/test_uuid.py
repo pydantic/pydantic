@@ -230,6 +230,6 @@ def test_uuid_wrap_json():
     )
 
 
-def uuid_safety_unknown():
+def test_uuid_safety_unknown():
     output = SchemaValidator(core_schema.uuid_schema()).validate_python('a6cc5730-2261-11ee-9c43-2eb5a363657c')
     assert output.is_safe is SafeUUID.unknown

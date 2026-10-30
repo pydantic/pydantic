@@ -1,9 +1,11 @@
+import json
 import re
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Any
 
 import pytest
 from dirty_equals import HasRepr
+from pydantic_core import to_jsonable_python
 
 from pydantic import (
     AwareDatetime,
@@ -353,12 +355,9 @@ def test_naive_datetime_validation_fails(naive_datetime_type):
     ]
 
 
-@pytest.fixture(scope='module', name='TimedeltaModel')
-def timedelta_model_fixture():
-    class TimedeltaModel(BaseModel):
-        d: timedelta
-
-    return TimedeltaModel
+@pytest.fixture(scope='module', name='timedelta_ta')
+def timedelta_ta_fixture() -> TypeAdapter[timedelta]:
+    return TypeAdapter(timedelta)
 
 
 @pytest.mark.parametrize(
@@ -373,9 +372,9 @@ def timedelta_model_fixture():
         timedelta(seconds=30),  # seconds
     ],
 )
-def test_parse_python_format(TimedeltaModel, delta):
-    assert TimedeltaModel(d=delta).d == delta
-    # assert TimedeltaModel(d=str(delta)).d == delta
+def test_parse_python_format(timedelta_ta: TypeAdapter[timedelta], delta):
+    assert timedelta_ta.validate_python(delta) == delta
+    # assert timedelta_ta.validate_python(str(delta)) == delta
 
 
 @pytest.mark.parametrize(
@@ -424,12 +423,32 @@ def test_parse_python_format(TimedeltaModel, delta):
         (b'PT0.000005S', timedelta(microseconds=5)),
     ],
 )
-def test_parse_durations(TimedeltaModel, value, result):
+def test_parse_durations(timedelta_ta: TypeAdapter[timedelta], value, result):
     if isinstance(result, Err):
         with pytest.raises(ValidationError, match=result.message_escaped()):
-            TimedeltaModel(d=value)
+            timedelta_ta.validate_python(value)
     else:
-        assert TimedeltaModel(d=value).d == result
+        assert timedelta_ta.validate_python(value) == result
+
+
+@pytest.mark.parametrize(
+    'value',
+    [
+        999_999_999 * 86400 + 86400,
+        86400 * 2**32,
+        86400 * (2**32 + 5),
+        -86400 * (2**32 + 5),
+    ],
+)
+def test_parse_durations_large_int(timedelta_ta: TypeAdapter[timedelta], value: int) -> None:
+    """https://github.com/pydantic/pydantic/issues/13969"""
+
+    assert timedelta_ta.validate_python(999_999_999 * 86400) == timedelta(days=999_999_999)
+
+    with pytest.raises(ValidationError, match='durations may not exceed 999,999,999 days'):
+        timedelta_ta.validate_python(value)
+    with pytest.raises(ValidationError, match='durations may not exceed 999,999,999 days'):
+        timedelta_ta.validate_json(str(value))
 
 
 @pytest.mark.parametrize(
@@ -541,14 +560,16 @@ def test_past_date_validation_success(value, result, past_date_type):
 
 
 @pytest.mark.parametrize(
-    'value',
+    'value_fn',
     (
-        date.today(),
-        date.today() + timedelta(1),
-        '2064-06-01',
+        pytest.param(lambda: date.today(), id='today'),
+        pytest.param(lambda: date.today() + timedelta(1), id='tomorrow'),
+        pytest.param(lambda: '2064-06-01', id='future-str'),
     ),
 )
-def test_past_date_validation_fails(value, past_date_type):
+def test_past_date_validation_fails(value_fn, past_date_type):
+    value = value_fn()
+
     class Model(BaseModel):
         foo: past_date_type
 
@@ -566,13 +587,15 @@ def test_past_date_validation_fails(value, past_date_type):
 
 
 @pytest.mark.parametrize(
-    'value,result',
+    'value_fn',
     (
-        (date.today() + timedelta(1), date.today() + timedelta(1)),
-        ('2064-06-01', date(2064, 6, 1)),
+        pytest.param(lambda: (date.today() + timedelta(1), date.today() + timedelta(1)), id='tomorrow'),
+        pytest.param(lambda: ('2064-06-01', date(2064, 6, 1)), id='future-str'),
     ),
 )
-def test_future_date_validation_success(value, result, future_date_type):
+def test_future_date_validation_success(value_fn, future_date_type):
+    value, result = value_fn()
+
     class Model(BaseModel):
         foo: future_date_type
 
@@ -580,14 +603,16 @@ def test_future_date_validation_success(value, result, future_date_type):
 
 
 @pytest.mark.parametrize(
-    'value',
+    'value_fn',
     (
-        date.today(),
-        date.today() - timedelta(1),
-        '1996-01-22',
+        pytest.param(lambda: date.today(), id='today'),
+        pytest.param(lambda: date.today() - timedelta(1), id='yesterday'),
+        pytest.param(lambda: '1996-01-22', id='past-str'),
     ),
 )
-def test_future_date_validation_fails(value, future_date_type):
+def test_future_date_validation_fails(value_fn, future_date_type):
+    value = value_fn()
+
     class Model(BaseModel):
         foo: future_date_type
 
@@ -809,3 +834,54 @@ def test_config_time(t: date, expected_to_json, mode):
 
     assert instance == t
     assert ta.dump_json(instance) == expected_to_json
+
+
+TEMPORAL_VALUES = {
+    'datetime': datetime(2024, 1, 1),
+    'date': date(2024, 1, 1),
+    'time': time(1),
+    'timedelta': timedelta(seconds=1),
+    datetime(2024, 1, 1): 'datetime_key',
+    timedelta(seconds=1): 'timedelta_key',
+}
+
+
+@pytest.mark.parametrize(
+    ['config', 'expected'],
+    [
+        (
+            {'ser_json_timedelta': 'float'},
+            {
+                'datetime': '2024-01-01T00:00:00',
+                'date': '2024-01-01',
+                'time': '01:00:00',
+                'timedelta': 1.0,
+                '2024-01-01T00:00:00': 'datetime_key',
+                '1': 'timedelta_key',
+            },
+        ),
+        (
+            {'ser_json_temporal': 'milliseconds', 'ser_json_timedelta': 'float'},
+            {
+                'datetime': 1704067200000.0,
+                'date': 1704067200000.0,
+                'time': 3600000.0,
+                'timedelta': 1000.0,
+                '1704067200000': 'datetime_key',
+                '1000': 'timedelta_key',
+            },
+        ),
+    ],
+)
+def test_ser_json_timedelta_only_applies_to_timedelta_inference(config, expected) -> None:
+    """`ser_json_timedelta` should only apply to timedeltas when serializing unknown types (by inference)."""
+    ta = TypeAdapter(Any, config=config)
+
+    assert ta.dump_python(TEMPORAL_VALUES, mode='json') == expected
+    assert json.loads(ta.dump_json(TEMPORAL_VALUES)) == expected
+
+    temporal_mode = config.get('ser_json_temporal', 'iso8601')
+    assert (
+        to_jsonable_python(TEMPORAL_VALUES, timedelta_mode=config['ser_json_timedelta'], temporal_mode=temporal_mode)
+        == expected
+    )

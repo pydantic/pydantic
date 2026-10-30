@@ -11,7 +11,7 @@ import sys
 import threading
 import types
 import warnings
-from collections.abc import Generator, Mapping
+from collections.abc import Generator, Mapping, MutableSet
 from copy import copy, deepcopy
 from functools import cached_property
 from typing import (
@@ -241,7 +241,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_extra__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
 
-    __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
+    __pydantic_fields_set__: MutableSet[str] = _model_construction.NoInitField(init=False)
     """The names of fields explicitly set during instantiation."""
 
     __pydantic_private__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
@@ -321,7 +321,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_extra__
 
     @property
-    def model_fields_set(self) -> set[str]:
+    def model_fields_set(self) -> MutableSet[str]:
         """Returns the set of fields that have been explicitly set on this model instance.
 
         Returns:
@@ -434,7 +434,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             copied = self.__copy__()
 
             # As we make separate `deepcopy()` calls, use a shared memo:
-            memo: dict[int, Any] = {}
+            memo: dict[int, Any] = {id(self): copied}
 
             # Selectively deepcopy fields that are not being updated:
             for k, v in copied.__dict__.items():
@@ -465,7 +465,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 copied.__dict__.update(update)  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
 
-            copied.__pydantic_fields_set__.update(update.keys())
+            for name in update:
+                copied.__pydantic_fields_set__.add(name)
 
         return copied
 
@@ -606,7 +607,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     def model_json_schema(
         cls,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
@@ -616,7 +617,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """Generates a JSON schema for a model class.
 
         Args:
-            by_alias: Whether to use attribute aliases or not.
+            by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+                aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+                schemas). An explicit value takes precedence over the configuration.
             ref_template: The reference template.
             union_format: The format to use when combining schemas from unions together. Can be one of:
 
@@ -1052,11 +1055,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     def __deepcopy__(self, memo: Dict[int, Any] | None = None) -> Self:  # noqa: UP006
         """Returns a deep copy of the model."""
+        if memo is None:
+            memo = {}
         cls = type(self)
         m = cls.__new__(cls)
+        memo[id(self)] = m
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
         _object_setattr(m, '__pydantic_extra__', deepcopy(self.__pydantic_extra__, memo=memo))
-        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
+        # This next line doesn't need a deepcopy because __pydantic_fields_set__ only contains strings,
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
 
@@ -1236,7 +1242,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 if not (
                     self_type is other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
-                    # We need to assume `None` and `{}` are equivalent, because extra behavior
+                    # We need to assume `None` and `{}` are equivalent, because extra behavior
                     # can be controlled at validation time:
                     and (self.__pydantic_extra__ or {}) == (other.__pydantic_extra__ or {})
                 ):
@@ -1374,7 +1380,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.',
         category=None,
     )
-    def __fields_set__(self) -> set[str]:
+    def __fields_set__(self) -> MutableSet[str]:
         warnings.warn(
             'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.',
             category=PydanticDeprecatedSince20,
@@ -1631,11 +1637,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 if k in self.__pydantic_extra__:  # k must have come from extra
                     extra[k] = values.pop(k)
 
+        fields_set = copy(self.__pydantic_fields_set__)
         # new `__pydantic_fields_set__` can have unset optional fields with a set value in `update` kwarg
         if update:
-            fields_set = self.__pydantic_fields_set__ | update.keys()
-        else:
-            fields_set = set(self.__pydantic_fields_set__)
+            fields_set |= update.keys()
 
         # removing excluded fields from `__pydantic_fields_set__`
         if exclude:
@@ -1762,6 +1767,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
 ModelT = TypeVar('ModelT', bound=BaseModel)
 
+_CREATE_MODEL_RESERVED_NAMESPACE_KEYS: dict[str, str] = {
+    '__annotations__': 'field definitions',
+    '__module__': 'the `__module__` argument',
+    '__qualname__': 'the `__qualname__` argument',
+    '__doc__': 'the `__doc__` argument',
+    'model_config': 'the `__config__` argument',
+}
+"""Keys that can't be provided in the `__namespace__` argument of `create_model()`, mapped to the argument to use instead."""
+
 
 @overload
 def create_model(
@@ -1773,6 +1787,7 @@ def create_model(
     __base__: None = None,
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
+    __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
     **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
@@ -1789,6 +1804,7 @@ def create_model(
     __base__: type[ModelT] | tuple[type[ModelT], ...],
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
+    __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
     **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
@@ -1804,6 +1820,7 @@ def create_model(  # noqa: C901
     __base__: type[ModelT] | tuple[type[ModelT], ...] | None = None,
     __module__: str | None = None,
     __validators__: dict[str, Callable[..., Any]] | None = None,
+    __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
     **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
@@ -1829,6 +1846,20 @@ def create_model(  # noqa: C901
         __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to
             be added to the model, and the values are the validation methods themselves. You can read more about functional
             validators [here](../concepts/validators.md#field-validators).
+
+            /// version-changed | v2.14
+            It is now recommended to use the `__namespace__` argument, which isn't restricted to validators.
+            `__validators__` will be deprecated in v3.
+            ///
+        __namespace__: A dictionary of attributes to add to the class namespace of the new model, such as
+            [validators](../concepts/validators.md), methods or [computed fields][pydantic.computed_field].
+            Keys take precedence over the ones from `__validators__`, and must not clash with any of the field names
+            or with the attributes that have a dedicated argument (`__annotations__`, `__module__`, `__qualname__`,
+            `__doc__` and `model_config`).
+
+            /// version-added | v2.14
+            This argument replaces `__validators__`, which will be deprecated in v3.
+            ///
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __qualname__: The qualified name of the newly created model.
         **field_definitions: Field definitions of the new model. Either:
@@ -1841,7 +1872,8 @@ def create_model(  # noqa: C901
         The new [model][pydantic.BaseModel].
 
     Raises:
-        PydanticUserError: If `__base__` and `__config__` are both passed.
+        PydanticUserError: If `__base__` and `__config__` are both passed,
+            or if a key of `__namespace__` clashes with a field name or with an attribute that has a dedicated argument.
     """
     if __base__ is None:
         __base__ = (cast('type[ModelT]', BaseModel),)
@@ -1867,6 +1899,19 @@ def create_model(  # noqa: C901
         else:
             annotations[f_name] = f_def
 
+    if __namespace__:
+        if clashing_names := field_definitions.keys() & __namespace__.keys():
+            raise PydanticUserError(
+                f'Field name(s) {", ".join(map(repr, sorted(clashing_names)))} clash with keys of the `__namespace__` argument.',
+                code='create-model-namespace',
+            )
+        for key, argument in _CREATE_MODEL_RESERVED_NAMESPACE_KEYS.items():
+            if key in __namespace__:
+                raise PydanticUserError(
+                    f'{key!r} is not allowed as a key of the `__namespace__` argument, use {argument} instead.',
+                    code='create-model-namespace',
+                )
+
     if __module__ is None:
         f = sys._getframe(1)
         __module__ = f.f_globals['__name__']
@@ -1878,6 +1923,8 @@ def create_model(  # noqa: C901
         namespace['__qualname__'] = __qualname__
     if __validators__:
         namespace.update(__validators__)
+    if __namespace__:
+        namespace.update(__namespace__)
     namespace.update(fields)
     if __config__:
         namespace['model_config'] = __config__

@@ -119,7 +119,11 @@ def create_generic_submodel(
     Returns:
         The created submodel.
     """
-    namespace: dict[str, Any] = {'__module__': origin.__module__}
+    model_module, called_globally = _get_caller_frame_info(depth=3)
+    # If parametrized at the module level, the parametrized class is registered in this module (see below).
+    # Its `__module__` must match. We fall back to the module of the origin for backwards compatibility reasons.
+    module = model_module if called_globally and model_module is not None else origin.__module__
+    namespace: dict[str, Any] = {'__module__': module}
     # As per https://docs.python.org/3/reference/datamodel.html#slots:
     # "The action of a __slots__ declaration is not limited to the class where it is defined.
     # __slots__ declared in parents are available in child classes. However, instances of a
@@ -149,11 +153,10 @@ def create_generic_submodel(
         **kwds,
     )
 
-    model_module, called_globally = _get_caller_frame_info(depth=3)
     if called_globally:  # create global reference and therefore allow pickling
         object_by_reference = None
         reference_name = model_name
-        reference_module_globals = sys.modules[model_module or created_model.__module__].__dict__
+        reference_module_globals = sys.modules[module].__dict__
         while object_by_reference is not created_model:
             object_by_reference = reference_module_globals.setdefault(reference_name, created_model)
             reference_name += '_'

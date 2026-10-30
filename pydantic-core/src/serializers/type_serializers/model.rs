@@ -4,7 +4,7 @@ use std::sync::Arc;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PySet, PyType};
+use pyo3::types::{PyDict, PyType};
 
 use ahash::AHashMap;
 use pyo3::IntoPyObjectExt;
@@ -17,6 +17,7 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
+use crate::fields_set::FieldsSet;
 use crate::serializers::SerializationState;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
@@ -223,9 +224,7 @@ impl ModelSerializer {
         // The `GeneralFieldsSerializer` makes sure to exclude the value, so any user-defined
         // serializer won't be called.
         if extra.exclude_unset {
-            let fields_set = model
-                .getattr(intern!(py, "__pydantic_fields_set__"))?
-                .cast_into::<PySet>()?;
+            let fields_set: FieldsSet<'_> = model.getattr(intern!(py, "__pydantic_fields_set__"))?.extract()?;
 
             // if nothing actually unset, avoid copying the dict
             let mut new_attrs = None;
@@ -233,7 +232,10 @@ impl ModelSerializer {
 
             for key in attrs.keys() {
                 if !fields_set.contains(&key)? {
-                    let missing_sentinel = missing_sentinel.get_or_insert_with(|| get_missing_sentinel_object(py));
+                    let missing_sentinel = match &missing_sentinel {
+                        Some(missing_sentinel) => missing_sentinel,
+                        None => missing_sentinel.insert(get_missing_sentinel_object(py)?),
+                    };
                     let new_attrs = match &new_attrs {
                         Some(new_attrs) => new_attrs,
                         None => new_attrs.insert(attrs.copy()?),

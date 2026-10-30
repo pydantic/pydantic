@@ -11,15 +11,8 @@ use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use super::{EitherFloat, EitherInt, Input};
 static ENUM_META_OBJECT: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
 
-pub fn get_enum_meta_object(py: Python<'_>) -> &Bound<'_, PyAny> {
-    ENUM_META_OBJECT
-        .get_or_init(py, || {
-            py.import(intern!(py, "enum"))
-                .and_then(|enum_module| enum_module.getattr(intern!(py, "EnumMeta")))
-                .unwrap()
-                .into()
-        })
-        .bind(py)
+pub fn get_enum_meta_object(py: Python<'_>) -> PyResult<&Bound<'_, PyAny>> {
+    ENUM_META_OBJECT.import(py, "enum", "EnumMeta")
 }
 
 pub fn str_as_bool<'py>(input: &(impl Input<'py> + ?Sized), str: &str) -> ValResult<bool> {

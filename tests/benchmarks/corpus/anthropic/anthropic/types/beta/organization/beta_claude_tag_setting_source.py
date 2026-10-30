@@ -1,0 +1,12 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing import Union
+from typing_extensions import Annotated, TypeAlias
+from ...._models import UnionDiscriminator
+from .beta_claude_tag_default_setting_source import BetaClaudeTagDefaultSettingSource
+from .beta_claude_tag_slack_channel_setting_source import BetaClaudeTagSlackChannelSettingSource
+from .beta_claude_tag_slack_default_setting_source import BetaClaudeTagSlackDefaultSettingSource
+from .beta_claude_tag_slack_workspace_setting_source import BetaClaudeTagSlackWorkspaceSettingSource
+from .beta_claude_tag_slack_grid_channel_setting_source import BetaClaudeTagSlackGridChannelSettingSource
+from .beta_claude_tag_slack_parent_channel_setting_source import BetaClaudeTagSlackParentChannelSettingSource
+BetaClaudeTagSettingSource: TypeAlias = Annotated[Union[BetaClaudeTagSlackChannelSettingSource, BetaClaudeTagSlackWorkspaceSettingSource, BetaClaudeTagSlackParentChannelSettingSource, BetaClaudeTagSlackDefaultSettingSource, BetaClaudeTagDefaultSettingSource, BetaClaudeTagSlackGridChannelSettingSource], UnionDiscriminator('type')]

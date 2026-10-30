@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import sys as _sys
+from collections.abc import MutableSet
 from typing import Any as _Any
 
 from typing_extensions import Sentinel
 
 from ._pydantic_core import (
     ArgsKwargs,
+    ModelFieldsSet,
     MultiHostUrl,
     PydanticCustomError,
     PydanticKnownError,
@@ -63,6 +65,7 @@ __all__ = [
     'PydanticOmit',
     'PydanticUseDefault',
     'PydanticSerializationError',
+    'ModelFieldsSet',
     'PydanticSerializationUnexpectedValue',
     'TzInfo',
     'to_json',
@@ -147,7 +150,7 @@ class MultiHostHost(_TypedDict):
 
 MISSING = Sentinel('MISSING')
 """
-/// version-added | v2.11
+/// version-added | v2.12
 ///
 
 /// version-changed | v2.14
@@ -191,3 +194,6 @@ timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
     When [applying constraints](./fields.md#field-constraints) to a union containing the `MISSING` sentinel,
     such constraints are automatically applied to the remaining type(s) of the union.
 """
+
+
+MutableSet.register(ModelFieldsSet)

@@ -11,6 +11,7 @@ from pydantic import (
     PydanticDeprecatedSince20,
     PydanticUserError,
     ValidationError,
+    computed_field,
     create_model,
     field_validator,
     validator,
@@ -411,3 +412,76 @@ def test_create_model_qualname() -> None:
     FooModel = create_model('FooModel', __qualname__='test_create_model_qualname.FooModel')
     assert FooModel.__name__ == 'FooModel'
     assert FooModel.__qualname__ == 'test_create_model_qualname.FooModel'
+
+
+def test_create_model_namespace() -> None:
+    def double(self) -> int:
+        return self.a * 2
+
+    def check_a(cls, v: int) -> int:
+        if v < 0:
+            raise ValueError('must be positive')
+        return v
+
+    Model = create_model(
+        'Model',
+        a=int,
+        __namespace__={
+            'double': double,
+            'a_plus_one': property(lambda self: self.a + 1),
+            'a_squared': computed_field(property(lambda self: self.a**2), return_type=int),
+            'check_a': field_validator('a')(check_a),
+        },
+    )
+
+    m = Model(a=3)
+    assert m.double() == 6
+    assert m.a_plus_one == 4
+    assert m.model_dump() == {'a': 3, 'a_squared': 9}
+    assert Model.model_json_schema(mode='serialization')['properties']['a_squared'] == {
+        'readOnly': True,
+        'title': 'A Squared',
+        'type': 'integer',
+    }
+    with pytest.raises(ValidationError):
+        Model(a=-1)
+
+
+def test_create_model_namespace_precedence_over_validators() -> None:
+    Model = create_model(
+        'Model',
+        a=int,
+        __validators__={'value': lambda self: 'from_validators'},
+        __namespace__={'value': lambda self: 'from_namespace'},
+    )
+
+    assert Model(a=1).value() == 'from_namespace'
+
+
+def test_create_model_namespace_field_name_clash() -> None:
+    with pytest.raises(
+        PydanticUserError, match=r"Field name\(s\) 'a', 'b' clash with keys of the `__namespace__` argument\."
+    ) as exc_info:
+        create_model('Model', a=int, b=(int, 1), c=str, __namespace__={'b': 2, 'a': 1, 'other': 3})
+
+    assert exc_info.value.code == 'create-model-namespace'
+
+
+@pytest.mark.parametrize(
+    ['key', 'argument'],
+    [
+        ('__annotations__', 'field definitions'),
+        ('__module__', 'the `__module__` argument'),
+        ('__qualname__', 'the `__qualname__` argument'),
+        ('__doc__', 'the `__doc__` argument'),
+        ('model_config', 'the `__config__` argument'),
+    ],
+)
+def test_create_model_namespace_reserved_keys(key: str, argument: str) -> None:
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(f'{key!r} is not allowed as a key of the `__namespace__` argument, use {argument} instead.'),
+    ) as exc_info:
+        create_model('Model', a=int, __namespace__={key: None})
+
+    assert exc_info.value.code == 'create-model-namespace'

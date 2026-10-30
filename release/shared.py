@@ -12,4 +12,6 @@ def run_command(*args: str) -> str:
 REPO = 'pydantic/pydantic'
 HISTORY_FILE = 'HISTORY.md'
 PACKAGE_VERSION_FILE = 'pydantic/version.py'
+PYPROJECT_FILE = 'pyproject.toml'
+CORE_CARGO_FILE = 'pydantic-core/Cargo.toml'
 GITHUB_TOKEN = run_command('gh', 'auth', 'token')

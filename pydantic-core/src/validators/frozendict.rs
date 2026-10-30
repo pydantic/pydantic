@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, py_schema_err};
-use crate::common::frozendict::get_frozendict_type;
+use crate::common::frozendict::{FROZENDICT_AVAILABLE, new_frozendict};
 use crate::errors::{LocItem, ValError, ValLineError, ValResult};
 use crate::input::BorrowInput;
 use crate::input::ConsumeIterator;
@@ -14,7 +14,7 @@ use crate::input::{Input, ValidatedDict};
 use crate::tools::SchemaDict;
 
 use super::any::AnyValidator;
-use super::list::length_check;
+use super::list::{max_length_check, min_length_check};
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
@@ -37,7 +37,7 @@ impl BuildValidator for FrozenDictValidator {
         definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        if get_frozendict_type(py).is_err() {
+        if !FROZENDICT_AVAILABLE {
             return py_schema_err!("The `frozendict` builtin type is only available on Python 3.15 and above");
         }
         let key_validator = match schema.get_item(intern!(py, "keys_schema"))? {
@@ -169,13 +169,14 @@ where
 
             if let Some(key) = output_key {
                 output.set_item(key, output_value)?;
+                max_length_check!(self.input, "Frozendict", self.max_length, output);
             }
         }
 
         if errors.is_empty() {
             let input = self.input;
-            length_check!(input, "Frozendict", self.min_length, self.max_length, output);
-            Ok(get_frozendict_type(self.py)?.call1((output,))?.unbind())
+            min_length_check!(input, "Frozendict", self.min_length, output);
+            Ok(new_frozendict(output.as_any())?.unbind())
         } else {
             Err(ValError::LineErrors(errors))
         }

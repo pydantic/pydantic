@@ -358,6 +358,19 @@ def test_default_factory_validated_data_argument_unsupported() -> None:
         TypeAdapter(Annotated[int, Field(default_factory=lambda v: v['key'])])
 
 
+def test_default_factory_validated_data_argument_unsupported_nested_in_model() -> None:
+    TestType = TypeAliasType('TestType', Annotated[int, Field(default_factory=lambda v: v['key'])])
+
+    with pytest.warns(UnsupportedFieldAttributeWarning) as w:
+
+        class Model(BaseModel):
+            f: list[TestType]
+
+    # Only the generic "unsupported attribute" warning should be emitted, not the validated data one:
+    assert len(w) == 1
+    assert str(w[0].message).startswith("The 'default_factory' attribute")
+
+
 def test_parent_field_info_not_mutated() -> None:
     class Parent(BaseModel):
         a: Annotated[int, Gt(2)]
