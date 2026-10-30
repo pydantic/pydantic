@@ -1122,10 +1122,6 @@ class TzInfo(datetime.tzinfo):
 class ModelFieldsSet(MutableSet[str]):
     """The set of field names explicitly set on a model instance, available as `__pydantic_fields_set__`.
 
-    Instead of storing every field name, the set holds a reference to the list of the model's field names
-    (shared between all instances of the model) along with a bitset of the fields that are set.
-    Extra keys (when [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`) are stored separately.
-
     While this class is not a subclass of `set`, it implements the same API and is registered as a virtual
     subclass of [`collections.abc.MutableSet`][]. A plain [`set`][] can be used interchangeably.
     """
