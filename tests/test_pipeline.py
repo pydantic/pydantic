@@ -13,7 +13,7 @@ import pytest
 import pytz
 from annotated_types import Interval, Len
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ConfigDict, TypeAdapter, ValidationError
 from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # pyright: ignore[reportPrivateUsage]
 
 
@@ -662,3 +662,57 @@ def test_validate_as_ellipsis_preserves_other_steps() -> None:
     ta = TypeAdapter[float](Annotated[float, validate_as(str).transform(lambda v: v.split()[0]).validate_as(...)])
 
     assert ta.validate_python('12 ab') == 12.0
+
+
+def test_transform_after_constraint_is_not_reordered() -> None:
+    """`str_strip()` must run after the `len()` constraint that precedes it in the pipeline."""
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).len(3).str_strip()])
+    assert ta.validate_python('  ab  ') == 'ab'
+
+
+def test_consecutive_string_transforms_are_both_applied() -> None:
+    """`str_lower()` followed by `str_upper()` must end up uppercase."""
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).str_lower().str_upper()])
+    assert ta.validate_python('AbC') == 'ABC'
+
+
+@pytest.mark.parametrize(
+    'pipeline,value,expected',
+    [
+        (validate_as(str).str_lower().len(2), '\u0130', 'i\u0307'),
+        (validate_as(str).str_upper().len(2), 'ß', 'SS'),
+        (validate_as(str).str_lower().str_pattern('^[a-z]+$'), 'ABC', 'abc'),
+        (validate_as(str).str_upper().str_pattern('^[A-Z]+$'), 'abc', 'ABC'),
+    ],
+)
+def test_constraint_after_case_transform_sees_the_transformed_value(pipeline: Any, value: str, expected: str) -> None:
+    """pydantic-core checks length and pattern before `to_lower`/`to_upper`, so they must not be folded together."""
+    assert TypeAdapter[str](Annotated[str, pipeline]).validate_python(value) == expected
+
+
+def test_max_length_after_case_transform_rejects_the_longer_result() -> None:
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).str_lower().len(0, 1)])
+    with pytest.raises(ValidationError, match='string_too_long'):
+        ta.validate_python('\u0130')
+
+
+@pytest.mark.parametrize(
+    'pipeline, value',
+    [
+        (validate_as(str).str_lower().str_pattern('^[a-z]+$'), 'abc'),
+        (validate_as(str).str_lower().len(0, 1), 'a'),
+    ],
+)
+def test_constraint_after_case_transform_ignores_config_transforms(pipeline: Any, value: str) -> None:
+    """The extra `str` schema only checks, so `str_to_upper` from the config cannot run after the check."""
+    ta = TypeAdapter[str](Annotated[str, pipeline], config=ConfigDict(str_to_upper=True))
+    assert ta.validate_python(value) == value
+
+
+def test_transform_before_constraint_still_folds_into_the_str_schema() -> None:
+    """The fast path stays in place when nothing precedes the transform."""
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).str_strip().len(3)])
+    assert ta.core_schema == {'type': 'str', 'strip_whitespace': True, 'min_length': 3}
+    assert ta.validate_python('  abc  ') == 'abc'
+    with pytest.raises(ValidationError):
+        ta.validate_python('  ab  ')
