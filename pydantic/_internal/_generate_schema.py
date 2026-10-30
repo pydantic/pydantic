@@ -139,7 +139,6 @@ ModifyCoreSchemaWrapHandler: TypeAlias = GetCoreSchemaHandler
 GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
 ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None]
 
-TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 _NONE_SCHEMA = core_schema.none_schema()
 _CALLABLE_SCHEMA = core_schema.callable_schema()
 
@@ -197,6 +196,191 @@ def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], 
 
     return handler
 
+
+# The leaf types of "pure" annotations (see `_pure_annotation_cache_key()`). These are immutable
+# C types only, guaranteeing that no custom `__get_pydantic_core_schema__`/`__get_pydantic_json_schema__`
+# hook can ever be attached to them.
+#
+# Note: membership of these collections is tested by identity (through `_ids()` below) and not with
+# a plain `in`. A user-defined class whose metaclass implements `__eq__`/`__hash__` so that the
+# class compares equal to e.g. `int` would otherwise be classified as pure and share `int`'s cache
+# entry, letting its `__get_pydantic_core_schema__` hook poison the schema used for `int` fields
+# (and vice versa):
+_PURE_LEAF_TYPES: frozenset[Any] = frozenset(
+    [
+        str,
+        bytes,
+        int,
+        float,
+        bool,
+        complex,
+        None,
+        NoneType,
+        Any,
+        typing_extensions.Any,
+        object,
+        # These classes are mutable on PyPy and may acquire custom schema hooks.
+        *(
+            [datetime.date, datetime.datetime, datetime.time, datetime.timedelta, Decimal]
+            if sys.implementation.name == 'cpython'
+            else []
+        ),
+        # The bare container forms (their schemas don't depend on configuration or context either):
+        list,
+        set,
+        frozenset,
+        dict,
+        tuple,
+    ]
+)
+_PURE_CONTAINER_ORIGINS: frozenset[Any] = frozenset([list, set, frozenset, dict, tuple])
+_PURE_LITERAL_VALUE_TYPES: frozenset[type[Any]] = frozenset([str, bytes, int, bool, NoneType])
+
+
+def _ids(objects: frozenset[Any], /) -> frozenset[int]:
+    """The ids of the provided objects, for identity-based membership tests.
+
+    The objects are all builtin/stdlib singletons kept alive for the lifetime of the process by the
+    (module-global) sets above, so their ids are stable and can't be reused by another object.
+    """
+    return frozenset(id(obj) for obj in objects)
+
+
+_PURE_LEAF_TYPE_IDS = _ids(_PURE_LEAF_TYPES)
+_PURE_CONTAINER_ORIGIN_IDS = _ids(_PURE_CONTAINER_ORIGINS)
+_PURE_LITERAL_VALUE_TYPE_IDS = _ids(_PURE_LITERAL_VALUE_TYPES)
+
+# Returned by `_pure_annotation_cache_key()` for annotations that aren't cacheable. A dedicated sentinel
+# is required as `None` is itself a valid (and pure) annotation, and so a valid cache key:
+_NOT_PURE: Any = object()
+
+# Bound the combined literal payload retained by each entry, including nested literals.
+# Together with the entry cap, this limits cached literal payload to roughly 4 MiB,
+# excluding the additional memory used by schema and key containers.
+_PURE_ANNOTATION_MAX_LITERAL_BYTES = 8 * 1024
+
+
+def _normalize_tuple_args(tuple_type: Any, args: tuple[Any, ...] | None) -> tuple[Any, ...] | None:
+    """Return tuple element annotations, or `None` for a bare, arbitrary-length tuple.
+
+    An empty tuple of arguments denotes a fixed-length empty tuple. On Python 3.10,
+    `typing.Tuple[()]` instead supplies `((),)`, which is normalized to the same shape.
+    """
+    if not args:
+        return None if tuple_type is tuple or tuple_type is typing.Tuple else ()  # noqa: UP006
+    if len(args) == 1 and args[0] == ():
+        return ()
+    return args
+
+
+def _pure_annotation_cache_key(tp: Any, literal_bytes: list[int] | None = None) -> Any:
+    """Return a cache key for a pure annotation within the literal budget, `_NOT_PURE` otherwise.
+
+    `literal_bytes` accumulates the combined literal payload across a recursive traversal.
+    It is allocated only for compound annotations, keeping leaf lookups unchanged.
+
+    An annotation is pure if it is composed only of immutable C leaf types and of typing
+    constructs (unions, literals of primitive values, builtin containers) of pure annotations.
+    The generated core schema for a pure annotation is guaranteed to be identical every time
+    it is generated: no custom schema hooks can be involved, and the schema can't be affected
+    by configuration (assuming no `json_encoders`, checked separately) or by generation context
+    (namespaces, type variable maps, reference definitions). This makes it safe to cache.
+
+    Note that the annotation objects themselves can't be used as cache keys: unions and literals
+    compare (and hash) equal regardless of the order of their arguments, while their generated
+    schemas are order-sensitive. The returned key is a nested tuple structure preserving order.
+
+    The returned key only ever holds builtin/stdlib types and literal values of such types (both
+    guaranteed by the identity-based membership tests), so it is always hashable. Callers still
+    guard against `TypeError` in case an unhashable annotation reaches a `get_args()` call.
+    """
+    type_id = id(tp)
+    if type_id in _PURE_LEAF_TYPE_IDS:
+        return tp
+    # Match schema dispatch's normalization of bare deprecated aliases, preserving
+    # the distinction between `typing.Tuple` (arbitrary length) and `Tuple[()]`.
+    if aliased_type := typing_objects.DEPRECATED_ALIASES_IDS.get(type_id):
+        return aliased_type if id(aliased_type) in _PURE_LEAF_TYPE_IDS else _NOT_PURE
+    origin = get_origin(tp)
+    if origin is None:
+        return _NOT_PURE
+    if is_union_origin(origin):
+        arg_keys: list[Any] = ['union']
+    elif id(origin) in _PURE_CONTAINER_ORIGIN_IDS:
+        arg_keys = [origin]
+    elif typing_objects.is_literal(origin):
+        arg_keys = ['literal']
+        size = literal_bytes[0] if literal_bytes is not None else 0
+        for arg in get_args(tp):
+            if id(type(arg)) not in _PURE_LITERAL_VALUE_TYPE_IDS:
+                return _NOT_PURE
+            value_size = sys.getsizeof(arg, 0)
+            if not value_size:
+                # PyPy cannot report object sizes. Use conservative estimates there,
+                # accounting for wide Unicode strings and arbitrary-precision integers.
+                if isinstance(arg, (str, bytes)):
+                    value_size = 80 + len(arg) * (4 if isinstance(arg, str) else 1)
+                elif isinstance(arg, int):
+                    value_size = 32 + 4 * ((arg.bit_length() + 29) // 30)
+                else:
+                    value_size = 32
+            size += value_size
+            if size > _PURE_ANNOTATION_MAX_LITERAL_BYTES:
+                return _NOT_PURE
+            # The type is included to discriminate between equal values of different
+            # types (e.g. `Literal[1]` and `Literal[True]`):
+            arg_keys.append((type(arg), arg))
+        if literal_bytes is not None:
+            literal_bytes[0] = size
+        return tuple(arg_keys)
+    else:
+        return _NOT_PURE
+
+    args = get_args(tp)
+    if origin is tuple:
+        args = _normalize_tuple_args(tp, args)
+        if args is None:
+            return tuple
+    if literal_bytes is None:
+        literal_bytes = [0]
+    for arg in args:
+        if arg is Ellipsis:
+            arg_keys.append(Ellipsis)
+            continue
+        arg_key = _pure_annotation_cache_key(arg, literal_bytes)
+        if arg_key is _NOT_PURE:
+            return _NOT_PURE
+        arg_keys.append(arg_key)
+    return tuple(arg_keys)
+
+
+def _copy_pure_schema(schema: Any) -> Any:
+    """Copy a core schema generated from a pure annotation.
+
+    Only containers are copied; all other values appearing in such a schema are immutable.
+    """
+    if isinstance(schema, dict):
+        return {k: _copy_pure_schema(v) for k, v in schema.items()}
+    if isinstance(schema, list):
+        return [_copy_pure_schema(v) for v in schema]
+    if isinstance(schema, tuple):
+        return tuple(_copy_pure_schema(v) for v in schema)
+    return schema
+
+
+# A process-wide cache of the core schemas generated for pure field annotations, keyed by
+# `_pure_annotation_cache_key()` keys. Values are the pristine generated schemas — they are
+# never handed out directly, only `_copy_pure_schema()` copies of them are. Keys only ever
+# hold builtin types and size-limited literal values, and can't keep user classes alive:
+_pure_annotation_schema_cache: dict[Any, core_schema.CoreSchema] = {}
+
+# The number of entries above which `_pure_annotation_schema_cache` is reset. The set of pure
+# annotations is unbounded (`Literal[...]` in particular can hold arbitrary values), so a process
+# building models from dynamically generated schemas would otherwise grow the cache forever.
+# Real-world libraries stay far below this limit — measured over a whole import, the Google GenAI
+# SDK (766 models) uses 118 entries and the MCP Python SDK (643 models) 139 — so the reset only
+# ever trips for workloads that wouldn't benefit from the cached entries anyway:
+_PURE_ANNOTATION_CACHE_SIZE = 512
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
@@ -1846,24 +2030,17 @@ class GenerateSchema:
         if typevars_map and params:
             params = tuple(replace_types(param, typevars_map) for param in params)
 
-        # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
-        # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
-        if not params:
-            if tuple_type in TUPLE_TYPES:
-                return core_schema.tuple_schema([core_schema.any_schema()], variadic_item_index=0)
-            else:
-                # special case for `tuple[()]` which means `tuple[]` - an empty tuple
-                return core_schema.tuple_schema([])
+        params = _normalize_tuple_args(tuple_type, params)
+        if params is None:
+            return core_schema.tuple_schema([core_schema.any_schema()], variadic_item_index=0)
+        elif not params:
+            return core_schema.tuple_schema([])
         elif params[-1] is Ellipsis:
             if len(params) == 2:
                 return core_schema.tuple_schema([self.generate_schema(params[0])], variadic_item_index=0)
             else:
                 # TODO: something like https://github.com/pydantic/pydantic/issues/5952
                 raise ValueError('Variable tuples can only have one type')
-        elif len(params) == 1 and params[0] == ():
-            # special case for `tuple[()]` which means `tuple[]` - an empty tuple
-            # NOTE: This conditional can be removed when we drop support for Python 3.10.
-            return core_schema.tuple_schema([])
         else:
             return core_schema.tuple_schema([self.generate_schema(param) for param in params])
 
@@ -2378,7 +2555,7 @@ class GenerateSchema:
         self,
         source_type: Any,
         annotations: list[Any],
-        transform_inner_schema: Callable[[CoreSchema], CoreSchema] = lambda x: x,
+        transform_inner_schema: Callable[[CoreSchema], CoreSchema] | None = None,
         check_unsupported_field_info_attributes: bool = True,
     ) -> CoreSchema:
         """Apply arguments from `Annotated` or from `FieldInfo` to a schema.
@@ -2390,7 +2567,8 @@ class GenerateSchema:
 
         def inner_handler(obj: Any) -> CoreSchema:
             if _is_simple_schema_type(obj):
-                return transform_inner_schema(self._handlers[obj](self, obj))
+                schema = self._handlers[obj](self, obj)
+                return transform_inner_schema(schema) if transform_inner_schema is not None else schema
 
             origin = get_origin(obj)
             schema: CoreSchema | None = None
@@ -2408,13 +2586,36 @@ class GenerateSchema:
                 metadata_schema = resolve_original_schema(schema, self.defs)
                 if metadata_schema is not None:
                     self._add_js_function(metadata_schema, metadata_js_function)
-            return transform_inner_schema(schema)
+            if transform_inner_schema is not None:
+                return transform_inner_schema(schema)
+            return schema
 
         if not annotations:
+            cache_key = _NOT_PURE
+            if transform_inner_schema is None and not self._config_wrapper.config_dict.get('json_encoders'):
+                try:
+                    cache_key = _pure_annotation_cache_key(source_type)
+                except TypeError:  # unhashable annotation (or part of it)
+                    pass
+                if cache_key is not _NOT_PURE:
+                    cached = _pure_annotation_schema_cache.get(cache_key)
+                    if cached is not None:
+                        return _copy_pure_schema(cached)
+
             schema = inner_handler(source_type)
             # Preserve the callback handler's reference conversion before applying encoders.
             if schema.get('ref') is not None:
                 schema = self.defs.create_definition_reference_schema(schema)
+            if cache_key is not _NOT_PURE:
+                if len(_pure_annotation_schema_cache) >= _PURE_ANNOTATION_CACHE_SIZE:
+                    # Keep the cache bounded (see `_PURE_ANNOTATION_CACHE_SIZE`). Clearing it wholesale
+                    # (rather than evicting individual entries) keeps this a single atomic `dict`
+                    # operation, so no locking is required on free-threaded builds:
+                    _pure_annotation_schema_cache.clear()
+                # Store a pristine copy, as the returned schema may be mutated downstream:
+                _pure_annotation_schema_cache[cache_key] = _copy_pure_schema(schema)
+                return schema
+
             return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
@@ -2435,6 +2636,7 @@ class GenerateSchema:
         if pydantic_js_annotation_functions:
             core_metadata = schema.setdefault('metadata', {})
             update_core_metadata(core_metadata, pydantic_js_annotation_functions=pydantic_js_annotation_functions)
+
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(
