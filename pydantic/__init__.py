@@ -65,8 +65,6 @@ if TYPE_CHECKING:
 
     MISSING = pydantic_core.MISSING
     ValidationError = pydantic_core.ValidationError
-    from .deprecated.config import Extra
-    from .deprecated.tools import *
     from .root_model import RootModel
 
 __version__ = VERSION
@@ -95,8 +93,6 @@ __all__ = (
     # config
     'ConfigDict',
     'with_config',
-    # deprecated V1 config, these are imported via `__getattr__` below
-    'Extra',
     # validate_call
     'validate_call',
     # errors
@@ -146,10 +142,6 @@ __all__ = (
     'validate_email',
     # root_model
     'RootModel',
-    # deprecated tools, these are imported via `__getattr__` below
-    'parse_obj_as',
-    'schema_of',
-    'schema_json_of',
     # types
     'Strict',
     'StrictStr',
@@ -405,11 +397,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'ValidatorFunctionWrapHandler': ('pydantic_core', '.core_schema'),
     'FieldSerializationInfo': ('pydantic_core', '.core_schema'),
     'SerializerFunctionWrapHandler': ('pydantic_core', '.core_schema'),
-    # deprecated, mostly not included in __all__
-    'Extra': (__spec__.parent, '.deprecated.config'),
-    'parse_obj_as': (__spec__.parent, '.deprecated.tools'),
-    'schema_of': (__spec__.parent, '.deprecated.tools'),
-    'schema_json_of': (__spec__.parent, '.deprecated.tools'),
     # deprecated dynamic imports
     'FieldValidationInfo': ('pydantic_core', '.core_schema'),
     'GenerateSchema': (__spec__.parent, '._internal._generate_schema'),

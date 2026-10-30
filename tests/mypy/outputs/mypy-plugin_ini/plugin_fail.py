@@ -1,11 +1,11 @@
 from typing import Generic, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.dataclasses import dataclass
 
 
 class Model(BaseModel):
-    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
+    model_config = ConfigDict(alias_generator=None, frozen=True, extra='forbid')
     x: int
     y: str
 
@@ -21,7 +21,7 @@ model.y = 'a'
 # MYPY: error: Property "y" defined in "Model" is read-only  [misc]
 
 
-class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
+class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra='forbid'):
     x: int
     y: str
 
@@ -38,7 +38,7 @@ kwargs_model.y = 'a'
 
 
 class ForbidExtraModel(BaseModel):
-    model_config = ConfigDict(extra=Extra.forbid)
+    model_config = ConfigDict(extra='forbid')
 
 
 ForbidExtraModel(x=1)
@@ -258,7 +258,7 @@ class FrozenModel(BaseModel):
     x: int
     y: str
 
-    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
+    model_config = ConfigDict(alias_generator=None, frozen=True, extra='forbid')
 
 
 frozenmodel = FrozenModel(x=1, y='b')

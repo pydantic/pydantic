@@ -1,7 +1,6 @@
 import re
 from collections.abc import Iterable
-from datetime import date, timedelta
-from pathlib import Path
+from datetime import date
 from typing import Any
 
 import pytest
@@ -20,11 +19,6 @@ from pydantic import (
     computed_field,
     conlist,
 )
-from pydantic.config import Extra
-from pydantic.deprecated.decorator import validate_arguments
-from pydantic.deprecated.json import custom_pydantic_encoder, pydantic_encoder, timedelta_isoformat
-from pydantic.deprecated.parse import load_file, load_str_bytes
-from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.type_adapter import TypeAdapter
 
@@ -51,18 +45,6 @@ def test_fields():
 
     with pytest.warns(PydanticDeprecatedSince211, match="Accessing the 'model_computed_fields' attribute"):
         assert len(m.model_computed_fields) == 1
-
-
-@pytest.mark.parametrize('attribute,value', [('allow', 'allow'), ('ignore', 'ignore'), ('forbid', 'forbid')])
-def test_extra_used_as_enum(
-    attribute: str,
-    value: str,
-) -> None:
-    with pytest.warns(
-        PydanticDeprecatedSince20,
-        match=re.escape("`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)"),
-    ):
-        assert getattr(Extra, attribute) == value
 
 
 def test_field_min_items_deprecation():
@@ -349,52 +331,6 @@ def test_field_extra_does_not_rewrite_json_schema_extra():
     assert Model.model_json_schema(by_alias=True)['properties'] == {
         'x': {'default': 'test', 'test': 'json_schema_extra value', 'title': 'X', 'type': 'string'}
     }
-
-
-def test_deprecated_module(tmp_path: Path) -> None:
-    class Model(BaseModel):
-        x: int
-
-    with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
-        assert hasattr(parse_obj_as, '__deprecated__')
-        parse_obj_as(Model, {'x': 1})
-        assert hasattr(schema_json_of, '__deprecated__')
-        schema_json_of(Model)
-        assert hasattr(schema_of, '__deprecated__')
-        schema_of(Model)
-        assert hasattr(load_str_bytes, '__deprecated__')
-        load_str_bytes('{"x": 1}')
-        assert hasattr(load_file, '__deprecated__')
-        file = tmp_path / 'main.py'
-        file.write_text('{"x": 1}')
-        load_file(file)
-        assert hasattr(pydantic_encoder, '__deprecated__')
-        pydantic_encoder(Model(x=1))
-        assert hasattr(custom_pydantic_encoder, '__deprecated__')
-        custom_pydantic_encoder({int: lambda x: str(x)}, Model(x=1))
-        assert hasattr(timedelta_isoformat, '__deprecated__')
-        timedelta_isoformat(timedelta(seconds=1))
-
-        def test(a: int, b: int):
-            pass
-
-        validate_arguments()(test)
-    assert len(all_warnings) == 12
-    expected_warnings = [
-        '`parse_obj_as` is deprecated. Use `pydantic.TypeAdapter.validate_python` instead',
-        '`schema_json_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead',
-        '`schema_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead',
-        '`schema_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead',
-        '`load_str_bytes` is deprecated',
-        '`load_file` is deprecated',
-        '`load_str_bytes` is deprecated',
-        '`pydantic_encoder` is deprecated, use `pydantic_core.to_jsonable_python` instead',
-        '`custom_pydantic_encoder` is deprecated, use `BaseModel.model_dump` instead',
-        '`pydantic_encoder` is deprecated, use `pydantic_core.to_jsonable_python` instead',
-        '`timedelta_isoformat` is deprecated',
-        'The `validate_arguments` method is deprecated; use `validate_call` instead',
-    ]
-    assert [w.message.message for w in all_warnings] == expected_warnings
 
 
 def test_deprecated_color():

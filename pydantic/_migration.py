@@ -16,18 +16,6 @@ MOVED_IN_V2 = {
     'pydantic.generics:GenericModel': 'pydantic.BaseModel',
 }
 
-DEPRECATED_MOVED_IN_V2 = {
-    'pydantic.tools:schema_of': 'pydantic.deprecated.tools:schema_of',
-    'pydantic.tools:parse_obj_as': 'pydantic.deprecated.tools:parse_obj_as',
-    'pydantic.tools:schema_json_of': 'pydantic.deprecated.tools:schema_json_of',
-    'pydantic.json:pydantic_encoder': 'pydantic.deprecated.json:pydantic_encoder',
-    'pydantic:validate_arguments': 'pydantic.deprecated.decorator:validate_arguments',
-    'pydantic.json:custom_pydantic_encoder': 'pydantic.deprecated.json:custom_pydantic_encoder',
-    'pydantic.json:timedelta_isoformat': 'pydantic.deprecated.json:timedelta_isoformat',
-    'pydantic.decorator:validate_arguments': 'pydantic.deprecated.decorator:validate_arguments',
-    'pydantic.config:Extra': 'pydantic.deprecated.config:Extra',
-}
-
 REDIRECT_TO_V1 = {
     f'pydantic.utils:{obj}': f'pydantic.v1.utils:{obj}'
     for obj in (
@@ -286,9 +274,6 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
                 stacklevel=2,
             )
             return import_string(new_location)
-        if import_path in DEPRECATED_MOVED_IN_V2:
-            # skip the warning here because a deprecation warning will be raised elsewhere
-            return import_string(DEPRECATED_MOVED_IN_V2[import_path])
         if import_path in REDIRECT_TO_V1:
             new_location = REDIRECT_TO_V1[import_path]
             warnings.warn(

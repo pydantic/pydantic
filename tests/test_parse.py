@@ -1,7 +1,7 @@
 import pytest
 from pydantic_core import CoreSchema
 
-from pydantic import BaseModel, GetJsonSchemaHandler, PydanticUserError, ValidationError, model_validator, parse_obj_as
+from pydantic import BaseModel, GetJsonSchemaHandler, PydanticUserError, ValidationError, model_validator
 from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
 
@@ -166,7 +166,6 @@ def test_parse_nested_root_list():
     assert isinstance(m.nested.root[0], NestedData)
 
 
-@pytest.mark.filterwarnings('ignore:`parse_obj_as` is deprecated.*:DeprecationWarning')
 def test_parse_nested_root_tuple():
     class NestedData(BaseModel):
         id: str
@@ -199,7 +198,7 @@ def test_parse_nested_root_tuple():
     assert isinstance(m.nested[0], NestedModel)
     assert isinstance(m.nested[0].root[1], NestedData)
 
-    nested = parse_obj_as(NestedModel, data)
+    nested = NestedModel.model_validate(data)
     assert isinstance(nested, NestedModel)
 
 

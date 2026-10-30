@@ -2,7 +2,7 @@ import importlib
 
 import pytest
 
-from pydantic._migration import DEPRECATED_MOVED_IN_V2, MOVED_IN_V2, REDIRECT_TO_V1, REMOVED_IN_V2, getattr_migration
+from pydantic._migration import MOVED_IN_V2, REDIRECT_TO_V1, REMOVED_IN_V2, getattr_migration
 from pydantic.errors import PydanticImportError
 from pydantic.version import version_short
 from pydantic.warnings import PydanticDeprecatedSince20
@@ -20,11 +20,6 @@ def import_from(dotted_path: str):
 @pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecatedSince20')
 @pytest.mark.parametrize('module', MOVED_IN_V2.keys())
 def test_moved_on_v2(module: str):
-    import_from(module)
-
-
-@pytest.mark.parametrize('module', DEPRECATED_MOVED_IN_V2.keys())
-def test_moved_but_not_warn_on_v2(module: str):
     import_from(module)
 
 

@@ -33,7 +33,6 @@ from mypy.nodes import (
     FuncDef,
     IfStmt,
     JsonDict,
-    MemberExpr,
     NameExpr,
     PassStmt,
     PlaceholderNode,
@@ -1022,8 +1021,6 @@ class PydanticModelTransformer:
         if name == 'extra':
             if isinstance(arg, StrExpr):
                 forbid_extra = arg.value == 'forbid'
-            elif isinstance(arg, MemberExpr):
-                forbid_extra = arg.name == 'forbid'
             else:
                 if not lax_extra:
                     # Only emit an error for other types of `arg` (e.g., `NameExpr`, `ConditionalExpr`, etc.) when
