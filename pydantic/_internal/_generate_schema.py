@@ -2387,9 +2387,6 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
-        annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
-
-        pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
             if _is_simple_schema_type(obj):
@@ -2413,6 +2410,15 @@ class GenerateSchema:
                     self._add_js_function(metadata_schema, metadata_js_function)
             return transform_inner_schema(schema)
 
+        if not annotations:
+            schema = inner_handler(source_type)
+            # Preserve the callback handler's reference conversion before applying encoders.
+            if schema.get('ref') is not None:
+                schema = self.defs.create_definition_reference_schema(schema)
+            return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
+
+        annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
+        pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
         get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
 
         for annotation in annotations:
