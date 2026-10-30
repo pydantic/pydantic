@@ -1,0 +1,41 @@
+tests/benchmarks/corpus/README.md
+  s_6ed4995a8d6b19::t_200f8a3a519e94 34-35,39-40,53-58
+tests/benchmarks/corpus/anthropic/README.md
+  s_6ed4995a8d6b19::t_763525a4f0aec5 14-17
+tests/benchmarks/corpus/anthropic/anthropic/_models.py
+  s_6ed4995a8d6b19::t_4a13f8adf63bd2 24
+tests/benchmarks/corpus/anthropic/manifest.json
+  s_6ed4995a8d6b19::t_a3c7a29d97b3e3 5963-5964
+tests/benchmarks/corpus/google-genai/README.md
+  s_6ed4995a8d6b19::t_8cfd31b0123f30 14-17
+tests/benchmarks/corpus/google-genai/google/genai/_common.py
+  s_6ed4995a8d6b19::t_5e95234bdccdd9 316
+tests/benchmarks/corpus/google-genai/manifest.json
+  s_6ed4995a8d6b19::t_62bf29d6449c44 2259-2260
+tests/benchmarks/corpus/openai/README.md
+  s_6ed4995a8d6b19::t_a474312d37b619 14-17
+tests/benchmarks/corpus/openai/manifest.json
+  s_6ed4995a8d6b19::t_b815ea6c94dcd5 8291-8292
+tests/benchmarks/corpus/openai/openai/_models.py
+  s_6ed4995a8d6b19::t_4e0e6b36a38663 21
+tests/benchmarks/model_corpus.py
+  s_6ed4995a8d6b19::t_bd220574651128 15-16,53,55-58,79-80
+tests/benchmarks/test_sdk_model_corpus.py
+  s_6ed4995a8d6b19::t_7ba5e8a4d7f42b 13,43,92-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7f935443b64578b6784bd48006c6d062b7b4d618",
+  "prompts": {},
+  "sessions": {
+    "s_6ed4995a8d6b19": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18801-c79f-7032-94e0-36fcbd7d8b74",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
