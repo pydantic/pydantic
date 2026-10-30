@@ -410,6 +410,10 @@ class InvalidSchemaError(Exception):
     """The core schema is invalid."""
 
 
+def _identity(x: Any):
+    return x
+
+
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
@@ -2378,7 +2382,7 @@ class GenerateSchema:
         self,
         source_type: Any,
         annotations: list[Any],
-        transform_inner_schema: Callable[[CoreSchema], CoreSchema] | None = None,
+        transform_inner_schema: Callable[[CoreSchema], CoreSchema] = _identity,
         check_unsupported_field_info_attributes: bool = True,
     ) -> CoreSchema:
         """Apply arguments from `Annotated` or from `FieldInfo` to a schema.
@@ -2387,7 +2391,7 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
-        if not annotations and transform_inner_schema is None and not self._config_wrapper.json_encoders:
+        if not annotations and transform_inner_schema is _identity and not self._config_wrapper.json_encoders:
             schema = self.generate_schema(source_type)
             # Preserve CallbackGetCoreSchemaHandler's conversion of referenced schemas.
             if schema.get('ref') is not None:
@@ -2400,8 +2404,7 @@ class GenerateSchema:
 
         def inner_handler(obj: Any) -> CoreSchema:
             if _is_simple_schema_type(obj):
-                schema = self._handlers[obj](self, obj)
-                return transform_inner_schema(schema) if transform_inner_schema is not None else schema
+                return transform_inner_schema(self._handlers[obj](self, obj))
 
             origin = get_origin(obj)
             schema: CoreSchema | None = None
@@ -2419,7 +2422,7 @@ class GenerateSchema:
                 metadata_schema = resolve_original_schema(schema, self.defs)
                 if metadata_schema is not None:
                     self._add_js_function(metadata_schema, metadata_js_function)
-            return transform_inner_schema(schema) if transform_inner_schema is not None else schema
+            return transform_inner_schema(schema)
 
         get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
 
