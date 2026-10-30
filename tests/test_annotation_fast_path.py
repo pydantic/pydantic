@@ -4,9 +4,10 @@ from enum import Enum
 from typing import Any, Literal
 
 import pytest
-from pydantic_core import CoreSchema, SchemaValidator, core_schema
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, core_schema
 
 from pydantic import BaseModel, Field, GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
+from pydantic._internal import _generate_schema
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.json_schema import JsonSchemaValue
@@ -17,9 +18,9 @@ from pydantic.json_schema import JsonSchemaValue
     [int, str | None, int | str, list[int], dict[str, list[int | str]], Literal['a', 'b']],
     ids=['scalar', 'optional', 'union', 'list', 'nested', 'literal'],
 )
-def test_matches_identity_transform(annotation: Any) -> None:
+def test_matches_annotation_handler_path(annotation: Any) -> None:
     direct = GenerateSchema(ConfigWrapper({}))._apply_annotations(annotation, [])
-    normal = GenerateSchema(ConfigWrapper({}))._apply_annotations(annotation, [], transform_inner_schema=lambda s: s)
+    normal = GenerateSchema(ConfigWrapper({}))._apply_annotations(annotation, [None])
     assert direct == normal
     assert direct is not normal
 
@@ -113,3 +114,34 @@ def test_json_encoders_with_references() -> None:
 
     assert Model(colour=Colour.red).model_dump_json() == '{"colour":"RED"}'
     assert TypeAdapter(Colour).dump_json(Colour.red) == b'"red"'
+
+
+def test_transform_reference_encoder_order(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Colour(Enum):
+        red = 'red'
+
+    generator = GenerateSchema(ConfigWrapper({'json_encoders': {Colour: lambda value: value.name.upper()}}))
+    events: list[str] = []
+
+    def transform(schema: CoreSchema) -> CoreSchema:
+        assert schema['type'] == 'enum'
+        assert 'serialization' not in schema
+        schema.setdefault('metadata', {})['transformed'] = True
+        events.append('transform')
+        return schema
+
+    original = _generate_schema._add_custom_serialization_from_json_encoders
+
+    def add_encoder(encoders: Any, source: Any, schema: CoreSchema) -> CoreSchema:
+        assert schema['type'] == 'definition-ref'
+        definition = generator.defs.get_schema_from_ref(schema['schema_ref'])
+        assert definition is not None
+        assert definition.get('metadata', {})['transformed'] is True
+        events.append('encoder')
+        return original(encoders, source, schema)
+
+    monkeypatch.setattr(_generate_schema, '_add_custom_serialization_from_json_encoders', add_encoder)
+    with pytest.warns(DeprecationWarning, match='json_encoders'):
+        schema = generator._apply_annotations(Colour, [], transform_inner_schema=transform)
+    assert events == ['transform', 'encoder']
+    assert SchemaSerializer(generator.clean_schema(schema)).to_json(Colour.red) == b'"RED"'
