@@ -728,7 +728,6 @@ class GenerateSchema:
                 - If `alias_generator` returns a disallowed type (must be str, AliasPath or AliasChoices).
             PydanticUserError:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
-                - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
         """
         origin = get_origin(obj)
         schema: CoreSchema | None = None
@@ -2541,30 +2540,8 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
 
 
 def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
-    """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`."""
-    js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
-
-    if hasattr(tp, '__modify_schema__'):
-        BaseModel = import_cached_base_model()
-
-        has_custom_v2_modify_js_func = (
-            js_modify_function is not None
-            and BaseModel.__get_pydantic_json_schema__.__func__  # type: ignore
-            not in (js_modify_function, getattr(js_modify_function, '__func__', None))
-        )
-
-        if not has_custom_v2_modify_js_func:
-            cls_name = getattr(tp, '__name__', None)
-            raise PydanticUserError(
-                f'The `__modify_schema__` method is not supported in Pydantic v2. '
-                f'Use `__get_pydantic_json_schema__` instead{f" in class `{cls_name}`" if cls_name else ""}.',
-                code='custom-json-schema',
-            )
-
-    if js_modify_function is None:
-        return None
-
-    return js_modify_function
+    """Extract `__get_pydantic_json_schema__` from a type."""
+    return getattr(tp, '__get_pydantic_json_schema__', None)
 
 
 def resolve_original_schema(schema: CoreSchema, definitions: _Definitions) -> CoreSchema | None:

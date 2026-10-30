@@ -1,12 +1,8 @@
-from typing import Any
-
 import pytest
 
 from pydantic import (
     BaseModel,
-    ConfigDict,
     PydanticDeprecatedSince211,
-    PydanticUserError,
     computed_field,
 )
 
@@ -33,34 +29,3 @@ def test_fields():
 
     with pytest.warns(PydanticDeprecatedSince211, match="Accessing the 'model_computed_fields' attribute"):
         assert len(m.model_computed_fields) == 1
-
-
-def test_modify_schema_error():
-    with pytest.raises(
-        PydanticUserError,
-        match='The `__modify_schema__` method is not supported in Pydantic v2. '
-        'Use `__get_pydantic_json_schema__` instead in class `Model`.',
-    ):
-
-        class Model(BaseModel):
-            @classmethod
-            def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-                pass
-
-
-def test_modify_schema_on_nested_class_error() -> None:
-    class SomeLongName:
-        @classmethod
-        def __modify_schema__(cls, field_schema):
-            pass
-
-    with pytest.raises(
-        PydanticUserError,
-        match='The `__modify_schema__` method is not supported in Pydantic v2. '
-        'Use `__get_pydantic_json_schema__` instead in class `SomeLongName`.',
-    ):
-
-        class B(BaseModel):
-            model_config = ConfigDict(arbitrary_types_allowed=True)
-
-            a: SomeLongName

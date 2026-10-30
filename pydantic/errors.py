@@ -26,7 +26,6 @@ __all__ = (
 DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{version_short()}/u/'
 PydanticErrorCodes = Literal[
     'class-not-fully-defined',
-    'custom-json-schema',
     'decorator-invalid-fields',
     'decorator-missing-arguments',
     'decorator-missing-field',
