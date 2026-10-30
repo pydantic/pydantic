@@ -1,0 +1,26 @@
+pydantic/_internal/_generate_schema.py
+  s_edff50a520c227::t_c3fe119347c9cf 2394
+  h_d9dd17644dded9 413-416,2407,2425
+  h_d9dd17644dded9 2385
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "571d93790d4443a3307fc69b7ef1454c8ed410db",
+  "prompts": {},
+  "humans": {
+    "h_d9dd17644dded9": {
+      "author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_edff50a520c227": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1793102559578",
+        "model": "unknown"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
