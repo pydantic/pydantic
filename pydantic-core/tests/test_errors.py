@@ -1166,9 +1166,6 @@ def test_errors_include_url() -> None:
         ('PYDANTIC_ERRORS_INCLUDE_URL', 'True', True),
         ('PYDANTIC_ERRORS_INCLUDE_URL', 'no', False),
         ('PYDANTIC_ERRORS_INCLUDE_URL', '0', False),
-        # Legacy environment variable, will raise a deprecation warning:
-        ('PYDANTIC_ERRORS_OMIT_URL', '1', False),
-        ('PYDANTIC_ERRORS_OMIT_URL', None, True),
     ],
 )
 def test_errors_include_url_envvar(env_var, env_var_value, expected_to_have_url) -> None:
@@ -1182,7 +1179,6 @@ def test_errors_include_url_envvar(env_var, env_var_value, expected_to_have_url)
     env = os.environ.copy()
     # in case the ambient environment has env vars set
     env.pop('PYDANTIC_ERRORS_INCLUDE_URL', None)
-    env.pop('PYDANTIC_ERRORS_OMIT_URL', None)
     if env_var_value is not None:
         env[env_var] = env_var_value
     result = subprocess.run(
@@ -1193,6 +1189,4 @@ def test_errors_include_url_envvar(env_var, env_var_value, expected_to_have_url)
         env=env,
     )
     assert result.returncode == 1
-    if 'PYDANTIC_ERRORS_OMIT_URL' in env:
-        assert 'PYDANTIC_ERRORS_OMIT_URL is deprecated' in result.stdout
     assert ('https://errors.pydantic.dev' in result.stdout) == expected_to_have_url
