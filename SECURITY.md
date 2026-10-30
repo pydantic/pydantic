@@ -46,7 +46,7 @@ Pydantic is a data validation library. Its main components are:
 
 ### Trust boundaries
 
-* **Untrusted**: the data being validated, when it is [user-controlled](##user-controlled-input).
+* **Untrusted**: the data being validated, when it is [user-controlled](#user-controlled-input).
 * **Trusted**: everything defined by the application: type hints and schemas, configuration, custom validators
   and serializers, custom types, and the objects created by the application.
 
