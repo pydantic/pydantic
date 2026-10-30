@@ -668,10 +668,8 @@ except PydanticUserError as exc_info:
 
 ## Import error {#import-error}
 
-This error is raised when you try to import an object that was available in Pydantic V1, but has been removed in
-Pydantic V2.
-
-See the [Migration Guide](../migration.md) for more information.
+This error is raised when you try to import an object that was available in a previous major version of Pydantic,
+but has since been removed.
 
 ## `create_model` field definitions {#create-model-field-definitions}
 

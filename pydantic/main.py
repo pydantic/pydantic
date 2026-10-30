@@ -143,7 +143,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_core_schema__: The core schema of the model.
         __pydantic_custom_init__: Whether the model has a custom `__init__` function.
         __pydantic_decorators__: Metadata containing the decorators defined on the model.
-            This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
         __pydantic_generic_metadata__: A dictionary containing metadata about generic Pydantic models.
             The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
             and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
@@ -190,8 +189,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
     __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos] = _decorators.DecoratorInfos()
-    """Metadata containing the decorators defined on the model.
-    This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1."""
+    """Metadata containing the decorators defined on the model."""
 
     __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
     """A dictionary containing metadata about generic Pydantic models.
@@ -217,9 +215,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """The `pydantic-core` `SchemaValidator` used to validate instances of the model."""
 
     __pydantic_fields__: ClassVar[Dict[str, FieldInfo]]  # noqa: UP006
-    """A dictionary of field names and their corresponding [`FieldInfo`][pydantic.fields.FieldInfo] objects.
-    This replaces `Model.__fields__` from Pydantic V1.
-    """
+    """A dictionary of field names and their corresponding [`FieldInfo`][pydantic.fields.FieldInfo] objects."""
 
     __pydantic_setattr_handlers__: ClassVar[Dict[str, Callable[[BaseModel, str, Any], None]]]  # noqa: UP006
     """`__setattr__` handlers. Memoizing the handlers leads to a dramatic performance improvement in `__setattr__`"""

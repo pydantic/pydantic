@@ -142,12 +142,6 @@ class User(BaseModel):
     age: int = Field(default=20)
 ```
 
-/// version-changed | v2
-[In Pydantic V1](../migration.md#required-optional-and-nullable-fields), a type annotated as [`Any`][typing.Any]
-or wrapped by [`Optional`][typing.Optional] would be given an implicit default of `None` even if no
-default was explicitly specified. This is no longer the case in Pydantic V2.
-///
-
 You can also pass a callable to the `default_factory` argument that will be called to generate a default value:
 
 ```python

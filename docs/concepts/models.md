@@ -177,10 +177,6 @@ Model instances possess the following attributes:
 !!! note
     See the API documentation of [`BaseModel`][pydantic.main.BaseModel] for the class definition including a full list of methods and attributes.
 
-!!! tip
-    See [Changes to `pydantic.BaseModel`](../migration.md#changes-to-pydanticbasemodel) in the
-    [Migration Guide](../migration.md) for details on changes from Pydantic V1.
-
 ## Data conversion
 
 Pydantic may cast input data to force it to conform to model field types,
@@ -466,8 +462,7 @@ print(Foo.model_json_schema())
 Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
 call [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] proactively when dealing with recursive models or generics.
 
-In V2, [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] replaced `update_forward_refs()` from V1. There are some slight differences with the new behavior.
-The biggest change is that when calling [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] on the outermost model, it builds a core schema used for validation of the
+When calling [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] on the outermost model, it builds a core schema used for validation of the
 whole model (nested models and all), so all types at all levels need to be ready before [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] is called.
 
 ## Validating data
@@ -1566,10 +1561,6 @@ print(my_pets.describe())
 
 Models can be configured to be immutable via `model_config['frozen'] = True`. When this is set, attempting to change the
 values of instance attributes will raise errors. See the [API reference][pydantic.config.ConfigDict.frozen] for more details.
-
-!!! note
-    This behavior was achieved in Pydantic V1 via the config setting `allow_mutation = False`.
-    This config flag is deprecated in Pydantic V2, and has been replaced with `frozen`.
 
 !!! warning
     In Python, immutability is not enforced. Developers have the ability to modify objects

@@ -179,9 +179,6 @@ class ConfigDict(TypedDict, total=False):
     Whether models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
     a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the
     attributes are hashable. Defaults to `False`.
-
-    Note:
-        On V1, the inverse of this setting was called `allow_mutation`, and was `True` by default.
     """
 
     populate_by_name: bool

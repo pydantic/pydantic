@@ -94,7 +94,6 @@ nav:
       - Help with Pydantic: help_with_pydantic.md
       - Enterprise Support: enterprise-support.md
       - Installation: install.md
-      - Migration Guide: migration.md
       - Version Policy: version-policy.md
       - Contributing: contributing.md
       - Changelog: changelog.md
