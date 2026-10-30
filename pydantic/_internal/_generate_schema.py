@@ -1166,16 +1166,7 @@ class GenerateSchema:
         origin = origin if origin is not PydanticUndefined else get_origin(obj)
 
         if is_union_origin(origin):
-            # Union members pass through generate_schema(), which applies configured JSON encoders.
-            cache_key = _simple_schema_cache_key(obj, origin) if not self._config_wrapper.json_encoders else None
-            if cache_key is not None:
-                cached = self._simple_schema_cache.get(cache_key)
-                if cached is not None:
-                    return _copy_flat_schema(cached)
-            schema = self._union_schema(obj)
-            if cache_key is not None:
-                self._remember_simple_schema(cache_key, schema)
-            return schema
+            return self._cached_union_schema(obj, origin)
 
         if typing_objects.is_annotated(origin):
             return self._annotated_schema(obj)
@@ -1423,6 +1414,19 @@ class GenerateSchema:
         )
 
         return schema, core_metadata
+
+    def _cached_union_schema(self, obj: Any, origin: Any) -> CoreSchema:
+        """Generate the optimized union schema without enlarging general dispatch frames."""
+        # Union members pass through generate_schema(), which applies configured JSON encoders.
+        cache_key = _simple_schema_cache_key(obj, origin) if not self._config_wrapper.json_encoders else None
+        if cache_key is not None:
+            cached = self._simple_schema_cache.get(cache_key)
+            if cached is not None:
+                return _copy_flat_schema(cached)
+        schema = self._union_schema(obj)
+        if cache_key is not None:
+            self._remember_simple_schema(cache_key, schema)
+        return schema
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
