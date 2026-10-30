@@ -144,6 +144,20 @@ _NONE_SCHEMA = core_schema.none_schema()
 _CALLABLE_SCHEMA = core_schema.callable_schema()
 
 
+def _is_simple_schema_type(obj: Any) -> bool:
+    """Recognize exact builtin scalars that cannot define custom schema hooks."""
+    return (
+        obj is str
+        or obj is int
+        or obj is bool
+        or obj is float
+        or obj is bytes
+        or obj is NoneType
+        or obj is None
+        or obj is complex
+    )
+
+
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
     """Return fresh copies of a fixed schema made only of immutable values."""
 
@@ -2307,6 +2321,9 @@ class GenerateSchema:
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
+            if _is_simple_schema_type(obj):
+                return transform_inner_schema(self._handlers[obj](self, obj))
+
             origin = get_origin(obj)
             schema: CoreSchema | None = None
             if origin is None:
