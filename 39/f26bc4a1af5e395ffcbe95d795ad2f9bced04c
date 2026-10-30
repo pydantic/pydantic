@@ -1,0 +1,21 @@
+tests/benchmarks/model_corpus.py
+  s_6ed4995a8d6b19::t_8ac8f858925b5b 1-71
+tests/benchmarks/test_mcp_model_corpus.py
+  s_6ed4995a8d6b19::t_16a7726357ed38 1,5,7,13-15,19-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "39f26bc4a1af5e395ffcbe95d795ad2f9bced04c",
+  "prompts": {},
+  "sessions": {
+    "s_6ed4995a8d6b19": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18801-c79f-7032-94e0-36fcbd7d8b74",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
