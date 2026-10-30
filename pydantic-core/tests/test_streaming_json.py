@@ -388,7 +388,8 @@ def test_model_object_hooks_decline_streaming(hook: str, nested: bool) -> None:
 
 
 @pytest.mark.parametrize('raises', [False, True])
-def test_storage_descriptors_wait_for_complete_json(raises: bool) -> None:
+@pytest.mark.parametrize('nested', [False, True])
+def test_storage_descriptors_wait_for_complete_json(raises: bool, nested: bool) -> None:
     calls: list[None] = []
 
     class Model:
@@ -404,15 +405,16 @@ def test_storage_descriptors_wait_for_complete_json(raises: bool) -> None:
             if raises:
                 raise RuntimeError('storage descriptor ran')
 
-    validator = SchemaValidator(
-        core_schema.model_schema(
-            Model,
-            core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
-        )
+    schema = core_schema.model_schema(
+        Model,
+        core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
     )
+    if nested:
+        schema = _model('Outer', {'items': core_schema.list_schema(schema)})
+    validator = SchemaValidator(schema)
     assert validator._stream_plan_accepted
     with pytest.raises(ValidationError):
-        validator.validate_json('{"x":1} trailing')
+        validator.validate_json('{"items":[{"x":1}]} trailing' if nested else '{"x":1} trailing')
     assert calls == []
 
 

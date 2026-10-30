@@ -11,7 +11,7 @@ use pyo3::exceptions::PyKeyError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PyList, PySet, PyType};
+use pyo3::types::{PyDict, PyList, PySet, PyTuple, PyType};
 use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
@@ -456,8 +456,8 @@ pub(crate) enum Taken<'py> {
     Raw,
 }
 
-/// One model instance from the cursor, or `None` if its object could not be finished. Either way
-/// the object has been consumed.
+/// Read one model from the cursor. Nested models hold their fields until the whole JSON document
+/// has been checked, since constructing a model can invoke a storage descriptor.
 fn build_model<'py>(
     py: Python<'py>,
     nested: &NestedModel<'_>,
@@ -474,12 +474,74 @@ fn build_model<'py>(
     else {
         return Ok(None);
     };
-    // Only the root model is eligible: finish parsing before storage descriptors can run.
+    if depth > 0 {
+        return Ok(Some(
+            PyTuple::new(py, [model_dict.into_any(), fields_set.into_any()])?.into_any(),
+        ));
+    }
+    // A nested model may invoke user code when its storage is assigned. Finish the document first.
     jiter.finish()?;
+    for (field, field_plan) in std::iter::zip(&nested.fields.fields, &nested.plan.fields) {
+        if !contains_nested_model(field_plan) {
+            continue;
+        }
+        let value = model_dict.get_item(&field.name)?.expect("streamed field is present");
+        if let Some(value) = materialize_nested(py, value, field_plan)? {
+            model_dict.set_item(&field.name, value)?;
+        }
+    }
     let instance = create_class(nested.class.bind(py))?;
     let none = py.None();
     set_model_attrs(&instance, &model_dict, none.bind(py), &fields_set)?;
     Ok(Some(instance))
+}
+
+fn contains_nested_model(field: &FieldPlan<'_>) -> bool {
+    match &field.fast {
+        Fast::Model(_) => true,
+        Fast::List(plan) | Fast::Dict(plan) => contains_nested_model(&plan.element),
+        _ => false,
+    }
+}
+
+/// Replace the temporary fields of a nested model with its instance after JSON parsing succeeds.
+fn materialize_nested<'py>(
+    py: Python<'py>,
+    value: Bound<'py, PyAny>,
+    field: &FieldPlan<'_>,
+) -> PyResult<Option<Bound<'py, PyAny>>> {
+    if field.nullable && pyo3::types::PyAnyMethods::is_none(&value) {
+        return Ok(None);
+    }
+    match &field.fast {
+        Fast::Model(nested) => {
+            let pending = value.cast::<PyTuple>()?;
+            let model_dict = pending.get_item(0)?;
+            let fields_set = pending.get_item(1)?;
+            let instance = create_class(nested.class.bind(py))?;
+            set_model_attrs(&instance, &model_dict, py.None().bind(py), &fields_set)?;
+            Ok(Some(instance))
+        }
+        Fast::List(plan) => {
+            let list = value.cast::<PyList>()?;
+            for index in 0..list.len() {
+                if let Some(item) = materialize_nested(py, list.get_item(index)?, &plan.element)? {
+                    list.set_item(index, item)?;
+                }
+            }
+            Ok(None)
+        }
+        Fast::Dict(plan) => {
+            let dict = value.cast::<PyDict>()?;
+            for (key, item) in dict.iter() {
+                if let Some(item) = materialize_nested(py, item, &plan.element)? {
+                    dict.set_item(key, item)?;
+                }
+            }
+            Ok(None)
+        }
+        _ => Ok(None),
+    }
 }
 
 /// A plan for a whole document, for a root the model shapes do not cover.
