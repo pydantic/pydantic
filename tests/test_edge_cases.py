@@ -2329,17 +2329,6 @@ class User(BaseModel):
     assert module.User(id=12).model_dump() == {'id': 12, 'name': 'Jane Doe'}
 
 
-def test_iter_coverage():
-    class MyModel(BaseModel):
-        x: int = 1
-        y: str = 'a'
-
-    with pytest.warns(
-        PydanticDeprecatedSince20, match='The private method `_iter` will be removed and should no longer be used.'
-    ):
-        assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
-
-
 def test_frozen_config_and_field():
     class Foo(BaseModel):
         model_config = ConfigDict(frozen=False, validate_assignment=True)

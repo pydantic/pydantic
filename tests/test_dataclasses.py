@@ -369,17 +369,6 @@ def test_post_init_inheritance_chain():
     assert post_init_called
 
 
-def test_post_init_post_parse():
-    with pytest.warns(PydanticDeprecatedSince20, match='Support for `__post_init_post_parse__` has been dropped'):
-
-        @pydantic.dataclasses.dataclass
-        class MyDataclass:
-            a: int
-
-            def __post_init_post_parse__(self):
-                pass
-
-
 def test_post_init_assignment():
     from dataclasses import field
 

@@ -17,12 +17,11 @@ from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import (
     TypeAliasType,
     dataclass_transform,
-    deprecated,
 )
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
-from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
+from ..warnings import GenericBeforeBaseModelWarning
 from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
 from ._fields import (
@@ -321,18 +320,6 @@ class ModelMetaclass(ABCMeta):
         return field_names, class_vars, private_attributes
 
     @property
-    @deprecated(
-        'The `__fields__` attribute is deprecated, use the `model_fields` class property instead.', category=None
-    )
-    def __fields__(self) -> dict[str, FieldInfo]:
-        warnings.warn(
-            'The `__fields__` attribute is deprecated, use the `model_fields` class property instead.',
-            PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        return getattr(self, '__pydantic_fields__', {})
-
-    @property
     def __pydantic_fields_complete__(self) -> bool:
         """Whether the fields were successfully collected (i.e. type hints were successfully resolved).
 
@@ -350,12 +337,6 @@ class ModelMetaclass(ABCMeta):
             extra_complete = True
 
         return all(field_info._complete for field_info in field_infos.values()) and extra_complete
-
-    def __dir__(self) -> list[str]:
-        attributes = list(super().__dir__())
-        if '__fields__' in attributes:
-            attributes.remove('__fields__')
-        return attributes
 
 
 def init_private_attributes(self: BaseModel, context: Any, /) -> None:
