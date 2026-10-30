@@ -1,0 +1,27 @@
+tests/test_annotation_fast_path.py
+  s_71408c856d82f7::t_edca1b998bd144 7,10,21,23,117-138,140-147
+  s_71408c856d82f7::t_d06af83ec8b151 139
+pydantic/_internal/_generate_schema.py
+  s_71408c856d82f7::t_edca1b998bd144 2417-2425
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f02e761b812b51d8c484948ddd1649853d533463",
+  "prompts": {},
+  "humans": {
+    "h_d9dd17644dded9": {
+      "author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_71408c856d82f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18849-dc38-70e0-8791-e6b654a22771",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
