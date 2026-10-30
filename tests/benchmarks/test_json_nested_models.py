@@ -22,14 +22,14 @@ MODEL_LIST = TypeAdapter(list[Inner])
 
 @pytest.mark.benchmark(group='nested JSON model')
 def test_top_level_model_list_valid_json(benchmark: BenchmarkFixture) -> None:
-    data = json.dumps([{'i': i, 's': str(i)} for i in range(100)]).encode()
-    assert len(MODEL_LIST.validate_json(data)) == 100
+    data = json.dumps([{'i': i, 's': str(i)} for i in range(1000)]).encode()
+    assert len(MODEL_LIST.validate_json(data)) == 1000
     benchmark(MODEL_LIST.validate_json, data)
 
 
 @pytest.fixture(scope='module')
 def nested_model_json() -> tuple[bytes, bytes, bytes]:
-    items = [{'i': i, 's': str(i)} for i in range(100)]
+    items = [{'i': i, 's': str(i)} for i in range(1000)]
     valid = json.dumps({'items': items}).encode()
     items[-1]['i'] = 'bad'
     type_error = json.dumps({'items': items}).encode()
@@ -41,7 +41,7 @@ def nested_model_json() -> tuple[bytes, bytes, bytes]:
 def test_nested_model_valid_json(benchmark: BenchmarkFixture, nested_model_json: tuple[bytes, bytes, bytes]) -> None:
     valid, _, _ = nested_model_json
     result = Outer.model_validate_json(valid)
-    assert len(result.items) == 100
+    assert len(result.items) == 1000
     benchmark(Outer.model_validate_json, valid)
 
 
