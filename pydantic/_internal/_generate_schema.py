@@ -156,17 +156,17 @@ if sys.implementation.name == 'cpython':
             or obj is bytes
             or obj is NoneType
             or obj is None
-            or obj is object
-            or obj is complex
-            or obj is EllipsisType
-            or obj is type
-            or obj is re.Pattern
             or obj is datetime.datetime
             or obj is datetime.date
-            or obj is datetime.time
-            or obj is datetime.timedelta
             or obj is Decimal
+            or obj is object
+            or obj is datetime.timedelta
+            or obj is datetime.time
+            or obj is type
+            or obj is re.Pattern
             or obj is ZoneInfo
+            or obj is complex
+            or obj is EllipsisType
         )
 
 else:
@@ -182,10 +182,10 @@ else:
             or obj is NoneType
             or obj is None
             or obj is object
-            or obj is complex
-            or obj is EllipsisType
             or obj is type
             or obj is re.Pattern
+            or obj is complex
+            or obj is EllipsisType
         )
 
 
