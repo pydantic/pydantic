@@ -319,67 +319,6 @@ class TestsBaseConfig:
         assert m == m.model_copy()
 
 
-def test_config_key_deprecation():
-    config_dict = {
-        'allow_mutation': None,
-        'error_msg_templates': None,
-        'fields': None,
-        'getter_dict': None,
-        'schema_extra': None,
-        'smart_union': None,
-        'underscore_attrs_are_private': None,
-        'allow_population_by_field_name': None,
-        'anystr_lower': None,
-        'anystr_strip_whitespace': None,
-        'anystr_upper': None,
-        'keep_untouched': None,
-        'max_anystr_length': None,
-        'min_anystr_length': None,
-        'orm_mode': None,
-        'validate_all': None,
-    }
-
-    warning_message = """
-Valid config keys have changed in V2:
-* 'allow_population_by_field_name' has been renamed to 'validate_by_name'
-* 'anystr_lower' has been renamed to 'str_to_lower'
-* 'anystr_strip_whitespace' has been renamed to 'str_strip_whitespace'
-* 'anystr_upper' has been renamed to 'str_to_upper'
-* 'keep_untouched' has been renamed to 'ignored_types'
-* 'max_anystr_length' has been renamed to 'str_max_length'
-* 'min_anystr_length' has been renamed to 'str_min_length'
-* 'orm_mode' has been renamed to 'from_attributes'
-* 'schema_extra' has been renamed to 'json_schema_extra'
-* 'validate_all' has been renamed to 'validate_default'
-* 'allow_mutation' has been removed
-* 'error_msg_templates' has been removed
-* 'fields' has been removed
-* 'getter_dict' has been removed
-* 'smart_union' has been removed
-* 'underscore_attrs_are_private' has been removed
-    """.strip()
-
-    with pytest.warns(UserWarning, match=re.escape(warning_message)):
-
-        class MyModel(BaseModel):
-            model_config = config_dict
-
-    with pytest.warns(UserWarning, match=re.escape(warning_message)):
-        create_model('MyCreatedModel', __config__=config_dict)
-
-    with pytest.warns(UserWarning, match=re.escape(warning_message)):
-
-        @pydantic_dataclass(config=config_dict)
-        class MyDataclass:
-            pass
-
-    with pytest.warns(UserWarning, match=re.escape(warning_message)):
-
-        @validate_call(config=config_dict)
-        def my_function():
-            pass
-
-
 def test_invalid_extra():
     ConfigDict(extra='invalid-value')
     extra_error = re.escape('Invalid extra_behavior: `invalid-value`')

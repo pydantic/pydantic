@@ -2262,7 +2262,7 @@ def test_hashable_json_schema():
 
 
 def test_default_factory_called_once():
-    """It should never call `default_factory` more than once even when `validate_all` is set"""
+    """It should never call `default_factory` more than once even when `validate_default` is set"""
 
     v = 0
 

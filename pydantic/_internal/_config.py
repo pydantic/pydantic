@@ -344,32 +344,6 @@ def prepare_config(config: ConfigDict | dict[str, Any] | None) -> ConfigDict:
 config_keys = set(ConfigDict.__annotations__.keys())
 
 
-V2_REMOVED_KEYS = {
-    'allow_mutation',
-    'error_msg_templates',
-    'fields',
-    'getter_dict',
-    'smart_union',
-    'underscore_attrs_are_private',
-    'json_loads',
-    'json_dumps',
-    'copy_on_model_validation',
-    'post_init_call',
-}
-V2_RENAMED_KEYS = {
-    'allow_population_by_field_name': 'validate_by_name',
-    'anystr_lower': 'str_to_lower',
-    'anystr_strip_whitespace': 'str_strip_whitespace',
-    'anystr_upper': 'str_to_upper',
-    'keep_untouched': 'ignored_types',
-    'max_anystr_length': 'str_max_length',
-    'min_anystr_length': 'str_min_length',
-    'orm_mode': 'from_attributes',
-    'schema_extra': 'json_schema_extra',
-    'validate_all': 'validate_default',
-}
-
-
 def check_deprecated(config_dict: ConfigDict) -> None:
     """Check for deprecated config keys and warn the user.
 
@@ -381,12 +355,3 @@ def check_deprecated(config_dict: ConfigDict) -> None:
             'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
             PydanticDeprecatedSince210,
         )
-
-    deprecated_removed_keys = V2_REMOVED_KEYS & config_dict.keys()
-    deprecated_renamed_keys = V2_RENAMED_KEYS.keys() & config_dict.keys()
-    if deprecated_removed_keys or deprecated_renamed_keys:
-        renamings = {k: V2_RENAMED_KEYS[k] for k in sorted(deprecated_renamed_keys)}
-        renamed_bullets = [f'* {k!r} has been renamed to {v!r}' for k, v in renamings.items()]
-        removed_bullets = [f'* {k!r} has been removed' for k in sorted(deprecated_removed_keys)]
-        message = '\n'.join(['Valid config keys have changed in V2:'] + renamed_bullets + removed_bullets)
-        warnings.warn(message, UserWarning)
