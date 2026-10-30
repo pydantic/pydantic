@@ -2,10 +2,7 @@
 
 from __future__ import annotations as _annotations
 
-from .version import version_short
-
 __all__ = (
-    'PydanticDeprecatedSince20',
     'PydanticDeprecatedSince26',
     'PydanticDeprecatedSince29',
     'PydanticDeprecatedSince210',
@@ -49,16 +46,7 @@ class PydanticDeprecationWarning(DeprecationWarning):
             f'{self.message}. Deprecated in Pydantic V{self.since[0]}.{self.since[1]}'
             f' to be removed in V{self.expected_removal[0]}.{self.expected_removal[1]}.'
         )
-        if self.since == (2, 0):
-            message += f' See Pydantic V2 Migration Guide at https://errors.pydantic.dev/{version_short()}/migration/'
         return message
-
-
-class PydanticDeprecatedSince20(PydanticDeprecationWarning):
-    """A specific `PydanticDeprecationWarning` subclass defining functionality deprecated since Pydantic 2.0."""
-
-    def __init__(self, message: str, *args: object) -> None:
-        super().__init__(message, *args, since=(2, 0), expected_removal=(3, 0))
 
 
 class PydanticDeprecatedSince26(PydanticDeprecationWarning):  # pragma: no cover

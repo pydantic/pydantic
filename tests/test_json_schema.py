@@ -57,7 +57,6 @@ from pydantic import (
     field_validator,
     with_config,
 )
-from pydantic.color import Color
 from pydantic.config import ConfigDict, ExtraValues
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
@@ -2920,19 +2919,6 @@ def test_literal_types() -> None:
     }
 
 
-def test_color_type():
-    class Model(BaseModel):
-        color: Color
-
-    model_schema = Model.model_json_schema()
-    assert model_schema == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'color': {'title': 'Color', 'type': 'string', 'format': 'color'}},
-        'required': ['color'],
-    }
-
-
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         model_config = ConfigDict(extra='forbid')
@@ -3737,10 +3723,6 @@ def test_schema_for_generic_field():
             self.data = data
 
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
-
-        @classmethod
         def validate(cls, v: Any):
             return v
 
@@ -3868,10 +3850,6 @@ def test_advanced_generic_schema():  # noqa: C901
             self.data = data
 
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
-
-        @classmethod
         def validate(cls, v: Any):
             return v
 
@@ -3908,10 +3886,6 @@ def test_advanced_generic_schema():  # noqa: C901
         def __init__(self, x: str, y: Any):
             self.x = x
             self.y = y
-
-        @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
 
         @classmethod
         def validate(cls, v: Any):

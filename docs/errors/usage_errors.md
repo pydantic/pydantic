@@ -557,24 +557,6 @@ class MyModel(BaseModel):
     _d: IgnoredType = IgnoredType()
 ```
 
-## Keyword arguments removed {#removed-kwargs}
-
-This error is raised when the keyword arguments are not available in Pydantic V2.
-
-For example, `regex` is removed from Pydantic V2:
-
-```python
-from pydantic import BaseModel, Field, PydanticUserError
-
-try:
-
-    class Model(BaseModel):
-        x: str = Field(regex='test')
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'removed-kwargs'
-```
-
 ## Circular reference schema {#circular-reference-schema}
 
 This error is raised when a circular reference is found that would otherwise result in an infinite recursion.

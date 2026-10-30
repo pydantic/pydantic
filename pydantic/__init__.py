@@ -1,6 +1,5 @@
 from importlib import import_module
 from typing import TYPE_CHECKING
-from warnings import warn
 
 from .version import VERSION, _ensure_pydantic_core_version
 
@@ -51,7 +50,6 @@ if TYPE_CHECKING:
     from .types import *
     from .validate_call_decorator import validate_call
     from .warnings import (
-        PydanticDeprecatedSince20,
         PydanticDeprecatedSince26,
         PydanticDeprecatedSince29,
         PydanticDeprecatedSince210,
@@ -182,7 +180,6 @@ __all__ = (
     'StrictBytes',
     'StrictInt',
     'StrictFloat',
-    'PaymentCardNumber',
     'ByteSize',
     'PastDate',
     'FutureDate',
@@ -210,7 +207,6 @@ __all__ = (
     '__version__',
     'VERSION',
     # warnings
-    'PydanticDeprecatedSince20',
     'PydanticDeprecatedSince26',
     'PydanticDeprecatedSince29',
     'PydanticDeprecatedSince210',
@@ -347,7 +343,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'StrictBytes': (__spec__.parent, '.types'),
     'StrictInt': (__spec__.parent, '.types'),
     'StrictFloat': (__spec__.parent, '.types'),
-    'PaymentCardNumber': (__spec__.parent, '.types'),
     'ByteSize': (__spec__.parent, '.types'),
     'PastDate': (__spec__.parent, '.types'),
     'SocketPath': (__spec__.parent, '.types'),
@@ -374,7 +369,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     # type_adapter
     'TypeAdapter': (__spec__.parent, '.type_adapter'),
     # warnings
-    'PydanticDeprecatedSince20': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince26': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince29': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince210': (__spec__.parent, '.warnings'),
@@ -394,23 +388,10 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'ValidatorFunctionWrapHandler': ('pydantic_core', '.core_schema'),
     'FieldSerializationInfo': ('pydantic_core', '.core_schema'),
     'SerializerFunctionWrapHandler': ('pydantic_core', '.core_schema'),
-    # deprecated dynamic imports
-    'FieldValidationInfo': ('pydantic_core', '.core_schema'),
-    'GenerateSchema': (__spec__.parent, '._internal._generate_schema'),
 }
-_deprecated_dynamic_imports = {'FieldValidationInfo', 'GenerateSchema'}
 
 
 def __getattr__(attr_name: str) -> object:
-    if attr_name in _deprecated_dynamic_imports:
-        from pydantic.warnings import PydanticDeprecatedSince20
-
-        warn(
-            f'Importing {attr_name} from `pydantic` is deprecated. This feature is either no longer supported, or is not public.',
-            PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-
     dynamic_attr = _dynamic_imports.get(attr_name)
     if dynamic_attr is None:
         raise AttributeError(f'module {__name__!r} has no attribute {attr_name!r}')
@@ -426,7 +407,7 @@ def __getattr__(attr_name: str) -> object:
         result = getattr(module, attr_name)
         g = globals()
         for k, (_, v_module_name) in _dynamic_imports.items():
-            if v_module_name == module_name and k not in _deprecated_dynamic_imports:
+            if v_module_name == module_name:
                 g[k] = getattr(module, k)
         return result
 

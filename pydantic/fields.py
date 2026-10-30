@@ -28,7 +28,6 @@ from .aliases import AliasChoices, AliasGenerator, AliasPath
 from .config import JsonDict
 from .errors import PydanticForbiddenQualifier, PydanticUserError
 from .json_schema import PydanticJsonSchemaWarning
-from .warnings import PydanticDeprecatedSince20
 
 if TYPE_CHECKING:
     from ._internal._config import ConfigWrapper
@@ -1046,10 +1045,6 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
-class _EmptyKwargs(TypedDict):
-    """This class exists solely to ensure that type checking warns about passing `**extra` in `Field`."""
-
-
 _Attrs = {
     'default': ...,
     'default_factory': None,
@@ -1117,7 +1112,6 @@ def Field(
     max_length: int | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     fail_fast: bool | None = _Unset,
-    **extra: Unpack[_EmptyKwargs],
 ) -> Any: ...
 @overload  # `default` argument set, validate_default=True (no type checking on the default value)
 def Field(
@@ -1157,7 +1151,6 @@ def Field(
     max_length: int | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     fail_fast: bool | None = _Unset,
-    **extra: Unpack[_EmptyKwargs],
 ) -> Any: ...
 @overload  # `default` argument set, validate_default=False or unset
 def Field(
@@ -1200,7 +1193,6 @@ def Field(
     max_length: int | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     fail_fast: bool | None = _Unset,
-    **extra: Unpack[_EmptyKwargs],
 ) -> _T: ...
 @overload  # `default_factory` argument set, validate_default=True  (no type checking on the default value)
 def Field(  # pyright: ignore[reportOverlappingOverload]
@@ -1240,7 +1232,6 @@ def Field(  # pyright: ignore[reportOverlappingOverload]
     max_length: int | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     fail_fast: bool | None = _Unset,
-    **extra: Unpack[_EmptyKwargs],
 ) -> Any: ...
 @overload  # `default_factory` argument set, validate_default=False or unset
 def Field(
@@ -1283,7 +1274,6 @@ def Field(
     max_length: int | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     fail_fast: bool | None = _Unset,
-    **extra: Unpack[_EmptyKwargs],
 ) -> _T: ...
 @overload
 def Field(  # No default set
@@ -1322,7 +1312,6 @@ def Field(  # No default set
     max_length: int | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     fail_fast: bool | None = _Unset,
-    **extra: Unpack[_EmptyKwargs],
 ) -> Any: ...
 def Field(  # noqa: C901
     default: Any = PydanticUndefined,
@@ -1362,7 +1351,6 @@ def Field(  # noqa: C901
     max_length: int | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     fail_fast: bool | None = _Unset,
-    **extra: Unpack[_EmptyKwargs],
 ) -> Any:
     """!!! abstract "Usage Documentation"
         [Fields](../concepts/fields.md)
@@ -1422,75 +1410,11 @@ def Field(  # noqa: C901
             See [Union Mode](../concepts/unions.md#union-modes) for details.
         fail_fast: If `True`, validation will stop on the first error. If `False`, all validation errors will be collected.
             This option can be applied only to iterable types (list, tuple, set, and frozenset).
-        extra: (Deprecated) Extra fields that will be included in the JSON schema.
-
-            !!! warning Deprecated
-                The `extra` kwargs is deprecated. Use `json_schema_extra` instead.
 
     Returns:
         A new [`FieldInfo`][pydantic.fields.FieldInfo]. The return annotation is `Any` so `Field` can be used on
             type-annotated fields without causing a type error.
     """
-    # Check deprecated and removed params from V1. This logic should eventually be removed.
-    const = extra.pop('const', None)  # type: ignore
-    if const is not None:
-        raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')
-
-    min_items = extra.pop('min_items', None)  # type: ignore
-    if min_items is not None:
-        warn(
-            '`min_items` is deprecated and will be removed, use `min_length` instead',
-            PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        if min_length in (None, _Unset):
-            min_length = min_items  # type: ignore
-
-    max_items = extra.pop('max_items', None)  # type: ignore
-    if max_items is not None:
-        warn(
-            '`max_items` is deprecated and will be removed, use `max_length` instead',
-            PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        if max_length in (None, _Unset):
-            max_length = max_items  # type: ignore
-
-    unique_items = extra.pop('unique_items', None)  # type: ignore
-    if unique_items is not None:
-        raise PydanticUserError(
-            (
-                '`unique_items` is removed, use `Set` instead'
-                '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
-            ),
-            code='removed-kwargs',
-        )
-
-    allow_mutation = extra.pop('allow_mutation', None)  # type: ignore
-    if allow_mutation is not None:
-        warn(
-            '`allow_mutation` is deprecated and will be removed. use `frozen` instead',
-            PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        if allow_mutation is False:
-            frozen = True
-
-    regex = extra.pop('regex', None)  # type: ignore
-    if regex is not None:
-        raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
-
-    if extra:
-        warn(
-            'Using extra keyword arguments on `Field` is deprecated and will be removed.'
-            ' Use `json_schema_extra` instead.'
-            f' (Extra keys: {", ".join(k.__repr__() for k in extra.keys())})',
-            PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        if not json_schema_extra or json_schema_extra is _Unset:
-            json_schema_extra = extra  # type: ignore
-
     if (
         validation_alias
         and validation_alias is not _Unset
@@ -1503,14 +1427,6 @@ def Field(  # noqa: C901
 
     if validation_alias in (_Unset, None):
         validation_alias = alias
-
-    include = extra.pop('include', None)  # type: ignore
-    if include is not None:
-        warn(
-            '`include` is deprecated and does nothing. It will be removed, use `exclude` instead',
-            PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
 
     return FieldInfo.from_field(
         default,
@@ -1553,7 +1469,6 @@ def Field(  # noqa: C901
 
 
 _FIELD_ARG_NAMES = set(inspect.signature(Field).parameters)
-_FIELD_ARG_NAMES.remove('extra')  # do not include the varkwargs parameter
 
 
 class ModelPrivateAttr(_repr.Representation):

@@ -10,7 +10,6 @@ import sys
 from collections.abc import Callable, Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
 from pathlib import Path
 from re import Pattern
 from types import ModuleType
@@ -33,7 +32,6 @@ from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, cor
 from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
     Protocol,
     TypeAliasType,
-    deprecated,
     get_args,
     get_origin,
 )
@@ -42,7 +40,6 @@ from ._internal import _fields, _utils, _validators
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
-from .warnings import PydanticDeprecatedSince20
 
 if TYPE_CHECKING:
     from ._internal._core_metadata import CoreMetadata
@@ -87,7 +84,6 @@ __all__ = (
     'StrictBytes',
     'StrictInt',
     'StrictFloat',
-    'PaymentCardNumber',
     'ByteSize',
     'PastDate',
     'FutureDate',
@@ -888,7 +884,6 @@ def conlist(
     *,
     min_length: int | None = None,
     max_length: int | None = None,
-    unique_items: bool | None = None,
 ) -> type[list[AnyItemType]]:
     """A wrapper around [`list`][] that adds validation.
 
@@ -896,22 +891,10 @@ def conlist(
         item_type: The type of the items in the list.
         min_length: The minimum length of the list. Defaults to None.
         max_length: The maximum length of the list. Defaults to None.
-        unique_items: Whether the items in the list must be unique. Defaults to None.
-            !!! warning Deprecated
-                The `unique_items` parameter is deprecated, use `Set` instead.
-                See [this issue](https://github.com/pydantic/pydantic-core/issues/296) for more details.
 
     Returns:
         The wrapped list type.
     """
-    if unique_items is not None:
-        raise PydanticUserError(
-            (
-                '`unique_items` is removed, use `Set` instead'
-                '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
-            ),
-            code='removed-kwargs',
-        )
     return Annotated[list[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
@@ -1940,127 +1923,6 @@ class SecretBytes(_SecretField[bytes]):
 
     def _display(self) -> bytes:
         return _secret_display(self._secret_value).encode()
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-class PaymentCardBrand(str, Enum):
-    amex = 'American Express'
-    mastercard = 'Mastercard'
-    visa = 'Visa'
-    other = 'other'
-
-    def __str__(self) -> str:
-        return self.value
-
-
-@deprecated(
-    'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. '
-    'See https://pydantic.dev/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.',
-    category=PydanticDeprecatedSince20,
-)
-class PaymentCardNumber(str):
-    """Based on: https://en.wikipedia.org/wiki/Payment_card_number."""
-
-    strip_whitespace: ClassVar[bool] = True
-    min_length: ClassVar[int] = 12
-    max_length: ClassVar[int] = 19
-    bin: str
-    last4: str
-    brand: PaymentCardBrand
-
-    def __init__(self, card_number: str):
-        self.validate_digits(card_number)
-
-        card_number = self.validate_luhn_check_digit(card_number)
-
-        self.bin = card_number[:6]
-        self.last4 = card_number[-4:]
-        self.brand = self.validate_brand(card_number)
-
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.with_info_after_validator_function(
-            cls.validate,
-            core_schema.str_schema(
-                min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
-            ),
-        )
-
-    @classmethod
-    def validate(cls, input_value: str, /, _: core_schema.ValidationInfo) -> PaymentCardNumber:
-        """Validate the card number and return a `PaymentCardNumber` instance."""
-        return cls(input_value)
-
-    @property
-    def masked(self) -> str:
-        """Mask all but the last 4 digits of the card number.
-
-        Returns:
-            A masked card number string.
-        """
-        num_masked = len(self) - 10  # len(bin) + len(last4) == 10
-        return f'{self.bin}{"*" * num_masked}{self.last4}'
-
-    @classmethod
-    def validate_digits(cls, card_number: str) -> None:
-        """Validate that the card number is all digits."""
-        if not card_number.isdigit():
-            raise PydanticCustomError('payment_card_number_digits', 'Card number is not all digits')
-
-    @classmethod
-    def validate_luhn_check_digit(cls, card_number: str) -> str:
-        """Based on: https://en.wikipedia.org/wiki/Luhn_algorithm."""
-        sum_ = int(card_number[-1])
-        length = len(card_number)
-        parity = length % 2
-        for i in range(length - 1):
-            digit = int(card_number[i])
-            if i % 2 == parity:
-                digit *= 2
-            if digit > 9:
-                digit -= 9
-            sum_ += digit
-        valid = sum_ % 10 == 0
-        if not valid:
-            raise PydanticCustomError('payment_card_number_luhn', 'Card number is not luhn valid')
-        return card_number
-
-    @staticmethod
-    def validate_brand(card_number: str) -> PaymentCardBrand:
-        """Validate length based on BIN for major brands:
-        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN).
-        """
-        if card_number[0] == '4':
-            brand = PaymentCardBrand.visa
-        elif 51 <= int(card_number[:2]) <= 55:
-            brand = PaymentCardBrand.mastercard
-        elif card_number[:2] in {'34', '37'}:
-            brand = PaymentCardBrand.amex
-        else:
-            brand = PaymentCardBrand.other
-
-        required_length: None | int | str = None
-        if brand in PaymentCardBrand.mastercard:
-            required_length = 16
-            valid = len(card_number) == required_length
-        elif brand == PaymentCardBrand.visa:
-            required_length = '13, 16 or 19'
-            valid = len(card_number) in {13, 16, 19}
-        elif brand == PaymentCardBrand.amex:
-            required_length = 15
-            valid = len(card_number) == required_length
-        else:
-            valid = True
-
-        if not valid:
-            raise PydanticCustomError(
-                'payment_card_number_brand',
-                'Length for a {brand} card must be {required_length}',
-                {'brand': brand, 'required_length': required_length},
-            )
-        return brand
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTE SIZE TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

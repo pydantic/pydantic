@@ -21,7 +21,6 @@ from pydantic._internal._utils import (
 )
 from pydantic._internal._validators import import_string
 from pydantic.alias_generators import to_camel, to_pascal, to_snake
-from pydantic.color import Color
 
 try:
     import devtools
@@ -117,26 +116,6 @@ def test_pretty():
         0,
         'b=',
         'fmt: [1, 2, 3]',
-        ',',
-        0,
-        -1,
-        ')',
-    ]
-
-
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_pretty_color():
-    c = Color('red')
-    assert str(c) == 'red'
-    assert repr(c) == "Color('red', rgb=(255, 0, 0))"
-    assert list(c.__pretty__(lambda x: f'fmt: {x!r}')) == [
-        'Color(',
-        1,
-        "fmt: 'red'",
-        ',',
-        0,
-        'rgb=',
-        'fmt: (255, 0, 0)',
         ',',
         0,
         -1,
