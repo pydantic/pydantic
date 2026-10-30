@@ -20,7 +20,9 @@ not a runnable copy of the SDK. The RequestId alias is imported from its origina
 
 `manifest.json` records upstream distribution versions, SHA-256 hashes for every
 extracted source file, the full model inventory keyed by original module and
-class name, and each module's model declarations. The upstream MIT license is
+class name (recorded on Python 3.14), and each module's model declarations.
+Tests compare declaration names and the runtime model count because generated
+generic class display names vary between Python versions. The upstream MIT license is
 reproduced in LICENSE. Update the snapshot and manifest together: a dependency
 update is an explicit benchmark workload change.
 

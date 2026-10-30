@@ -1,5 +1,6 @@
 """Build all frozen MCP model graphs without importing the installed SDK."""
 
+import ast
 import importlib
 import importlib.abc
 import importlib.machinery
@@ -74,7 +75,14 @@ def build_models() -> list[type[BaseModel]]:
 
 def test_mcp_model_corpus(benchmark: Callable[[Callable[[], list[type[BaseModel]]]], list[type[BaseModel]]]) -> None:
     models = benchmark(build_models)
-    assert {f'{model.__module__}:{model.__name__}' for model in models} == set(MANIFEST['models'])
+    # Generated generic class names differ between supported Python versions.
+    assert len(models) == len(MANIFEST['models'])
+    declarations = {
+        f'{model.__module__}:{model.__name__}'
+        for model in models
+        if model.__pydantic_generic_metadata__['origin'] is None
+    }
+    assert declarations == {f'{module}:{name}' for module, names in MANIFEST['declarations'].items() for name in names}
     assert all(model.__pydantic_complete__ for model in models)
 
 
@@ -82,7 +90,8 @@ def test_mcp_corpus_fresh_models() -> None:
     previous = {name: module for name, module in sys.modules.copy().items() if is_corpus_module(name)}
     first = {f'{model.__module__}:{model.__name__}': model for model in build_models()}
     second = {f'{model.__module__}:{model.__name__}': model for model in build_models()}
-    assert first.keys() == second.keys() == set(MANIFEST['models'])
+    assert first.keys() == second.keys()
+    assert len(first) == len(MANIFEST['models'])
     assert all(first[name] is not second[name] for name in first)
     assert {name: module for name, module in sys.modules.copy().items() if is_corpus_module(name)} == previous
     request = first['mcp_types._types:ReadResourceRequest'].model_validate(
@@ -105,3 +114,8 @@ def test_mcp_corpus_import_failure(monkeypatch: pytest.MonkeyPatch, code: str, e
         build_models()
     assert {name: module for name, module in sys.modules.copy().items() if is_corpus_module(name)} == previous
     assert sys.meta_path == previous_importers
+
+
+def test_mcp_corpus_python310_syntax() -> None:
+    for source in CORPUS.rglob('*.py'):
+        ast.parse(source.read_text(), filename=str(source), feature_version=(3, 10))

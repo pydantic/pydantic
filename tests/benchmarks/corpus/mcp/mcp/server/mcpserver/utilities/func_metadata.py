@@ -49,7 +49,7 @@ def _as_typing_extensions_typeddict(td_type: type[Any]) -> type[Any]:
     items: dict[str, Any] = {}
     for name, hint in get_type_hints(td_type, include_extras=True).items():
         key = inspect_annotation(hint, annotation_source=AnnotationSource.TYPED_DICT)
-        item: Any = Annotated[key.type, *key.metadata] if key.metadata else key.type
+        item: Any = Annotated[(key.type, *key.metadata)] if key.metadata else key.type
         if 'read_only' in key.qualifiers:
             item = ReadOnly[item]
         required = (name in td_type.__required_keys__ or 'required' in key.qualifiers) and 'not_required' not in key.qualifiers
