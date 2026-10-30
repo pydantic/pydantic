@@ -44,7 +44,7 @@ building, not cold SDK or interpreter startup.
 Run the checks without installing any SDK dependencies:
 
 ```bash
-uv run --no-sync pytest tests/benchmarks/test_mcp_model_corpus.py tests/benchmarks/test_sdk_model_corpus.py
+uv run --no-sync pytest tests/benchmarks/test_model_corpus.py tests/benchmarks/test_mcp_model_corpus.py
 ```
 
 For CodSpeed, add `--codspeed`. The existing CI workflow already includes both

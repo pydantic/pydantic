@@ -1,4 +1,4 @@
-"""Build complete frozen SDK model graphs under CPU simulation."""
+"""Build complete frozen model graphs under CPU simulation."""
 
 import ast
 import sys
@@ -16,6 +16,7 @@ from .model_corpus import CorpusImporter
 # Import isolation changes process-wide module state.
 pytestmark = pytest.mark.thread_unsafe
 LIBRARIES = [
+    'mcp',
     'openai',
     'anthropic',
     pytest.param('google-genai', marks=pytest.mark.skipif(sys.version_info < (3, 11), reason='Requires Python 3.11+')),
@@ -27,7 +28,7 @@ def corpus(request: pytest.FixtureRequest) -> CorpusImporter:
     return CorpusImporter(Path(__file__).parent / 'corpus' / request.param)
 
 
-def test_sdk_model_corpus(
+def test_model_corpus(
     benchmark: Callable[[Callable[[], list[type[BaseModel]]]], list[type[BaseModel]]], corpus: CorpusImporter
 ) -> None:
     models = benchmark(corpus.build_models)
@@ -43,7 +44,7 @@ def test_sdk_model_corpus(
     assert all(not model.model_config.get('defer_build') for model in models)
 
 
-def test_sdk_corpus_fresh_models(corpus: CorpusImporter) -> None:
+def test_corpus_fresh_models(corpus: CorpusImporter) -> None:
     before = {name: module for name, module in sys.modules.copy().items() if corpus.is_corpus_module(name)}
     first = corpus.build_models()
     second = corpus.build_models()
@@ -56,7 +57,7 @@ def test_sdk_corpus_fresh_models(corpus: CorpusImporter) -> None:
     ('code', 'error'),
     [('raise RuntimeError("broken corpus")', RuntimeError), ('import {root}.unvendored', ModuleNotFoundError)],
 )
-def test_sdk_corpus_import_failure(
+def test_corpus_import_failure(
     corpus: CorpusImporter, monkeypatch: pytest.MonkeyPatch, code: str, error: type[Exception]
 ) -> None:
     root = corpus.roots[0]
@@ -70,15 +71,19 @@ def test_sdk_corpus_import_failure(
     assert sys.meta_path == importers
 
 
-def test_sdk_corpus_syntax(corpus: CorpusImporter) -> None:
-    minimum = tuple(corpus.manifest['minimum_python'])
+def test_corpus_syntax(corpus: CorpusImporter) -> None:
+    minimum = tuple(corpus.manifest.get('minimum_python', (3, 10)))
     for source in corpus.directory.rglob('*.py'):
         ast.parse(source.read_text(), filename=str(source), feature_version=minimum)
 
 
-def test_sdk_corpus_validation(corpus: CorpusImporter) -> None:
+def test_corpus_validation(corpus: CorpusImporter) -> None:
     models = {f'{model.__module__}:{model.__name__}': model for model in corpus.build_models()}
     model, data = {
+        'mcp': (
+            'mcp_types._types:ReadResourceRequest',
+            {'method': 'resources/read', 'params': {'uri': 'file:///example.txt'}},
+        ),
         'openai': (
             'openai.types.completion_usage:CompletionUsage',
             {'completion_tokens': 1, 'prompt_tokens': 2, 'total_tokens': 3},
@@ -86,14 +91,14 @@ def test_sdk_corpus_validation(corpus: CorpusImporter) -> None:
         'anthropic': ('anthropic.types.usage:Usage', {'input_tokens': 2, 'output_tokens': 1}),
         'google-genai': ('google.genai.types:Content', {'role': 'user', 'parts': [{'text': 'hello'}]}),
     }[corpus.directory.name]
-    result = models[model].model_validate(data).model_dump(exclude_none=True)
+    result = models[model].model_validate(data).model_dump(exclude_none=True, by_alias=True)
     for name, value in data.items():
         assert result[name] == value
 
 
 @pytest.mark.parametrize('initial_limit', [1000, 3000])
 @pytest.mark.parametrize('fails', [False, True])
-def test_sdk_corpus_stack_budget(
+def test_corpus_stack_budget(
     corpus: CorpusImporter, monkeypatch: pytest.MonkeyPatch, initial_limit: int, fails: bool
 ) -> None:
     current = initial_limit
