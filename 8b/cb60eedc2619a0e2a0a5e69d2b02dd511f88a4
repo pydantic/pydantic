@@ -1,0 +1,37 @@
+pydantic/_internal/_fields.py
+  s_749d1544ba1b51::t_3b367ddee9f150 28-34,283-333,530-539,566-576
+pydantic/_internal/_generate_schema.py
+  s_749d1544ba1b51::t_91e292c15961b7 117-119,122,125,128,131,134,137-140,1350-1355,1357,1366-1459,2552
+pydantic/_internal/_model_construction.py
+  s_749d1544ba1b51::t_ce44d1c3f72a8d 13,397-405,448-452,464-477
+pydantic/_internal/_schema_cache.py
+  s_749d1544ba1b51::t_1f287211ddbafa 1-25,33,38,42-49,80-83,88-92,102-133,135,137-224,226,229-349,362-364,367-368,371-374,376-378,382,385-400,402,409-410,422-423,431,435,444-446,451-476,482,484,486,490-501,503-520
+pydantic/_internal/_typing_extra.py
+  s_749d1544ba1b51::t_02d32b27ba2f2c 23,287-291
+tests/_schema_cache_verification.py
+  s_749d1544ba1b51::t_c432da2ea64fb1 1-147
+tests/conftest.py
+  s_749d1544ba1b51::t_29c0d309b93c94 238-252
+tests/test_internal.py
+  s_749d1544ba1b51::t_03418b078aa196 479-482,486,488-497,558-726,794-797
+tests/test_schema_cache_edges.py
+  s_749d1544ba1b51::t_3cf5258791a39e 1-323
+tests/types/test_literal.py
+  s_749d1544ba1b51::t_8c24c3573d211e 98,100-101,104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8bcb60eedc2619a0e2a0a5e69d2b02dd511f88a4",
+  "prompts": {},
+  "sessions": {
+    "s_749d1544ba1b51": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18e2e-3a9b-7551-ac78-6fa4f6e418e8",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
