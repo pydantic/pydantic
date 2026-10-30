@@ -1168,7 +1168,7 @@ class GenerateSchema:
         origin = origin if origin is not PydanticUndefined else get_origin(obj)
 
         if is_union_origin(origin):
-            return self._union_schema(obj)
+            return self._direct_union_schema(obj)
 
         if typing_objects.is_annotated(origin):
             return self._annotated_schema(obj)
@@ -1416,6 +1416,41 @@ class GenerateSchema:
         )
 
         return schema, core_metadata
+
+    def _direct_union_schema(self, obj: Any) -> CoreSchema:
+        """Generate the optimized union schema without enlarging general dispatch frames."""
+        # These exact simple types cannot attach hooks or union tags. Field-level
+        # metadata and validators still process the fresh schema normally.
+        if not self._config_wrapper.json_encoders:
+            args = get_args(obj)
+            if len(args) >= 2:
+                nullable = False
+                for arg in args:
+                    if arg is NoneType:
+                        nullable = True
+                    elif _is_simple_schema_type(arg):
+                        continue
+                    else:
+                        break
+                else:
+                    handlers = self._handlers
+                    schema: CoreSchema
+                    if nullable:
+                        if len(args) == 2:
+                            arg = args[0] if args[1] is NoneType else args[1]
+                            schema = handlers[arg](self, arg)
+                        else:
+                            schema = {
+                                'type': 'union',
+                                'choices': [handlers[arg](self, arg) for arg in args if arg is not NoneType],
+                            }
+                        return {'type': 'nullable', 'schema': schema}
+                    else:
+                        return {
+                            'type': 'union',
+                            'choices': [handlers[arg](self, arg) for arg in args],
+                        }
+        return self._union_schema(obj)
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
