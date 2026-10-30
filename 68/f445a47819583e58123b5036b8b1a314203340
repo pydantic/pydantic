@@ -1,0 +1,14 @@
+pydantic/_internal/_generate_schema.py
+  h_d9dd17644dded9 2381
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "68f445a47819583e58123b5036b8b1a314203340",
+  "prompts": {},
+  "humans": {
+    "h_d9dd17644dded9": {
+      "author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
