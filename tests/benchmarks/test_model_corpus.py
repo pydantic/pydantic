@@ -72,7 +72,7 @@ def test_corpus_import_failure(
 
 
 def test_corpus_syntax(corpus: CorpusImporter) -> None:
-    minimum = tuple(corpus.manifest.get('minimum_python', (3, 10)))
+    minimum = tuple(corpus.manifest['minimum_python'])
     for source in corpus.directory.rglob('*.py'):
         ast.parse(source.read_text(), filename=str(source), feature_version=minimum)
 

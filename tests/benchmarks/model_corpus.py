@@ -19,7 +19,7 @@ class CorpusImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
     def __init__(self, directory: Path) -> None:
         self.directory = directory
         self.manifest = json.loads((directory / 'manifest.json').read_text())
-        self.roots: tuple[str, ...] = tuple(self.manifest.get('roots', ('mcp', 'mcp_types')))
+        self.roots: tuple[str, ...] = tuple(self.manifest['roots'])
         self.sources: dict[str, tuple[CodeType, bool]] = {}
         for source in sorted(directory.rglob('*.py')):
             parts = source.relative_to(directory).with_suffix('').parts

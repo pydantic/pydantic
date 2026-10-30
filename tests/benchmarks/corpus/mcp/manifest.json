@@ -1175,5 +1175,13 @@
     "mcp_types/jsonrpc.py": "c2d1bc1d07c5ebc7597919e4f65611c3887d50410f115b4a49d7918f68ffbf89",
     "mcp_types/methods.py": "eaa0bf7b113edd7ed091a0a7928156b1aa5023d63c5c491a4add1fc62468a10d",
     "mcp_types/version.py": "e244c0bb0dda774b50af4a2f1a2145be6511794fdfd63e6a6c7afe60ee62e51e"
-  }
+  },
+  "roots": [
+    "mcp",
+    "mcp_types"
+  ],
+  "minimum_python": [
+    3,
+    10
+  ]
 }
