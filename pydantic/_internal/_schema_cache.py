@@ -248,7 +248,7 @@ def _trusted_leaf_hooks() -> dict[int, tuple[Any, Any, Any]]:
     As these are regular Python classes, hooks could be monkeypatched onto (or off of) them at
     runtime, which invalidates the reasoning above, so `_verified_leaf_class_key()` checks the
     expected hooks on every use. Note that the expectation is pinned to `None` and to pydantic's own
-    function objects (looked up on the class *defining* them) rather than snapshotted from whatever
+    function objects (recorded when their class is defined) rather than snapshotted from whatever
     happens to be present on first use: a hook monkeypatched before the first model is built would
     otherwise be absorbed into the baseline and trusted from then on.
     """
@@ -257,7 +257,16 @@ def _trusted_leaf_hooks() -> dict[int, tuple[Any, Any, Any]]:
     from pathlib import Path, PosixPath, PurePath, PurePosixPath, PureWindowsPath, WindowsPath
     from uuid import UUID
 
-    from ..networks import AnyHttpUrl, AnyUrl, AnyWebsocketUrl, FileUrl, FtpUrl, HttpUrl, WebsocketUrl, _BaseUrl
+    from ..networks import (
+        _BASE_URL_SCHEMA_HOOKS,
+        AnyHttpUrl,
+        AnyUrl,
+        AnyWebsocketUrl,
+        FileUrl,
+        FtpUrl,
+        HttpUrl,
+        WebsocketUrl,
+    )
 
     hook_free_classes: tuple[type[Any], ...] = (
         UUID,
@@ -285,11 +294,7 @@ def _trusted_leaf_hooks() -> dict[int, tuple[Any, Any, Any]]:
         FtpUrl,
     )
     # All the URL classes above inherit both hooks from `_BaseUrl`:
-    url_hooks = (
-        _normalize_hook(_BaseUrl.__dict__['__get_pydantic_core_schema__']),
-        _normalize_hook(_BaseUrl.__dict__['__get_pydantic_json_schema__']),
-        None,
-    )
+    url_hooks = (*_BASE_URL_SCHEMA_HOOKS, None)
 
     _trusted_leaf_classes.extend(hook_free_classes)
     _trusted_leaf_classes.extend(url_classes)

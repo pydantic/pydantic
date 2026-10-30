@@ -321,3 +321,47 @@ def test_classvar_default_does_not_hash_its_type(error: type[Exception]) -> None
 
     assert Model.x is value
     assert Model.model_fields == {}
+
+
+@pytest.mark.thread_unsafe
+@pytest.mark.parametrize('hook_kind', ['core', 'json'])
+def test_base_url_hook_patched_before_trust_initialization(monkeypatch: pytest.MonkeyPatch, hook_kind: str) -> None:
+    from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
+    from pydantic.json_schema import JsonSchemaValue
+    from pydantic.networks import _BaseUrl
+
+    state = {'multiple': 2}
+
+    def core_hook(cls: type[_BaseUrl], source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        return core_schema.int_schema(multiple_of=state['multiple'])
+
+    def json_hook(
+        cls: type[_BaseUrl], schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return {**handler(schema), 'title': f'Multiple {state["multiple"]}'}
+
+    hook_name = f'__get_pydantic_{hook_kind}_schema__'
+    monkeypatch.setattr(_BaseUrl, hook_name, classmethod(core_hook if hook_kind == 'core' else json_hook))
+    _schema_cache._trusted_leaf_hooks.cache_clear()
+    try:
+
+        class First(BaseModel):
+            value: AnyUrl
+
+        if hook_kind == 'json':
+            assert First.model_json_schema()['properties']['value']['title'] == 'Multiple 2'
+        state['multiple'] = 3
+
+        class Second(BaseModel):
+            value: AnyUrl
+
+        if hook_kind == 'core':
+            assert First(value=2).value == 2
+            assert Second(value=3).value == 3
+            with pytest.raises(ValidationError, match='multiple of 3'):
+                Second(value=2)
+        else:
+            assert Second.model_json_schema()['properties']['value']['title'] == 'Multiple 3'
+        assert _schema_cache.pure_annotation_cache_key(AnyUrl) is _schema_cache.NOT_PURE
+    finally:
+        _schema_cache._trusted_leaf_hooks.cache_clear()
