@@ -1383,12 +1383,15 @@ class GenerateSchema:
                     else:
                         break
                 else:
-                    choices = [self._handlers[arg](self, arg) for arg in args if arg is not NoneType]
                     schema: CoreSchema
-                    if len(choices) == 1:
-                        schema = choices[0]
+                    if nullable and len(args) == 2:
+                        arg = args[0] if args[0] is not NoneType else args[1]
+                        schema = self._handlers[arg](self, arg)
                     else:
-                        schema = cast(core_schema.UnionSchema, {'type': 'union', 'choices': choices})
+                        schema = {
+                            'type': 'union',
+                            'choices': [self._handlers[arg](self, arg) for arg in args if arg is not NoneType],
+                        }
                     return {'type': 'nullable', 'schema': schema} if nullable else schema
         return self._union_schema(obj)
 
