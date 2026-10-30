@@ -1419,7 +1419,7 @@ class GenerateSchema:
 
     def _direct_union_schema(self, obj: Any) -> CoreSchema:
         """Generate the optimized union schema without enlarging general dispatch frames."""
-        # These exact builtin types cannot attach hooks or union tags. Field-level
+        # These exact simple types cannot attach hooks or union tags. Field-level
         # metadata and validators still process the fresh schema normally.
         if not self._config_wrapper.json_encoders:
             args = get_args(obj)
@@ -1428,7 +1428,7 @@ class GenerateSchema:
                 for arg in args:
                     if arg is NoneType:
                         nullable = True
-                    elif arg is str or arg is bool or arg is int or arg is float or arg is bytes or arg is complex:
+                    elif _is_simple_schema_type(arg):
                         continue
                     else:
                         break
