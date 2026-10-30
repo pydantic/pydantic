@@ -1,0 +1,19 @@
+tests/benchmarks/test_model_json_streaming.py
+  s_629bbbd6524d1d::t_9383acc3ed0b7b 27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cf941e7608a1f8d44fcc22059cdbc22f09bed242",
+  "prompts": {},
+  "sessions": {
+    "s_629bbbd6524d1d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1887c-b79d-7b33-a619-aba5fa98b8ff",
+        "model": "unknown"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
