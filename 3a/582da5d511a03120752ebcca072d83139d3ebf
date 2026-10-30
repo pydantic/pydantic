@@ -1,0 +1,21 @@
+pydantic/_internal/_model_construction.py
+  s_9a7bac33cfbcbe::t_acc5879c9eb389 400-401,464,471
+tests/test_schema_cache_edges.py
+  s_9a7bac33cfbcbe::t_90d6df17b1904b 304-323
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3a582da5d511a03120752ebcca072d83139d3ebf",
+  "prompts": {},
+  "sessions": {
+    "s_9a7bac33cfbcbe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18e0f-17fd-7c21-ba7e-d3fdf6f16891",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
