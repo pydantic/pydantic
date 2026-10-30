@@ -82,7 +82,6 @@ cases: list[ParameterSet | tuple[str, str]] = [
             'plugin_success.py',
             'plugin_fail.py',
             'plugin_success_baseConfig.py',
-            'plugin_fail_baseConfig.py',
             'pydantic_settings.py',
             'decorator_implicit_classmethod.py',
         ],
@@ -95,7 +94,6 @@ cases: list[ParameterSet | tuple[str, str]] = [
             'plugin_fail.py',
             'fail_defaults.py',
             'plugin_success_baseConfig.py',
-            'plugin_fail_baseConfig.py',
         ],
     ),
     # One-off cases

@@ -17,13 +17,11 @@ from typing_extensions import Self
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
-from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
+from ..warnings import PydanticDeprecatedSince210
 
 if TYPE_CHECKING:
     from .._internal._schema_generation_shared import GenerateSchema
     from ..fields import ComputedFieldInfo, FieldInfo
-
-DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
 
 # Maps the `ConfigDict` keys that have a `CoreConfig` counterpart to the corresponding
 # `CoreConfig` key (`'title'` is omitted as it requires special handling, see `ConfigWrapper.core_config()`):
@@ -137,7 +135,7 @@ class ConfigWrapper:
     url_preserve_empty_path: bool
     polymorphic_serialization: bool
 
-    def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
+    def __init__(self, config: ConfigDict | dict[str, Any] | None, *, check: bool = True):
         if check:
             self.config_dict = prepare_config(config)
         else:
@@ -172,15 +170,7 @@ class ConfigWrapper:
             if config:
                 config_new.update(config.copy())
 
-        config_class_from_namespace = namespace.get('Config')
-        config_dict_from_namespace = namespace.get('model_config')
-
-        if config_class_from_namespace and config_dict_from_namespace:
-            raise PydanticUserError('"Config" and "model_config" cannot be used together', code='config-both')
-
-        config_from_namespace = config_dict_from_namespace or prepare_config(config_class_from_namespace)
-
-        config_new.update(config_from_namespace)
+        config_new.update(namespace.get('model_config') or {})
 
         for k in list(kwargs.keys()):
             if k in config_keys:
@@ -332,8 +322,8 @@ def _build_effective_config(config: ConfigDict) -> ConfigDict:
     return config
 
 
-def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> ConfigDict:
-    """Create a `ConfigDict` instance from an existing dict, a class (e.g. old class-based config) or None.
+def prepare_config(config: ConfigDict | dict[str, Any] | None) -> ConfigDict:
+    """Create a `ConfigDict` instance from an existing dict or None.
 
     Args:
         config: The input config.
@@ -344,13 +334,9 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
     if config is None:
         return ConfigDict()
 
-    if not isinstance(config, dict):
-        warnings.warn(DEPRECATION_MESSAGE, PydanticDeprecatedSince20, stacklevel=4)
-        config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
-    else:
-        # Copy, so that the `ConfigWrapper` owns its configuration and can never
-        # mutate the mapping provided by the user:
-        config = config.copy()
+    # Copy, so that the `ConfigWrapper` owns its configuration and can never
+    # mutate the mapping provided by the user:
+    config = config.copy()
 
     config_dict = cast(ConfigDict, config)
     check_deprecated(config_dict)

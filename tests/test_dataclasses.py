@@ -31,7 +31,6 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
-    PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     RootModel,
@@ -2070,21 +2069,6 @@ def test_subclass_post_init_inheritance():
             self.a *= 3
 
     assert C(1).a == 12  # (1 + 3) * 3
-
-
-def test_config_as_type_deprecated():
-    class Config:
-        validate_assignment = True
-
-    with pytest.warns(
-        PydanticDeprecatedSince20, match='Support for class-based `config` is deprecated, use ConfigDict instead.'
-    ):
-
-        @pydantic.dataclasses.dataclass(config=Config)
-        class MyDataclass:
-            a: int
-
-    assert MyDataclass.__pydantic_config__ == ConfigDict(validate_assignment=True)
 
 
 def test_validator_info_field_name_data_before():

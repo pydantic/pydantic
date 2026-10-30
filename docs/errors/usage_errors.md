@@ -557,27 +557,6 @@ class MyModel(BaseModel):
     _d: IgnoredType = IgnoredType()
 ```
 
-## `Config` and `model_config` both defined {#config-both}
-
-This error is raised when `class Config` and `model_config` are used together.
-
-```python
-from pydantic import BaseModel, ConfigDict, PydanticUserError
-
-try:
-
-    class Model(BaseModel):
-        model_config = ConfigDict(from_attributes=True)
-
-        a: str
-
-        class Config:
-            from_attributes = True
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'config-both'
-```
-
 ## Keyword arguments removed {#removed-kwargs}
 
 This error is raised when the keyword arguments are not available in Pydantic V2.

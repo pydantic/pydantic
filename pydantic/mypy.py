@@ -578,35 +578,23 @@ class PydanticModelTransformer:
         # Handle `model_config`
         stmt: Statement | None = None
         for stmt in cls.defs.body:
-            if not isinstance(stmt, (AssignmentStmt, ClassDef)):
+            if not isinstance(stmt, AssignmentStmt):
                 continue
 
-            if isinstance(stmt, AssignmentStmt):
-                lhs = stmt.lvalues[0]
-                if not isinstance(lhs, NameExpr) or lhs.name != 'model_config':
-                    continue
+            lhs = stmt.lvalues[0]
+            if not isinstance(lhs, NameExpr) or lhs.name != 'model_config':
+                continue
 
-                if isinstance(stmt.rvalue, CallExpr):  # calls to `dict` or `ConfigDict`
-                    for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args, strict=True):
-                        if arg_name is None:
-                            continue
-                        config.update(self.get_config_update(arg_name, arg, lax_extra=True))
-                elif isinstance(stmt.rvalue, DictExpr):  # dict literals
-                    for key_expr, value_expr in stmt.rvalue.items:
-                        if not isinstance(key_expr, StrExpr):
-                            continue
-                        config.update(self.get_config_update(key_expr.value, value_expr))
-
-            elif isinstance(stmt, ClassDef):
-                if stmt.name != 'Config':  # 'deprecated' Config-class
-                    continue
-                for substmt in stmt.defs.body:
-                    if not isinstance(substmt, AssignmentStmt):
+            if isinstance(stmt.rvalue, CallExpr):  # calls to `dict` or `ConfigDict`
+                for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args, strict=True):
+                    if arg_name is None:
                         continue
-                    lhs = substmt.lvalues[0]
-                    if not isinstance(lhs, NameExpr):
+                    config.update(self.get_config_update(arg_name, arg, lax_extra=True))
+            elif isinstance(stmt.rvalue, DictExpr):  # dict literals
+                for key_expr, value_expr in stmt.rvalue.items:
+                    if not isinstance(key_expr, StrExpr):
                         continue
-                    config.update(self.get_config_update(lhs.name, substmt.rvalue))
+                    config.update(self.get_config_update(key_expr.value, value_expr))
 
             if has_config_kwargs:
                 self._api.fail(
@@ -1039,7 +1027,7 @@ class PydanticModelTransformer:
             else:
                 if not lax_extra:
                     # Only emit an error for other types of `arg` (e.g., `NameExpr`, `ConditionalExpr`, etc.) when
-                    # reading from a config class, etc. If a ConfigDict is used, then we don't want to emit an error
+                    # reading from class kwargs or a dict literal. If a ConfigDict is used, then we don't want to emit an error
                     # because you'll get type checking from the ConfigDict itself.
                     #
                     # It would be nice if we could introspect the types better otherwise, but I don't know what the API

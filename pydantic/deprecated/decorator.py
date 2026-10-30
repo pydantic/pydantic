@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     AnyCallable = Callable[..., Any]
 
     AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
-    ConfigType = Union[None, type[Any], dict[str, Any]]
+    ConfigType = Union[None, dict[str, Any]]
 
 
 @overload

@@ -32,7 +32,7 @@ On Pydantic models, configuration can be specified in two ways:
     1. A plain dictionary (i.e. `{'str_max_length': 5}`) can also be used.
 
     !!! note
-        In Pydantic V1, the `Config` class was used. This is still supported, but **deprecated**.
+        In Pydantic V1, the `Config` class was used. This is no longer supported.
 
 * Using class arguments:
 

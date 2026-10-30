@@ -326,19 +326,6 @@ def test_config_not_mutated():
     assert config == {'title': 'Testing'}
 
 
-def test_config_title_cls():
-    class Config:
-        title = 'Testing'
-
-    @validate_arguments(config={'title': 'Testing'})
-    def foo(a: int, b: int):
-        return f'{a}, {b}'
-
-    assert foo(1, 2) == '1, 2'
-    assert foo(1, b=2) == '1, 2'
-    assert foo.model.model_json_schema()['title'] == 'Testing'
-
-
 def test_config_fields():
     with pytest.raises(PydanticUserError, match='Setting the "alias_generator" property on custom Config for @'):
 

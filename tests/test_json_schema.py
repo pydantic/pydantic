@@ -46,7 +46,6 @@ from pydantic import (
     InstanceOf,
     PlainSerializer,
     PlainValidator,
-    PydanticDeprecatedSince20,
     PydanticDeprecatedSince29,
     PydanticUserError,
     RootModel,
@@ -5293,74 +5292,6 @@ def test_model_with_schema_extra_callable_no_model_class():
         model_config = dict(json_schema_extra=json_schema_extra)
 
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_config_class():
-    with pytest.warns(PydanticDeprecatedSince20, match='use ConfigDict instead'):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                @staticmethod
-                def json_schema_extra(schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-                    assert model_class is Model
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_no_model_class_config_class():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                @staticmethod
-                def json_schema_extra(schema):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_classmethod():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                type = 'foo'
-
-                @classmethod
-                def json_schema_extra(cls, schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = cls.type
-                    assert model_class is Model
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_instance_method():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                def json_schema_extra(schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-                    assert model_class is Model
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
 def test_serialization_validation_interaction():

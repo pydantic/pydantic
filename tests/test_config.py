@@ -15,11 +15,9 @@ from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 from typing_extensions import TypedDict
 
 from pydantic import (
-    BaseConfig,
     BaseModel,
     Field,
     PrivateAttr,
-    PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
     ValidationError,
     create_model,
@@ -77,35 +75,6 @@ def test_config_dict_missing_keys():
 
 
 class TestsBaseConfig:
-    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
-    def test_base_config_equality_defaults_of_config_dict_class(self):
-        for key, value in config_defaults.items():
-            assert getattr(BaseConfig, key) == value
-
-    def test_config_and_module_config_cannot_be_used_together(self):
-        with pytest.raises(PydanticUserError):
-
-            class MyModel(BaseModel):
-                model_config = ConfigDict(title='MyTitle')
-
-                class Config:
-                    title = 'MyTitleConfig'
-
-    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
-    def test_base_config_properly_converted_to_dict(self):
-        class MyConfig(BaseConfig):
-            title = 'MyTitle'
-            frozen = True
-
-        class MyBaseModel(BaseModel):
-            class Config(MyConfig): ...
-
-        class MyModel(MyBaseModel): ...
-
-        MyModel.model_config['title'] = 'MyTitle'
-        MyModel.model_config['frozen'] = True
-        assert 'str_to_lower' not in MyModel.model_config
-
     def test_base_config_custom_init_signature(self):
         class MyModel(BaseModel):
             id: int
@@ -349,56 +318,6 @@ class TestsBaseConfig:
 
         m = Model(a=40, b=10)
         assert m == m.model_copy()
-
-    def test_config_class_is_deprecated(self):
-        with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
-
-            class Config(BaseConfig):
-                pass
-
-        # typing-extensions swallows one of the warnings, so we need to support
-        # both ways for now.
-        assert len(all_warnings) in [1, 2]
-        expected_warnings = [
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-        ]
-        if len(all_warnings) == 2:
-            expected_warnings.insert(0, 'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead')
-        assert [w.message.message for w in all_warnings] == expected_warnings
-
-    def test_config_class_attributes_are_deprecated(self):
-        with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
-            assert BaseConfig.validate_assignment is False
-            assert BaseConfig().validate_assignment is False
-
-            class Config(BaseConfig):
-                pass
-
-            assert Config.validate_assignment is False
-            assert Config().validate_assignment is False
-        assert len(all_warnings) == 7
-        expected_warnings = {
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-            'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
-        }
-        assert set(w.message.message for w in all_warnings) <= expected_warnings
-
-    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
-    def test_config_class_missing_attributes(self):
-        with pytest.raises(AttributeError, match="type object 'BaseConfig' has no attribute 'missing_attribute'"):
-            BaseConfig.missing_attribute
-
-        with pytest.raises(AttributeError, match="'BaseConfig' object has no attribute 'missing_attribute'"):
-            BaseConfig().missing_attribute
-
-        class Config(BaseConfig):
-            pass
-
-        with pytest.raises(AttributeError, match="type object 'Config' has no attribute 'missing_attribute'"):
-            Config.missing_attribute
-
-        with pytest.raises(AttributeError, match="'Config' object has no attribute 'missing_attribute'"):
-            Config().missing_attribute
 
 
 def test_config_key_deprecation():

@@ -41,7 +41,6 @@ PydanticErrorCodes = Literal[
     'typed-dict-version',
     'model-field-overridden',
     'model-field-missing-annotation',
-    'config-both',
     'removed-kwargs',
     'circular-reference-schema',
     'invalid-for-json-schema',
