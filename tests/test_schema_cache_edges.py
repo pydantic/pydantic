@@ -251,3 +251,23 @@ def test_literal_of_an_enum_member_is_not_pure() -> None:
         red = 'red'
 
     assert _schema_cache.pure_annotation_cache_key(Literal[Colour.red]) is _schema_cache.NOT_PURE
+
+
+@pytest.mark.parametrize('error', [RuntimeError, ValueError])
+def test_annotation_with_failing_hash_falls_back_to_evaluation(error: type[Exception]) -> None:
+    class Meta(type):
+        def __hash__(cls) -> int:
+            raise error('cannot hash annotation')
+
+    class Arbitrary(metaclass=Meta):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: Any) -> core_schema.CoreSchema:
+            return core_schema.is_instance_schema(cls)
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+        value: Arbitrary
+
+    value = Arbitrary()
+    assert Model(value=value).value is value
+    assert Model.model_fields['value'].annotation is Arbitrary

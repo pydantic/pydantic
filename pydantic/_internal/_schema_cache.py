@@ -462,7 +462,7 @@ def is_pure_annotation(tp: Any, /) -> bool:
         if tp in _pure_annotations_seen:
             return True
         pure = pure_annotation_cache_key(tp) is not NOT_PURE
-    except TypeError:  # unhashable annotation (or part of it)
+    except Exception:  # User-defined metaclasses may raise arbitrary exceptions from __hash__/__eq__.
         return False
     if pure:
         if len(_pure_annotations_seen) >= CACHE_SIZE_LIMIT:
