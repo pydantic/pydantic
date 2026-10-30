@@ -446,6 +446,10 @@ and [JSON](../concepts/serialization.md#json-mode) modes.
 Pydantic supports the following [date and time](https://docs.python.org/library/datetime.html#available-types)
 types from the [`datetime`][] standard library:
 
+!!! warning "Mocking the current time"
+    Pydantic does not work well with [freezegun](https://pypi.org/project/freezegun/) as freezegun replaces the
+    [`datetime`][] classes with its own subclasses. Instead, we recommend using [time-machine](https://pypi.org/project/time-machine/).
+
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#datetimedatetime}
@@ -681,10 +685,10 @@ Standard library type: [`datetime.timedelta`][].
 
 <h4>Constraints</h4>
 
-Timedeltas support the following constraints (constraint values must be coercible to a [`timedata`][datetime.timedelta] instance):
+Timedeltas support the following constraints (constraint values must be coercible to a [`timedelta`][datetime.timedelta] instance):
 
 | Constraint | Description                                               | JSON Schema |
-| ---------- | ---------------------------------------------------- -----| ----------- |
+| ---------- | --------------------------------------------------------- | ----------- |
 | `le`       | The value must be less than or equal to this timedelta    | N/A         |
 | `ge`       | The value must be greater than or equal to this timedelta | N/A         |
 | `lt`       | The value must be strictly less than this timedelta       | N/A         |
@@ -804,6 +808,19 @@ using [`list`][] or [`tuple`][] will allow most other iterables as input, with b
 !!! note "Strictness on collection types"
     When applying [strict mode](../concepts/strict_mode.md) on collection types, strictness will *not* apply
     to the inner types. This may change in the future, see [this issue](https://github.com/pydantic/pydantic/issues/12319).
+
+!!! warning "Hash collisions with untrusted input"
+    Building a [set](#sets) or [dictionary](#dictionaries) from crafted values can take quadratic time, as some hashes
+    (most notably for integers) aren't randomized in CPython. If the input is untrusted and this is a concern, the number
+    of items can be bounded using the `max_length` constraint:
+
+    ```python
+    from typing import Annotated
+
+    from pydantic import Field, TypeAdapter
+
+    ta = TypeAdapter(Annotated[dict[int, int], Field(max_length=100)])
+    ```
 
 ### Lists
 
@@ -1489,7 +1506,8 @@ and [`IPvAnyNetwork`][pydantic.networks.IPvAnyNetwork] Pydantic types.
 <h3>Strictness</h3>
 
 In [strict mode](../concepts/strict_mode.md), only the address types are accepted.
-In JSON mode, strict mode has no effect.
+In JSON mode, only strings are accepted in strict mode, while integers are also accepted in lax mode
+(e.g. `3232235521` is validated as `IPv4Address('192.168.0.1')`).
 
 <h3>Serialization</h3>
 

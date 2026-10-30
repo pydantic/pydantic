@@ -13,7 +13,7 @@ use crate::input::{Input, ValidatedDict};
 use crate::tools::SchemaDict;
 
 use super::any::AnyValidator;
-use super::list::length_check;
+use super::list::{max_length_check, min_length_check};
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
@@ -165,12 +165,13 @@ where
 
             if let Some(key) = output_key {
                 output.set_item(key, output_value)?;
+                max_length_check!(self.input, "Dictionary", self.max_length, output);
             }
         }
 
         if errors.is_empty() {
             let input = self.input;
-            length_check!(input, "Dictionary", self.min_length, self.max_length, output);
+            min_length_check!(input, "Dictionary", self.min_length, output);
             Ok(output.into())
         } else {
             Err(ValError::LineErrors(errors))

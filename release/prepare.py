@@ -10,14 +10,20 @@ from pathlib import Path
 import requests
 
 from release.shared import (
+    CORE_CARGO_FILE,
     GITHUB_TOKEN,
     HISTORY_FILE,
     PACKAGE_VERSION_FILE,
+    PYPROJECT_FILE,
     REPO,
     run_command,
 )
 
 ROOT_DIR = Path(__file__).parent.parent
+
+# Leading markdownlint directives (and blank lines) at the top of the history file,
+# which should be kept before the new release section:
+HISTORY_DIRECTIVES_REGEX = re.compile(r'\A(?:<!--.*-->\n|\n)*')
 
 
 def update_version(new_version: str, dry_run: bool) -> None:
@@ -53,9 +59,57 @@ def update_version(new_version: str, dry_run: bool) -> None:
     run_command('uv', 'lock', '-P', 'pydantic')
 
 
+def _replace_version_in_file(file: str, pattern: str, new_version: str, dry_run: bool) -> None:
+    """Replace the version captured by the `version` group of `pattern` (matched once) in `file`."""
+    file_path = ROOT_DIR / file
+    content = file_path.read_text(encoding='utf-8')
+
+    match = re.search(pattern, content, flags=re.MULTILINE)
+    if match is None:
+        print(f'Could not find the pydantic-core version in "{file}" (pattern: {pattern!r}).')
+        raise SystemExit(1)
+    if match.group('version') == new_version:
+        warnings.warn(f'The pydantic-core version in "{file}" is already {new_version}.')
+
+    old_stm = match.group(0)
+    start, end = match.span('version')
+    new_stm = content[match.start() : start] + new_version + content[end : match.end()]
+
+    if dry_run:
+        print(f'Updating pydantic-core version in "{file}"')
+        print('--- Before ---')
+        print(old_stm)
+        print('--- After ---')
+        print(new_stm)
+        return
+
+    file_path.write_text(content[: match.start()] + new_stm + content[match.end() :], encoding='utf-8')
+
+
+def update_core_version(new_version: str, dry_run: bool) -> None:
+    """Update the pydantic-core version, the pydantic-core pin in pydantic and the compatibility check."""
+    # The `[package]` table comes first in the Cargo manifest:
+    _replace_version_in_file(CORE_CARGO_FILE, r'^version = "(?P<version>[^"]+)"$', new_version, dry_run)
+    _replace_version_in_file(PYPROJECT_FILE, r"""['"]pydantic-core==(?P<version>[^'"]+)['"]""", new_version, dry_run)
+    _replace_version_in_file(
+        PACKAGE_VERSION_FILE,
+        r"""^_COMPATIBLE_PYDANTIC_CORE_VERSION\s*=\s*['"](?P<version>[^'"]+)['"]""",
+        new_version,
+        dry_run,
+    )
+
+    if dry_run:
+        print('Running in dry mode, lock files are not updated.')
+        return
+
+    # Only update the workspace members' entries in the lock file:
+    run_command('cargo', 'update', '--workspace', '--offline', '--manifest-path', CORE_CARGO_FILE)
+    run_command('uv', 'lock', '-P', 'pydantic', '-P', 'pydantic-core')
+
+
 def get_notes(new_version: str) -> str:
     """Fetch auto-generated release notes from github."""
-    last_tag = run_command('git', 'describe', '--tags', '--abbrev=0')
+    last_tag = run_command('git', 'describe', '--tags', '--abbrev=0', '--match', 'v*')
     auth_token = GITHUB_TOKEN
 
     data = {'target_committish': 'main', 'previous_tag_name': last_tag, 'tag_name': f'v{new_version}'}
@@ -116,7 +170,8 @@ def update_history(new_version: str, dry_run: bool, force_update: bool) -> None:
     new_chunk = f'## {title}\n\n[GitHub release](https://github.com/{REPO}/releases/tag/v{new_version})\n\n{notes}\n\n'
     if dry_run:
         print(f'Would add the following to {history_path}:\n{new_chunk}')
-    history = new_chunk + history_content
+    directives_end = HISTORY_DIRECTIVES_REGEX.match(history_content).end()  # pyright: ignore[reportOptionalMemberAccess]
+    history = history_content[:directives_end] + new_chunk + history_content[directives_end:]
 
     if not dry_run:
         history_path.write_text(history)
@@ -144,7 +199,11 @@ def update_history(new_version: str, dry_run: bool, force_update: bool) -> None:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # For easier iteration, can generate the release notes without saving
-    parser.add_argument('version', help='New version number to release.')
+    parser.add_argument('--pydantic-version', required=True, help='New pydantic version number to release.')
+    parser.add_argument(
+        '--pydantic-core-version',
+        help='New pydantic-core version number to release alongside pydantic (optional).',
+    )
     parser.add_argument(
         '-d',
         '--dry-run',
@@ -159,12 +218,18 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    version = args.version
+    version = args.pydantic_version
+    core_version = args.pydantic_core_version
     _dry_run = args.dry_run
     _force_update = args.force
 
     update_version(version, _dry_run)
     if not _dry_run:
         print(f'Updated version to v{version} in the python version file.')
+
+    if core_version is not None:
+        update_core_version(core_version, _dry_run)
+        if not _dry_run:
+            print(f'Updated pydantic-core version to v{core_version}.')
 
     update_history(version, _dry_run, _force_update)

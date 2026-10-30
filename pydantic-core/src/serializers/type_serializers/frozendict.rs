@@ -3,13 +3,13 @@ use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyMapping};
+use pyo3::types::PyDict;
 
 use pyo3::IntoPyObjectExt;
 use serde::ser::SerializeMap;
 
 use crate::build_tools::py_schema_err;
-use crate::common::frozendict::get_frozendict_type;
+use crate::common::frozendict::{FROZENDICT_AVAILABLE, as_frozendict, new_frozendict};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::serializers::extra::IncludeExclude;
@@ -39,7 +39,7 @@ impl BuildSerializer for FrozenDictSerializer {
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
-        if get_frozendict_type(py).is_err() {
+        if !FROZENDICT_AVAILABLE {
             return py_schema_err!("The `frozendict` builtin type is only available on Python 3.15 and above");
         }
         let key_serializer = match schema.get_as(intern!(py, "keys_schema"))? {
@@ -79,15 +79,6 @@ impl_py_gc_traverse!(FrozenDictSerializer {
     value_serializer
 });
 
-fn as_frozendict<'py>(value: &Bound<'py, PyAny>) -> Option<Bound<'py, PyMapping>> {
-    match get_frozendict_type(value.py()) {
-        Ok(frozendict_type) if value.is_instance(frozendict_type).unwrap_or(false) => {
-            value.cast::<PyMapping>().ok().map(Bound::to_owned)
-        }
-        _ => None,
-    }
-}
-
 impl TypeSerializer for FrozenDictSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
@@ -114,7 +105,7 @@ impl TypeSerializer for FrozenDictSerializer {
                 }
                 match state.extra.mode {
                     SerMode::Json => Ok(new_dict.into()),
-                    _ => Ok(get_frozendict_type(py)?.call1((new_dict,))?.unbind()),
+                    _ => Ok(new_frozendict(new_dict.as_any())?.unbind()),
                 }
             }
             None => {

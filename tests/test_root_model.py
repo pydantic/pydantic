@@ -2,6 +2,7 @@ import importlib.util
 import inspect
 import pickle
 import typing
+from copy import deepcopy
 from datetime import date, datetime
 from typing import Annotated, Any, Generic, Literal, TypeVar
 
@@ -647,6 +648,18 @@ def test_root_model_shallow_copy() -> None:
     assert copied.root == [1, 2, 3, 4]
 
 
+def test_root_model_shallow_copy_private_attributes() -> None:
+    class Root(RootModel[int]):
+        _tag: str = PrivateAttr(default='original')
+
+    original = Root(1)
+    copied = original.model_copy(deep=False)
+
+    copied._tag = 'copy'
+    assert original._tag == 'original'
+    assert copied._tag == 'copy'
+
+
 def test_root_model_deep_copy() -> None:
     class NestedListRootModel(RootModel[list[list[int]]]):
         pass
@@ -658,6 +671,18 @@ def test_root_model_deep_copy() -> None:
     assert original.root is not copied.root
     assert original.root[0] is not copied.root[0]
     assert original.root == copied.root
+
+
+def test_root_model_deepcopy_self_referential() -> None:
+    class Nodes(RootModel[list[Any]]):
+        pass
+
+    original = Nodes([])
+    original.root.append(original)
+
+    for copied in (deepcopy(original), original.model_copy(deep=True)):
+        assert copied is not original
+        assert copied.root[0] is copied
 
 
 @pytest.mark.parametrize(

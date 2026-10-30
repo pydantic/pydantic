@@ -103,16 +103,25 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         m = cls.__new__(cls)
         new_dict = copy(self.__dict__)
         new_dict['root'] = copy(self.__dict__['root'])  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
+        # Private attributes live in `__dict__` on root models, so give the copy its own:
+        private = new_dict.get('__pydantic_private__')
+        if private is not None:
+            new_dict['__pydantic_private__'] = {  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
+                k: v for k, v in private.items() if v is not PydanticUndefined
+            }
         _object_setattr(m, '__dict__', new_dict)
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m
 
     def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
         """Returns a deep copy of the model."""
+        if memo is None:
+            memo = {}
         cls = type(self)
         m = cls.__new__(cls)
+        memo[id(self)] = m
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
-        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
+        # This next line doesn't need a deepcopy because __pydantic_fields_set__ only contains strings,
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m

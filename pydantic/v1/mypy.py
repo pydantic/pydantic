@@ -593,7 +593,8 @@ class PydanticModelTransformer:
                 has_alias_generator = False
             return ModelConfigData(has_alias_generator=has_alias_generator)
         if isinstance(substmt.rvalue, NameExpr) and substmt.rvalue.fullname in ('builtins.True', 'builtins.False'):
-            return ModelConfigData(**{lhs.name: substmt.rvalue.fullname == 'builtins.True'})
+            config_data = {lhs.name: substmt.rvalue.fullname == 'builtins.True'}
+            return ModelConfigData(**config_data)
         error_invalid_config_value(lhs.name, self._ctx.api, substmt)
         return None
 

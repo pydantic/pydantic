@@ -715,3 +715,84 @@ def test_trusted_url_class_key_covers_mutable_class_attributes():
             After(u='http://example.com')
     finally:
         HttpUrl._constraints = original
+
+
+@pytest.mark.parametrize(
+    'legacy,modern',
+    [
+        ('Tuple', 'tuple'),
+        ('Tuple[()]', 'tuple[()]'),
+        ('Tuple[int]', 'tuple[int]'),
+        ('Tuple[int, ...]', 'tuple[int, ...]'),
+        ('List', 'list'),
+        ('Set', 'set'),
+        ('FrozenSet', 'frozenset'),
+        ('Dict', 'dict'),
+        ('List[Tuple]', 'list[tuple]'),
+        ('List[Tuple[()]]', 'list[tuple[()]]'),
+    ],
+)
+def test_pure_annotation_cache_key_deprecated_aliases(legacy: str, modern: str) -> None:
+    import typing
+
+    from pydantic._internal._generate_schema import _NOT_PURE, _pure_annotation_cache_key
+
+    key = _pure_annotation_cache_key(eval(legacy, vars(typing)))
+    assert key is not _NOT_PURE
+    assert key == _pure_annotation_cache_key(eval(modern))
+    assert _pure_annotation_cache_key(typing.Tuple) != _pure_annotation_cache_key(tuple[()])  # noqa: UP006
+
+
+@pytest.mark.parametrize(
+    'annotation,args,expected',
+    [
+        (tuple, (), None),
+        ('bare', (), None),
+        (tuple[()], (), ()),
+        ('empty', ((),), ()),
+        (tuple[int], (int,), (int,)),
+        (tuple[int, ...], (int, Ellipsis), (int, Ellipsis)),
+    ],
+)
+def test_normalize_tuple_args(annotation: Any, args: tuple[Any, ...], expected: tuple[Any, ...] | None) -> None:
+    import typing
+
+    from pydantic._internal._generate_schema import _normalize_tuple_args
+
+    if annotation == 'bare':
+        annotation = typing.Tuple  # noqa: UP006
+    elif annotation == 'empty':
+        annotation = typing.Tuple[()]  # noqa: UP006
+    assert _normalize_tuple_args(annotation, args) == expected
+
+
+@pytest.mark.thread_unsafe
+@pytest.mark.parametrize('value', ['abc', b'abc', 42, True, None], ids=['str', 'bytes', 'int', 'bool', 'none'])
+@pytest.mark.parametrize('estimated', [False, True])
+def test_literal_cache_budget_boundary(value: Any, estimated: bool, monkeypatch: pytest.MonkeyPatch) -> None:
+    from typing import Literal
+
+    from pydantic._internal import _schema_cache
+
+    if isinstance(value, (str, bytes)):
+        estimate = 80 + len(value) * (4 if isinstance(value, str) else 1)
+    elif isinstance(value, int):
+        estimate = 32 + 4 * ((value.bit_length() + 29) // 30)
+    else:
+        estimate = 32
+    size = sys.getsizeof(value, estimate)
+    if estimated:
+        monkeypatch.setattr(sys, 'getsizeof', lambda value, default: default)
+        size = estimate
+    monkeypatch.setattr(_schema_cache, 'PURE_ANNOTATION_MAX_LITERAL_BYTES', size)
+    assert _schema_cache.pure_annotation_cache_key(Literal[value]) is not _schema_cache.NOT_PURE
+    monkeypatch.setattr(_schema_cache, 'PURE_ANNOTATION_MAX_LITERAL_BYTES', size - 1)
+    assert _schema_cache.pure_annotation_cache_key(Literal[value]) is _schema_cache.NOT_PURE
+
+
+def test_large_integer_literal_bypasses_schema_cache() -> None:
+    from typing import Literal
+
+    from pydantic._internal._generate_schema import _NOT_PURE, _pure_annotation_cache_key
+
+    assert _pure_annotation_cache_key(Literal[1 << 80_000]) is _NOT_PURE

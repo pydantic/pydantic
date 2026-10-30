@@ -83,7 +83,7 @@ impl Validator for DefinitionRefValidator {
 
         self.definition.read(|validator| {
             let validator = validator.unwrap();
-            if let Some(id) = input.as_python().map(py_identity) {
+            if let Some(id) = input.identity() {
                 // Python objects can be cyclic, so need recursion guard
                 let Ok(mut guard) = RecursionGuard::new(state, id, self.definition.id()) else {
                     return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));

@@ -27,6 +27,7 @@ can never keep user classes alive.
 from __future__ import annotations
 
 import datetime
+import sys
 import typing
 from decimal import Decimal
 from functools import cache
@@ -343,7 +344,25 @@ def _verified_leaf_class_key(tp: Any) -> Any:
     return ('url-class', tp, constraints_key, _normalize_hook(tp.serialize_url))
 
 
-def pure_annotation_cache_key(tp: Any, /) -> Any:
+def normalize_tuple_args(tuple_type: Any, args: tuple[Any, ...] | None) -> tuple[Any, ...] | None:
+    """Return tuple element annotations, or `None` for a bare, arbitrary-length tuple.
+
+    An empty tuple of arguments denotes a fixed-length empty tuple. On Python 3.10,
+    `typing.Tuple[()]` instead supplies `((),)`, which is normalized to the same shape.
+    """
+    if not args:
+        return None if tuple_type is tuple or tuple_type is typing.Tuple else ()  # noqa: UP006
+    if len(args) == 1 and args[0] == ():
+        return ()
+    return args
+
+
+# Bound the combined literal payload of a key, including nested literals.
+# The per-value cap above also applies to each literal independently.
+PURE_ANNOTATION_MAX_LITERAL_BYTES = 8 * 1024
+
+
+def pure_annotation_cache_key(tp: Any, /, literal_bytes: list[int] | None = None) -> Any:
     """Return a cache key for the annotation if it is pure, `NOT_PURE` otherwise.
 
     Note that the annotation objects themselves can't be used as cache keys: unions and literals
@@ -356,15 +375,18 @@ def pure_annotation_cache_key(tp: Any, /) -> Any:
     of such types, so it is always hashable. Callers still guard against `TypeError` in case an
     unhashable annotation reaches a `get_args()` call.
     """
+    type_id = id(tp)
+    if aliased_type := typing_objects.DEPRECATED_ALIASES_IDS.get(type_id):
+        return aliased_type if id(aliased_type) in _PURE_LEAF_TYPE_IDS else NOT_PURE
     origin = get_origin(tp)
     if origin is None:
-        if id(tp) in _PURE_LEAF_TYPE_IDS:
+        if type_id in _PURE_LEAF_TYPE_IDS:
             return tp
         if isinstance(tp, type):
             return _verified_leaf_class_key(tp)
         return NOT_PURE
     if typing_objects.is_annotated(origin):
-        source_key = pure_annotation_cache_key(tp.__origin__)
+        source_key = pure_annotation_cache_key(tp.__origin__, literal_bytes)
         if source_key is NOT_PURE:
             return NOT_PURE
         arg_keys: list[Any] = ['annotated', source_key]
@@ -378,28 +400,46 @@ def pure_annotation_cache_key(tp: Any, /) -> Any:
         arg_keys = ['union']
     elif id(origin) in _PURE_CONTAINER_ORIGIN_IDS:
         arg_keys = [origin]
-        if not hasattr(tp, '__args__'):
-            # An unparameterized alias (`typing.Tuple`) and one parameterized with nothing
-            # (`typing.Tuple[()]`, the empty tuple) both have an empty `get_args()`, but only
-            # the first is variadic, so they must not share an entry:
-            arg_keys.append('unparameterized')
     elif typing_objects.is_literal(origin):
         arg_keys = ['literal']
+        size = literal_bytes[0] if literal_bytes is not None else 0
         for arg in get_args(tp):
             if id(type(arg)) not in _PURE_LITERAL_VALUE_TYPE_IDS or not _value_fits_in_key(arg):
+                return NOT_PURE
+            value_size = sys.getsizeof(arg, 0)
+            if not value_size:
+                # PyPy cannot report object sizes. Use conservative estimates there,
+                # accounting for wide Unicode strings and arbitrary-precision integers.
+                if isinstance(arg, (str, bytes)):
+                    value_size = 80 + len(arg) * (4 if isinstance(arg, str) else 1)
+                elif isinstance(arg, int):
+                    value_size = 32 + 4 * ((arg.bit_length() + 29) // 30)
+                else:
+                    value_size = 32
+            size += value_size
+            if size > PURE_ANNOTATION_MAX_LITERAL_BYTES:
                 return NOT_PURE
             # The type is included to discriminate between equal values of different
             # types (e.g. `Literal[1]` and `Literal[True]`):
             arg_keys.append((type(arg), arg))
+        if literal_bytes is not None:
+            literal_bytes[0] = size
         return tuple(arg_keys)
     else:
         return NOT_PURE
 
-    for arg in get_args(tp):
+    args = get_args(tp)
+    if origin is tuple:
+        args = normalize_tuple_args(tp, args)
+        if args is None:
+            return tuple
+    if literal_bytes is None:
+        literal_bytes = [0]
+    for arg in args:
         if arg is Ellipsis:
             arg_keys.append(Ellipsis)
             continue
-        arg_key = pure_annotation_cache_key(arg)
+        arg_key = pure_annotation_cache_key(arg, literal_bytes)
         if arg_key is NOT_PURE:
             return NOT_PURE
         arg_keys.append(arg_key)

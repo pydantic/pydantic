@@ -9,6 +9,7 @@ use pyo3::{PyTypeInfo, intern};
 use strum::Display;
 use strum_macros::EnumString;
 
+use crate::common::frozendict::{as_frozendict, frozendict_type_raw};
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 #[derive(Debug, Clone)]
@@ -21,10 +22,8 @@ pub struct ObTypeLookup {
     string: usize,
     list: usize,
     dict: usize,
-    // `frozendict` builtin, only available on Python 3.15+ (`None` on older versions)
-    // TODO: remove when https://github.com/PyO3/pyo3/pull/6174 gets released, and use a
-    // `frozendict: usize` field from `PyFrozenDict::type_object_raw()` instead, like `dict`:
-    frozendict_object: Option<Py<PyAny>>,
+    // `frozendict` builtin, only available on Python 3.15+ (`0` on older versions)
+    frozendict: usize,
     ordered_dict_object: Py<PyAny>,
     counter_object: Py<PyAny>,
     // other numeric types
@@ -83,12 +82,7 @@ impl ObTypeLookup {
             float: PyFloat::type_object_raw(py) as usize,
             list: PyList::type_object_raw(py) as usize,
             dict: PyDict::type_object_raw(py) as usize,
-            frozendict_object: py
-                .import("builtins")
-                .unwrap()
-                .getattr("frozendict")
-                .ok()
-                .map(Bound::unbind),
+            frozendict: frozendict_type_raw(py),
             ordered_dict_object: py
                 .import("collections")
                 .unwrap()
@@ -170,10 +164,7 @@ impl ObTypeLookup {
             ObType::Str => self.string == ob_type,
             ObType::List => self.list == ob_type,
             ObType::Dict => self.dict == ob_type,
-            ObType::Frozendict => self
-                .frozendict_object
-                .as_ref()
-                .is_some_and(|t| t.as_ptr() as usize == ob_type),
+            ObType::Frozendict => self.frozendict == ob_type,
             ObType::OrderedDict => self.ordered_dict_object.as_ptr() as usize == ob_type,
             ObType::Counter => self.counter_object.as_ptr() as usize == ob_type,
             ObType::Decimal => self.decimal_object.as_ptr() as usize == ob_type,
@@ -258,11 +249,7 @@ impl ObTypeLookup {
             ObType::List
         } else if ob_type == self.dict {
             ObType::Dict
-        } else if self
-            .frozendict_object
-            .as_ref()
-            .is_some_and(|t| t.as_ptr() as usize == ob_type)
-        {
+        } else if ob_type == self.frozendict {
             ObType::Frozendict
         } else if ob_type == self.ordered_dict_object.as_ptr() as usize {
             ObType::OrderedDict
@@ -368,11 +355,7 @@ impl ObTypeLookup {
             ObType::Counter
         } else if value.is_instance_of::<PyDict>() {
             ObType::Dict
-        } else if self
-            .frozendict_object
-            .as_ref()
-            .is_some_and(|t| value.is_instance(t.bind(py)).unwrap_or(false))
-        {
+        } else if as_frozendict(value).is_some() {
             ObType::Frozendict
         } else if value.is_instance_of::<PyBool>() {
             ObType::Bool

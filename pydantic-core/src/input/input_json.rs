@@ -33,6 +33,11 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         Some(self)
     }
 
+    fn identity(&self) -> Option<usize> {
+        // depth is bounded by the JSON parser's recursion limit
+        None
+    }
+
     #[inline]
     fn py_converter(&self) -> impl IntoPyObject<'py> + '_ {
         self
@@ -202,7 +207,9 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
                 create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::strict)
             }
             JsonValue::Array(array) if !strict && ValidatedTuple::len(&array) == Some(3) => {
-                create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::lax)
+                create_decimal(&self.into_pyobject(py)?, self)
+                    .map(ValidationMatch::lax)
+                    .map_err(|_| ValError::new(ErrorTypeDefaults::DecimalType, self))
             }
             _ => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
@@ -436,6 +443,10 @@ impl<'py> Input<'py> for str {
         // Justification for the clone: this is on the error pathway and we are generally ok
         // with errors having a performance penalty
         InputValue::Json(JsonValue::Str(self.to_owned().into()))
+    }
+
+    fn identity(&self) -> Option<usize> {
+        None
     }
 
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
