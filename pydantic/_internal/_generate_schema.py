@@ -155,15 +155,22 @@ def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], 
     return handler
 
 
-_CACHEABLE_SCALARS = (str, bytes, int, float, bool, complex, NoneType)
-_CACHEABLE_SCALARS_BY_ID = {id(scalar): scalar for scalar in _CACHEABLE_SCALARS}
-
-
 def _simple_schema_cache_key(obj: Any, origin: Any) -> tuple[type, ...] | None:
     """Return an order-sensitive key only for flat unions of builtin scalars."""
     if is_union_origin(origin):
         args = get_args(obj)
-        if len(args) >= 2 and all(_CACHEABLE_SCALARS_BY_ID.get(id(arg)) is arg for arg in args):
+        if len(args) >= 2:
+            for arg in args:
+                if not (
+                    arg is str
+                    or arg is bytes
+                    or arg is int
+                    or arg is float
+                    or arg is bool
+                    or arg is complex
+                    or arg is NoneType
+                ):
+                    return None
             return args
     return None
 
