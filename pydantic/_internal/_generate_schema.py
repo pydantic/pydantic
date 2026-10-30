@@ -1123,16 +1123,16 @@ class GenerateSchema:
             if not self._config_wrapper.json_encoders:
                 args = get_args(obj)
                 if len(args) >= 2:
-                    choices: list[CoreSchema] = []
                     nullable = False
                     for arg in args:
-                        if arg is NoneType:
+                        if arg is str or arg is bytes or arg is int or arg is float or arg is bool or arg is complex:
+                            continue
+                        elif arg is NoneType:
                             nullable = True
-                        elif arg is str or arg is bytes or arg is int or arg is float or arg is bool or arg is complex:
-                            choices.append(self._handlers[arg](self, arg))
                         else:
                             break
                     else:
+                        choices = [self._handlers[arg](self, arg) for arg in args if arg is not NoneType]
                         schema: CoreSchema
                         if len(choices) == 1:
                             schema = choices[0]
