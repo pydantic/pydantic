@@ -397,8 +397,8 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
 # Namespace value types that can never match any of the `isinstance`-based branches of
 # `inspect_namespace()` (in particular, they can never be classes, `ModelPrivateAttr` or
 # `FieldInfo` instances, or `functools` objects):
-_simple_default_types: frozenset[type[Any]] = frozenset(
-    [NoneType, bool, int, float, complex, str, bytes, list, dict, set, tuple, frozenset]
+_simple_default_type_ids: frozenset[int] = frozenset(
+    id(tp) for tp in (NoneType, bool, int, float, complex, str, bytes, list, dict, set, tuple, frozenset)
 )
 
 
@@ -461,14 +461,14 @@ def inspect_namespace(  # noqa C901
         elif isinstance(value, all_ignored_types) or value.__class__.__module__ == 'functools':
             ignored_names.add(var_name)
             continue
-        elif type(value) in _simple_default_types and is_valid_field_name(var_name):
+        elif id(type(value)) in _simple_default_type_ids and is_valid_field_name(var_name):
             # Fast path: a plain immutable default under an ordinary field name. Its exact type
             # rules out `ModelPrivateAttr` and `FieldInfo`, and the name rules out the dunder and
             # sunder branches, so the only outcome left is the field-candidate one below:
             if var_name not in base_class_vars:
                 field_candidates.append(var_name)
             continue
-        elif type(value) in _simple_default_types and is_valid_field_name(var_name):
+        elif id(type(value)) in _simple_default_type_ids and is_valid_field_name(var_name):
             # Fast path: a plain immutable default under an ordinary field name. Its exact type
             # rules out `ModelPrivateAttr` and `FieldInfo`, and the name rules out the dunder and
             # sunder branches, so the only outcome left is the field-candidate one below:

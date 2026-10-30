@@ -301,3 +301,23 @@ def test_legacy_validators_added_and_removed_after_caching(monkeypatch: pytest.M
         value: UUID
 
     assert After(value=value).value == value
+
+
+@pytest.mark.parametrize('error', [TypeError, RuntimeError, ValueError])
+def test_classvar_default_does_not_hash_its_type(error: type[Exception]) -> None:
+    from typing import ClassVar
+
+    class Meta(type):
+        def __hash__(cls) -> int:
+            raise error('cannot hash type')
+
+    class Value(metaclass=Meta):
+        pass
+
+    value = Value()
+
+    class Model(BaseModel):
+        x: ClassVar[Any] = value
+
+    assert Model.x is value
+    assert Model.model_fields == {}
