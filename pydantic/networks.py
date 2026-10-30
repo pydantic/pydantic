@@ -385,6 +385,14 @@ class _BaseUrl:
     __pydantic_serializer__ = SchemaSerializer(core_schema.any_schema(serialization=core_schema.to_string_ser_schema()))
 
 
+# Preserve the original functions before user code can monkeypatch the class. The schema
+# cache initializes lazily and must not trust a replacement installed before its first use.
+_BASE_URL_SCHEMA_HOOKS: tuple[object, object] = (
+    _BaseUrl.__dict__['__get_pydantic_core_schema__'].__func__,
+    _BaseUrl.__dict__['__get_pydantic_json_schema__'].__func__,
+)
+
+
 class _BaseMultiHostUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
     _url: _CoreMultiHostUrl
