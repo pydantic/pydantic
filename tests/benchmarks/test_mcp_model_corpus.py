@@ -15,6 +15,9 @@ import pytest
 
 from pydantic import BaseModel
 
+# Each run temporarily replaces process-wide MCP modules and import hooks.
+pytestmark = pytest.mark.thread_unsafe
+
 CORPUS = Path(__file__).parent / 'corpus' / 'mcp'
 MANIFEST = json.loads((CORPUS / 'manifest.json').read_text())
 SOURCES: dict[str, tuple[CodeType, bool]] = {}
