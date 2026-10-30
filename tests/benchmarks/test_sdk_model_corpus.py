@@ -14,7 +14,7 @@ from .model_corpus import CorpusImporter
 
 # Import isolation changes process-wide module state.
 pytestmark = pytest.mark.thread_unsafe
-LIBRARIES = ['openai']
+LIBRARIES = ['openai', 'anthropic']
 
 
 @pytest.fixture(scope='module', params=LIBRARIES)
