@@ -24,6 +24,7 @@ class NumbersModel(BaseModel):
 @pytest.mark.parametrize(
     'case',
     ['scalar', 'list', 'coerce-last', 'invalid-last', 'syntax-last'],
+    ids=['scalar', 'list-10000', 'coerce-last-10000', 'invalid-last-10000', 'syntax-last-10000'],
 )
 def test_model_json_streaming(benchmark: BenchmarkFixture, case: str) -> None:
     """Measure successful validation and late fallback/error costs separately."""
