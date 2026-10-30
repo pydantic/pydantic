@@ -1,79 +1,26 @@
-"""Build all frozen MCP model graphs without importing the installed SDK."""
+"""Verify the frozen MCP model graph and its isolated importer."""
 
 import ast
-import importlib
-import importlib.abc
-import importlib.machinery
-import importlib.util
-import json
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from pathlib import Path
-from types import CodeType, ModuleType
+from types import ModuleType
 
 import pytest
 
 from pydantic import BaseModel
 
-# Each run temporarily replaces process-wide MCP modules and import hooks.
+from .model_corpus import CorpusImporter
+
+# Each run temporarily replaces process-wide modules and import hooks.
 pytestmark = pytest.mark.thread_unsafe
 
 CORPUS = Path(__file__).parent / 'corpus' / 'mcp'
-MANIFEST = json.loads((CORPUS / 'manifest.json').read_text())
-SOURCES: dict[str, tuple[CodeType, bool]] = {}
-for source in sorted(CORPUS.rglob('*.py')):
-    parts = source.relative_to(CORPUS).with_suffix('').parts
-    is_package = parts[-1] == '__init__'
-    name = '.'.join(parts[:-1] if is_package else parts)
-    SOURCES[name] = compile(source.read_text(), str(source), 'exec'), is_package
-
-
-def is_corpus_module(name: str) -> bool:
-    return name.split('.')[0] in ('mcp', 'mcp_types')
-
-
-class CorpusImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
-    def find_spec(
-        self, fullname: str, path: Sequence[str] | None = None, target: ModuleType | None = None
-    ) -> importlib.machinery.ModuleSpec | None:
-        if not is_corpus_module(fullname):
-            return None
-        if fullname not in SOURCES:
-            raise ModuleNotFoundError(f'Module missing from frozen MCP corpus: {fullname}', name=fullname)
-        return importlib.util.spec_from_loader(fullname, self, is_package=SOURCES[fullname][1])
-
-    def create_module(self, spec: importlib.machinery.ModuleSpec) -> None:
-        return None
-
-    def exec_module(self, module: ModuleType) -> None:
-        exec(SOURCES[module.__name__][0], module.__dict__)
-
-
-def build_models() -> list[type[BaseModel]]:
-    previous = {name: module for name, module in sys.modules.copy().items() if is_corpus_module(name)}
-    for name in previous:
-        sys.modules.pop(name)
-    importer = CorpusImporter()
-    sys.meta_path.insert(0, importer)
-    try:
-        modules = [importlib.import_module(name) for name in MANIFEST['declarations']]
-        models = list(
-            dict.fromkeys(
-                value
-                for module in modules
-                for value in vars(module).values()
-                if isinstance(value, type) and issubclass(value, BaseModel) and is_corpus_module(value.__module__)
-            )
-        )
-        for model in sorted(models, key=lambda cls: (cls.__module__, cls.__name__)):
-            model.model_rebuild()
-        return models
-    finally:
-        sys.meta_path.remove(importer)
-        for name in list(sys.modules):
-            if is_corpus_module(name):
-                sys.modules.pop(name)
-        sys.modules.update(previous)
+IMPORTER = CorpusImporter(CORPUS)
+MANIFEST = IMPORTER.manifest
+SOURCES = IMPORTER.sources
+build_models = IMPORTER.build_models
+is_corpus_module = IMPORTER.is_corpus_module
 
 
 def test_mcp_model_corpus(benchmark: Callable[[Callable[[], list[type[BaseModel]]]], list[type[BaseModel]]]) -> None:
