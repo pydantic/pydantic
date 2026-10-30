@@ -32,15 +32,15 @@ def test_model_json_streaming(benchmark: BenchmarkFixture, case: str) -> None:
         data = b'{"count":123,"name":"hello","ratio":1.5}'
     else:
         model = NumbersModel
-        prefix = b'{"numbers":[' + b','.join(str(i).encode() for i in range(999)) + b','
+        prefix = b'{"numbers":[' + b','.join(str(i).encode() for i in range(9999)) + b','
         if case == 'list':
-            data = prefix + b'999]}'
+            data = prefix + b'9999]}'
         elif case == 'coerce-last':
-            data = prefix + b'"999"]}'
+            data = prefix + b'"9999"]}'
         elif case == 'invalid-last':
             data = prefix + b'"oops"]}'
         else:
-            data = prefix + b'999]} trailing'
+            data = prefix + b'9999]} trailing'
 
     if case in ('invalid-last', 'syntax-last'):
         with pytest.raises(ValidationError):
@@ -60,5 +60,5 @@ def test_model_json_streaming(benchmark: BenchmarkFixture, case: str) -> None:
         if case == 'scalar':
             assert result == ScalarModel(count=123, name='hello', ratio=1.5)
         else:
-            assert result.numbers == list(range(1000))
+            assert result.numbers == list(range(10000))
         benchmark(model.model_validate_json, data)
