@@ -1,0 +1,51 @@
+pydantic-core/src/validators/model_fields.rs
+  s_f7df228e6aba5a::t_a506b05be394b5 10,14,21,26,49-55,94-96,100,113-114,126-127,131-132,150-151,162,492,510,829,868,870,881,898,956,981,1083,1085,1088,1193-1195,1214,1235,1237,1262,1274,1354,1377-1384,1412-1419
+SECURITY.md
+  s_f7df228e6aba5a::t_5c25fab48789e5 49
+docs/api/pydantic_core.md
+  s_f7df228e6aba5a::t_d610a768386300 22
+docs/contributing.md
+  s_f7df228e6aba5a::t_a069883d95d31d 99,103
+pydantic-core/python/pydantic_core/__init__.py
+  s_f7df228e6aba5a::t_390fbb9c701e13 4,11,68,197-199
+pydantic-core/python/pydantic_core/_pydantic_core/__init__.pyi
+  s_f7df228e6aba5a::t_830f82d54bc9bf 2-4,1120-1178
+pydantic-core/src/fields_set.rs
+  s_f7df228e6aba5a::t_5538b88fced7f1 1-711
+pydantic-core/src/lib.rs
+  s_f7df228e6aba5a::t_b6555c9ff2c6d3 22,42,121-124
+pydantic-core/src/serializers/type_serializers/model.rs
+  s_f7df228e6aba5a::t_89d74533ada4f2 7,20,227
+pydantic-core/src/validators/model.rs
+  s_f7df228e6aba5a::t_7032bb59bae4be 19,298,300,330
+pydantic-core/src/validators/shared/lookup_tree.rs
+  s_f7df228e6aba5a::t_e5cc31d6e53d00 294-295
+pydantic-core/tests/test_fields_set.py
+  s_f7df228e6aba5a::t_1a5872e04f3b23 1-565
+pydantic-core/tests/test_streaming_json.py
+  s_f7df228e6aba5a::t_4e60fa9f1b70ca 25,488-501
+pydantic/deprecated/copy_internals.py
+  s_f7df228e6aba5a::t_4da1ce1e53a9dc 4-5,102,211
+pydantic/main.py
+  s_f7df228e6aba5a::t_c5a46d83a2abee 14,244,324,468-469,1065,1383,1640,1643
+pydantic/root_model.py
+  s_f7df228e6aba5a::t_0a70faedd617f4 124
+tests/test_main.py
+  s_f7df228e6aba5a::t_39bad77e59dd6f 31,3519-3523,3526,3528,3531-3532,4040-4107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "49ccd9a8e9bf30cad637c0d95e03fcf2d587912a",
+  "prompts": {},
+  "sessions": {
+    "s_f7df228e6aba5a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18ced-21d4-7363-aacd-118ef720bb0e",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
