@@ -1118,28 +1118,7 @@ class GenerateSchema:
         origin = origin if origin is not PydanticUndefined else get_origin(obj)
 
         if is_union_origin(origin):
-            # These exact builtin types cannot attach hooks or union tags. Field-level
-            # metadata and validators still process the fresh schema normally.
-            if not self._config_wrapper.json_encoders:
-                args = get_args(obj)
-                if len(args) >= 2:
-                    nullable = False
-                    for arg in args:
-                        if arg is str or arg is bytes or arg is int or arg is float or arg is bool or arg is complex:
-                            continue
-                        elif arg is NoneType:
-                            nullable = True
-                        else:
-                            break
-                    else:
-                        choices = [self._handlers[arg](self, arg) for arg in args if arg is not NoneType]
-                        schema: CoreSchema
-                        if len(choices) == 1:
-                            schema = choices[0]
-                        else:
-                            schema = cast(core_schema.UnionSchema, {'type': 'union', 'choices': choices})
-                        return {'type': 'nullable', 'schema': schema} if nullable else schema
-            return self._union_schema(obj)
+            return self._direct_union_schema(obj)
 
         if typing_objects.is_annotated(origin):
             return self._annotated_schema(obj)
@@ -1387,6 +1366,31 @@ class GenerateSchema:
         )
 
         return schema, core_metadata
+
+    def _direct_union_schema(self, obj: Any) -> CoreSchema:
+        """Generate the optimized union schema without enlarging general dispatch frames."""
+        # These exact builtin types cannot attach hooks or union tags. Field-level
+        # metadata and validators still process the fresh schema normally.
+        if not self._config_wrapper.json_encoders:
+            args = get_args(obj)
+            if len(args) >= 2:
+                nullable = False
+                for arg in args:
+                    if arg is str or arg is bytes or arg is int or arg is float or arg is bool or arg is complex:
+                        continue
+                    elif arg is NoneType:
+                        nullable = True
+                    else:
+                        break
+                else:
+                    choices = [self._handlers[arg](self, arg) for arg in args if arg is not NoneType]
+                    schema: CoreSchema
+                    if len(choices) == 1:
+                        schema = choices[0]
+                    else:
+                        schema = cast(core_schema.UnionSchema, {'type': 'union', 'choices': choices})
+                    return {'type': 'nullable', 'schema': schema} if nullable else schema
+        return self._union_schema(obj)
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
