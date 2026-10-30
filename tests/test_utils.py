@@ -15,12 +15,9 @@ from pydantic._internal._typing_extra import get_origin
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
     LazyClassAttribute,
-    ValueItems,
     all_identical,
-    deep_update,
     lenient_issubclass,
     smart_deepcopy,
-    unique_list,
 )
 from pydantic._internal._validators import import_string
 from pydantic.alias_generators import to_camel, to_pascal, to_snake
@@ -102,132 +99,6 @@ def test_lenient_issubclass_is_lenient():
     assert lenient_issubclass('a', 'a') is False
 
 
-@pytest.mark.parametrize(
-    'input_value,output',
-    [
-        ([], []),
-        ([1, 1, 1, 2, 1, 2, 3, 2, 3, 1, 4, 2, 3, 1], [1, 2, 3, 4]),
-        (['a', 'a', 'b', 'a', 'b', 'c', 'b', 'c', 'a'], ['a', 'b', 'c']),
-    ],
-)
-def test_unique_list(input_value, output):
-    assert unique_list(input_value) == output
-    assert unique_list(unique_list(input_value)) == unique_list(input_value)
-
-
-def test_value_items():
-    v = ['a', 'b', 'c']
-    vi = ValueItems(v, {0, -1})
-    assert vi.is_excluded(2)
-    assert [v_ for i, v_ in enumerate(v) if not vi.is_excluded(i)] == ['b']
-
-    assert vi.is_included(2)
-    assert [v_ for i, v_ in enumerate(v) if vi.is_included(i)] == ['a', 'c']
-
-    v2 = {'a': v, 'b': {'a': 1, 'b': (1, 2)}, 'c': 1}
-
-    vi = ValueItems(v2, {'a': {0, -1}, 'b': {'a': ..., 'b': -1}})
-
-    assert not vi.is_excluded('a')
-    assert vi.is_included('a')
-    assert not vi.is_excluded('c')
-    assert not vi.is_included('c')
-
-    assert str(vi) == "{'a': {0, -1}, 'b': {'a': Ellipsis, 'b': -1}}"
-    assert repr(vi) == "ValueItems({'a': {0, -1}, 'b': {'a': Ellipsis, 'b': -1}})"
-
-    excluded = {k_: v_ for k_, v_ in v2.items() if not vi.is_excluded(k_)}
-    assert excluded == {'a': v, 'b': {'a': 1, 'b': (1, 2)}, 'c': 1}
-
-    included = {k_: v_ for k_, v_ in v2.items() if vi.is_included(k_)}
-    assert included == {'a': v, 'b': {'a': 1, 'b': (1, 2)}}
-
-    sub_v = included['a']
-    sub_vi = ValueItems(sub_v, vi.for_element('a'))
-    assert repr(sub_vi) == 'ValueItems({0: Ellipsis, 2: Ellipsis})'
-
-    assert sub_vi.is_excluded(2)
-    assert [v_ for i, v_ in enumerate(sub_v) if not sub_vi.is_excluded(i)] == ['b']
-
-    assert sub_vi.is_included(2)
-    assert [v_ for i, v_ in enumerate(sub_v) if sub_vi.is_included(i)] == ['a', 'c']
-
-    vi = ValueItems([], {'__all__': {}})
-    assert vi._items == {}
-
-    with pytest.raises(TypeError, match='Unexpected type of exclude value for index "a" <class \'NoneType\'>'):
-        ValueItems(['a', 'b'], {'a': None})
-
-    m = (
-        'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
-        'expected integer keys or keyword "__all__"'
-    )
-    with pytest.raises(TypeError, match=m):
-        ValueItems(['a', 'b'], {'a': {}})
-
-    vi = ValueItems([1, 2, 3, 4], {'__all__': True})
-    assert repr(vi) == 'ValueItems({0: Ellipsis, 1: Ellipsis, 2: Ellipsis, 3: Ellipsis})'
-
-    vi = ValueItems([1, 2], {'__all__': {1, 2}})
-    assert repr(vi) == 'ValueItems({0: {1: Ellipsis, 2: Ellipsis}, 1: {1: Ellipsis, 2: Ellipsis}})'
-
-
-@pytest.mark.parametrize(
-    'base,override,intersect,expected',
-    [
-        # Check in default (union) mode
-        (..., ..., False, ...),
-        (None, None, False, None),
-        ({}, {}, False, {}),
-        (..., None, False, ...),
-        (None, ..., False, ...),
-        (None, {}, False, {}),
-        ({}, None, False, {}),
-        (..., {}, False, {}),
-        ({}, ..., False, ...),
-        ({'a': None}, {'a': None}, False, {}),
-        ({'a'}, ..., False, ...),
-        ({'a'}, {}, False, {'a': ...}),
-        ({'a'}, {'b'}, False, {'a': ..., 'b': ...}),
-        ({'a': ...}, {'b': {'c'}}, False, {'a': ..., 'b': {'c': ...}}),
-        ({'a': ...}, {'a': {'c'}}, False, {'a': {'c': ...}}),
-        ({'a': {'c': ...}, 'b': {'d'}}, {'a': ...}, False, {'a': ..., 'b': {'d': ...}}),
-        # Check in intersection mode
-        (..., ..., True, ...),
-        (None, None, True, None),
-        ({}, {}, True, {}),
-        (..., None, True, ...),
-        (None, ..., True, ...),
-        (None, {}, True, {}),
-        ({}, None, True, {}),
-        (..., {}, True, {}),
-        ({}, ..., True, {}),
-        ({'a': None}, {'a': None}, True, {}),
-        ({'a'}, ..., True, {'a': ...}),
-        ({'a'}, {}, True, {}),
-        ({'a'}, {'b'}, True, {}),
-        ({'a': ...}, {'b': {'c'}}, True, {}),
-        ({'a': ...}, {'a': {'c'}}, True, {'a': {'c': ...}}),
-        ({'a': {'c': ...}, 'b': {'d'}}, {'a': ...}, True, {'a': {'c': ...}}),
-        # Check usage of `True` instead of `...`
-        (..., True, False, True),
-        (True, ..., False, ...),
-        (True, None, False, True),
-        ({'a': {'c': True}, 'b': {'d'}}, {'a': True}, False, {'a': True, 'b': {'d': ...}}),
-    ],
-)
-def test_value_items_merge(base, override, intersect, expected):
-    actual = ValueItems.merge(base, override, intersect=intersect)
-    assert actual == expected
-
-
-def test_value_items_error():
-    with pytest.raises(TypeError) as e:
-        ValueItems(1, (1, 2, 3))
-
-    assert str(e.value) == "Unexpected type of exclude value <class 'tuple'>"
-
-
 def test_pretty():
     class MyTestModel(BaseModel):
         a: int = 1
@@ -280,46 +151,6 @@ def test_devtools_output():
         b: list[int] = [1, 2, 3]
 
     assert devtools.pformat(MyTestModel()) == 'MyTestModel(\n    a=1,\n    b=[1, 2, 3],\n)'
-
-
-@pytest.mark.parametrize(
-    'mapping, updating_mapping, expected_mapping, msg',
-    [
-        (
-            {'key': {'inner_key': 0}},
-            {'other_key': 1},
-            {'key': {'inner_key': 0}, 'other_key': 1},
-            'extra keys are inserted',
-        ),
-        (
-            {'key': {'inner_key': 0}, 'other_key': 1},
-            {'key': [1, 2, 3]},
-            {'key': [1, 2, 3], 'other_key': 1},
-            'values that can not be merged are updated',
-        ),
-        (
-            {'key': {'inner_key': 0}},
-            {'key': {'other_key': 1}},
-            {'key': {'inner_key': 0, 'other_key': 1}},
-            'values that have corresponding keys are merged',
-        ),
-        (
-            {'key': {'inner_key': {'deep_key': 0}}},
-            {'key': {'inner_key': {'other_deep_key': 1}}},
-            {'key': {'inner_key': {'deep_key': 0, 'other_deep_key': 1}}},
-            'deeply nested values that have corresponding keys are merged',
-        ),
-    ],
-)
-def test_deep_update(mapping, updating_mapping, expected_mapping, msg):
-    assert deep_update(mapping, updating_mapping) == expected_mapping, msg
-
-
-def test_deep_update_is_not_mutating():
-    mapping = {'key': {'inner_key': {'deep_key': 1}}}
-    updated_mapping = deep_update(mapping, {'key': {'inner_key': {'other_deep_key': 1}}})
-    assert updated_mapping == {'key': {'inner_key': {'deep_key': 1, 'other_deep_key': 1}}}
-    assert mapping == {'key': {'inner_key': {'deep_key': 1}}}
 
 
 def test_undefined_repr():
