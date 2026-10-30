@@ -1,0 +1,9 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing import Union
+from typing_extensions import Annotated, TypeAlias
+from ...._models import UnionDiscriminator
+from .beta_managed_agents_agent_tool_evaluation_auto import BetaManagedAgentsAgentToolEvaluationAuto
+from .beta_managed_agents_agent_tool_evaluation_always_ask import BetaManagedAgentsAgentToolEvaluationAlwaysAsk
+from .beta_managed_agents_agent_tool_evaluation_always_allow import BetaManagedAgentsAgentToolEvaluationAlwaysAllow
+BetaManagedAgentsAgentToolEvaluation: TypeAlias = Annotated[Union[BetaManagedAgentsAgentToolEvaluationAlwaysAllow, BetaManagedAgentsAgentToolEvaluationAlwaysAsk, BetaManagedAgentsAgentToolEvaluationAuto], UnionDiscriminator('type')]
