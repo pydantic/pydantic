@@ -23,7 +23,6 @@ class Model(BaseModel):
 model = Model(x=1, y='y', z='z')
 model = Model(x=1)
 model.y = 'a'
-Model.from_orm({})
 
 
 class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
@@ -37,7 +36,6 @@ class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forb
 kwargs_model = KwargsModel(x=1, y='y', z='z')
 kwargs_model = KwargsModel(x=1)
 kwargs_model.y = 'a'
-KwargsModel.from_orm({})
 
 
 class ForbidExtraModel(BaseModel):
@@ -67,19 +65,19 @@ class KwargsBadExtraModel(BaseModel, extra=1):
 
 class BadConfig1(BaseModel):
     class Config:
-        from_attributes: Any = {}  # not sensible, but should still be handled gracefully
+        frozen: Any = {}  # not sensible, but should still be handled gracefully
 
 
-class KwargsBadConfig1(BaseModel, from_attributes={}):
+class KwargsBadConfig1(BaseModel, frozen={}):
     pass
 
 
 class BadConfig2(BaseModel):
     class Config:
-        from_attributes = list  # not sensible, but should still be handled gracefully
+        frozen = list  # not sensible, but should still be handled gracefully
 
 
-class KwargsBadConfig2(BaseModel, from_attributes=list):
+class KwargsBadConfig2(BaseModel, frozen=list):
     pass
 
 
@@ -227,14 +225,6 @@ class KwargsAliasGeneratorModel2(BaseModel, alias_generator=lambda x: x + '_'):
 
 KwargsAliasGeneratorModel2(x=1)
 KwargsAliasGeneratorModel2(y=1, z=1)
-
-
-class CoverageTester(Missing):  # noqa F821
-    def from_orm(self) -> None:
-        pass
-
-
-CoverageTester().from_orm()
 
 
 @dataclass(config={})

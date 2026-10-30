@@ -19,8 +19,6 @@ model = Model(x=1)
 # MYPY: error: Missing named argument "y" for "Model"  [call-arg]
 model.y = 'a'
 # MYPY: error: Property "y" defined in "Model" is read-only  [misc]
-Model.from_orm({})
-# MYPY: error: "Model" does not have from_attributes=True  [pydantic-orm]
 
 
 class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
@@ -37,8 +35,6 @@ kwargs_model = KwargsModel(x=1)
 # MYPY: error: Missing named argument "y" for "KwargsModel"  [call-arg]
 kwargs_model.y = 'a'
 # MYPY: error: Property "y" defined in "KwargsModel" is read-only  [misc]
-KwargsModel.from_orm({})
-# MYPY: error: "KwargsModel" does not have from_attributes=True  [pydantic-orm]
 
 
 class ForbidExtraModel(BaseModel):
@@ -67,24 +63,24 @@ class KwargsBadExtraModel(BaseModel, extra=1):
 
 
 class BadConfig1(BaseModel):
-    model_config = ConfigDict(from_attributes={})  # type: ignore[typeddict-item]
-# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+    model_config = ConfigDict(frozen={})  # type: ignore[typeddict-item]
+# MYPY: error: Invalid value for "Config.frozen"  [pydantic-config]
 # MYPY: note: Error code "pydantic-config" not covered by "type: ignore[typeddict-item]" comment
 
 
-class KwargsBadConfig1(BaseModel, from_attributes={}):
-# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+class KwargsBadConfig1(BaseModel, frozen={}):
+# MYPY: error: Invalid value for "Config.frozen"  [pydantic-config]
     pass
 
 
 class BadConfig2(BaseModel):
-    model_config = ConfigDict(from_attributes=list)  # type: ignore[typeddict-item]
-# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+    model_config = ConfigDict(frozen=list)  # type: ignore[typeddict-item]
+# MYPY: error: Invalid value for "Config.frozen"  [pydantic-config]
 # MYPY: note: Error code "pydantic-config" not covered by "type: ignore[typeddict-item]" comment
 
 
-class KwargsBadConfig2(BaseModel, from_attributes=list):
-# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+class KwargsBadConfig2(BaseModel, frozen=list):
+# MYPY: error: Invalid value for "Config.frozen"  [pydantic-config]
     pass
 
 
@@ -245,15 +241,6 @@ class KwargsAliasGeneratorModel2(BaseModel, alias_generator=lambda x: x + '_'):
 
 KwargsAliasGeneratorModel2(x=1)
 KwargsAliasGeneratorModel2(y=1, z=1)
-
-
-class CoverageTester(Missing):  # noqa F821
-# MYPY: error: Name "Missing" is not defined  [name-defined]
-    def from_orm(self) -> None:
-        pass
-
-
-CoverageTester().from_orm()
 
 
 @dataclass(config={})

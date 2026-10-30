@@ -16,7 +16,6 @@ class Model(BaseModel):
 model = Model(x=1, y='y', z='z')
 model = Model(x=1)
 model.y = 'a'
-Model.from_orm({})
 
 
 class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
@@ -30,7 +29,6 @@ class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forb
 kwargs_model = KwargsModel(x=1, y='y', z='z')
 kwargs_model = KwargsModel(x=1)
 kwargs_model.y = 'a'
-KwargsModel.from_orm({})
 
 
 class ForbidExtraModel(BaseModel):
@@ -56,18 +54,18 @@ class KwargsBadExtraModel(BaseModel, extra=1):
 
 
 class BadConfig1(BaseModel):
-    model_config = ConfigDict(from_attributes={})  # type: ignore[typeddict-item]
+    model_config = ConfigDict(frozen={})  # type: ignore[typeddict-item]
 
 
-class KwargsBadConfig1(BaseModel, from_attributes={}):
+class KwargsBadConfig1(BaseModel, frozen={}):
     pass
 
 
 class BadConfig2(BaseModel):
-    model_config = ConfigDict(from_attributes=list)  # type: ignore[typeddict-item]
+    model_config = ConfigDict(frozen=list)  # type: ignore[typeddict-item]
 
 
-class KwargsBadConfig2(BaseModel, from_attributes=list):
+class KwargsBadConfig2(BaseModel, frozen=list):
     pass
 
 
@@ -211,14 +209,6 @@ class KwargsAliasGeneratorModel2(BaseModel, alias_generator=lambda x: x + '_'):
 
 KwargsAliasGeneratorModel2(x=1)
 KwargsAliasGeneratorModel2(y=1, z=1)
-
-
-class CoverageTester(Missing):  # noqa F821
-    def from_orm(self) -> None:
-        pass
-
-
-CoverageTester().from_orm()
 
 
 @dataclass(config={})
