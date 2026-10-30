@@ -410,10 +410,6 @@ class InvalidSchemaError(Exception):
     """The core schema is invalid."""
 
 
-def _identity(x: Any):
-    return x
-
-
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
@@ -2382,7 +2378,7 @@ class GenerateSchema:
         self,
         source_type: Any,
         annotations: list[Any],
-        transform_inner_schema: Callable[[CoreSchema], CoreSchema] = _identity,
+        transform_inner_schema: Callable[[CoreSchema], CoreSchema] = lambda x: x,
         check_unsupported_field_info_attributes: bool = True,
     ) -> CoreSchema:
         """Apply arguments from `Annotated` or from `FieldInfo` to a schema.
