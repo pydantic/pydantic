@@ -49,7 +49,7 @@ pub struct ModelFieldsValidator {
     /// or when extra keys are validated), in which case adding it to the fields set requires
     /// a check against the field names.
     extra_keys_may_be_field_names: bool,
-    model_name: String,
+    model_name: Box<str>,
     extra_behavior: ExtraBehavior,
     extras_validator: Option<Arc<CombinedValidator>>,
     extras_keys_validator: Option<Arc<CombinedValidator>>,
@@ -88,9 +88,9 @@ impl BuildValidator for ModelFieldsValidator {
             (Some(_), _) => return py_schema_err!("extras_keys_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
-        let model_name: String = schema
-            .get_as(intern!(py, "model_name"))?
-            .unwrap_or_else(|| "Model".to_string());
+        let model_name: Box<str> = schema
+            .get_as::<String>(intern!(py, "model_name"))?
+            .map_or_else(|| "Model".into(), String::into_boxed_str);
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: Vec<Field> = Vec::with_capacity(fields_dict.len());
@@ -318,7 +318,7 @@ impl ModelFieldsValidator {
                 return Err(ValError::new(
                     ErrorType::ModelType {
                         context: None,
-                        class_name: self.model_name.clone(),
+                        class_name: self.model_name.to_string(),
                     },
                     input,
                 ));
@@ -335,7 +335,7 @@ impl ModelFieldsValidator {
                             ErrorType::DictType { .. } => {
                                 let mut e = e;
                                 e.error_type = ErrorType::ModelType {
-                                    class_name: self.model_name.clone(),
+                                    class_name: self.model_name.to_string(),
                                     context: None,
                                 };
                                 e
