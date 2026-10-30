@@ -1,0 +1,51 @@
+SECURITY.md
+  s_a6a2a864ddd798::t_fe7d0056ceaff6 49
+docs/api/pydantic_core.md
+  s_a6a2a864ddd798::t_77c60d2242e527 22
+docs/contributing.md
+  s_a6a2a864ddd798::t_030706ae43a7f7 99,103
+pydantic-core/python/pydantic_core/__init__.py
+  s_a6a2a864ddd798::t_eb42c162cf794c 4,11,68,197-199
+pydantic-core/python/pydantic_core/_pydantic_core/__init__.pyi
+  s_a6a2a864ddd798::t_9bfdd4777fbd30 2-4,1120-1178
+pydantic-core/src/fields_set.rs
+  s_a6a2a864ddd798::t_047c5dc7cd6831 1-711
+pydantic-core/src/lib.rs
+  s_a6a2a864ddd798::t_bbae54a192e331 22,42,121-124
+pydantic-core/src/serializers/type_serializers/model.rs
+  s_a6a2a864ddd798::t_65bd8f2e6e5e60 7,20,227
+pydantic-core/src/validators/model.rs
+  s_a6a2a864ddd798::t_54859ebf6e7d82 19,298,300,330
+pydantic-core/src/validators/model_fields.rs
+  s_a6a2a864ddd798::t_50fe1f07ff1fff 10,14,21,26,49-55,94-96,100,113-114,126-127,131-132,150-151,162,493,764,803,805,816,833,891,916,1018,1020,1023,1128-1130,1149,1170,1172,1197,1209,1289,1312-1319,1347-1354
+pydantic-core/src/validators/shared/lookup_tree.rs
+  s_a6a2a864ddd798::t_a4bdff71d90329 294-295
+pydantic-core/tests/test_fields_set.py
+  s_a6a2a864ddd798::t_07f06af16a3cef 1-565
+pydantic-core/tests/test_streaming_json.py
+  s_a6a2a864ddd798::t_9600a0d8f9fd78 25,468-481
+pydantic/deprecated/copy_internals.py
+  s_a6a2a864ddd798::t_2c0a3e23d00292 4-5,102,211
+pydantic/main.py
+  s_a6a2a864ddd798::t_d129cc8a3924d0 14,244,324,468-469,1065,1383,1640,1643
+pydantic/root_model.py
+  s_a6a2a864ddd798::t_1b60600a104680 124
+tests/test_main.py
+  s_a6a2a864ddd798::t_f344d3c7ccfeef 31,3519-3523,3526,3528,3531-3532,4040-4107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "396279c907cb9709107b93d2efbf90c9901fabf8",
+  "prompts": {},
+  "sessions": {
+    "s_a6a2a864ddd798": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1888a-f3cc-72c0-bf38-c18b933879cf",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
