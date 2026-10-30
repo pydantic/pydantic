@@ -1,0 +1,13 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing import List, Optional
+from typing_extensions import Literal
+from .._models import BaseModel
+
+class TextEditorCodeExecutionStrReplaceResultBlock(BaseModel):
+    lines: Optional[List[str]] = None
+    new_lines: Optional[int] = None
+    new_start: Optional[int] = None
+    old_lines: Optional[int] = None
+    old_start: Optional[int] = None
+    type: Literal['text_editor_code_execution_str_replace_result']
