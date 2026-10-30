@@ -9,13 +9,11 @@ from typing_inspection.introspection import Qualifier
 
 from pydantic._internal import _repr
 
-from ._migration import getattr_migration
 from .version import version_short
 
 __all__ = (
     'PydanticUserError',
     'PydanticUndefinedAnnotation',
-    'PydanticImportError',
     'PydanticSchemaGenerationError',
     'PydanticInvalidForJsonSchema',
     'PydanticForbiddenQualifier',
@@ -48,7 +46,6 @@ PydanticErrorCodes = Literal[
     'base-model-instantiated',
     'undefined-annotation',
     'schema-for-unknown-type',
-    'import-error',
     'create-model-field-definitions',
     'create-model-namespace',
     'validator-instance-method',
@@ -123,17 +120,6 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
         return cls(name=name_error.name, message=str(name_error))
 
 
-class PydanticImportError(PydanticErrorMixin, ImportError):
-    """An error raised when an import fails due to module changes between V1 and V2.
-
-    Attributes:
-        message: Description of the error.
-    """
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message, code='import-error')
-
-
 class PydanticSchemaGenerationError(PydanticUserError):
     """An error raised during failures to generate a `CoreSchema` for some type.
 
@@ -176,6 +162,3 @@ class PydanticForbiddenQualifier(PydanticUserError):
             ),
             code=None,
         )
-
-
-__getattr__ = getattr_migration(__name__)

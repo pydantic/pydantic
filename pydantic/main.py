@@ -45,7 +45,6 @@ from ._internal import (
     _typing_extra,
     _utils,
 )
-from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict, ExtraValues
@@ -1531,6 +1530,3 @@ def create_model(  # noqa: C901
         _create_model_module=__module__,
         **kwds,
     )
-
-
-__getattr__ = getattr_migration(__name__)

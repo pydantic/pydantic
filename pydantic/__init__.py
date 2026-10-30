@@ -2,7 +2,6 @@ from importlib import import_module
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from ._migration import getattr_migration
 from .version import VERSION, _ensure_pydantic_core_version
 
 _ensure_pydantic_core_version()
@@ -99,7 +98,6 @@ __all__ = (
     'PydanticErrorCodes',
     'PydanticUserError',
     'PydanticSchemaGenerationError',
-    'PydanticImportError',
     'PydanticUndefinedAnnotation',
     'PydanticInvalidForJsonSchema',
     'PydanticForbiddenQualifier',
@@ -266,7 +264,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PydanticErrorCodes': (__spec__.parent, '.errors'),
     'PydanticUserError': (__spec__.parent, '.errors'),
     'PydanticSchemaGenerationError': (__spec__.parent, '.errors'),
-    'PydanticImportError': (__spec__.parent, '.errors'),
     'PydanticUndefinedAnnotation': (__spec__.parent, '.errors'),
     'PydanticInvalidForJsonSchema': (__spec__.parent, '.errors'),
     'PydanticForbiddenQualifier': (__spec__.parent, '.errors'),
@@ -403,8 +400,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
 }
 _deprecated_dynamic_imports = {'FieldValidationInfo', 'GenerateSchema'}
 
-_getattr_migration = getattr_migration(__name__)
-
 
 def __getattr__(attr_name: str) -> object:
     if attr_name in _deprecated_dynamic_imports:
@@ -418,7 +413,7 @@ def __getattr__(attr_name: str) -> object:
 
     dynamic_attr = _dynamic_imports.get(attr_name)
     if dynamic_attr is None:
-        return _getattr_migration(attr_name)
+        raise AttributeError(f'module {__name__!r} has no attribute {attr_name!r}')
 
     package, module_name = dynamic_attr
 

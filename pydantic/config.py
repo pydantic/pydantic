@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, cast,
 
 from typing_extensions import TypedDict, Unpack, deprecated
 
-from ._migration import getattr_migration
 from .aliases import AliasGenerator
 from .errors import PydanticUserError
 from .warnings import PydanticDeprecatedSince211
@@ -1287,6 +1286,3 @@ def with_config(config: ConfigDict | None = None, /, **kwargs: Any) -> Callable[
         return class_
 
     return inner
-
-
-__getattr__ = getattr_migration(__name__)

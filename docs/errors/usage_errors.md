@@ -666,11 +666,6 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'schema-for-unknown-type'
 ```
 
-## Import error {#import-error}
-
-This error is raised when you try to import an object that was available in a previous major version of Pydantic,
-but has since been removed.
-
 ## `create_model` field definitions {#create-model-field-definitions}
 
 This error is raised when you provide invalid field definitions in [`create_model()`][pydantic.create_model].

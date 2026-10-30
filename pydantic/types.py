@@ -39,7 +39,6 @@ from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
 )
 
 from ._internal import _fields, _utils, _validators
-from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
@@ -2886,9 +2885,6 @@ print(m)
 #> base64url_str='Hw?tw>Mw'
 ```
 """
-
-
-__getattr__ = getattr_migration(__name__)
 
 
 @_dataclasses.dataclass(slots=True)
