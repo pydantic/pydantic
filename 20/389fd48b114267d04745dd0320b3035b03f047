@@ -1,0 +1,569 @@
+tests/benchmarks/corpus/google-genai/HTTPX-LICENSE
+  s_6ed4995a8d6b19::t_30e1cc460058dc 1-12
+tests/benchmarks/corpus/google-genai/HTTPX2-LICENSE
+  s_6ed4995a8d6b19::t_bb70f00084621b 1-13
+tests/benchmarks/corpus/google-genai/LICENSE
+  s_6ed4995a8d6b19::t_592b724db1e564 1-202
+tests/benchmarks/corpus/google-genai/README.md
+  s_6ed4995a8d6b19::t_2a51e80d030880 1-28
+tests/benchmarks/corpus/google-genai/google/genai/__init__.py
+  s_71408c856d82f7::t_1ce1ae26465213 1-16
+tests/benchmarks/corpus/google-genai/google/genai/_common.py
+  s_6ed4995a8d6b19::t_6f8c3276c73569 1-444
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/errors/cancelinteractionbyid.py
+  s_6ed4995a8d6b19::t_3c50933119eb8b 1-27
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/errors/createinteraction.py
+  s_6ed4995a8d6b19::t_6c3821c853cfb8 1-27
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/errors/deleteinteraction.py
+  s_6ed4995a8d6b19::t_f4f710ca745ba6 1-27
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/errors/getinteractionbyid.py
+  s_6ed4995a8d6b19::t_a555a8c933f9ed 1-27
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/cancelinteractionbyid.py
+  s_6ed4995a8d6b19::t_f86a36172122ec 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/createagent.py
+  s_6ed4995a8d6b19::t_62dd29de2d8d30 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/createcredential.py
+  s_6ed4995a8d6b19::t_c074a9b7a7b73e 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/createenvironment.py
+  s_6ed4995a8d6b19::t_474620fb62e472 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/createinteraction.py
+  s_6ed4995a8d6b19::t_884f58c65eb26d 1-59
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/createtrigger.py
+  s_6ed4995a8d6b19::t_73d871caf8391a 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/createvoice.py
+  s_6ed4995a8d6b19::t_290c08dad09cc3 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/createwebhook.py
+  s_6ed4995a8d6b19::t_a0c530eb8951e1 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/deleteagent.py
+  s_6ed4995a8d6b19::t_542dfb6191996e 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/deletecredential.py
+  s_6ed4995a8d6b19::t_3b908d53152a85 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/deleteenvironment.py
+  s_6ed4995a8d6b19::t_b57da19ccb90e7 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/deleteinteraction.py
+  s_6ed4995a8d6b19::t_8293fca9b4be23 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/deletetrigger.py
+  s_6ed4995a8d6b19::t_4df9f13a7790db 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/deletevoice.py
+  s_6ed4995a8d6b19::t_1f6615b9788acd 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/deletewebhook.py
+  s_6ed4995a8d6b19::t_193fe765a373cc 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/getagent.py
+  s_6ed4995a8d6b19::t_f0439e29b0c819 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/getcredential.py
+  s_6ed4995a8d6b19::t_3f0337a0ffeb83 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/getenvironment.py
+  s_6ed4995a8d6b19::t_8ed436c177bbc4 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/getenvironmentfiles.py
+  s_6ed4995a8d6b19::t_3f9647b9c9b7b7 1-61
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/getinteractionbyid.py
+  s_6ed4995a8d6b19::t_c03c33d755cf77 1-61
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/gettrigger.py
+  s_6ed4995a8d6b19::t_29260bd17a7d10 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/getvoice.py
+  s_6ed4995a8d6b19::t_780afcaa4c05ad 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/getwebhook.py
+  s_6ed4995a8d6b19::t_259e5fd7253887 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/internal/globals.py
+  s_6ed4995a8d6b19::t_e5e05b5a1a2264 1-42
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/listagents.py
+  s_6ed4995a8d6b19::t_4be3293adb3b0c 1-59
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/listcredentials.py
+  s_6ed4995a8d6b19::t_8a838401254350 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/listenvironments.py
+  s_6ed4995a8d6b19::t_092ea1fea837e4 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/listtriggerexecutions.py
+  s_6ed4995a8d6b19::t_34704ae6d58e88 1-60
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/listtriggers.py
+  s_6ed4995a8d6b19::t_ff87f6b7dacd5c 1-60
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/listvoices.py
+  s_6ed4995a8d6b19::t_df87caa6a5f137 1-68
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/listwebhooks.py
+  s_6ed4995a8d6b19::t_1c36a9beda5605 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/pingwebhook.py
+  s_6ed4995a8d6b19::t_3ebc9708714cec 1-59
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/rotatesigningsecret.py
+  s_6ed4995a8d6b19::t_bff0d60cb6d060 1-59
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/runtrigger.py
+  s_6ed4995a8d6b19::t_7f3d960450d8dd 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/startenvironmentfileupload.py
+  s_6ed4995a8d6b19::t_44e191a3dda430 1-69
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/updatecredential.py
+  s_6ed4995a8d6b19::t_2e16b509eba698 1-60
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/updatetrigger.py
+  s_6ed4995a8d6b19::t_f109529e3b0bed 1-59
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/models/updatewebhook.py
+  s_6ed4995a8d6b19::t_c06f4a2f0537d2 1-60
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/__init__.py
+  s_6ed4995a8d6b19::t_57ea7781914a53 1-20
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/agents/__init__.py
+  s_71408c856d82f7::t_4cac215112f4b3 1-18
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/agents/agent.py
+  s_6ed4995a8d6b19::t_9ab86eee34052d 1-82
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/agents/agentlistresponse.py
+  s_6ed4995a8d6b19::t_6bb9c0514632dc 1-40
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/agents/agenttool.py
+  s_6ed4995a8d6b19::t_5f5e47efaa68b9 1-37
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/base64fileinput.py
+  s_6ed4995a8d6b19::t_02e3aa9d7ab1e0 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/basemodel.py
+  s_6ed4995a8d6b19::t_a309fa4e345e7f 1-43
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/__init__.py
+  s_71408c856d82f7::t_bd7bc27146942f 1-18
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/credential.py
+  s_6ed4995a8d6b19::t_61a21dc00a03bb 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/credentialcreateparams.py
+  s_6ed4995a8d6b19::t_a31299cdadcad6 1-27
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/credentiallistresponse.py
+  s_6ed4995a8d6b19::t_4a27158f5df6c1 1-40
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/credentialupdate.py
+  s_6ed4995a8d6b19::t_ba4b76c1b77537 1-27
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/environmentvariableconfig.py
+  s_6ed4995a8d6b19::t_9b79a402b7ba07 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/environmentvariableupdateconfig.py
+  s_6ed4995a8d6b19::t_b5926996fe8bf7 1-56
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/httpbearerconfig.py
+  s_6ed4995a8d6b19::t_4479cf13d615cf 1-55
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/httpbearerupdateconfig.py
+  s_6ed4995a8d6b19::t_c0f5fee45d86c3 1-53
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/injectionlocation_enum.py
+  s_6ed4995a8d6b19::t_377b30b920f8a5 1-21
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/oauth2config.py
+  s_6ed4995a8d6b19::t_b13d3ad9bee1a7 1-59
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/credentials/oauth2updateconfig.py
+  s_6ed4995a8d6b19::t_52e999d4cdf9c0 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/environments/__init__.py
+  s_71408c856d82f7::t_8ada01be85dba4 1-18
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/environments/createenvironmentrequest.py
+  s_6ed4995a8d6b19::t_cb9d9bde01d901 1-52
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/environments/environment.py
+  s_6ed4995a8d6b19::t_30599424f0a040 1-55
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/environments/environmentfile.py
+  s_6ed4995a8d6b19::t_4955db3d0a60c2 1-51
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/environments/getenvironmentfilesresponse.py
+  s_6ed4995a8d6b19::t_76d3414ce16016 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/environments/listenvironmentsresponse.py
+  s_6ed4995a8d6b19::t_a970eeb9567ca0 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/__init__.py
+  s_71408c856d82f7::t_904172a65bbf8a 1-18
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/agentoption.py
+  s_6ed4995a8d6b19::t_e449029e24cf66 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/allowedtools.py
+  s_6ed4995a8d6b19::t_ff173bfe0f7d96 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/allowlistentry.py
+  s_6ed4995a8d6b19::t_cd009b3e00a6a2 1-50
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/annotation.py
+  s_6ed4995a8d6b19::t_93d4c42e8c2e43 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/antigravityagentconfig.py
+  s_6ed4995a8d6b19::t_ff5f8df8259f1c 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/argumentsdelta.py
+  s_6ed4995a8d6b19::t_f020f852d924de 1-43
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/audiocontent.py
+  s_6ed4995a8d6b19::t_a65c2f19286dcf 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/audiodelta.py
+  s_6ed4995a8d6b19::t_b8e46ea6cbfb65 1-49
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/audioresponseformat.py
+  s_6ed4995a8d6b19::t_0efd79ad7bf500 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/codeexecution.py
+  s_6ed4995a8d6b19::t_2fee962c105743 1-33
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/codeexecutioncallarguments.py
+  s_6ed4995a8d6b19::t_9b6fef1a4bde03 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/codeexecutioncalldelta.py
+  s_6ed4995a8d6b19::t_1c91389f4d7b6d 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/codeexecutioncallstep.py
+  s_6ed4995a8d6b19::t_77941b9ae01f03 1-54
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/codeexecutionresultdelta.py
+  s_6ed4995a8d6b19::t_99cf83f94cd546 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/codeexecutionresultstep.py
+  s_6ed4995a8d6b19::t_2f861d33d97dd3 1-55
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/codemenderagentconfig.py
+  s_6ed4995a8d6b19::t_48130968537109 1-60
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/computeruse.py
+  s_6ed4995a8d6b19::t_241ae1a47aa846 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/content.py
+  s_6ed4995a8d6b19::t_2c3d70395d9ec3 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/createagentinteraction.py
+  s_6ed4995a8d6b19::t_bb558a3977bc63 1-98
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/createmodelinteraction.py
+  s_6ed4995a8d6b19::t_fdb1dd3262ee9d 1-95
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/deepresearchagentconfig.py
+  s_6ed4995a8d6b19::t_6165f47995a2d6 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/documentcontent.py
+  s_6ed4995a8d6b19::t_8663f973e37dfc 1-54
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/documentdelta.py
+  s_6ed4995a8d6b19::t_2847a34bde0016 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/dynamicagentconfig.py
+  s_6ed4995a8d6b19::t_145b1f7cd520aa 1-36
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/empty.py
+  s_6ed4995a8d6b19::t_48044745ede2d9 1-30
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/environment.py
+  s_6ed4995a8d6b19::t_95103b6b2557b0 1-63
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/environmentnetworkegressallowlist.py
+  s_6ed4995a8d6b19::t_e5a07bb30bf82e 1-48
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/envvar.py
+  s_6ed4995a8d6b19::t_4567c6637a75ce 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/error.py
+  s_6ed4995a8d6b19::t_29f2b13f8d8786 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/errorevent.py
+  s_6ed4995a8d6b19::t_f1b8ba4d0cd456 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/exaaisearchconfig.py
+  s_6ed4995a8d6b19::t_ed0de6663cc823 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/filecitation.py
+  s_6ed4995a8d6b19::t_7373e9bbb9e2a5 1-63
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/filecontent.py
+  s_6ed4995a8d6b19::t_54d87d2404e59b 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/filesearch.py
+  s_6ed4995a8d6b19::t_f54bcd58c3a6d2 1-53
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/filesearchcalldelta.py
+  s_6ed4995a8d6b19::t_4a25f06c319a3f 1-43
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/filesearchcallstep.py
+  s_6ed4995a8d6b19::t_d339a47f152b80 1-51
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/filesearchresult.py
+  s_6ed4995a8d6b19::t_74436f539766e2 1-23
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/filesearchresultdelta.py
+  s_6ed4995a8d6b19::t_610e55ec71bc04 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/filesearchresultstep.py
+  s_6ed4995a8d6b19::t_c6aebf141add8e 1-51
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/filter_.py
+  s_6ed4995a8d6b19::t_da268addc247a8 1-48
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/findrequest.py
+  s_6ed4995a8d6b19::t_03dd0a1d2cfe96 1-56
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/fixrequest.py
+  s_6ed4995a8d6b19::t_99f03be2ab1dc5 1-53
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/function.py
+  s_6ed4995a8d6b19::t_fb0725f03c19f8 1-53
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/functioncallstep.py
+  s_6ed4995a8d6b19::t_a79b470dacfc20 1-39
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/functionresultdelta.py
+  s_6ed4995a8d6b19::t_bd7f7a695943d7 1-50
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/functionresultstep.py
+  s_6ed4995a8d6b19::t_52c5995b4cee52 1-64
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/functionresultsubcontent.py
+  s_6ed4995a8d6b19::t_a7456ccdea79b7 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/generationconfig.py
+  s_6ed4995a8d6b19::t_73b877e13710c4 1-80
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlemaps.py
+  s_6ed4995a8d6b19::t_98678afd7f65ac 1-53
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlemapscallarguments.py
+  s_6ed4995a8d6b19::t_23e1e7163dab29 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlemapscalldelta.py
+  s_6ed4995a8d6b19::t_5df51d896b961d 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlemapscallstep.py
+  s_6ed4995a8d6b19::t_43a652ac575973 1-54
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlemapsresult.py
+  s_6ed4995a8d6b19::t_01e9969784bc5c 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlemapsresultdelta.py
+  s_6ed4995a8d6b19::t_a76290e806b6b5 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlemapsresultplaces.py
+  s_6ed4995a8d6b19::t_5e8b2f5dc288f8 1-49
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlemapsresultstep.py
+  s_6ed4995a8d6b19::t_fcb6ef3699d40e 1-54
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlesearch.py
+  s_6ed4995a8d6b19::t_2d9fe36ab81b87 1-50
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlesearchcallarguments.py
+  s_6ed4995a8d6b19::t_34ad0a7252bd42 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlesearchcalldelta.py
+  s_6ed4995a8d6b19::t_303283efbc3b91 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlesearchcallstep.py
+  s_6ed4995a8d6b19::t_fb958644799198 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlesearchresult.py
+  s_6ed4995a8d6b19::t_858fa87a2bd2de 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlesearchresultdelta.py
+  s_6ed4995a8d6b19::t_91b0598e18cb4c 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/googlesearchresultstep.py
+  s_6ed4995a8d6b19::t_1cd80f81175a0f 1-56
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/groundingtoolcount.py
+  s_6ed4995a8d6b19::t_63ad0610920007 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/harmcategory.py
+  s_6ed4995a8d6b19::t_e9615556ce66bc 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/hybridsearch.py
+  s_6ed4995a8d6b19::t_17d0d3e2df1db9 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/imageconfig.py
+  s_6ed4995a8d6b19::t_413c8ae534f6fa 1-50
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/imagecontent.py
+  s_6ed4995a8d6b19::t_0ccdedefcbab79 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/imagedelta.py
+  s_6ed4995a8d6b19::t_cb0d2f4b6d750d 1-48
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/imageresponseformat.py
+  s_6ed4995a8d6b19::t_de5bd564d6e0e5 1-59
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/interaction.py
+  s_6ed4995a8d6b19::t_e00a563298c430 1-189
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/interactioncompletedevent.py
+  s_6ed4995a8d6b19::t_f6bb325a1c81f2 1-49
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/interactioncreatedevent.py
+  s_6ed4995a8d6b19::t_e15a0376c082c0 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/interactionsinput.py
+  s_6ed4995a8d6b19::t_9a704e6d330f7d 1-25
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/interactionsseevent.py
+  s_6ed4995a8d6b19::t_1535bd72b32e49 1-42
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/interactionsseeventinteraction.py
+  s_6ed4995a8d6b19::t_6de809dfbac5cb 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/interactionssestreamevent.py
+  s_6ed4995a8d6b19::t_29f48d2ae5442c 1-24
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/interactionstatusupdate.py
+  s_6ed4995a8d6b19::t_61474d83cb7190 1-49
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/mcpserver.py
+  s_6ed4995a8d6b19::t_3245e6c83f55ac 1-56
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/mcpservertoolcalldelta.py
+  s_6ed4995a8d6b19::t_41752a3a33e50f 1-31
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/mcpservertoolcallstep.py
+  s_6ed4995a8d6b19::t_a216c389535b78 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/mcpservertoolresultdelta.py
+  s_6ed4995a8d6b19::t_603d3e51eb52fe 1-50
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/mcpservertoolresultstep.py
+  s_6ed4995a8d6b19::t_0d8c56be9d5422 1-64
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/mediaprocessing.py
+  s_6ed4995a8d6b19::t_2e43f44c0ff2dd 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/mediaresolution.py
+  s_6ed4995a8d6b19::t_9273f998b1a409 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/modalitytokens.py
+  s_6ed4995a8d6b19::t_7f684ec8acde20 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/model.py
+  s_6ed4995a8d6b19::t_1e3968c3fb3719 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/modeloutputstep.py
+  s_6ed4995a8d6b19::t_ef223158b8a190 1-53
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/parallelaisearchconfig.py
+  s_6ed4995a8d6b19::t_bd9412fb701042 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/placecitation.py
+  s_6ed4995a8d6b19::t_f5766cfb3b9d3b 1-60
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/processingcalldelta.py
+  s_6ed4995a8d6b19::t_0ee93f0e228eff 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/processingcallstep.py
+  s_6ed4995a8d6b19::t_3da029273a83ac 1-55
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/processingresultdelta.py
+  s_6ed4995a8d6b19::t_64b394d136ac29 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/processingresultstep.py
+  s_6ed4995a8d6b19::t_b70050f4fbe9c0 1-51
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/ragresource.py
+  s_6ed4995a8d6b19::t_5b3537e6c5bcb6 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/ragretrievalconfig.py
+  s_6ed4995a8d6b19::t_b26e5666db9ab5 1-54
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/ragstoreconfig.py
+  s_6ed4995a8d6b19::t_49581b475b6e6b 1-53
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/ranking.py
+  s_6ed4995a8d6b19::t_a473f4ad0736c3 1-52
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/rankservice.py
+  s_6ed4995a8d6b19::t_1d476cbeb805de 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/responseformat.py
+  s_6ed4995a8d6b19::t_c454adf3d81975 1-27
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/responsemodality.py
+  s_6ed4995a8d6b19::t_7805bcddf58d46 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/retrieval.py
+  s_6ed4995a8d6b19::t_bc0ad19ae9076e 1-62
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/retrievalcallarguments.py
+  s_6ed4995a8d6b19::t_52c7dcd1277829 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/retrievalcalldelta.py
+  s_6ed4995a8d6b19::t_a87ea8902753f0 1-50
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/retrievalcallstep.py
+  s_6ed4995a8d6b19::t_3cfd1e661b7c26 1-63
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/retrievalresultdelta.py
+  s_6ed4995a8d6b19::t_f69abd22797803 1-48
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/retrievalresultstep.py
+  s_6ed4995a8d6b19::t_061d1fc27faad5 1-59
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/reviewsnippet.py
+  s_6ed4995a8d6b19::t_ad5e3c924d6816 1-52
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/safetysetting.py
+  s_6ed4995a8d6b19::t_21cfd9fca81817 1-63
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/servicetier.py
+  s_6ed4995a8d6b19::t_3d638ab2abcb3b 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/sessionconfig.py
+  s_6ed4995a8d6b19::t_88afd34f44bda4 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/smarttranscriptionmode.py
+  s_6ed4995a8d6b19::t_1697ceb4d26f46 1-33
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/source.py
+  s_6ed4995a8d6b19::t_39923706d0c20d 1-53
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/speakerconfig.py
+  s_6ed4995a8d6b19::t_61e2a972141bbe 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/speechannotation.py
+  s_6ed4995a8d6b19::t_90943423c4709e 1-55
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/speechconfig.py
+  s_6ed4995a8d6b19::t_40e9a538cb35c4 1-48
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/staticmediaprocessing.py
+  s_6ed4995a8d6b19::t_d646c52b7579b0 1-51
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/status.py
+  s_6ed4995a8d6b19::t_d30b2fc34066d2 1-62
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/step.py
+  s_6ed4995a8d6b19::t_412ee0cb0c4d07 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/stepdelta.py
+  s_6ed4995a8d6b19::t_7602cdc237f297 1-48
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/stepdeltadata.py
+  s_6ed4995a8d6b19::t_689b73ac5ee539 1-61
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/stepdeltametadata.py
+  s_6ed4995a8d6b19::t_5d64406ab14f17 1-40
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/stepstart.py
+  s_6ed4995a8d6b19::t_36503d434a0a89 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/stepstop.py
+  s_6ed4995a8d6b19::t_6c8ed3531dae6c 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/textannotationdelta.py
+  s_6ed4995a8d6b19::t_19737db861d4e0 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/textcontent.py
+  s_6ed4995a8d6b19::t_c1ed364811a488 1-52
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/textdelta.py
+  s_6ed4995a8d6b19::t_3d620b332d9bd2 1-29
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/textresponseformat.py
+  s_6ed4995a8d6b19::t_706bc0ce666de9 1-52
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/thinkinglevel.py
+  s_6ed4995a8d6b19::t_778defb00b999f 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/thinkingsummaries.py
+  s_6ed4995a8d6b19::t_4186dcfa9c05ab 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/thoughtsignaturedelta.py
+  s_6ed4995a8d6b19::t_a3477106aa2013 1-43
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/thoughtstep.py
+  s_6ed4995a8d6b19::t_7981a56a1cb50a 1-52
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/thoughtsummarycontent.py
+  s_6ed4995a8d6b19::t_ec39e0fd4b18fa 1-38
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/thoughtsummarydelta.py
+  s_6ed4995a8d6b19::t_874093345d8883 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/tool.py
+  s_6ed4995a8d6b19::t_da297c0b9a29f7 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/toolchoiceconfig.py
+  s_6ed4995a8d6b19::t_f2fdf8e8037456 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/toolchoicetype.py
+  s_6ed4995a8d6b19::t_05725b75d83249 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/transcriptionconfig.py
+  s_6ed4995a8d6b19::t_f9d25be88ba0ca 1-61
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/transcriptionmode.py
+  s_6ed4995a8d6b19::t_da2ecb590776af 1-38
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/urlcitation.py
+  s_6ed4995a8d6b19::t_ea0ea655c09a88 1-55
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/urlcontext.py
+  s_6ed4995a8d6b19::t_62b9b741a2632a 1-33
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/urlcontextcallarguments.py
+  s_6ed4995a8d6b19::t_69f4cccb3ef1bd 1-44
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/urlcontextcalldelta.py
+  s_6ed4995a8d6b19::t_b7e513bdc0ae7a 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/urlcontextcallstep.py
+  s_6ed4995a8d6b19::t_74589681bb5dc1 1-54
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/urlcontextresult.py
+  s_6ed4995a8d6b19::t_42ed5a07a30570 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/urlcontextresultdelta.py
+  s_6ed4995a8d6b19::t_4b7aa11d0b6c9a 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/urlcontextresultstep.py
+  s_6ed4995a8d6b19::t_24636804e1223c 1-56
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/usage.py
+  s_6ed4995a8d6b19::t_779d9160116e8c 1-68
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/userinputstep.py
+  s_6ed4995a8d6b19::t_f2924bdc707ca8 1-50
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/verbatimtranscriptionmode.py
+  s_6ed4995a8d6b19::t_d7d2f6b926772c 1-51
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/vertexaisearchconfig.py
+  s_6ed4995a8d6b19::t_e1fa2fdf4b89e2 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/videoconfig.py
+  s_6ed4995a8d6b19::t_3bef0071d42a50 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/videocontent.py
+  s_6ed4995a8d6b19::t_3509d53c769749 1-65
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/videodelta.py
+  s_6ed4995a8d6b19::t_c937212a0136c4 1-48
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/videoresponseformat.py
+  s_6ed4995a8d6b19::t_c5b73e3eb5ffde 1-60
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/webhookconfig.py
+  s_6ed4995a8d6b19::t_8895c8ad5ae86e 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/interactions/wordinfo.py
+  s_6ed4995a8d6b19::t_61e085b9de7f32 1-63
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/security.py
+  s_6ed4995a8d6b19::t_e2ccefed4a3ea5 1-43
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/triggers/__init__.py
+  s_71408c856d82f7::t_524a5681b07866 1-18
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/triggers/listtriggerexecutionsresponse.py
+  s_6ed4995a8d6b19::t_fef220fd149c55 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/triggers/listtriggersresponse.py
+  s_6ed4995a8d6b19::t_730fb16b9120d6 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/triggers/trigger.py
+  s_6ed4995a8d6b19::t_0e4a0a548137c0 1-58
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/triggers/triggercreateparams.py
+  s_6ed4995a8d6b19::t_3cfe716533a1ae 1-57
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/triggers/triggerexecution.py
+  s_6ed4995a8d6b19::t_2c0e7de787c5ed 1-49
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/triggers/triggerupdate.py
+  s_6ed4995a8d6b19::t_298cf02f887562 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/__init__.py
+  s_71408c856d82f7::t_872e5250a2d514 1-18
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/audiodata.py
+  s_6ed4995a8d6b19::t_c13f66f1bc4a39 1-32
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/createvoicerequest.py
+  s_6ed4995a8d6b19::t_57ae91991d7da6 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/deletevoiceresponse.py
+  s_6ed4995a8d6b19::t_8efca83ee4cbad 1-23
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/listvoicesresponse.py
+  s_6ed4995a8d6b19::t_ffc77e924a94ae 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/pitch.py
+  s_6ed4995a8d6b19::t_119a03540e967d 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/promptedvoice.py
+  s_6ed4995a8d6b19::t_ca6e016f1490e5 1-52
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/replicatedvoice.py
+  s_6ed4995a8d6b19::t_b6df5a8dce5d6c 1-38
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/voice_input.py
+  s_6ed4995a8d6b19::t_15be3ed7b274ff 1-79
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/voice_output.py
+  s_6ed4995a8d6b19::t_748fc744a07030 1-63
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/voices/voicetype.py
+  s_6ed4995a8d6b19::t_7cb548e807455d 1-22
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/webhooks/__init__.py
+  s_71408c856d82f7::t_f217bead0bd1eb 1-18
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/webhooks/pingwebhookrequest.py
+  s_6ed4995a8d6b19::t_b64d5aeff1f10a 1-27
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/webhooks/rotatesigningsecretrequest.py
+  s_6ed4995a8d6b19::t_e270056409c915 1-45
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/webhooks/signingsecret.py
+  s_6ed4995a8d6b19::t_c82908fd137208 1-47
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/webhooks/webhook.py
+  s_6ed4995a8d6b19::t_03b642989ad630 1-89
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/webhooks/webhooklistresponse.py
+  s_6ed4995a8d6b19::t_e83bf3ff23b9b6 1-41
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/webhooks/webhookpingresponse.py
+  s_6ed4995a8d6b19::t_77f1f79d37c59d 1-23
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/webhooks/webhookrotatesigningsecretresponse.py
+  s_6ed4995a8d6b19::t_23b0761d2c86af 1-39
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/types/webhooks/webhookupdate.py
+  s_6ed4995a8d6b19::t_bfbf489873f835 1-50
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/utils/__init__.py
+  s_6ed4995a8d6b19::t_f8c45e762259d1 1-27
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/utils/metadata.py
+  s_6ed4995a8d6b19::t_782f4dd72a70b1 1-82
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/utils/serializers.py
+  s_6ed4995a8d6b19::t_1bffcac356bac6 1-50
+tests/benchmarks/corpus/google-genai/google/genai/_gaos/utils/unions.py
+  s_6ed4995a8d6b19::t_e3513bb01632ef 1-46
+tests/benchmarks/corpus/google-genai/google/genai/_replay_api_client.py
+  s_6ed4995a8d6b19::t_34db9e9a1e8657 1-50
+tests/benchmarks/corpus/google-genai/google/genai/client.py
+  s_6ed4995a8d6b19::t_2158c3e262dd2d 1-26
+tests/benchmarks/corpus/google-genai/google/genai/types.py
+  s_6ed4995a8d6b19::t_960c47914c6e3c 1-4978
+tests/benchmarks/corpus/google-genai/httpx/__init__.py
+  s_6ed4995a8d6b19::t_acf1506cbdbf06 1-3
+tests/benchmarks/corpus/google-genai/httpx/_client.py
+  s_6ed4995a8d6b19::t_11a3993c9528c4 1-6
+tests/benchmarks/corpus/google-genai/httpx2/__init__.py
+  s_6ed4995a8d6b19::t_113ae4e313215b 1-3
+tests/benchmarks/corpus/google-genai/httpx2/_client.py
+  s_6ed4995a8d6b19::t_365ef79b4c97ec 1-6
+tests/benchmarks/corpus/google-genai/manifest.json
+  s_6ed4995a8d6b19::t_fe30b3953f6be8 1-2260
+tests/benchmarks/test_sdk_model_corpus.py
+  s_6ed4995a8d6b19::t_a47a6f2b6356ca 17-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "20389fd48b114267d04745dd0320b3035b03f047",
+  "prompts": {},
+  "sessions": {
+    "s_6ed4995a8d6b19": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18801-c79f-7032-94e0-36fcbd7d8b74",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    },
+    "s_71408c856d82f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18849-dc38-70e0-8791-e6b654a22771",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
