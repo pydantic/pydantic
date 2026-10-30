@@ -515,11 +515,12 @@ class GenerateJsonSchema:
                 json_schema = self.ser_schema(ser_schema)
 
                 # It might be that the 'serialization'` is skipped depending on `when_used`.
-                # This is only relevant for `nullable` schemas though, so we special case here.
+                # This is only relevant for `nullable` schemas though (possibly wrapped, e.g. when
+                # using a field serializer on a field with a default value), so we special case here.
                 if (
                     json_schema is not None
                     and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
-                    and schema_or_field['type'] == 'nullable'
+                    and _is_nullable_schema(schema_or_field)
                 ):
                     json_schema = self.get_union_of_schemas([{'type': 'null'}, json_schema])
             if json_schema is None:
@@ -3273,3 +3274,22 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
         return cast('core_schema.PlainSerializerFunctionSerSchema', ser_schema)
     if _core_utils.is_function_with_inner_schema(schema):
         return _get_ser_schema_for_default_value(schema['schema'])
+
+
+def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
+    """Whether the schema is a `'nullable'` schema, possibly wrapped in default, validator function, chain,
+    lax-or-strict and JSON-or-Python schemas.
+
+    For the latter three, the same inner schema as the one used to generate the serialization JSON Schema
+    is checked (see the corresponding `GenerateJsonSchema` methods).
+    """
+    if schema['type'] == 'default' or _core_utils.is_function_with_inner_schema(schema):
+        return _is_nullable_schema(schema['schema'])
+    if schema['type'] == 'chain':
+        return _is_nullable_schema(schema['steps'][-1])
+    if schema['type'] == 'lax-or-strict':
+        # See TODO in `GenerateJsonSchema.lax_or_strict_schema()`:
+        return _is_nullable_schema(schema['strict_schema'] if schema.get('strict', False) else schema['lax_schema'])
+    if schema['type'] == 'json-or-python':
+        return _is_nullable_schema(schema['json_schema'])
+    return schema['type'] == 'nullable'

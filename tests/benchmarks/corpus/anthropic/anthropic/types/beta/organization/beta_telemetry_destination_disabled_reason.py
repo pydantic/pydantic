@@ -1,0 +1,10 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing import Union
+from typing_extensions import Annotated, TypeAlias
+from ...._models import UnionDiscriminator
+from .beta_telemetry_destination_disabled_reason_caller import BetaTelemetryDestinationDisabledReasonCaller
+from .beta_telemetry_destination_disabled_reason_redirect import BetaTelemetryDestinationDisabledReasonRedirect
+from .beta_telemetry_destination_disabled_reason_invalid_address import BetaTelemetryDestinationDisabledReasonInvalidAddress
+from .beta_telemetry_destination_disabled_reason_sustained_failure import BetaTelemetryDestinationDisabledReasonSustainedFailure
+BetaTelemetryDestinationDisabledReason: TypeAlias = Annotated[Union[BetaTelemetryDestinationDisabledReasonCaller, BetaTelemetryDestinationDisabledReasonSustainedFailure, BetaTelemetryDestinationDisabledReasonInvalidAddress, BetaTelemetryDestinationDisabledReasonRedirect], UnionDiscriminator('type')]

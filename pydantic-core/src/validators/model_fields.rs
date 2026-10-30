@@ -6,22 +6,23 @@ use indexmap::IndexMap;
 use jiter::JsonObject;
 use jiter::JsonValue;
 use pyo3::IntoPyObjectExt;
-use pyo3::exceptions::PyKeyError;
+use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PySet, PyType};
+use pyo3::types::{PyDict, PySet, PyString, PyType};
 use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::fields_set::{FieldNames, ModelFieldsSet};
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, EitherString, Input, ValidatedDict};
 use crate::lookup_key::LookupPath;
-use crate::lookup_key::LookupPathCollection;
 use crate::lookup_key::LookupType;
+use crate::lookup_key::{LookupPathCollection, ValidationAlias};
 use crate::tools::SchemaDict;
 use crate::validators::shared::lookup_tree::LookupFieldInfo;
 use crate::validators::shared::lookup_tree::LookupTree;
@@ -42,7 +43,13 @@ impl_py_gc_traverse!(Field { validator });
 #[derive(Debug)]
 pub struct ModelFieldsValidator {
     fields: Vec<Field>,
-    model_name: String,
+    /// The field names, shared with every `ModelFieldsSet` created by this validator.
+    field_names: Arc<FieldNames>,
+    /// Whether an extra key can be equal to a field name (when a field has a validation alias,
+    /// or when extra keys are validated), in which case adding it to the fields set requires
+    /// a check against the field names.
+    extra_keys_may_be_field_names: bool,
+    model_name: Box<str>,
     extra_behavior: ExtraBehavior,
     extras_validator: Option<Arc<CombinedValidator>>,
     extras_keys_validator: Option<Arc<CombinedValidator>>,
@@ -81,12 +88,13 @@ impl BuildValidator for ModelFieldsValidator {
             (Some(_), _) => return py_schema_err!("extras_keys_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
-        let model_name: String = schema
-            .get_as(intern!(py, "model_name"))?
-            .unwrap_or_else(|| "Model".to_string());
+        let model_name: Box<str> = schema
+            .get_as::<String>(intern!(py, "model_name"))?
+            .map_or_else(|| "Model".into(), String::into_boxed_str);
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: Vec<Field> = Vec::with_capacity(fields_dict.len());
+        let mut has_validation_alias = false;
 
         for (key, value) in fields_dict {
             let field_info = value.cast::<PyDict>()?;
@@ -99,7 +107,8 @@ impl BuildValidator for ModelFieldsValidator {
                 Err(err) => return py_schema_err!("Field \"{name}\":\n  {err}"),
             };
 
-            let validation_alias = field_info.get_as(intern!(py, "validation_alias"))?;
+            let validation_alias: Option<ValidationAlias> = field_info.get_as(intern!(py, "validation_alias"))?;
+            has_validation_alias |= validation_alias.is_some();
             let lookup_path_collection = LookupPathCollection::new(validation_alias, name.clone())?;
 
             fields.push(Field {
@@ -111,9 +120,13 @@ impl BuildValidator for ModelFieldsValidator {
         }
 
         let lookup = LookupTree::from_fields(&fields, |field| &field.lookup_path_collection);
+        let field_names = Arc::new(fields.iter().map(|field| field.name.clone()).collect::<FieldNames>());
+        let extra_keys_may_be_field_names = has_validation_alias || extras_keys_validator.is_some();
 
         Ok(CombinedValidator::ModelFields(Self {
             fields,
+            field_names,
+            extra_keys_may_be_field_names,
             model_name,
             extra_behavior,
             extras_validator,
@@ -131,7 +144,8 @@ impl BuildValidator for ModelFieldsValidator {
 
 impl_py_gc_traverse!(ModelFieldsValidator {
     fields,
-    extras_validator
+    extras_validator,
+    extras_keys_validator
 });
 
 impl Validator for ModelFieldsValidator {
@@ -142,7 +156,7 @@ impl Validator for ModelFieldsValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let (model_dict, model_extra, fields_set) = self.validate_fields(py, input, state)?;
-        Ok((model_dict, model_extra, fields_set).into_py_any(py)?)
+        Ok((model_dict, model_extra, Bound::new(py, fields_set)?).into_py_any(py)?)
     }
 
     fn validate_assignment<'py>(
@@ -252,7 +266,7 @@ impl Validator for ModelFieldsValidator {
     }
 }
 
-pub(crate) type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, Bound<'py, PySet>);
+pub(crate) type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, ModelFieldsSet);
 
 impl ModelFieldsValidator {
     /// Like `Validator::validate()`, but returns the components without packing them into a Python tuple.
@@ -291,8 +305,9 @@ impl ModelFieldsValidator {
             lookup_type,
             model_dict,
             extra_validator,
-            fields_set: PySet::empty(py)?,
+            fields_set: ModelFieldsSet::empty(Arc::clone(&self.field_names)),
             fields_set_count: 0,
+            extra_keys_may_be_field_names: self.extra_keys_may_be_field_names,
             state,
             errors: Vec::new(),
             loc_by_alias: self.loc_by_alias,
@@ -303,7 +318,7 @@ impl ModelFieldsValidator {
                 return Err(ValError::new(
                     ErrorType::ModelType {
                         context: None,
-                        class_name: self.model_name.clone(),
+                        class_name: self.model_name.to_string(),
                     },
                     input,
                 ));
@@ -320,7 +335,7 @@ impl ModelFieldsValidator {
                             ErrorType::DictType { .. } => {
                                 let mut e = e;
                                 e.error_type = ErrorType::ModelType {
-                                    class_name: self.model_name.clone(),
+                                    class_name: self.model_name.to_string(),
                                     context: None,
                                 };
                                 e
@@ -378,7 +393,7 @@ impl ModelFieldsValidator {
                 Some(AHashSet::with_capacity(self.fields.len()))
             };
 
-        for field in &self.fields {
+        for (field_idx, field) in self.fields.iter().enumerate() {
             let field_input = match field
                 .lookup_path_collection
                 .lookup_paths(state.lookup_type)
@@ -403,7 +418,7 @@ impl ModelFieldsValidator {
                 Err(e) => return Err(e),
             };
 
-            state.validate_field(py, input, field, field_input)?;
+            state.validate_field(py, input, field_idx, field, field_input)?;
         }
 
         if let Some(used_keys) = used_keys {
@@ -545,7 +560,9 @@ impl ModelFieldsValidator {
         }
 
         // Iterate in place to avoid moving the inline buffer into an owning iterator.
-        for (field, field_input) in std::iter::zip(&self.fields, field_inputs.iter().copied()) {
+        for ((field_idx, field), field_input) in
+            std::iter::zip(self.fields.iter().enumerate(), field_inputs.iter().copied())
+        {
             let field_input_with_lookup_path = field_input.map(|(field_info, value)| {
                 let lookup_path = if let Some(alias_index) = field_info.alias_index() {
                     &field.lookup_path_collection.by_alias[alias_index]
@@ -564,7 +581,7 @@ impl ModelFieldsValidator {
                 (lookup_path, value)
             });
 
-            state.validate_field(py, json_input, field, field_input_with_lookup_path)?;
+            state.validate_field(py, json_input, field_idx, field, field_input_with_lookup_path)?;
         }
 
         // handle extra fields if necessary
@@ -585,8 +602,9 @@ struct ModelFieldsValidationState<'a, 's, 'py> {
     lookup_type: LookupType,
     model_dict: Bound<'py, PyDict>,
     extra_validator: ModelExtraValidator<'a, 'py>,
-    fields_set: Bound<'py, PySet>,
+    fields_set: ModelFieldsSet,
     fields_set_count: usize,
+    extra_keys_may_be_field_names: bool,
     state: &'a mut ValidationState<'s, 'py>,
     errors: Vec<ValLineError>,
     loc_by_alias: bool,
@@ -611,6 +629,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
         &mut self,
         py: Python<'py>,
         full_input: &(impl Input<'py> + ?Sized),
+        field_idx: usize,
         field: &Field,
         field_input: Option<(&LookupPath, impl BorrowInput<'py>)>,
     ) -> ValResult<()> {
@@ -622,7 +641,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
             match field.validator.validate(py, value.borrow_input(), state) {
                 Ok(value) => {
                     self.model_dict.set_item(&field.name, value)?;
-                    self.fields_set.add(&field.name)?;
+                    self.fields_set.insert_field(field_idx);
                     self.fields_set_count += 1;
                     return Ok(());
                 }
@@ -702,6 +721,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
             state,
             errors,
             fields_set,
+            extra_keys_may_be_field_names,
             ..
         } = self;
         let state = &mut **state;
@@ -724,6 +744,14 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                 // key is invalid.
                 let validated_key = if let Some(validator) = keys_validator {
                     match validator.validate(py, key_input, state) {
+                        // Extra keys are stored in the fields set and accessible as attributes, so they must be strings:
+                        Ok(value) if !value.bind(py).is_instance_of::<PyString>() => {
+                            return Err(PyTypeError::new_err(format!(
+                                "Extra keys must be strings, got `{}`",
+                                value.bind(py).get_type().qualname()?
+                            ))
+                            .into());
+                        }
                         Ok(value) => Some(value),
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {
@@ -751,8 +779,14 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                     value.borrow_input().to_object(py)?.unbind()
                 };
                 if let Some(validated_key) = validated_key {
-                    extra_dict.set_item(&validated_key, validated_value)?;
-                    fields_set.add(validated_key)?;
+                    let validated_key = validated_key.bind(py);
+                    extra_dict.set_item(validated_key, validated_value)?;
+                    if *extra_keys_may_be_field_names {
+                        fields_set.insert_value(py, validated_key)?;
+                    } else {
+                        // Without a keys validator, the key is always a string:
+                        fields_set.insert_extra(py, validated_key.cast::<PyString>()?)?;
+                    }
                 }
                 Ok(())
             }
