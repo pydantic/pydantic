@@ -89,15 +89,30 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
     ),
     'nested': (
         _model('Outer', {'name': STR, 'address': ADDRESS}),
-        False,
+        True,
         [
             '{"name": "n", "address": {"street": "s", "city": "c"}}',
-            # the sub-object is consumed either way, and has to be re-read to report this
+            # a mismatched nested field sends the document to ordinary validation
             '{"name": "n", "address": {"street": 1, "city": "c"}}',
             '{"name": "n", "address": {"street": "s"}}',
             '{"name": "n", "address": null}',
             '{"name": "n", "address": "not an object"}',
             '{"name": "n"}',
+            '{"name": "n", "address": {"street": "s", "city": "c"}} trailing',
+        ],
+    ),
+    'two_nested_levels_refused': (
+        _model('Outer2', {'middle': _model('Middle', {'address': ADDRESS})}),
+        False,
+        ['{"middle": {"address": {"street": "s", "city": "c"}}}'],
+    ),
+    'list_of_nested_models': (
+        _model('ListOfModels', {'items': core_schema.list_schema(ADDRESS)}),
+        True,
+        [
+            '{"items": [{"street": "s", "city": "c"}]}',
+            '{"items": [{"street": "s", "city": "c"}, {"street": 1, "city": "c"}]}',
+            '{"items": [{"street": "s", "city": "c"}]} trailing',
         ],
     ),
     'containers': (
@@ -111,7 +126,7 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
                 'models': core_schema.dict_schema(keys_schema=STR, values_schema=ADDRESS),
             },
         ),
-        False,
+        True,
         [
             '{"tags": ["a"], "nums": [1], "grid": [[1.5, 2]], "map": {"k": "v"},'
             ' "models": {"a": {"street": "s", "city": "c"}}}',
@@ -339,7 +354,8 @@ def test_streaming_matches_the_tree(case: str) -> None:
 
 
 @pytest.mark.parametrize('hook', ['__del__', '__new__'])
-def test_model_object_hooks_decline_streaming(hook: str) -> None:
+@pytest.mark.parametrize('nested', [False, True])
+def test_model_object_hooks_decline_streaming(hook: str, nested: bool) -> None:
     calls: list[str] = []
     base = _cls('Base')
 
@@ -362,15 +378,18 @@ def test_model_object_hooks_decline_streaming(hook: str) -> None:
         cls=cls,
         schema=core_schema.model_fields_schema(fields={'value': core_schema.model_field(INT)}),
     )
+    if nested:
+        schema = _model('Outer', {'inner': schema})
     validator = SchemaValidator(schema)
     assert validator._stream_plan_accepted is False
     with pytest.raises(ValidationError):
-        validator.validate_json(b'{"value": 1} trailing')
+        validator.validate_json(b'{"inner": {"value": 1}} trailing' if nested else b'{"value": 1} trailing')
     assert calls == []
 
 
 @pytest.mark.parametrize('raises', [False, True])
-def test_storage_descriptors_wait_for_complete_json(raises: bool) -> None:
+@pytest.mark.parametrize('nested', [False, True])
+def test_storage_descriptors_wait_for_complete_json(raises: bool, nested: bool) -> None:
     calls: list[None] = []
 
     class Model:
@@ -386,15 +405,16 @@ def test_storage_descriptors_wait_for_complete_json(raises: bool) -> None:
             if raises:
                 raise RuntimeError('storage descriptor ran')
 
-    validator = SchemaValidator(
-        core_schema.model_schema(
-            Model,
-            core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
-        )
+    schema = core_schema.model_schema(
+        Model,
+        core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
     )
+    if nested:
+        schema = _model('Outer', {'items': core_schema.list_schema(schema)})
+    validator = SchemaValidator(schema)
     assert validator._stream_plan_accepted
     with pytest.raises(ValidationError):
-        validator.validate_json('{"x":1} trailing')
+        validator.validate_json('{"items":[{"x":1}]} trailing' if nested else '{"x":1} trailing')
     assert calls == []
 
 
