@@ -47,8 +47,11 @@ Run the checks without installing any SDK dependencies:
 uv run --no-sync pytest tests/benchmarks/test_model_corpus.py tests/benchmarks/test_mcp_model_corpus.py
 ```
 
-For CodSpeed, add `--codspeed`. The existing CI workflow already includes both
-benchmark files. Snapshot updates are explicit workload changes and should update
+For CodSpeed, add `--codspeed`. All four workloads use the same parametrized
+benchmark, `test_model_corpus[<corpus>]`. The CodSpeed workflow runs each corpus in
+its own matrix job alongside the existing benchmark suite, with identical build
+and profiling settings. To select one corpus, add `-k "[openai]"`, for example.
+Snapshot updates are explicit workload changes and should update
 provenance, declaration inventories and coverage checks together.
 
 On PyPy, the importer temporarily raises a smaller recursion limit to 2,000,
