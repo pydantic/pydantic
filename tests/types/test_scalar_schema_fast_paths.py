@@ -41,7 +41,7 @@ def test_field_processing() -> None:
         def serialize_value(self, value: str) -> str:
             return value.lower()
 
-    model = Model(constrained='AB', plain='x')
+    model = Model(constrained='ab', plain='x')
     assert model.constrained == 'AB'
     assert model.model_dump() == {'constrained': 'ab', 'plain': 'x'}
     assert Model.model_json_schema()['properties']['constrained']['title'] == 'Constrained'
