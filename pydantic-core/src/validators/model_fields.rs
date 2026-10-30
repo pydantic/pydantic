@@ -560,13 +560,28 @@ fn materialize_nested<'py>(
     }
 }
 
-/// A plan for a whole document, for a root the model shapes do not cover.
+/// A plan for a whole document: a model or a list of simple models.
 pub(crate) fn root_plan<'v>(py: Python<'_>, validator: &'v CombinedValidator) -> Option<FieldPlan<'v>> {
-    if !matches!(unwrap_prebuilt(validator), CombinedValidator::Model(_)) {
+    let root = unwrap_prebuilt(validator);
+    let supported = match root {
+        CombinedValidator::Model(_) => true,
+        CombinedValidator::List(list) => list
+            .stream_list()
+            .is_some_and(|list| matches!(unwrap_prebuilt(list.items), CombinedValidator::Model(_))),
+        _ => false,
+    };
+    if !supported {
         return None;
     }
     let plan = classify(py, validator, 0);
-    (!matches!(plan.fast, Fast::No)).then_some(plan)
+    match (&plan.fast, root) {
+        (Fast::Model(_), CombinedValidator::Model(_)) => Some(plan),
+        (Fast::List(list), CombinedValidator::List(_)) => match &list.element.fast {
+            Fast::Model(model) if model.plan.fields.iter().all(|field| !contains_nested_model(field)) => Some(plan),
+            _ => None,
+        },
+        _ => None,
+    }
 }
 
 /// One whole document off the cursor, or `None` if the cursor could not finish it.
@@ -577,7 +592,14 @@ pub(crate) fn take_root<'py>(
     state: &mut ValidationState<'_, 'py>,
 ) -> Result<Option<Bound<'py, PyAny>>, StreamStop> {
     match take_fast(py, jiter, plan, state, 0)? {
-        Taken::Ready(value) => Ok(Some(value)),
+        Taken::Ready(value) => {
+            if matches!(plan.fast, Fast::List(_)) {
+                // A list's models stay as field bundles until the entire document is valid.
+                jiter.finish()?;
+                materialize_nested(py, value.clone(), plan)?;
+            }
+            Ok(Some(value))
+        }
         Taken::Raw => Ok(None),
     }
 }

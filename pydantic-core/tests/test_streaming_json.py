@@ -233,6 +233,23 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
             '[]',
         ],
     ),
+    'root_model_list': (
+        core_schema.list_schema(items_schema=ADDRESS),
+        True,
+        [
+            '[{"street":"s","city":"c"},{"street":"t","city":"d"}]',
+            '[]',
+            '[{"street":1,"city":"c"},{"street":"t","city":"d"}]',
+            '[{"street":"s"}]',
+            '[null]',
+            '[{"street":"s","city":"c"}] trailing',
+        ],
+    ),
+    'root_list_with_nested_refused': (
+        core_schema.list_schema(items_schema=_model('WithAddress', {'address': ADDRESS})),
+        False,
+        ['[{"address":{"street":"s","city":"c"}}]'],
+    ),
     # the ordinary path decodes every string in the document, so it rejects invalid utf-8 even
     # in a field the model ignores; the cursor skips those values without decoding them
     'bad_utf8_in_ignored_fields': (
@@ -252,7 +269,7 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
     # the one to check it
     'constrained_root_list': (
         core_schema.list_schema(items_schema=ADDRESS, min_length=2, max_length=3),
-        False,
+        True,
         [
             '[{"street": "s", "city": "c"}]',
             '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}]',
@@ -354,8 +371,8 @@ def test_streaming_matches_the_tree(case: str) -> None:
 
 
 @pytest.mark.parametrize('hook', ['__del__', '__new__'])
-@pytest.mark.parametrize('nested', [False, True])
-def test_model_object_hooks_decline_streaming(hook: str, nested: bool) -> None:
+@pytest.mark.parametrize('shape', ['root', 'nested', 'root_list'])
+def test_model_object_hooks_decline_streaming(hook: str, shape: str) -> None:
     calls: list[str] = []
     base = _cls('Base')
 
@@ -378,18 +395,26 @@ def test_model_object_hooks_decline_streaming(hook: str, nested: bool) -> None:
         cls=cls,
         schema=core_schema.model_fields_schema(fields={'value': core_schema.model_field(INT)}),
     )
-    if nested:
+    if shape == 'nested':
         schema = _model('Outer', {'inner': schema})
+    elif shape == 'root_list':
+        schema = core_schema.list_schema(schema)
     validator = SchemaValidator(schema)
     assert validator._stream_plan_accepted is False
     with pytest.raises(ValidationError):
-        validator.validate_json(b'{"inner": {"value": 1}} trailing' if nested else b'{"value": 1} trailing')
+        validator.validate_json(
+            b'{"inner": {"value": 1}} trailing'
+            if shape == 'nested'
+            else b'[{"value": 1}] trailing'
+            if shape == 'root_list'
+            else b'{"value": 1} trailing'
+        )
     assert calls == []
 
 
 @pytest.mark.parametrize('raises', [False, True])
-@pytest.mark.parametrize('nested', [False, True])
-def test_storage_descriptors_wait_for_complete_json(raises: bool, nested: bool) -> None:
+@pytest.mark.parametrize('shape', ['root', 'nested', 'root_list'])
+def test_storage_descriptors_wait_for_complete_json(raises: bool, shape: str) -> None:
     calls: list[None] = []
 
     class Model:
@@ -409,12 +434,20 @@ def test_storage_descriptors_wait_for_complete_json(raises: bool, nested: bool) 
         Model,
         core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
     )
-    if nested:
+    if shape == 'nested':
         schema = _model('Outer', {'items': core_schema.list_schema(schema)})
+    elif shape == 'root_list':
+        schema = core_schema.list_schema(schema)
     validator = SchemaValidator(schema)
     assert validator._stream_plan_accepted
     with pytest.raises(ValidationError):
-        validator.validate_json('{"items":[{"x":1}]} trailing' if nested else '{"x":1} trailing')
+        validator.validate_json(
+            '{"items":[{"x":1}]} trailing'
+            if shape == 'nested'
+            else '[{"x":1}] trailing'
+            if shape == 'root_list'
+            else '{"x":1} trailing'
+        )
     assert calls == []
 
 
