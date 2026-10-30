@@ -139,6 +139,15 @@ impl_py_gc_traverse!(SchemaValidator {
 
 #[pymethods]
 impl SchemaValidator {
+    /// Whether `validate_json` can read this schema straight off the json cursor, rather than
+    /// building a `JsonValue` tree first. Answers "is my model on the fast path", and lets a
+    /// differential test tell "both paths agree" apart from "only one path ran".
+    #[getter]
+    fn _stream_plan_accepted(&self, py: Python<'_>) -> bool {
+        let root = model_fields::unwrap_prebuilt(&self.validator);
+        model_fields::root_plan(py, root).is_some()
+    }
+
     #[new]
     #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
     pub fn py_new(
@@ -481,6 +490,51 @@ impl SchemaValidator {
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> ValResult<Py<PyAny>> {
+        // On unless switched off. Every schema or document the fast path cannot finish falls
+        // back to the tree path, so the switch is an escape hatch rather than a feature flag:
+        static DISABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        #[allow(clippy::used_underscore_items)]
+        if !*DISABLED.get_or_init(|| std::env::var_os("PYDANTIC_DISABLE_JSON_STREAMING").is_some())
+            && let Some(result) = self._validate_json_streaming(
+                py,
+                json_data,
+                strict,
+                extra_behavior,
+                context,
+                self_instance,
+                allow_partial,
+                by_alias,
+                by_name,
+            )
+        {
+            // Under `stream-verify` the same document is validated the ordinary way too and the
+            // results compared, so a divergence fails loudly instead of being returned. Only a
+            // streamed success is checked, which is the whole risk surface: the fast path has no
+            // error-construction code, so it can only produce a value or decline.
+            #[cfg(feature = "stream-verify")]
+            if let Ok(streamed) = &result {
+                let tree = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
+                    .map_err(|e| json::map_json_err(input, e, json_data))
+                    .and_then(|json_value| {
+                        #[allow(clippy::used_underscore_items)]
+                        self._validate(
+                            py,
+                            &json_value,
+                            InputType::Json,
+                            strict,
+                            extra_behavior,
+                            None,
+                            context,
+                            self_instance,
+                            allow_partial,
+                            by_alias,
+                            by_name,
+                        )
+                    });
+                crate::stream_verify::compare(py, streamed, tree)?;
+            }
+            return result;
+        }
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
         #[allow(clippy::used_underscore_items)]
@@ -497,6 +551,65 @@ impl SchemaValidator {
             by_alias,
             by_name,
         )
+    }
+
+    /// Validate models straight off a json cursor, so the document's objects are never built
+    /// into a `JsonValue` tree. `None` means the schema or the document is not one this handles
+    /// and the caller should take the tree path.
+    ///
+    /// Handles a model at the top level and an array of them. Any element the fast path cannot
+    /// finish is re-read from its own bytes and validated the ordinary way, so errors and their
+    /// locations come out exactly as they always did.
+    #[allow(clippy::too_many_arguments)]
+    fn _validate_json_streaming(
+        &self,
+        py: Python<'_>,
+        json_data: &[u8],
+        strict: Option<bool>,
+        extra_behavior: Option<ExtraBehavior>,
+        context: Option<&Bound<'_, PyAny>>,
+        self_instance: Option<&Bound<'_, PyAny>>,
+        allow_partial: PartialMode,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
+    ) -> Option<ValResult<Py<PyAny>>> {
+        if by_alias.is_some()
+            || by_name.is_some()
+            || allow_partial.is_active()
+            || extra_behavior.is_some()
+            || self_instance.is_some()
+        {
+            return None;
+        }
+
+        let root = model_fields::unwrap_prebuilt(&self.validator);
+
+        let plan = model_fields::root_plan(py, root)?;
+
+        let mut recursion_guard = RecursionState::default();
+        let mut state = ValidationState::new(
+            Extra::new(
+                strict,
+                extra_behavior,
+                None,
+                context,
+                InputType::Json,
+                self.cache_str,
+                by_alias,
+                by_name,
+            ),
+            &mut recursion_guard,
+            allow_partial,
+            None,
+            self_instance,
+        );
+        let mut jiter = jiter::Jiter::new(json_data);
+        match model_fields::take_root(py, &mut jiter, &plan, &mut state) {
+            // trailing content is an error the ordinary path reports
+            Ok(Some(value)) if jiter.finish().is_ok() => Some(Ok(value.unbind())),
+            Err(model_fields::StreamStop::Py(err)) => Some(Err(err.into())),
+            _ => None,
+        }
     }
 
     fn prepare_validation_err(&self, py: Python, error: ValError, input_type: InputType) -> PyErr {
