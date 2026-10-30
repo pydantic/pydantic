@@ -1,0 +1,99 @@
+tests/benchmarks/corpus/mcp/README.md
+  s_6ed4995a8d6b19::t_12cc56c5756dad 3-7,9-12,14-19,21-25,27-34
+tests/benchmarks/corpus/mcp/manifest.json
+  s_6ed4995a8d6b19::t_60a94b9a332526 1-1179
+tests/benchmarks/corpus/mcp/mcp/client/auth/extensions/client_credentials.py
+  s_6ed4995a8d6b19::t_ed3fa76c050773 1-11
+tests/benchmarks/corpus/mcp/mcp/client/auth/oauth2.py
+  s_6ed4995a8d6b19::t_4562e698d564c1 1-6
+tests/benchmarks/corpus/mcp/mcp/client/session_group.py
+  s_6ed4995a8d6b19::t_f1783cd9b45919 1-18
+tests/benchmarks/corpus/mcp/mcp/client/stdio.py
+  s_6ed4995a8d6b19::t_ad5db515dccbae 1-12
+tests/benchmarks/corpus/mcp/mcp/client/streamable_http.py
+  s_6ed4995a8d6b19::t_69b33b371d6079 1-3
+tests/benchmarks/corpus/mcp/mcp/server/apps.py
+  s_6ed4995a8d6b19::t_a997a964458055 1-19
+tests/benchmarks/corpus/mcp/mcp/server/auth/handlers/authorize.py
+  s_6ed4995a8d6b19::t_23caac97902c20 1-20
+tests/benchmarks/corpus/mcp/mcp/server/auth/handlers/register.py
+  s_6ed4995a8d6b19::t_53e474e15a2bf4 1-7
+tests/benchmarks/corpus/mcp/mcp/server/auth/handlers/revoke.py
+  s_6ed4995a8d6b19::t_edf5346b7eb9e1 1-13
+tests/benchmarks/corpus/mcp/mcp/server/auth/handlers/token.py
+  s_6ed4995a8d6b19::t_8bd22a31d2e2f3 1-34
+tests/benchmarks/corpus/mcp/mcp/server/auth/provider.py
+  s_6ed4995a8d6b19::t_9a47b96ff2e3f6 1-47
+tests/benchmarks/corpus/mcp/mcp/server/auth/settings.py
+  s_6ed4995a8d6b19::t_9eaaf1489bbfcc 1-33
+tests/benchmarks/corpus/mcp/mcp/server/context.py
+  s_6ed4995a8d6b19::t_e17cd03d093ffb 1-5
+tests/benchmarks/corpus/mcp/mcp/server/elicitation.py
+  s_6ed4995a8d6b19::t_9a6ad3c186a61c 1-18
+tests/benchmarks/corpus/mcp/mcp/server/lowlevel/server.py
+  s_6ed4995a8d6b19::t_be011c2b975046 1-5
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/context.py
+  s_6ed4995a8d6b19::t_c4ce4c50dd553a 1-24
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/prompts/base.py
+  s_6ed4995a8d6b19::t_9edd18749679f2 1-49
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/resolve.py
+  s_6ed4995a8d6b19::t_17f65044056cb9 1-14
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/resources/base.py
+  s_6ed4995a8d6b19::t_32a41d8f4eaf29 1-25
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/resources/templates.py
+  s_6ed4995a8d6b19::t_0061c689c40f7f 1-30
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/resources/types.py
+  s_6ed4995a8d6b19::t_fc35ef232e6628 1-70
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/server.py
+  s_6ed4995a8d6b19::t_0aeefcf7fa6a7e 1-21
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/tools/base.py
+  s_6ed4995a8d6b19::t_e132eadf06ef0a 1-22
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/utilities/func_metadata.py
+  s_6ed4995a8d6b19::t_ff1c61b911f8f2 1-61
+tests/benchmarks/corpus/mcp/mcp/server/mcpserver/utilities/types.py
+  s_6ed4995a8d6b19::t_24eb4a890b5654 1-6
+tests/benchmarks/corpus/mcp/mcp/server/models.py
+  s_6ed4995a8d6b19::t_b88a76d660b3f7 1-13
+tests/benchmarks/corpus/mcp/mcp/server/transport_security.py
+  s_6ed4995a8d6b19::t_5ea17580c9b106 1-7
+tests/benchmarks/corpus/mcp/mcp/shared/auth.py
+  s_6ed4995a8d6b19::t_70624bca689a07 1-118
+tests/benchmarks/corpus/mcp/mcp/shared/exceptions.py
+  s_6ed4995a8d6b19::t_7aaacbc06c0c1a 1-5
+tests/benchmarks/corpus/mcp/mcp/shared/uri_template.py
+  s_6ed4995a8d6b19::t_655f3b60eca8b7 1-37
+tests/benchmarks/corpus/mcp/mcp_types/__init__.py
+  s_6ed4995a8d6b19::t_30d2b2f0a04d68 1-4
+tests/benchmarks/corpus/mcp/mcp_types/_types.py
+  s_6ed4995a8d6b19::t_777b4701e3e1f7 1,7
+tests/benchmarks/corpus/mcp/mcp_types/_v2025_11_25/__init__.py
+  s_6ed4995a8d6b19::t_f327693cb01282 1-990
+tests/benchmarks/corpus/mcp/mcp_types/_v2026_07_28/__init__.py
+  s_6ed4995a8d6b19::t_e8fb5955d51057 1-994
+tests/benchmarks/corpus/mcp/mcp_types/_wire_base.py
+  s_6ed4995a8d6b19::t_af4b2d3576b919 1-5
+tests/benchmarks/corpus/mcp/mcp_types/jsonrpc.py
+  s_6ed4995a8d6b19::t_c847c9861b80b3 1-45
+tests/benchmarks/corpus/mcp/mcp_types/methods.py
+  s_6ed4995a8d6b19::t_9117f84d21911d 1-103
+tests/benchmarks/corpus/mcp/mcp_types/version.py
+  s_6ed4995a8d6b19::t_7194113daafa11 1-17
+tests/benchmarks/test_mcp_model_corpus.py
+  s_6ed4995a8d6b19::t_eb91c15c738974 1,3-7,9,11-13,17-45,49-53,55,59,61,64,68-72,77,82-85,87-88,92-107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "46034217decdc579ee8d9b75ce314d0b4c75e503",
+  "prompts": {},
+  "sessions": {
+    "s_6ed4995a8d6b19": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18801-c79f-7032-94e0-36fcbd7d8b74",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
