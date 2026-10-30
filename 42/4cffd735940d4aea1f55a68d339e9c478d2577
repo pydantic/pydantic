@@ -1,0 +1,19 @@
+uv.lock
+  s_6ed4995a8d6b19::t_b21d60efd6f497 7,1149,1151,1153,2067,2204,2762,3401
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "424cffd735940d4aea1f55a68d339e9c478d2577",
+  "prompts": {},
+  "sessions": {
+    "s_6ed4995a8d6b19": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18801-c79f-7032-94e0-36fcbd7d8b74",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
