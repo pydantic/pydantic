@@ -2,6 +2,7 @@
 Tests for internal things that are complex enough to warrant their own unit tests.
 """
 
+import datetime
 import sys
 from copy import deepcopy
 from dataclasses import dataclass
@@ -368,6 +369,12 @@ class _NotPure:
         (int, True),
         (str, True),
         (type(None), True),
+        (datetime.date, sys.implementation.name == 'cpython'),
+        (datetime.datetime, sys.implementation.name == 'cpython'),
+        (datetime.time, sys.implementation.name == 'cpython'),
+        (datetime.timedelta, sys.implementation.name == 'cpython'),
+        (Decimal, sys.implementation.name == 'cpython'),
+        (list[datetime.date], sys.implementation.name == 'cpython'),
         ('int | None', True),
         ('list[int]', True),
         ('dict[str, list[int | None]]', True),

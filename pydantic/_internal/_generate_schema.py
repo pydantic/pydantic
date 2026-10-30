@@ -219,11 +219,12 @@ _PURE_LEAF_TYPES: frozenset[Any] = frozenset(
         Any,
         typing_extensions.Any,
         object,
-        datetime.date,
-        datetime.datetime,
-        datetime.time,
-        datetime.timedelta,
-        Decimal,
+        # These classes are mutable on PyPy and may acquire custom schema hooks.
+        *(
+            [datetime.date, datetime.datetime, datetime.time, datetime.timedelta, Decimal]
+            if sys.implementation.name == 'cpython'
+            else []
+        ),
         # The bare container forms (their schemas don't depend on configuration or context either):
         list,
         set,
