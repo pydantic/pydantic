@@ -1,0 +1,19 @@
+.pre-commit-config.yaml
+  s_90409fc2dd3126::t_067150ffaf0962 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "93d989bf719336c1253c1b1e89cd0f33244b9c65",
+  "prompts": {},
+  "sessions": {
+    "s_90409fc2dd3126": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18c6a-6d7c-7f31-bc16-11225243971b",
+        "model": "unknown"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
