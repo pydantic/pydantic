@@ -5,7 +5,7 @@ import json
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 
 class Inner(BaseModel):
@@ -15,6 +15,16 @@ class Inner(BaseModel):
 
 class Outer(BaseModel):
     items: list[Inner]
+
+
+MODEL_LIST = TypeAdapter(list[Inner])
+
+
+@pytest.mark.benchmark(group='nested JSON model')
+def test_top_level_model_list_valid_json(benchmark: BenchmarkFixture) -> None:
+    data = json.dumps([{'i': i, 's': str(i)} for i in range(100)]).encode()
+    assert len(MODEL_LIST.validate_json(data)) == 100
+    benchmark(MODEL_LIST.validate_json, data)
 
 
 @pytest.fixture(scope='module')
