@@ -1,0 +1,2593 @@
+tests/benchmarks/corpus/anthropic/HTTPX2-LICENSE
+  s_6ed4995a8d6b19::t_41b99f77d3be53 1-13
+tests/benchmarks/corpus/anthropic/LICENSE
+  s_6ed4995a8d6b19::t_60a1b1358b29a2 1-201
+tests/benchmarks/corpus/anthropic/LICENSE-MIT
+  s_6ed4995a8d6b19::t_f90a705afd5978 1-11
+tests/benchmarks/corpus/anthropic/README.md
+  s_6ed4995a8d6b19::t_386ef83cce2d76 1-25
+tests/benchmarks/corpus/anthropic/anthropic/_base_client.py
+  s_6ed4995a8d6b19::t_6e9532db85419f 1-28
+tests/benchmarks/corpus/anthropic/anthropic/_compat.py
+  s_6ed4995a8d6b19::t_e2b7e41e9d69d8 1-25
+tests/benchmarks/corpus/anthropic/anthropic/_models.py
+  s_6ed4995a8d6b19::t_9d46560ee54e16 1-273
+tests/benchmarks/corpus/anthropic/anthropic/_types.py
+  s_6ed4995a8d6b19::t_cc6c8fc63b15d2 1-49
+tests/benchmarks/corpus/anthropic/anthropic/_utils/__init__.py
+  s_6ed4995a8d6b19::t_9279b8f3b6d025 1-6
+tests/benchmarks/corpus/anthropic/anthropic/_utils/_compat.py
+  s_6ed4995a8d6b19::t_b858bafc186e73 1-24
+tests/benchmarks/corpus/anthropic/anthropic/_utils/_datetime_parse.py
+  s_6ed4995a8d6b19::t_28fa6ae342c0f9 1-86
+tests/benchmarks/corpus/anthropic/anthropic/_utils/_typing.py
+  s_6ed4995a8d6b19::t_63f14dbe9eb4f9 1-34
+tests/benchmarks/corpus/anthropic/anthropic/_utils/_utils.py
+  s_6ed4995a8d6b19::t_819337666161b5 1-38
+tests/benchmarks/corpus/anthropic/anthropic/lib/_parse/_response.py
+  s_6ed4995a8d6b19::t_8349120852d644 1-5
+tests/benchmarks/corpus/anthropic/anthropic/lib/middleware/_fallbacks.py
+  s_6ed4995a8d6b19::t_e680cf46929818 1-34
+tests/benchmarks/corpus/anthropic/anthropic/lib/streaming/_beta_types.py
+  s_6ed4995a8d6b19::t_a81fa98670194a 1-46
+tests/benchmarks/corpus/anthropic/anthropic/lib/streaming/_types.py
+  s_6ed4995a8d6b19::t_770f97ac7a38c6 1-49
+tests/benchmarks/corpus/anthropic/anthropic/lib/tools/_toolsets/_base.py
+  s_6ed4995a8d6b19::t_85e50209042322 1-25
+tests/benchmarks/corpus/anthropic/anthropic/lib/tools/_toolsets/_computer_inputs.py
+  s_6ed4995a8d6b19::t_9f28ac7dbb9bc8 1-4
+tests/benchmarks/corpus/anthropic/anthropic/lib/tools/_toolsets/_computer_results.py
+  s_6ed4995a8d6b19::t_ee48b00075c524 1-17
+tests/benchmarks/corpus/anthropic/anthropic/lib/tools/_toolsets/_hooks.py
+  s_6ed4995a8d6b19::t_7a98947a18ea49 1-27
+tests/benchmarks/corpus/anthropic/anthropic/lib/tools/_toolsets/_inputs.py
+  s_6ed4995a8d6b19::t_1128660b6ebb52 1-4
+tests/benchmarks/corpus/anthropic/anthropic/lib/tools/_toolsets/_results.py
+  s_6ed4995a8d6b19::t_c873c1cdfe96d8 1-55
+tests/benchmarks/corpus/anthropic/anthropic/lib/tools/_toolsets/_runnable.py
+  s_6ed4995a8d6b19::t_bfa0ef30870bb7 1-10
+tests/benchmarks/corpus/anthropic/anthropic/pagination.py
+  s_6ed4995a8d6b19::t_8d92c04d17775b 1-58
+tests/benchmarks/corpus/anthropic/anthropic/types/__init__.py
+  s_6ed4995a8d6b19::t_98bbf132632f5c 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/base64_pdf_source.py
+  s_6ed4995a8d6b19::t_5246eb274b2a6b 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/bash_code_execution_output_block.py
+  s_6ed4995a8d6b19::t_02f4a9ef25ff14 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/bash_code_execution_result_block.py
+  s_6ed4995a8d6b19::t_4b0586550933f8 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/bash_code_execution_tool_result_block.py
+  s_6ed4995a8d6b19::t_3224d9584c03ea 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/bash_code_execution_tool_result_error.py
+  s_6ed4995a8d6b19::t_6b632e030a81c7 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/bash_code_execution_tool_result_error_code.py
+  s_6ed4995a8d6b19::t_13df8f9be06cfc 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/__init__.py
+  s_6ed4995a8d6b19::t_f7c3c6923d2c77 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_advisor_message_iteration_usage.py
+  s_6ed4995a8d6b19::t_69bf0614fd494f 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_advisor_redacted_result_block.py
+  s_6ed4995a8d6b19::t_0a34682b1edfc0 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_advisor_result_block.py
+  s_6ed4995a8d6b19::t_c5821cb257e9ce 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_advisor_tool_20260301.py
+  s_6ed4995a8d6b19::t_898f4bb01c8c3a 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_advisor_tool_result_block.py
+  s_6ed4995a8d6b19::t_75d3ec9843c261 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_advisor_tool_result_error.py
+  s_6ed4995a8d6b19::t_f4966a1eb6dd46 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_base64_pdf_source.py
+  s_6ed4995a8d6b19::t_7ced6d9b7c7da2 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_bash_code_execution_output_block.py
+  s_6ed4995a8d6b19::t_adbb37bcae0bb7 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_bash_code_execution_result_block.py
+  s_6ed4995a8d6b19::t_612b27fb2d313e 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_bash_code_execution_tool_result_block.py
+  s_6ed4995a8d6b19::t_f6b9f8d2fa9a46 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_bash_code_execution_tool_result_error.py
+  s_6ed4995a8d6b19::t_c8b2f7b590edad 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_click_target.py
+  s_6ed4995a8d6b19::t_54368d7bf3e64f 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_close_tab_config.py
+  s_6ed4995a8d6b19::t_5828b5880f60e3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_close_tab_input.py
+  s_6ed4995a8d6b19::t_fc9244a86b6d77 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_close_tab_tool_use_block.py
+  s_6ed4995a8d6b19::t_1d0d1e994780e8 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_coordinate_target.py
+  s_6ed4995a8d6b19::t_dbe22af367f069 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_double_click_config.py
+  s_6ed4995a8d6b19::t_78cd1a9b8c678d 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_double_click_input.py
+  s_6ed4995a8d6b19::t_22760b20fc38d1 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_double_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_fcace2d542e81c 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_file_upload_config.py
+  s_6ed4995a8d6b19::t_4d5b69e905e918 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_file_upload_input.py
+  s_6ed4995a8d6b19::t_ccaa91753ce54f 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_file_upload_tool_use_block.py
+  s_6ed4995a8d6b19::t_089998c4aa18c6 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_find_config.py
+  s_6ed4995a8d6b19::t_73b4781f7d33d6 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_find_input.py
+  s_6ed4995a8d6b19::t_d30af8de5c7f82 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_find_tool_use_block.py
+  s_6ed4995a8d6b19::t_9856d16c6e96d0 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_form_input_config.py
+  s_6ed4995a8d6b19::t_5ed79503b4e2a0 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_form_input_input.py
+  s_6ed4995a8d6b19::t_f3678b913dc297 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_form_input_tool_use_block.py
+  s_6ed4995a8d6b19::t_215dabd760a415 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_form_input_value.py
+  s_6ed4995a8d6b19::t_8a43cd36da0670 1-5
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_get_page_text_config.py
+  s_6ed4995a8d6b19::t_0c07e52f4362f8 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_get_page_text_input.py
+  s_6ed4995a8d6b19::t_9fa89dfdab5880 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_get_page_text_tool_use_block.py
+  s_6ed4995a8d6b19::t_c729a77acdb9cd 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_hold_key_config.py
+  s_6ed4995a8d6b19::t_f9c50f32b9290f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_hold_key_input.py
+  s_6ed4995a8d6b19::t_278ab5aa0b36a1 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_hold_key_tool_use_block.py
+  s_6ed4995a8d6b19::t_a8af2949e76807 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_hover_config.py
+  s_6ed4995a8d6b19::t_d944acc5f5ee87 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_hover_input.py
+  s_6ed4995a8d6b19::t_979e204419c85c 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_hover_tool_use_block.py
+  s_6ed4995a8d6b19::t_659ee6250dda56 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_javascript_exec_config.py
+  s_6ed4995a8d6b19::t_6c229f0996f9c0 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_javascript_exec_input.py
+  s_6ed4995a8d6b19::t_b51838c37a90d0 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_javascript_exec_tool_use_block.py
+  s_6ed4995a8d6b19::t_743ab16ab7cd17 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_key_config.py
+  s_6ed4995a8d6b19::t_a29d093f3629d9 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_key_input.py
+  s_6ed4995a8d6b19::t_ad203960264348 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_key_tool_use_block.py
+  s_6ed4995a8d6b19::t_df104198c1e456 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_click_config.py
+  s_6ed4995a8d6b19::t_ab0100177ef210 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_click_drag_config.py
+  s_6ed4995a8d6b19::t_872b1d21e128fc 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_click_drag_input.py
+  s_6ed4995a8d6b19::t_10539c3943e4b6 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_click_drag_tool_use_block.py
+  s_6ed4995a8d6b19::t_3041a62ba60d24 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_click_input.py
+  s_6ed4995a8d6b19::t_99220370bf0c76 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_5cdefda8815c6d 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_mouse_down_config.py
+  s_6ed4995a8d6b19::t_b01e2e8cda14c2 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_mouse_down_input.py
+  s_6ed4995a8d6b19::t_3d2281f5dc8fc3 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_mouse_down_tool_use_block.py
+  s_6ed4995a8d6b19::t_14002875ab228e 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_mouse_up_config.py
+  s_6ed4995a8d6b19::t_da5fb8ce26ec4e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_mouse_up_input.py
+  s_6ed4995a8d6b19::t_e4ac9197dbc023 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_left_mouse_up_tool_use_block.py
+  s_6ed4995a8d6b19::t_eaeec85cd8cba4 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_list_tabs_config.py
+  s_6ed4995a8d6b19::t_404c3ecc813220 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_list_tabs_input.py
+  s_6ed4995a8d6b19::t_b0fcb18db08c06 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_list_tabs_tool_use_block.py
+  s_6ed4995a8d6b19::t_d2168c1fdbebcc 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_member_input.py
+  s_6ed4995a8d6b19::t_e125cdc0d45324 1-36
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_member_name.py
+  s_6ed4995a8d6b19::t_80d1dc8da2ae7e 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_middle_click_config.py
+  s_6ed4995a8d6b19::t_3bb8cdc17ce6eb 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_middle_click_input.py
+  s_6ed4995a8d6b19::t_08cd00fec01afa 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_middle_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_27a79a1b19d65d 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_mouse_move_config.py
+  s_6ed4995a8d6b19::t_136bdd9d05fc42 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_mouse_move_input.py
+  s_6ed4995a8d6b19::t_afd2dae7d6d395 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_mouse_move_tool_use_block.py
+  s_6ed4995a8d6b19::t_9c7540cd6314b8 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_navigate_config.py
+  s_6ed4995a8d6b19::t_beac47e0f6c1a2 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_navigate_input.py
+  s_6ed4995a8d6b19::t_de2cdd0e919f71 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_navigate_tool_use_block.py
+  s_6ed4995a8d6b19::t_96d886b05e0d8e 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_new_tab_config.py
+  s_6ed4995a8d6b19::t_95ea544bf12d83 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_new_tab_input.py
+  s_6ed4995a8d6b19::t_e5bc9af2ce27ad 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_new_tab_tool_use_block.py
+  s_6ed4995a8d6b19::t_efa0148de64047 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_console_config.py
+  s_6ed4995a8d6b19::t_acce1d803f2298 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_console_input.py
+  s_6ed4995a8d6b19::t_430b8323985179 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_console_tool_use_block.py
+  s_6ed4995a8d6b19::t_fe0229070d2996 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_network_config.py
+  s_6ed4995a8d6b19::t_8b939710dba768 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_network_input.py
+  s_6ed4995a8d6b19::t_3141ea4682ba5e 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_network_tool_use_block.py
+  s_6ed4995a8d6b19::t_8e1b85fa059dc2 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_page_config.py
+  s_6ed4995a8d6b19::t_b9a6612c3833e3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_page_filter.py
+  s_6ed4995a8d6b19::t_c8528bdd8ff491 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_page_input.py
+  s_6ed4995a8d6b19::t_d3206f49c83198 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_read_page_tool_use_block.py
+  s_6ed4995a8d6b19::t_36fbbff1abd0b6 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_ref_target.py
+  s_6ed4995a8d6b19::t_dc96611110d883 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_right_click_config.py
+  s_6ed4995a8d6b19::t_7c9f3dd204571c 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_right_click_input.py
+  s_6ed4995a8d6b19::t_e18bc921bbac71 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_right_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_2f3a5eab14594a 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_screenshot_config.py
+  s_6ed4995a8d6b19::t_09adfd0c23631f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_screenshot_input.py
+  s_6ed4995a8d6b19::t_cb279404b44b7c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_screenshot_tool_use_block.py
+  s_6ed4995a8d6b19::t_83d7e28cde2ac3 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_scroll_config.py
+  s_6ed4995a8d6b19::t_f28ff0f4a464aa 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_scroll_direction.py
+  s_6ed4995a8d6b19::t_e9b35e8a91df17 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_scroll_input.py
+  s_6ed4995a8d6b19::t_9b452aaee3bd5f 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_scroll_to_config.py
+  s_6ed4995a8d6b19::t_13747cc02c2206 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_scroll_to_input.py
+  s_6ed4995a8d6b19::t_77a732ce16ba65 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_scroll_to_tool_use_block.py
+  s_6ed4995a8d6b19::t_0d618df95e6d01 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_scroll_tool_use_block.py
+  s_6ed4995a8d6b19::t_c0768d803171c6 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_state_change_download_completed_param.py
+  s_6ed4995a8d6b19::t_297452643bbb26 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_state_change_download_failed_param.py
+  s_6ed4995a8d6b19::t_f35edf5a4fef2d 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_state_change_download_started_param.py
+  s_6ed4995a8d6b19::t_e49ee244e6b00d 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_state_change_param.py
+  s_6ed4995a8d6b19::t_84d412b4a57cb5 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_state_change_tab_opened_param.py
+  s_6ed4995a8d6b19::t_b271f55b8ba8d6 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_state_tab_entry_param.py
+  s_6ed4995a8d6b19::t_bc0871f0b7c02e 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_switch_tab_config.py
+  s_6ed4995a8d6b19::t_50c0f18de4c74e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_switch_tab_input.py
+  s_6ed4995a8d6b19::t_ac33afc8656d19 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_switch_tab_tool_use_block.py
+  s_6ed4995a8d6b19::t_77f99c1537f02c 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_toolset_20260801.py
+  s_6ed4995a8d6b19::t_22765aea265877 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_toolset_configs.py
+  s_6ed4995a8d6b19::t_672873ba0453e4 1-76
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_triple_click_config.py
+  s_6ed4995a8d6b19::t_b8d5cd94f8d120 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_triple_click_input.py
+  s_6ed4995a8d6b19::t_8ae59905ac54b3 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_triple_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_b1cb1384a84fd2 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_type_config.py
+  s_6ed4995a8d6b19::t_9cb25f42368fc9 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_type_input.py
+  s_6ed4995a8d6b19::t_6331ba29174393 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_type_tool_use_block.py
+  s_6ed4995a8d6b19::t_328b6f8eeedd20 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_wait_config.py
+  s_6ed4995a8d6b19::t_a833ddf61eb053 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_wait_input.py
+  s_6ed4995a8d6b19::t_d58a42ae4a7e9a 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_wait_tool_use_block.py
+  s_6ed4995a8d6b19::t_3346376f767034 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_zoom_config.py
+  s_6ed4995a8d6b19::t_ea99de9ac43bfa 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_zoom_input.py
+  s_6ed4995a8d6b19::t_e2d1aa550c43b4 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_browser_zoom_tool_use_block.py
+  s_6ed4995a8d6b19::t_6fea7730b93c93 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cache_control_ephemeral.py
+  s_6ed4995a8d6b19::t_55f77048cb5276 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cache_creation.py
+  s_6ed4995a8d6b19::t_a264b2879c538c 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cache_miss_messages_changed.py
+  s_6ed4995a8d6b19::t_d98aaebe8b0732 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cache_miss_model_changed.py
+  s_6ed4995a8d6b19::t_78079cf272bfd2 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cache_miss_previous_message_not_found.py
+  s_6ed4995a8d6b19::t_4897213c9ba4dd 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cache_miss_reason.py
+  s_6ed4995a8d6b19::t_6a779851a9c994 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cache_miss_system_changed.py
+  s_6ed4995a8d6b19::t_ecb75a264d84b6 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cache_miss_tools_changed.py
+  s_6ed4995a8d6b19::t_1a139ca1468756 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cache_miss_unavailable.py
+  s_6ed4995a8d6b19::t_2f14491233a504 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_capability_support.py
+  s_6ed4995a8d6b19::t_2acca2413ffccc 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_citation_char_location.py
+  s_6ed4995a8d6b19::t_8bd148fdea46d9 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_citation_config.py
+  s_6ed4995a8d6b19::t_9fdf3ca8f20ec0 1-6
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_citation_content_block_location.py
+  s_6ed4995a8d6b19::t_55c9dd14d239d1 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_citation_page_location.py
+  s_6ed4995a8d6b19::t_19045c868e3132 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_citation_search_result_location.py
+  s_6ed4995a8d6b19::t_3cbb2b0b2be2d9 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_citations_config_param.py
+  s_6ed4995a8d6b19::t_decf6be6aa195a 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_citations_delta.py
+  s_6ed4995a8d6b19::t_8b9e5defaafc91 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_citations_web_search_result_location.py
+  s_6ed4995a8d6b19::t_7f8b6630a9ab15 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_clear_thinking_20251015_edit_response.py
+  s_6ed4995a8d6b19::t_ca16047b5f2ee6 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_clear_tool_uses_20250919_edit_response.py
+  s_6ed4995a8d6b19::t_d7f86084a6446f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_cloud_config.py
+  s_6ed4995a8d6b19::t_7cc495adb7cc92 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_output_block.py
+  s_6ed4995a8d6b19::t_fbe072ade875d2 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_result_block.py
+  s_6ed4995a8d6b19::t_f50f55b4b54117 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_tool_20250522.py
+  s_6ed4995a8d6b19::t_bdd8401f16d2c9 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_tool_20250825.py
+  s_6ed4995a8d6b19::t_4432be1c9f8b62 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_tool_20260120.py
+  s_6ed4995a8d6b19::t_ab3ff3410857d0 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_tool_20260521.py
+  s_6ed4995a8d6b19::t_6b51d41bec8b5d 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_tool_result_block.py
+  s_6ed4995a8d6b19::t_af3871743d3f35 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_tool_result_block_content.py
+  s_6ed4995a8d6b19::t_fbdc83b79c4d5d 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_tool_result_error.py
+  s_6ed4995a8d6b19::t_7e9c48bf545cca 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_code_execution_tool_result_error_code.py
+  s_6ed4995a8d6b19::t_271345a99d292f 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_compaction_block.py
+  s_6ed4995a8d6b19::t_fdd7ad031677c0 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_compaction_capability.py
+  s_6ed4995a8d6b19::t_570220e862d845 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_compaction_content_block_delta.py
+  s_6ed4995a8d6b19::t_49d75acf408804 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_compaction_iteration_usage.py
+  s_6ed4995a8d6b19::t_d8a59713649298 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_cursor_position_config.py
+  s_6ed4995a8d6b19::t_95b3bb7a0de5b8 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_cursor_position_input.py
+  s_6ed4995a8d6b19::t_8c23b5e3ed7827 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_cursor_position_tool_use_block.py
+  s_6ed4995a8d6b19::t_3ad1ef5961d219 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_double_click_config.py
+  s_6ed4995a8d6b19::t_407ddec9e9118e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_double_click_input.py
+  s_6ed4995a8d6b19::t_5437af7110d6ff 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_double_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_6789a18d033dc8 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_hold_key_config.py
+  s_6ed4995a8d6b19::t_63b9e1087e5de8 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_hold_key_input.py
+  s_6ed4995a8d6b19::t_2848e0cb04f9a4 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_hold_key_tool_use_block.py
+  s_6ed4995a8d6b19::t_3ca6b0f87f78ea 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_key_config.py
+  s_6ed4995a8d6b19::t_3bd14253e626b5 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_key_input.py
+  s_6ed4995a8d6b19::t_150a639fda2b78 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_key_tool_use_block.py
+  s_6ed4995a8d6b19::t_9993729112c870 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_click_config.py
+  s_6ed4995a8d6b19::t_1ef9142c25d50d 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_click_drag_config.py
+  s_6ed4995a8d6b19::t_a7805d9ca15752 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_click_drag_input.py
+  s_6ed4995a8d6b19::t_a339ea1de6a43c 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_click_drag_tool_use_block.py
+  s_6ed4995a8d6b19::t_1dd30f285c2a7b 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_click_input.py
+  s_6ed4995a8d6b19::t_bfc99f9c28539e 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_0a26244f9a2794 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_mouse_down_config.py
+  s_6ed4995a8d6b19::t_43558d3c09607e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_mouse_down_input.py
+  s_6ed4995a8d6b19::t_9e7de49a617d74 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_mouse_down_tool_use_block.py
+  s_6ed4995a8d6b19::t_6f1b73cba604ec 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_mouse_up_config.py
+  s_6ed4995a8d6b19::t_698142614155f0 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_mouse_up_input.py
+  s_6ed4995a8d6b19::t_3afbab70cf1e30 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_left_mouse_up_tool_use_block.py
+  s_6ed4995a8d6b19::t_39e8753ae60453 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_member_input.py
+  s_6ed4995a8d6b19::t_181502708ec4e6 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_member_name.py
+  s_6ed4995a8d6b19::t_5063e706346da2 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_middle_click_config.py
+  s_6ed4995a8d6b19::t_2a992ea3a3c059 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_middle_click_input.py
+  s_6ed4995a8d6b19::t_3933815138ffc5 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_middle_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_eac3e8d97fd959 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_mouse_move_config.py
+  s_6ed4995a8d6b19::t_2897c18d606eff 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_mouse_move_input.py
+  s_6ed4995a8d6b19::t_fe296990d7e488 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_mouse_move_tool_use_block.py
+  s_6ed4995a8d6b19::t_a6bc15405b5df5 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_right_click_config.py
+  s_6ed4995a8d6b19::t_89e498661ffc2b 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_right_click_input.py
+  s_6ed4995a8d6b19::t_8e874b0f3c98ee 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_right_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_d90943f5a26d50 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_screenshot_config.py
+  s_6ed4995a8d6b19::t_6064532e9afa0c 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_screenshot_input.py
+  s_6ed4995a8d6b19::t_196fe0c83dc4bb 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_screenshot_tool_use_block.py
+  s_6ed4995a8d6b19::t_1648ce0657490f 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_scroll_config.py
+  s_6ed4995a8d6b19::t_7a501607ba3647 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_scroll_direction.py
+  s_6ed4995a8d6b19::t_d3d781e9279326 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_scroll_input.py
+  s_6ed4995a8d6b19::t_b27abde6671e87 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_scroll_tool_use_block.py
+  s_6ed4995a8d6b19::t_fcfb7069dab846 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_toolset_20260801.py
+  s_6ed4995a8d6b19::t_22401bf5de14c5 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_toolset_configs.py
+  s_6ed4995a8d6b19::t_9629c9b5bbe4fa 1-48
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_triple_click_config.py
+  s_6ed4995a8d6b19::t_acab366331a601 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_triple_click_input.py
+  s_6ed4995a8d6b19::t_059d89b9e8d699 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_triple_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_8141355f5cb70c 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_type_config.py
+  s_6ed4995a8d6b19::t_739704e6f88624 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_type_input.py
+  s_6ed4995a8d6b19::t_b80e79127d2e11 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_type_tool_use_block.py
+  s_6ed4995a8d6b19::t_cc8c7fa1996760 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_wait_config.py
+  s_6ed4995a8d6b19::t_e292060d07267e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_wait_input.py
+  s_6ed4995a8d6b19::t_7609a96be3b5d1 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_wait_tool_use_block.py
+  s_6ed4995a8d6b19::t_d1ae5122469f03 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_zoom_config.py
+  s_6ed4995a8d6b19::t_130f141eb5df01 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_zoom_input.py
+  s_6ed4995a8d6b19::t_9893857fd43a30 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_computer_zoom_tool_use_block.py
+  s_6ed4995a8d6b19::t_704226cf158023 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_container.py
+  s_6ed4995a8d6b19::t_ef8a99428d8ba1 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_container_skill.py
+  s_6ed4995a8d6b19::t_189d423fbc9877 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_container_upload_block.py
+  s_6ed4995a8d6b19::t_09c7ca44ce2212 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_content_block.py
+  s_6ed4995a8d6b19::t_36002538a443e5 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_context_management_capability.py
+  s_6ed4995a8d6b19::t_066fb14bd7f193 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_context_management_response.py
+  s_6ed4995a8d6b19::t_f1f450672fd8a0 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_count_tokens_context_management_response.py
+  s_6ed4995a8d6b19::t_882d9a3e43f283 1-6
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_deleted_file.py
+  s_6ed4995a8d6b19::t_1dc17b71304e6c 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_deleted_skill.py
+  s_6ed4995a8d6b19::t_d2cd52594aecf2 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_deleted_user_profile.py
+  s_6ed4995a8d6b19::t_78f7649cc154c6 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_diagnostics.py
+  s_6ed4995a8d6b19::t_768d7dea2210d7 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_direct_caller.py
+  s_6ed4995a8d6b19::t_65167f0c9c4af5 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_document_block.py
+  s_6ed4995a8d6b19::t_8db480ba213d85 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_dream.py
+  s_6ed4995a8d6b19::t_4f8bd1501a553f 1-38
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_dream_error.py
+  s_6ed4995a8d6b19::t_4281d0c71bd926 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_dream_input.py
+  s_6ed4995a8d6b19::t_0ede1cbd29754b 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_dream_memory_store_input.py
+  s_6ed4995a8d6b19::t_ea23784a92898f 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_dream_model_config.py
+  s_6ed4995a8d6b19::t_b665a2567439e4 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_dream_output.py
+  s_6ed4995a8d6b19::t_72af24dd9af601 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_dream_sessions_input.py
+  s_6ed4995a8d6b19::t_d83fb5348f7e9a 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_dream_status.py
+  s_6ed4995a8d6b19::t_10a437edc0438d 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_dream_usage.py
+  s_6ed4995a8d6b19::t_8a56ffaf9babf0 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_effort_capability.py
+  s_6ed4995a8d6b19::t_17a3562c484cd5 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_encrypted_code_execution_result_block.py
+  s_6ed4995a8d6b19::t_3524a2ea7d9f82 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_environment.py
+  s_6ed4995a8d6b19::t_c9e7b81aa0b8c5 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_environment_delete_response.py
+  s_6ed4995a8d6b19::t_a1700276d6d464 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_fallback_block.py
+  s_6ed4995a8d6b19::t_38a07f513d4f7b 1-25
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_fallback_credit_not_applied.py
+  s_6ed4995a8d6b19::t_c7645b45f0a101 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_fallback_credit_redeemed.py
+  s_6ed4995a8d6b19::t_9dae237cd18319 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_fallback_credit_usage.py
+  s_6ed4995a8d6b19::t_137c492f38ceeb 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_fallback_info.py
+  s_6ed4995a8d6b19::t_105ff9190486fb 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_fallback_message_iteration_usage.py
+  s_6ed4995a8d6b19::t_597e29d8a070ac 1-25
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_fallback_refusal_trigger.py
+  s_6ed4995a8d6b19::t_4dbc633779b397 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_file_metadata.py
+  s_6ed4995a8d6b19::t_ec95cedcbbfd60 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_file_scope.py
+  s_6ed4995a8d6b19::t_b80acd49eb412a 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_input_json_delta.py
+  s_6ed4995a8d6b19::t_28f92529405ae7 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_input_transformation.py
+  s_6ed4995a8d6b19::t_ecf44d85725c9c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_iterations_usage.py
+  s_6ed4995a8d6b19::t_2bc0c75996d833 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_limited_network.py
+  s_6ed4995a8d6b19::t_0a799682b04187 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_advisor.py
+  s_6ed4995a8d6b19::t_ab9466fa7d492e 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent.py
+  s_6ed4995a8d6b19::t_bd53770fda4ecc 1-36
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_archived_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_ec6f847e41ddce 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_archived_run_error.py
+  s_6ed4995a8d6b19::t_af85dbe9c87648 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_message_preview.py
+  s_6ed4995a8d6b19::t_421dbb85ea8095 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_reference.py
+  s_6ed4995a8d6b19::t_a6cad003b4a329 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_thinking_preview.py
+  s_6ed4995a8d6b19::t_e57be95498c18d 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_tool_config.py
+  s_6ed4995a8d6b19::t_2309405b95c61a 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_toolset20260401.py
+  s_6ed4995a8d6b19::t_abce2fc06f55f8 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_toolset20260401_bash_input.py
+  s_6ed4995a8d6b19::t_d78811713f89eb 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_toolset20260401_edit_input.py
+  s_6ed4995a8d6b19::t_6ce8a417363a5f 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_toolset20260401_glob_input.py
+  s_6ed4995a8d6b19::t_7738ee63dd46e7 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_toolset20260401_grep_input.py
+  s_6ed4995a8d6b19::t_6dda382ba84159 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_toolset20260401_read_input.py
+  s_6ed4995a8d6b19::t_3a9c9e1e4e48b2 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_toolset20260401_write_input.py
+  s_6ed4995a8d6b19::t_44a8d849d0af18 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_agent_toolset_default_config.py
+  s_6ed4995a8d6b19::t_076b962d634183 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_always_allow_policy.py
+  s_6ed4995a8d6b19::t_78c356bcacef38 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_always_ask_policy.py
+  s_6ed4995a8d6b19::t_029fcee01eb4b1 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_anthropic_skill.py
+  s_6ed4995a8d6b19::t_360dc7ebfbc09c 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_auto_policy.py
+  s_6ed4995a8d6b19::t_6251f5a7002a13 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_aws_role_execution_identity.py
+  s_6ed4995a8d6b19::t_1981f74d32bb66 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_bash_tool_config.py
+  s_6ed4995a8d6b19::t_a76a10ed3af601 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_branch_checkout.py
+  s_6ed4995a8d6b19::t_d76ca5cc79561b 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_budget_limit.py
+  s_6ed4995a8d6b19::t_488346241e4249 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_cache_creation_usage.py
+  s_6ed4995a8d6b19::t_303b7265792066 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_commit_checkout.py
+  s_6ed4995a8d6b19::t_95193595023a62 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_custom_skill.py
+  s_6ed4995a8d6b19::t_7f9fbae9fd6fce 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_custom_tool.py
+  s_6ed4995a8d6b19::t_3dea48593e62d7 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_custom_tool_input_schema.py
+  s_6ed4995a8d6b19::t_4078351fc7c80a 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deleted_memory_store.py
+  s_6ed4995a8d6b19::t_a22694d4edc7a8 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deleted_session.py
+  s_6ed4995a8d6b19::t_e4efb47b63d6bd 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deleted_vault.py
+  s_6ed4995a8d6b19::t_5380ff6120a5bb 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_delta_content.py
+  s_6ed4995a8d6b19::t_5fd931a4d13cfc 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_delta_event.py
+  s_6ed4995a8d6b19::t_dec78df8269125 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deployment.py
+  s_6ed4995a8d6b19::t_88383299b49617 1-35
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deployment_initial_event.py
+  s_6ed4995a8d6b19::t_59e9ef9ea7f05a 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deployment_paused_reason.py
+  s_6ed4995a8d6b19::t_6635053e72b9cd 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_7380a14daddb44 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deployment_run.py
+  s_6ed4995a8d6b19::t_bb82db750eb7f5 1-39
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deployment_status.py
+  s_6ed4995a8d6b19::t_26525b9fc385f3 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deployment_system_message_event.py
+  s_6ed4995a8d6b19::t_d757c6dda73e20 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deployment_user_define_outcome_event.py
+  s_6ed4995a8d6b19::t_0fc0e29ae709de 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_deployment_user_message_event.py
+  s_6ed4995a8d6b19::t_152c99df9fd2a7 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_edit_tool_config.py
+  s_6ed4995a8d6b19::t_90676dda802bfc 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_effort_high.py
+  s_6ed4995a8d6b19::t_e94657f19352b0 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_effort_low.py
+  s_6ed4995a8d6b19::t_dbeccbd3fbd6cb 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_effort_max.py
+  s_6ed4995a8d6b19::t_f0d8dcd6a8ff02 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_effort_medium.py
+  s_6ed4995a8d6b19::t_e91f6aae0ea4cc 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_effort_xhigh.py
+  s_6ed4995a8d6b19::t_cff73f4c216abb 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_environment_archived_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_d3b8d12bebdad2 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_environment_archived_run_error.py
+  s_6ed4995a8d6b19::t_9e69fa75f042c3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_environment_not_found_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_bbe4e3dc45192c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_environment_not_found_run_error.py
+  s_6ed4995a8d6b19::t_247e968d0dd73d 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_error_deployment_paused_reason.py
+  s_6ed4995a8d6b19::t_1efb2ea748ffde 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_execution_identity.py
+  s_6ed4995a8d6b19::t_1d0656292df479 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_file_not_found_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_62ee48c07ff309 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_file_not_found_run_error.py
+  s_6ed4995a8d6b19::t_3dc53d50f06b2e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_file_resource_config.py
+  s_6ed4995a8d6b19::t_88810ae7fb7af1 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_github_repository_resource_config.py
+  s_6ed4995a8d6b19::t_b898f50e593bde 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_glob_tool_config.py
+  s_6ed4995a8d6b19::t_1f2aa9e03c603c 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_grep_tool_config.py
+  s_6ed4995a8d6b19::t_dcf721a9bbf16f 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_manual_deployment_paused_reason.py
+  s_6ed4995a8d6b19::t_541fb303017e09 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_manual_trigger_context.py
+  s_6ed4995a8d6b19::t_9e42ff5da7fec1 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_mcp_egress_blocked_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_66370bde07bff0 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_mcp_egress_blocked_run_error.py
+  s_6ed4995a8d6b19::t_d70389d96cfa9e 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_mcp_server_url_definition.py
+  s_6ed4995a8d6b19::t_007dd3b0aaa199 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_mcp_tool_config.py
+  s_6ed4995a8d6b19::t_2e898cb6471892 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_mcp_toolset.py
+  s_6ed4995a8d6b19::t_556325be2c3322 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_mcp_toolset_default_config.py
+  s_6ed4995a8d6b19::t_72c0639b315c3c 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_memory_store.py
+  s_6ed4995a8d6b19::t_897b58708a4010 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_memory_store_archived_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_bf7f508a1bef9e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_memory_store_archived_run_error.py
+  s_6ed4995a8d6b19::t_1b38f5c70e6418 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_memory_store_resource_config.py
+  s_6ed4995a8d6b19::t_8d4347cf8a64f9 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_model.py
+  s_6ed4995a8d6b19::t_b2f77a6b99adfe 1-5
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_model_config.py
+  s_6ed4995a8d6b19::t_ab9a8f92b95ae4 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent.py
+  s_6ed4995a8d6b19::t_368d23efd901de 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent20261001.py
+  s_6ed4995a8d6b19::t_a2a1d6d7db0c77 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_advisor.py
+  s_6ed4995a8d6b19::t_71a12a6b556c04 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_advisor_disabled.py
+  s_6ed4995a8d6b19::t_a10c8d0d0546dc 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_advisor_enabled.py
+  s_6ed4995a8d6b19::t_cc2a773eed8fa3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_coordinator.py
+  s_6ed4995a8d6b19::t_b7675c8a95ca5e 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_inline_agents.py
+  s_6ed4995a8d6b19::t_f632f88b1cd372 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_inline_agents_disabled.py
+  s_6ed4995a8d6b19::t_932142b6b4289c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_inline_agents_enabled.py
+  s_6ed4995a8d6b19::t_430f28c38a7247 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_subagents.py
+  s_6ed4995a8d6b19::t_75c427ad38b69c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_subagents_disabled.py
+  s_6ed4995a8d6b19::t_b843db5391635b 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_subagents_enabled.py
+  s_6ed4995a8d6b19::t_b7bb5e26591405 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_workflows.py
+  s_6ed4995a8d6b19::t_25565ed684d429 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_workflows_disabled.py
+  s_6ed4995a8d6b19::t_12d9bcc85e8b02 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_multiagent_workflows_enabled.py
+  s_6ed4995a8d6b19::t_b19cce53d830ce 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_organization_disabled_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_809ec9d3f62236 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_organization_disabled_run_error.py
+  s_6ed4995a8d6b19::t_964ba554ddc583 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_outcome_evaluation_resource.py
+  s_6ed4995a8d6b19::t_87008848c6ec94 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_read_tool_config.py
+  s_6ed4995a8d6b19::t_4f6db660926826 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_schedule.py
+  s_6ed4995a8d6b19::t_9028b84fa647cd 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_schedule_trigger_context.py
+  s_6ed4995a8d6b19::t_286ebe78ec7207 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_self_hosted_resources_unsupported_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_0742c9fb471988 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_self_hosted_resources_unsupported_run_error.py
+  s_6ed4995a8d6b19::t_b3e64f0e5dc00c 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_server_tool_usage.py
+  s_6ed4995a8d6b19::t_121783c386fc64 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_service_account_execution_identity.py
+  s_6ed4995a8d6b19::t_e0d99b03ca71c0 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session.py
+  s_6ed4995a8d6b19::t_357920945718f5 1-32
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_agent.py
+  s_6ed4995a8d6b19::t_46e10e7233c849 1-34
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_creation_rejected_run_error.py
+  s_6ed4995a8d6b19::t_e3c0ae3912b7d5 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_multiagent.py
+  s_6ed4995a8d6b19::t_de9446629c0478 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_multiagent20261001.py
+  s_6ed4995a8d6b19::t_b79e93215b558b 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_multiagent_coordinator.py
+  s_6ed4995a8d6b19::t_b272301c50031f 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_multiagent_subagents.py
+  s_6ed4995a8d6b19::t_fca1c95c8feb27 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_multiagent_subagents_enabled.py
+  s_6ed4995a8d6b19::t_d4237f02ea4559 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_multiagent_workflows.py
+  s_6ed4995a8d6b19::t_6dc24698718bc9 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_multiagent_workflows_enabled.py
+  s_6ed4995a8d6b19::t_830c71e9772a48 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_rate_limited_run_error.py
+  s_6ed4995a8d6b19::t_e1a94639e97d37 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_resource_config.py
+  s_6ed4995a8d6b19::t_5db69f2be4328e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_resource_not_found_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_7d00a43a26743c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_resource_not_found_run_error.py
+  s_6ed4995a8d6b19::t_4a77c62573c67a 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_stats.py
+  s_6ed4995a8d6b19::t_cf881c8e43a9c9 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_thread_agent.py
+  s_6ed4995a8d6b19::t_41d26bee115f8b 1-32
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_updated_event.py
+  s_6ed4995a8d6b19::t_438e68cbae261d 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_usage.py
+  s_6ed4995a8d6b19::t_304760b3a7382d 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_session_usage_event.py
+  s_6ed4995a8d6b19::t_0279095ffc1d40 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_skill_not_found_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_42fae7877c2e41 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_skill_not_found_run_error.py
+  s_6ed4995a8d6b19::t_b777e7d7ec3186 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_start_event.py
+  s_6ed4995a8d6b19::t_65ee2398e02f7a 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_start_event_preview.py
+  s_6ed4995a8d6b19::t_a797ed6fb5110a 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_system_content_block.py
+  s_6ed4995a8d6b19::t_5157ba809188ee 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_system_message_event.py
+  s_6ed4995a8d6b19::t_2db226347fd11e 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_trigger_context.py
+  s_6ed4995a8d6b19::t_8daddabb87c4e9 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_unknown_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_f66eef361c1c27 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_unknown_run_error.py
+  s_6ed4995a8d6b19::t_18ab525ed8a4e2 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_user_location.py
+  s_6ed4995a8d6b19::t_def064dcc9d00f 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_user_tool_result_event.py
+  s_6ed4995a8d6b19::t_f55635f8439833 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_vault.py
+  s_6ed4995a8d6b19::t_fb338010f08ab4 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_vault_archived_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_c3ed0b9fde0809 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_vault_archived_run_error.py
+  s_6ed4995a8d6b19::t_5dd8e0764ff24f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_vault_not_found_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_bb817b857b9d6f 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_vault_not_found_run_error.py
+  s_6ed4995a8d6b19::t_458c678428ef2a 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_fetch_tool_config.py
+  s_6ed4995a8d6b19::t_edcf33fea2ae17 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_fetch_url_source_all.py
+  s_6ed4995a8d6b19::t_47941590e1aedb 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_fetch_url_source_except.py
+  s_6ed4995a8d6b19::t_b95f39b5c920c9 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_fetch_url_source_none.py
+  s_6ed4995a8d6b19::t_850924f8557c39 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_fetch_url_source_only.py
+  s_6ed4995a8d6b19::t_840bb2f88da61c 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_fetch_url_source_tool_filter.py
+  s_6ed4995a8d6b19::t_d6afd02ff9ac00 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_fetch_url_source_tool_reference.py
+  s_6ed4995a8d6b19::t_dec55eb8fe4683 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_fetch_url_source_user_input.py
+  s_6ed4995a8d6b19::t_244a78928786ef 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_fetch_url_sources.py
+  s_6ed4995a8d6b19::t_536a77d48a53e3 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_web_search_tool_config.py
+  s_6ed4995a8d6b19::t_f7a87427b9814e 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_workspace_archived_deployment_paused_reason_error.py
+  s_6ed4995a8d6b19::t_47f1907398a00e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_workspace_archived_run_error.py
+  s_6ed4995a8d6b19::t_4f29218d2b43d0 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_managed_agents_write_tool_config.py
+  s_6ed4995a8d6b19::t_667b02a952b6e6 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_mcp_tool.py
+  s_6ed4995a8d6b19::t_5ea1fbcb7b144d 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_mcp_tool_config.py
+  s_6ed4995a8d6b19::t_9224299cf8232c 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_mcp_tool_default_config.py
+  s_6ed4995a8d6b19::t_0c26713c31736d 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_mcp_tool_listing_block.py
+  s_6ed4995a8d6b19::t_b43d5c678e323b 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_mcp_tool_param.py
+  s_6ed4995a8d6b19::t_841aaa7c5e6ee3 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_mcp_tool_result_block.py
+  s_6ed4995a8d6b19::t_b58c10d691102c 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_mcp_tool_use_block.py
+  s_6ed4995a8d6b19::t_a314e8fce8b933 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_mcp_toolset.py
+  s_6ed4995a8d6b19::t_94d18a0046d3f1 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_memory_tool_20250818.py
+  s_6ed4995a8d6b19::t_a9873a3a262709 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_memory_tool_20250818_create_command.py
+  s_6ed4995a8d6b19::t_1fe9730a1f09ec 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_memory_tool_20250818_delete_command.py
+  s_6ed4995a8d6b19::t_182db6269b21cf 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_memory_tool_20250818_insert_command.py
+  s_6ed4995a8d6b19::t_2e6b20509a41e9 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_memory_tool_20250818_rename_command.py
+  s_6ed4995a8d6b19::t_eda34c90039b48 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_memory_tool_20250818_str_replace_command.py
+  s_6ed4995a8d6b19::t_08f04bc484edc2 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_memory_tool_20250818_view_command.py
+  s_6ed4995a8d6b19::t_c989eb4c6cbbcf 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_message.py
+  s_6ed4995a8d6b19::t_a4f3c5f6e850e2 1-29
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_message_delta_usage.py
+  s_6ed4995a8d6b19::t_b193d63b271922 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_message_iteration_usage.py
+  s_6ed4995a8d6b19::t_1d2f746e684a90 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_message_tokens_count.py
+  s_6ed4995a8d6b19::t_972d357182e06d 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_model_capabilities.py
+  s_6ed4995a8d6b19::t_15875c6474321e 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_model_info.py
+  s_6ed4995a8d6b19::t_d69067d4d7b6f0 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_model_line.py
+  s_6ed4995a8d6b19::t_37587637430e33 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_organization.py
+  s_6ed4995a8d6b19::t_b33b30579cd69a 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_organization_role.py
+  s_6ed4995a8d6b19::t_627d98f07ab094 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_output_behavior.py
+  s_6ed4995a8d6b19::t_12d7bbe8d167a1 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_output_behavior_create_new.py
+  s_6ed4995a8d6b19::t_6c63c1463cc038 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_output_behavior_update_existing.py
+  s_6ed4995a8d6b19::t_0591f29d967c31 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_output_tokens_details.py
+  s_6ed4995a8d6b19::t_eda947a0315ecd 1-6
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_packages.py
+  s_6ed4995a8d6b19::t_9c1734d51a674a 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_plain_text_source.py
+  s_6ed4995a8d6b19::t_9b8dc65fa051e3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_raw_content_block_delta.py
+  s_6ed4995a8d6b19::t_4c593dcf2d2ae6 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_raw_content_block_delta_event.py
+  s_6ed4995a8d6b19::t_4cc8e59f3a96c7 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_raw_content_block_start_event.py
+  s_6ed4995a8d6b19::t_d83d63acac8e04 1-29
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_raw_content_block_stop_event.py
+  s_6ed4995a8d6b19::t_5d020b8ce8d9c4 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_raw_message_delta_event.py
+  s_6ed4995a8d6b19::t_dc2d9ac9339dd3 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_raw_message_start_event.py
+  s_6ed4995a8d6b19::t_76cb723344ddd0 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_raw_message_stop_event.py
+  s_6ed4995a8d6b19::t_8fb3be0a6813a2 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_redacted_thinking_block.py
+  s_6ed4995a8d6b19::t_11bd6ae01d9dd2 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_refusal_stop_details.py
+  s_6ed4995a8d6b19::t_b1f3fe2a960d91 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_response_tool.py
+  s_6ed4995a8d6b19::t_b6ce9bc92ca59d 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_response_tool_addition_block.py
+  s_6ed4995a8d6b19::t_2efcf97265ad23 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_response_tool_change_mcp_tool_reference.py
+  s_6ed4995a8d6b19::t_7eee609a12ee2e 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_response_tool_change_mcp_toolset_reference.py
+  s_6ed4995a8d6b19::t_1a7540bd30fc8a 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_response_tool_change_tool_reference.py
+  s_6ed4995a8d6b19::t_f424830e9ad33d 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_response_tool_input_schema.py
+  s_6ed4995a8d6b19::t_290530e10f7926 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_response_tool_removal_block.py
+  s_6ed4995a8d6b19::t_6e3e94e5b3fa4f 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_response_tool_union.py
+  s_6ed4995a8d6b19::t_8adf939dcf945d 1-33
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_self_hosted_config.py
+  s_6ed4995a8d6b19::t_f58de03e1c556e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_server_tool_caller.py
+  s_6ed4995a8d6b19::t_f51f5b4324ee33 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_server_tool_caller_20260120.py
+  s_6ed4995a8d6b19::t_a3742bf468d307 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_server_tool_usage.py
+  s_6ed4995a8d6b19::t_48e16837d40127 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_server_tool_use_block.py
+  s_6ed4995a8d6b19::t_8df42da113df37 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_server_tools_capability.py
+  s_6ed4995a8d6b19::t_df0bfc0ea9c0b2 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_signature_delta.py
+  s_6ed4995a8d6b19::t_ceffaca34a303b 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_skill.py
+  s_6ed4995a8d6b19::t_afda44903f7674 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_skill_source.py
+  s_6ed4995a8d6b19::t_2086ede27235c6 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_stop_reason.py
+  s_6ed4995a8d6b19::t_d3c1509c403ba9 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_text_block.py
+  s_6ed4995a8d6b19::t_f7693169f2e151 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_text_citation.py
+  s_6ed4995a8d6b19::t_aaa6bd5485eafd 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_text_delta.py
+  s_6ed4995a8d6b19::t_5980c4644c4b10 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_text_editor_code_execution_create_result_block.py
+  s_6ed4995a8d6b19::t_5edca674d5309b 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_text_editor_code_execution_str_replace_result_block.py
+  s_6ed4995a8d6b19::t_90dbb3df098f18 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_text_editor_code_execution_tool_result_block.py
+  s_6ed4995a8d6b19::t_119d44fa2833a5 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_text_editor_code_execution_tool_result_error.py
+  s_6ed4995a8d6b19::t_d125c9ae93c882 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_text_editor_code_execution_view_result_block.py
+  s_6ed4995a8d6b19::t_8ce1244bf14dbe 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_thinking_block.py
+  s_6ed4995a8d6b19::t_1cc22b22785c2a 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_thinking_capability.py
+  s_6ed4995a8d6b19::t_a0a64391d9a197 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_thinking_delta.py
+  s_6ed4995a8d6b19::t_61487cca59fc39 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_thinking_dropped_input_transformation.py
+  s_6ed4995a8d6b19::t_6161b93ba8340f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_thinking_mismatch_allowed_input_transformation.py
+  s_6ed4995a8d6b19::t_4b82c22f3f9519 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_thinking_types.py
+  s_6ed4995a8d6b19::t_8f35fe4cfec364 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_bash_20241022.py
+  s_6ed4995a8d6b19::t_816560f922b581 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_bash_20250124.py
+  s_6ed4995a8d6b19::t_00623ff9ba7ba9 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_change_tool_definition.py
+  s_6ed4995a8d6b19::t_f2f304a5f1ef51 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_computer_use_20241022.py
+  s_6ed4995a8d6b19::t_89c98801c647ef 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_computer_use_20250124.py
+  s_6ed4995a8d6b19::t_130678e3868fbb 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_computer_use_20251124.py
+  s_6ed4995a8d6b19::t_fbb8acb0c1e1bc 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_reference_block.py
+  s_6ed4995a8d6b19::t_c5e3373bcb9590 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_search_tool_bm25_20251119.py
+  s_6ed4995a8d6b19::t_45470601fc1ba5 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_search_tool_regex_20251119.py
+  s_6ed4995a8d6b19::t_a2608029f65caf 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_search_tool_result_block.py
+  s_6ed4995a8d6b19::t_2076413a39877a 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_search_tool_result_error.py
+  s_6ed4995a8d6b19::t_16d6719d0583df 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_search_tool_search_result_block.py
+  s_6ed4995a8d6b19::t_af30a76e3315fc 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_text_editor_20241022.py
+  s_6ed4995a8d6b19::t_50e3c2464d1c13 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_text_editor_20250124.py
+  s_6ed4995a8d6b19::t_f21e77294255c4 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_text_editor_20250429.py
+  s_6ed4995a8d6b19::t_ce89b6af55ccf4 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_text_editor_20250728.py
+  s_6ed4995a8d6b19::t_c2005ba4f127c0 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_use_block.py
+  s_6ed4995a8d6b19::t_eb06696e309af8 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tool_use_caller.py
+  s_6ed4995a8d6b19::t_a50b3a2d0f1d8f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tunnel.py
+  s_6ed4995a8d6b19::t_a716cb8eb207d2 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_tunnel_token.py
+  s_6ed4995a8d6b19::t_026f954e35ae4e 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_unrestricted_network.py
+  s_6ed4995a8d6b19::t_40baa3a6ec5a21 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_usage.py
+  s_6ed4995a8d6b19::t_81893578ab5e76 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_user_location.py
+  s_6ed4995a8d6b19::t_5c19026283b8dd 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_user_profile.py
+  s_6ed4995a8d6b19::t_74156005fb7a57 1-26
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_user_profile_enrollment_url.py
+  s_6ed4995a8d6b19::t_d87f93dea9e957 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_user_profile_external_user_details.py
+  s_6ed4995a8d6b19::t_26c8bc3bf74072 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_user_profile_trust_grant.py
+  s_6ed4995a8d6b19::t_f02defd6dbc07e 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_block.py
+  s_6ed4995a8d6b19::t_dfde49b3e61ceb 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_tool_20250910.py
+  s_6ed4995a8d6b19::t_7c1a40cab7275a 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_tool_20260209.py
+  s_6ed4995a8d6b19::t_5819e2d778f16d 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_tool_20260309.py
+  s_6ed4995a8d6b19::t_60cb6349e73c63 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_tool_20260318.py
+  s_6ed4995a8d6b19::t_ff5ae9f392020d 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_tool_result_block.py
+  s_6ed4995a8d6b19::t_77190cc39453f8 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_tool_result_error_block.py
+  s_6ed4995a8d6b19::t_c34aa0c2834a8e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_tool_result_error_code.py
+  s_6ed4995a8d6b19::t_8946a0cd4ff642 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_url_source_all.py
+  s_6ed4995a8d6b19::t_01919718899d4b 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_url_source_except.py
+  s_6ed4995a8d6b19::t_af573cf9543745 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_url_source_none.py
+  s_6ed4995a8d6b19::t_cb29a8f0a1e609 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_url_source_only.py
+  s_6ed4995a8d6b19::t_180e99bf6b00c1 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_url_source_tool_reference.py
+  s_6ed4995a8d6b19::t_f9144766854846 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_fetch_url_sources.py
+  s_6ed4995a8d6b19::t_87cee277da0927 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_search_result_block.py
+  s_6ed4995a8d6b19::t_42726a0bf85eaf 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_search_tool_20250305.py
+  s_6ed4995a8d6b19::t_f2023234a99b3c 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_search_tool_20260209.py
+  s_6ed4995a8d6b19::t_f0f6dde3d1de2c 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_search_tool_20260318.py
+  s_6ed4995a8d6b19::t_e85b29773b7741 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_search_tool_result_block.py
+  s_6ed4995a8d6b19::t_e9993071add13c 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_search_tool_result_block_content.py
+  s_6ed4995a8d6b19::t_6897d911d7fbbf 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_search_tool_result_error.py
+  s_6ed4995a8d6b19::t_ebc193e9331f05 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_web_search_tool_result_error_code.py
+  s_6ed4995a8d6b19::t_d32545d04fe574 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_agent_archived_event_data.py
+  s_6ed4995a8d6b19::t_617ed8b7d0fba7 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_agent_created_event_data.py
+  s_6ed4995a8d6b19::t_c91d2a795c351d 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_agent_deleted_event_data.py
+  s_6ed4995a8d6b19::t_949d3a3b871adf 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_agent_updated_event_data.py
+  s_6ed4995a8d6b19::t_c41652fd640001 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_deployment_archived_event_data.py
+  s_6ed4995a8d6b19::t_e47468a5c9e75d 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_deployment_created_event_data.py
+  s_6ed4995a8d6b19::t_7459ff0d37b868 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_deployment_deleted_event_data.py
+  s_6ed4995a8d6b19::t_d46cfbc868f8d2 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_deployment_paused_event_data.py
+  s_6ed4995a8d6b19::t_565c63c6f62637 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_deployment_run_failed_event_data.py
+  s_6ed4995a8d6b19::t_ba1973153deee7 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_deployment_run_started_event_data.py
+  s_6ed4995a8d6b19::t_af34e6d8532294 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_deployment_run_succeeded_event_data.py
+  s_6ed4995a8d6b19::t_0763a5b7076172 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_deployment_unpaused_event_data.py
+  s_6ed4995a8d6b19::t_d3416033ea032d 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_deployment_updated_event_data.py
+  s_6ed4995a8d6b19::t_e6d797d3132496 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_environment_archived_event_data.py
+  s_6ed4995a8d6b19::t_939cc77da5b7d5 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_environment_created_event_data.py
+  s_6ed4995a8d6b19::t_1f13fe408f47f6 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_environment_deleted_event_data.py
+  s_6ed4995a8d6b19::t_602ee90fc99e4a 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_environment_updated_event_data.py
+  s_6ed4995a8d6b19::t_d3791976fbf75a 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_event.py
+  s_6ed4995a8d6b19::t_6f875e48859090 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_event_data.py
+  s_6ed4995a8d6b19::t_08e3de89851606 1-52
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_memory_store_archived_event_data.py
+  s_6ed4995a8d6b19::t_32dac113728ecd 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_memory_store_created_event_data.py
+  s_6ed4995a8d6b19::t_a1c21b6a0253cb 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_memory_store_deleted_event_data.py
+  s_6ed4995a8d6b19::t_634acd0901d6db 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_archived_event_data.py
+  s_6ed4995a8d6b19::t_838dce94672d68 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_budget_reached_event_data.py
+  s_6ed4995a8d6b19::t_d7b3c3bdb14572 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_created_event_data.py
+  s_6ed4995a8d6b19::t_ee2c7b2fc4903d 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_deleted_event_data.py
+  s_6ed4995a8d6b19::t_d81028c37de581 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_idled_event_data.py
+  s_6ed4995a8d6b19::t_983a21f67ab8f1 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_outcome_evaluation_ended_event_data.py
+  s_6ed4995a8d6b19::t_1f51f77fff5885 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_pending_event_data.py
+  s_6ed4995a8d6b19::t_d94baab80dde83 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_requires_action_event_data.py
+  s_6ed4995a8d6b19::t_738d4337560f82 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_running_event_data.py
+  s_6ed4995a8d6b19::t_d5ee154a0d304e 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_status_idled_event_data.py
+  s_6ed4995a8d6b19::t_a23b52f252d700 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_status_rescheduled_event_data.py
+  s_6ed4995a8d6b19::t_add3c166fbf663 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_status_run_started_event_data.py
+  s_6ed4995a8d6b19::t_da09201eba83d2 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_status_terminated_event_data.py
+  s_6ed4995a8d6b19::t_feeb96f345ae82 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_thread_created_event_data.py
+  s_6ed4995a8d6b19::t_960e5e9eeadc3f 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_thread_idled_event_data.py
+  s_6ed4995a8d6b19::t_382dad14241162 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_thread_terminated_event_data.py
+  s_6ed4995a8d6b19::t_f6a277d134ba8f 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_session_updated_event_data.py
+  s_6ed4995a8d6b19::t_0167e9a10e3493 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_user_profile_enforcement_action_opened_event_data.py
+  s_6ed4995a8d6b19::t_a0f458d82f5d85 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_user_profile_enforcement_action_resolved_event_data.py
+  s_6ed4995a8d6b19::t_834c6e85cd3561 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_vault_archived_event_data.py
+  s_6ed4995a8d6b19::t_ab9f75c302ef19 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_vault_created_event_data.py
+  s_6ed4995a8d6b19::t_8f6ad28980a632 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_vault_credential_archived_event_data.py
+  s_6ed4995a8d6b19::t_c6d5f763720a83 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_vault_credential_created_event_data.py
+  s_6ed4995a8d6b19::t_5bff6c1bc925b1 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_vault_credential_deleted_event_data.py
+  s_6ed4995a8d6b19::t_6b688105722c93 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_vault_credential_refresh_failed_event_data.py
+  s_6ed4995a8d6b19::t_e6868f329fce17 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/beta_webhook_vault_deleted_event_data.py
+  s_6ed4995a8d6b19::t_4ea1c2ec69b635 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/environments/beta_self_hosted_work.py
+  s_6ed4995a8d6b19::t_e97c66ef008a00 1-27
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/environments/beta_self_hosted_work_heartbeat_response.py
+  s_6ed4995a8d6b19::t_41158eebc5dcd4 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/environments/beta_self_hosted_work_list_response.py
+  s_6ed4995a8d6b19::t_a877b8cf75b4fe 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/environments/beta_self_hosted_work_queue_stats.py
+  s_6ed4995a8d6b19::t_ce738314685f46 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/environments/beta_session_work_data.py
+  s_6ed4995a8d6b19::t_ec81d91ef7bf8d 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_actor.py
+  s_6ed4995a8d6b19::t_f0867a3b1b9b61 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_api_actor.py
+  s_6ed4995a8d6b19::t_e96a7525ea8cd3 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_deleted_memory.py
+  s_6ed4995a8d6b19::t_913efcb1d40148 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_memory.py
+  s_6ed4995a8d6b19::t_abf955f895690a 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_memory_prefix.py
+  s_6ed4995a8d6b19::t_fe048c97fbaf10 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_memory_version.py
+  s_6ed4995a8d6b19::t_9496dd9bce9cf9 1-31
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_memory_version_operation.py
+  s_6ed4995a8d6b19::t_6d7c8962fc06d8 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_service_account_actor.py
+  s_6ed4995a8d6b19::t_014227bfb67991 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_session_actor.py
+  s_6ed4995a8d6b19::t_2dd3369cd28c08 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/memory_stores/beta_managed_agents_user_actor.py
+  s_6ed4995a8d6b19::t_cb5d20e62f5298 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/messages/beta_deleted_message_batch.py
+  s_6ed4995a8d6b19::t_822aacba397102 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/messages/beta_message_batch.py
+  s_6ed4995a8d6b19::t_8461567450816a 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/messages/beta_message_batch_canceled_result.py
+  s_6ed4995a8d6b19::t_a860a662c8f67a 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/messages/beta_message_batch_errored_result.py
+  s_6ed4995a8d6b19::t_f3a14086e45d4b 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/messages/beta_message_batch_expired_result.py
+  s_6ed4995a8d6b19::t_94b092e3f52abb 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/messages/beta_message_batch_individual_response.py
+  s_6ed4995a8d6b19::t_4a37c5daab0ce3 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/messages/beta_message_batch_request_counts.py
+  s_6ed4995a8d6b19::t_c44e1c56d7b76d 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/messages/beta_message_batch_result.py
+  s_6ed4995a8d6b19::t_17449327c44ce1 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/messages/beta_message_batch_succeeded_result.py
+  s_6ed4995a8d6b19::t_58834834f84489 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/analytics/beta_analytics_cost_group.py
+  s_6ed4995a8d6b19::t_94a3ff33c861f6 1-40
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/analytics/beta_analytics_cost_item.py
+  s_6ed4995a8d6b19::t_20c27a6afb9484 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/analytics/beta_analytics_cost_metrics.py
+  s_6ed4995a8d6b19::t_fa71cbbfbaed98 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/analytics/beta_analytics_usage_group.py
+  s_6ed4995a8d6b19::t_85e823e250a6ae 1-36
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/analytics/beta_analytics_usage_item.py
+  s_6ed4995a8d6b19::t_e2861e58faedbd 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/analytics/beta_analytics_usage_metrics.py
+  s_6ed4995a8d6b19::t_5a229d6dce6fd0 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_allowed_inference_geo.py
+  s_6ed4995a8d6b19::t_90d14788243e07 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_actor.py
+  s_6ed4995a8d6b19::t_33aed7ad4039fc 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_actor_type.py
+  s_6ed4995a8d6b19::t_c219c0ef8fdf17 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_api_actor.py
+  s_6ed4995a8d6b19::t_6d39b603b28258 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_artifact_activity.py
+  s_6ed4995a8d6b19::t_4f0d672488508d 1-27
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_chat_cowork_unified_chat_metrics.py
+  s_6ed4995a8d6b19::t_e38b49ac4baac5 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_chat_cowork_unified_sessions_metrics.py
+  s_6ed4995a8d6b19::t_77510c4d5f74f6 1-27
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_chat_metrics.py
+  s_6ed4995a8d6b19::t_9e769c4ae484c2 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_claude_code_metrics.py
+  s_6ed4995a8d6b19::t_84c2cd9b0f5d32 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_claude_tag_category.py
+  s_6ed4995a8d6b19::t_8d917432e029b7 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_connector_activity.py
+  s_6ed4995a8d6b19::t_61ac4cc73685b7 1-37
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_connector_chat_cowork_unified_chat_metrics.py
+  s_6ed4995a8d6b19::t_8bd5d5a265d18d 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_connector_chat_cowork_unified_sessions_metrics.py
+  s_6ed4995a8d6b19::t_2e5dede96586d0 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_connector_chat_metrics.py
+  s_6ed4995a8d6b19::t_7a75022bfb4128 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_connector_claude_code_metrics.py
+  s_6ed4995a8d6b19::t_db3b60bc6e3e81 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_connector_cowork_metrics.py
+  s_6ed4995a8d6b19::t_407f7194e3d448 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_connector_office_metrics.py
+  s_6ed4995a8d6b19::t_0c331c8a43ff58 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_connector_office_product_metrics.py
+  s_6ed4995a8d6b19::t_3f3487230d9b81 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_context_window.py
+  s_6ed4995a8d6b19::t_f365b81496a8c2 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_core_code_metrics.py
+  s_6ed4995a8d6b19::t_6525895a513207 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_cost_bucketed_result.py
+  s_6ed4995a8d6b19::t_7a0d63440b2304 1-26
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_cost_report_time_bucket.py
+  s_6ed4995a8d6b19::t_ec0f39c3386a22 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_cost_type.py
+  s_6ed4995a8d6b19::t_9c516e270b6df6 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_cost_users_item.py
+  s_6ed4995a8d6b19::t_061142b6c457d1 1-31
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_cowork_metrics.py
+  s_6ed4995a8d6b19::t_9d56c358b83479 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_design_metrics.py
+  s_6ed4995a8d6b19::t_db68c0cca5a1ae 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_federated_actor.py
+  s_6ed4995a8d6b19::t_76c3bcfbe13a07 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_federated_actor_aws_provider.py
+  s_6ed4995a8d6b19::t_db9f5626e7bf1f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_federated_actor_azure_provider.py
+  s_6ed4995a8d6b19::t_4db398721a0da7 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_federated_actor_gcp_provider.py
+  s_6ed4995a8d6b19::t_4e4a1288032dce 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_federated_actor_oidc_provider.py
+  s_6ed4995a8d6b19::t_d136e6282a66ce 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_federated_actor_provider.py
+  s_6ed4995a8d6b19::t_03aeec1b6bdfa1 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_grouped_cost_type.py
+  s_6ed4995a8d6b19::t_35246b43c8f605 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_lines_of_code.py
+  s_6ed4995a8d6b19::t_0865340bcc817e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_office_metrics.py
+  s_6ed4995a8d6b19::t_56b44f7feb069e 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_office_product_metrics.py
+  s_6ed4995a8d6b19::t_7f104210fe696a 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_plugin_activity.py
+  s_6ed4995a8d6b19::t_ed1c2899d46ed8 1-34
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_plugin_claude_code_metrics.py
+  s_6ed4995a8d6b19::t_ef395e138fa973 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_plugin_cowork_metrics.py
+  s_6ed4995a8d6b19::t_cb6fbe00c50a7f 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_project_activity.py
+  s_6ed4995a8d6b19::t_5055e04da0a1b8 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_report_user_actor.py
+  s_6ed4995a8d6b19::t_4c05c5a2ed99e0 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_science_metrics.py
+  s_6ed4995a8d6b19::t_51ca34d636736f 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_server_tool_use.py
+  s_6ed4995a8d6b19::t_d38340e005bbd3 1-6
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_service_account_actor.py
+  s_6ed4995a8d6b19::t_9871ebdfa491b3 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_service_tier.py
+  s_6ed4995a8d6b19::t_ac7a30d07e644b 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_single_day_activity_summary.py
+  s_6ed4995a8d6b19::t_573770f685186e 1-40
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_skill_activity.py
+  s_6ed4995a8d6b19::t_d56ee0cfcd90e6 1-39
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_skill_chat_cowork_unified_chat_metrics.py
+  s_6ed4995a8d6b19::t_3982aa5ab60330 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_skill_chat_cowork_unified_sessions_metrics.py
+  s_6ed4995a8d6b19::t_57617d25d99775 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_skill_chat_metrics.py
+  s_6ed4995a8d6b19::t_3a3e8aa440910e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_skill_claude_code_metrics.py
+  s_6ed4995a8d6b19::t_9e696c4c071caa 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_skill_cowork_metrics.py
+  s_6ed4995a8d6b19::t_dce6efb7f3872c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_skill_office_metrics.py
+  s_6ed4995a8d6b19::t_fc55c89d29435a 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_skill_office_product_metrics.py
+  s_6ed4995a8d6b19::t_2a4800c880bbfc 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_speed.py
+  s_6ed4995a8d6b19::t_72f32adaa2dd24 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_token_type.py
+  s_6ed4995a8d6b19::t_42986bc0ae4cf7 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_tool_action_counts.py
+  s_6ed4995a8d6b19::t_8b41f57b725394 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_tool_actions.py
+  s_6ed4995a8d6b19::t_071124915f72fc 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_usage_bucketed_result.py
+  s_6ed4995a8d6b19::t_db2f6f63255401 1-26
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_usage_cost_inference_geo.py
+  s_6ed4995a8d6b19::t_dff37b481a699b 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_usage_report_time_bucket.py
+  s_6ed4995a8d6b19::t_d192a55701ee6f 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_usage_users_item.py
+  s_6ed4995a8d6b19::t_12b53d5bab20dd 1-32
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_user.py
+  s_6ed4995a8d6b19::t_2b244d71425354 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_user_activity.py
+  s_6ed4995a8d6b19::t_9f2d190508bf14 1-37
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_analytics_user_actor.py
+  s_6ed4995a8d6b19::t_8df9c7848d0700 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_api_key.py
+  s_6ed4995a8d6b19::t_d37216f1baea7c 1-25
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_api_key_created_by.py
+  s_6ed4995a8d6b19::t_eeaeef98ec0bf4 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_api_key_organization_scope.py
+  s_6ed4995a8d6b19::t_b1fe2f4d17626e 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_api_key_service_account_actor.py
+  s_6ed4995a8d6b19::t_38071ded497e9f 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_api_key_user_actor.py
+  s_6ed4995a8d6b19::t_c22ec27ff574cf 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_api_key_workspace_scope.py
+  s_6ed4995a8d6b19::t_a586a80e3a6b8e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_aws_external_key_config.py
+  s_6ed4995a8d6b19::t_f2edde03b7c03a 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_azure_external_key_config.py
+  s_6ed4995a8d6b19::t_d51d3c5f699296 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_default_setting_source.py
+  s_6ed4995a8d6b19::t_a22b973fcb089f 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_guest_policy.py
+  s_6ed4995a8d6b19::t_4a95ce9727f328 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_guest_policy_allow.py
+  s_6ed4995a8d6b19::t_38341adcf99745 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_guest_policy_channel_only.py
+  s_6ed4995a8d6b19::t_c56aa2e4a96572 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_guest_policy_restrict.py
+  s_6ed4995a8d6b19::t_5e5876429cdbab 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_setting_source.py
+  s_6ed4995a8d6b19::t_f1c9c63b54be9a 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_setting_sources.py
+  s_6ed4995a8d6b19::t_65e2f080375c51 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_settings.py
+  s_6ed4995a8d6b19::t_d5e15516e8f9db 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_slack_channel_identifiers.py
+  s_6ed4995a8d6b19::t_5fb5d68ff13e1f 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_slack_channel_setting_source.py
+  s_6ed4995a8d6b19::t_9cb429f6168006 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_slack_default_setting_source.py
+  s_6ed4995a8d6b19::t_db110434e43ae1 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_slack_grid_channel_setting_source.py
+  s_6ed4995a8d6b19::t_d70a1f9d776855 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_slack_parent_channel_setting_source.py
+  s_6ed4995a8d6b19::t_f7766dcd6c6a3c 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_slack_workspace_identifiers.py
+  s_6ed4995a8d6b19::t_e71708f4b0352c 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_claude_tag_slack_workspace_setting_source.py
+  s_6ed4995a8d6b19::t_36624a5dd3e101 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_compliance_settings.py
+  s_6ed4995a8d6b19::t_1727bd6ff2f660 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_compliance_settings_state.py
+  s_6ed4995a8d6b19::t_9664471f672c6b 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_compliance_settings_state_disabled.py
+  s_6ed4995a8d6b19::t_54265dd5828cf9 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_compliance_settings_state_enabled.py
+  s_6ed4995a8d6b19::t_94ccb0d60fc778 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_data_residency.py
+  s_6ed4995a8d6b19::t_ca1725be35d27b 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_deleted_organization_webhook_endpoint.py
+  s_6ed4995a8d6b19::t_1ee4649163b483 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_deleted_plugin.py
+  s_6ed4995a8d6b19::t_37e5748b79c700 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_deleted_telemetry_destination.py
+  s_6ed4995a8d6b19::t_fab5a2643323ba 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_external_key.py
+  s_6ed4995a8d6b19::t_9abc727ec30fe5 1-29
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_external_key_attached_attachment.py
+  s_6ed4995a8d6b19::t_6b552f1a421cd8 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_external_key_unattached_attachment.py
+  s_6ed4995a8d6b19::t_897f217e27e066 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_gcp_external_key_config.py
+  s_6ed4995a8d6b19::t_5aec0be3a22480 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_new_organization_webhook_endpoint.py
+  s_6ed4995a8d6b19::t_0ce544849d59a2 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_invite.py
+  s_6ed4995a8d6b19::t_aa41ddd7d9141e 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_rate_limit.py
+  s_6ed4995a8d6b19::t_4a5e35f5162902 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_rate_limit_batch_group.py
+  s_6ed4995a8d6b19::t_cb5cad280d7ac3 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_rate_limit_files_group.py
+  s_6ed4995a8d6b19::t_5ac6599e4c7a58 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_rate_limit_model_group.py
+  s_6ed4995a8d6b19::t_d5743951dad9e2 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_rate_limit_skills_group.py
+  s_6ed4995a8d6b19::t_a00522af0770d1 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_rate_limit_token_count_group.py
+  s_6ed4995a8d6b19::t_96e5d40fa2ca16 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_rate_limit_value.py
+  s_6ed4995a8d6b19::t_5a3957794dfcd1 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_rate_limit_web_search_group.py
+  s_6ed4995a8d6b19::t_244f14083d3722 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_user.py
+  s_6ed4995a8d6b19::t_18af7142a3f7c0 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_webhook_endpoint.py
+  s_6ed4995a8d6b19::t_0c791b0bdf960d 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_webhook_endpoint_signing_secret.py
+  s_6ed4995a8d6b19::t_9100cba97f319a 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_organization_webhook_endpoint_state.py
+  s_6ed4995a8d6b19::t_8142f18783013d 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin.py
+  s_6ed4995a8d6b19::t_663dc0c2fe589f 1-35
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_api_actor.py
+  s_6ed4995a8d6b19::t_2c72f77afae75c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_component.py
+  s_6ed4995a8d6b19::t_d2489cd38ca3a4 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_content_scan.py
+  s_6ed4995a8d6b19::t_dc8c57ae4d999c 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_marketplace.py
+  s_6ed4995a8d6b19::t_58ab15c70adc0a 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_marketplace_validation_plugin_error.py
+  s_6ed4995a8d6b19::t_e23da34314a50a 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_marketplace_validation_plugin_warning.py
+  s_6ed4995a8d6b19::t_2635aa91a99e85 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_marketplace_validation_plugin_warnings.py
+  s_6ed4995a8d6b19::t_7b17d82c7ea395 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_marketplace_validation_report.py
+  s_6ed4995a8d6b19::t_b85d61361bc11a 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_owner_organization.py
+  s_6ed4995a8d6b19::t_81c5714af9f07b 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_owner_user.py
+  s_6ed4995a8d6b19::t_f5516662d47c75 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_target_organization.py
+  s_6ed4995a8d6b19::t_d643f1fe61e1d3 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_target_organization_member.py
+  s_6ed4995a8d6b19::t_a5ae01e34b67ea 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_target_rbac_group.py
+  s_6ed4995a8d6b19::t_b6126c4440c4b5 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_plugin_user_actor.py
+  s_6ed4995a8d6b19::t_b22b47d4a7ea5e 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_rbac_group.py
+  s_6ed4995a8d6b19::t_fe12dbdbacd695 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_rbac_role.py
+  s_6ed4995a8d6b19::t_40cffc9ae7f3cc 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_service_account.py
+  s_6ed4995a8d6b19::t_2212df2d41b7d5 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_service_account_workspace_member.py
+  s_6ed4995a8d6b19::t_9154e28ca97e0f 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit.py
+  s_6ed4995a8d6b19::t_54937805646f78 1-27
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_organization_scope.py
+  s_6ed4995a8d6b19::t_6fecb8b4f784e7 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_organization_service_scope.py
+  s_6ed4995a8d6b19::t_529dbdc566650a 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_period.py
+  s_6ed4995a8d6b19::t_9746f0a19bba9f 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_rbac_group_scope.py
+  s_6ed4995a8d6b19::t_2d4c81e9b316ec 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_scoped_api_key_actor.py
+  s_6ed4995a8d6b19::t_d3f8a232e6240a 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_seat_tier_scope.py
+  s_6ed4995a8d6b19::t_f359a69a01fcfa 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_usage_tier_scope.py
+  s_6ed4995a8d6b19::t_d1912a23128531 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_user_actor.py
+  s_6ed4995a8d6b19::t_6ce4f4a3b8e139 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_user_scope.py
+  s_6ed4995a8d6b19::t_db5f4230638e9f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_limit_workspace_scope.py
+  s_6ed4995a8d6b19::t_1a408f298fc5db 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_spend_summary.py
+  s_6ed4995a8d6b19::t_50da5421038b18 1-29
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination.py
+  s_6ed4995a8d6b19::t_006e88c710d157 1-26
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_content_mode.py
+  s_6ed4995a8d6b19::t_46ee7d81029dc6 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_delivery_health.py
+  s_6ed4995a8d6b19::t_354642fdbab0b6 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_disabled_reason.py
+  s_6ed4995a8d6b19::t_4ebd56a54c93e4 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_disabled_reason_caller.py
+  s_6ed4995a8d6b19::t_6323939c48f7b2 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_disabled_reason_invalid_address.py
+  s_6ed4995a8d6b19::t_2bd60433b73151 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_disabled_reason_redirect.py
+  s_6ed4995a8d6b19::t_95a805a14acf4d 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_disabled_reason_sustained_failure.py
+  s_6ed4995a8d6b19::t_440d4faa1c5f29 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_state.py
+  s_6ed4995a8d6b19::t_78bb457a9f8d95 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_state_disabled.py
+  s_6ed4995a8d6b19::t_ec5aaa69a1c7a2 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_state_enabled.py
+  s_6ed4995a8d6b19::t_575a85ab1ebe3a 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_test_failure.py
+  s_6ed4995a8d6b19::t_80ecc7550e7ed2 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_test_response.py
+  s_6ed4995a8d6b19::t_b08f5b92a34a36 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_test_result.py
+  s_6ed4995a8d6b19::t_d0dc27bc96e929 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_test_success.py
+  s_6ed4995a8d6b19::t_2d4a5b00d0f24e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_traces.py
+  s_6ed4995a8d6b19::t_1f5049cf6b54fd 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_workspaces.py
+  s_6ed4995a8d6b19::t_b38a68b4cd4043 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_workspaces_all.py
+  s_6ed4995a8d6b19::t_e436b2a0eacad5 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_workspaces_exclude.py
+  s_6ed4995a8d6b19::t_ae9fd52d6c7492 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_telemetry_destination_workspaces_include.py
+  s_6ed4995a8d6b19::t_1f04c04a5c78b3 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_workspace.py
+  s_6ed4995a8d6b19::t_1a8d1c3b3d4663 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_workspace_member.py
+  s_6ed4995a8d6b19::t_ae4d4f788f6aec 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/beta_workspace_role.py
+  s_6ed4995a8d6b19::t_60cd61d0170bd6 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/claude_tag/beta_claude_tag_bundle.py
+  s_6ed4995a8d6b19::t_4cc75d570ca214 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/claude_tag/beta_claude_tag_deleted_slack_channel.py
+  s_6ed4995a8d6b19::t_1dfd8ee4cd28c3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/claude_tag/beta_claude_tag_slack_channel.py
+  s_6ed4995a8d6b19::t_a46dc6939eddbe 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/claude_tag/beta_claude_tag_slack_workspace.py
+  s_6ed4995a8d6b19::t_c6aca8e841a9c6 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/claude_tag/bundles/beta_claude_tag_deleted_bundle_target.py
+  s_6ed4995a8d6b19::t_a70ad0f2853c41 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/claude_tag/bundles/beta_claude_tag_slack_channel_bundle_target.py
+  s_6ed4995a8d6b19::t_7903e302b51852 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/claude_tag/bundles/beta_claude_tag_slack_workspace_bundle_target.py
+  s_6ed4995a8d6b19::t_73a88d9230c844 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/external_key_delete_response.py
+  s_6ed4995a8d6b19::t_6e7f35bd0ae3a9 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/external_key_validate_response.py
+  s_6ed4995a8d6b19::t_1a008a26e848c9 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/beta_federation_issuer.py
+  s_6ed4995a8d6b19::t_af04ede00be47a 1-33
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/beta_federation_issuer_poll_status.py
+  s_6ed4995a8d6b19::t_90a5f1ae34c702 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/beta_federation_rule.py
+  s_6ed4995a8d6b19::t_b6782a4574c9e3 1-41
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/beta_federation_rule_match.py
+  s_6ed4995a8d6b19::t_0b59de93de2354 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/beta_federation_rule_workspace.py
+  s_6ed4995a8d6b19::t_a57251deaaa1b4 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/beta_jwks_discovery.py
+  s_6ed4995a8d6b19::t_ca503b45979ad5 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/beta_jwks_explicit_url.py
+  s_6ed4995a8d6b19::t_33c5c113ec3236 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/beta_jwks_inline.py
+  s_6ed4995a8d6b19::t_8bae6c85c11508 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/beta_service_account_target.py
+  s_6ed4995a8d6b19::t_d39007aa2270f4 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/federation/rules/workspace_remove_response.py
+  s_6ed4995a8d6b19::t_292c5f9eb182a4 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/invite_delete_response.py
+  s_6ed4995a8d6b19::t_ee4fc9dc304703 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/plugins/beta_deleted_plugin_installation_setting.py
+  s_6ed4995a8d6b19::t_a71a6e7a7244cd 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/plugins/beta_plugin_installation_setting.py
+  s_6ed4995a8d6b19::t_4f2e547f76f004 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/plugins/beta_plugin_share.py
+  s_6ed4995a8d6b19::t_4f205cd4d7999f 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/plugins/beta_plugin_version.py
+  s_6ed4995a8d6b19::t_522c44f5d11f68 1-25
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/rbac_group_delete_response.py
+  s_6ed4995a8d6b19::t_0445b7e9f64f02 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/rbac_groups/beta_rbac_group_member.py
+  s_6ed4995a8d6b19::t_c9f671a078cf24 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/rbac_groups/member_remove_response.py
+  s_6ed4995a8d6b19::t_2766488c243ea9 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/rbac_roles/beta_rbac_all_connectors_permission_resource.py
+  s_6ed4995a8d6b19::t_400211112f0309 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/rbac_roles/beta_rbac_connector_permission_resource.py
+  s_6ed4995a8d6b19::t_f035752fe046f9 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/rbac_roles/beta_rbac_connector_scope_permission_resource.py
+  s_6ed4995a8d6b19::t_9d469e789c582f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/rbac_roles/beta_rbac_connector_tool_permission_resource.py
+  s_6ed4995a8d6b19::t_180e1c55e5d55d 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/rbac_roles/beta_rbac_organization_permission_resource.py
+  s_6ed4995a8d6b19::t_3f7dc736d3ad9f 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/rbac_roles/beta_rbac_role_permission.py
+  s_6ed4995a8d6b19::t_074a244f794cd1 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/service_accounts/workspace_remove_response.py
+  s_6ed4995a8d6b19::t_94e37270e2af09 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/spend_limit_delete_response.py
+  s_6ed4995a8d6b19::t_72bfb3e28cbca0 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/spend_limits/beta_spend_limit_increase_request.py
+  s_6ed4995a8d6b19::t_0fc55d9339d71e 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/spend_limits/beta_spend_limit_increase_request_status.py
+  s_6ed4995a8d6b19::t_73e2c75ac787a8 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/spend_limits/increase_request_approve_response.py
+  s_6ed4995a8d6b19::t_7665e319f4e2c6 1-26
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/telemetry_destinations/beta_deleted_telemetry_destination_workspace.py
+  s_6ed4995a8d6b19::t_b9143e5f8d6929 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/telemetry_destinations/beta_telemetry_destination_workspace.py
+  s_6ed4995a8d6b19::t_af08c9f09a56be 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/user_remove_response.py
+  s_6ed4995a8d6b19::t_da26ee1ed204be 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/workspaces/beta_workspace_rate_limit.py
+  s_6ed4995a8d6b19::t_c912d35b7e154b 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/workspaces/beta_workspace_rate_limit_organization_source.py
+  s_6ed4995a8d6b19::t_42c10ef21f5bc1 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/workspaces/beta_workspace_rate_limit_value.py
+  s_6ed4995a8d6b19::t_2ff2bea442c605 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/workspaces/beta_workspace_rate_limit_workspace_source.py
+  s_6ed4995a8d6b19::t_3cc59a49523025 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/workspaces/member_remove_response.py
+  s_6ed4995a8d6b19::t_9a72fdec2738b3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/organization/workspaces/service_account_remove_response.py
+  s_6ed4995a8d6b19::t_2a1f0893a2ddab 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/parsed_beta_message.py
+  s_6ed4995a8d6b19::t_74bbab410c669f 1-35
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_auto_evaluated_permission.py
+  s_6ed4995a8d6b19::t_d5aacbcc6b0ac9 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_auto_evaluated_permission_allow.py
+  s_6ed4995a8d6b19::t_c5b975b7f7069e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_auto_evaluated_permission_ask.py
+  s_6ed4995a8d6b19::t_63d62336a7e0ab 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_auto_evaluated_permission_deny.py
+  s_6ed4995a8d6b19::t_bc31abcb21bfb3 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_custom_tool_use_event.py
+  s_6ed4995a8d6b19::t_dd8198eb534c38 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_evaluated_permission.py
+  s_6ed4995a8d6b19::t_ac2652b8aba328 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_mcp_tool_result_event.py
+  s_6ed4995a8d6b19::t_9b04d33d13b5f5 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_mcp_tool_use_event.py
+  s_6ed4995a8d6b19::t_7b387dbd5cbd70 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_message_event.py
+  s_6ed4995a8d6b19::t_62a9a952d99f50 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_thinking_event.py
+  s_6ed4995a8d6b19::t_93d72ad9750719 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_thread_context_compacted_event.py
+  s_6ed4995a8d6b19::t_862c8b9d97a99d 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_thread_message_received_event.py
+  s_6ed4995a8d6b19::t_c68d38d1f77fe4 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_thread_message_sent_event.py
+  s_6ed4995a8d6b19::t_2280007d6f76ba 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_tool_evaluation.py
+  s_6ed4995a8d6b19::t_95dd5957454d3b 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_tool_evaluation_always_allow.py
+  s_6ed4995a8d6b19::t_160391d9da557c 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_tool_evaluation_always_ask.py
+  s_6ed4995a8d6b19::t_c5c31b2d7d0fee 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_tool_evaluation_auto.py
+  s_6ed4995a8d6b19::t_51ac077e676507 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_tool_result_event.py
+  s_6ed4995a8d6b19::t_d4fe4b5e8beee9 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_agent_tool_use_event.py
+  s_6ed4995a8d6b19::t_cde92b24720698 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_base64_document_source.py
+  s_6ed4995a8d6b19::t_856e8d4e3d7c7a 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_base64_image_source.py
+  s_6ed4995a8d6b19::t_d4a146a5ac4bc3 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_billing_error.py
+  s_6ed4995a8d6b19::t_6945773b423c06 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_credential_host_unreachable_error.py
+  s_6ed4995a8d6b19::t_6374596903a172 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_delete_session_resource.py
+  s_6ed4995a8d6b19::t_0e0cc0f4259ef8 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_document_block.py
+  s_6ed4995a8d6b19::t_93c67bd1bbc96c 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_file_document_source.py
+  s_6ed4995a8d6b19::t_bfe9c84d224485 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_file_image_source.py
+  s_6ed4995a8d6b19::t_5fe589aadc64fe 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_file_resource.py
+  s_6ed4995a8d6b19::t_2807567f62d3a1 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_file_rubric.py
+  s_6ed4995a8d6b19::t_ab64e0da015ac5 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_github_repository_resource.py
+  s_6ed4995a8d6b19::t_eea1e9506a5046 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_image_block.py
+  s_6ed4995a8d6b19::t_81b4e21f01a1fe 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_inline_agent.py
+  s_6ed4995a8d6b19::t_58c2c80c4c2686 1-30
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_max_workflow_runs_workflow_run_error.py
+  s_6ed4995a8d6b19::t_4bb65a7f9c01e5 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_mcp_authentication_failed_error.py
+  s_6ed4995a8d6b19::t_b68d88e249babe 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_mcp_connection_failed_error.py
+  s_6ed4995a8d6b19::t_ebdbecde3be3ff 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_memory_store_resource.py
+  s_6ed4995a8d6b19::t_e88cb1a7faf556 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_model_overloaded_error.py
+  s_6ed4995a8d6b19::t_96b301e6f4f67e 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_model_rate_limited_error.py
+  s_6ed4995a8d6b19::t_a1e65eeaaba9d3 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_model_request_failed_error.py
+  s_6ed4995a8d6b19::t_49db2618e93545 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_plain_text_document_source.py
+  s_6ed4995a8d6b19::t_e7142ac63505f1 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_program_workflow_run_error.py
+  s_6ed4995a8d6b19::t_4e4104277dcde3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_redacted_block.py
+  s_6ed4995a8d6b19::t_d2c9995cf67a07 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_repository_authentication_error.py
+  s_6ed4995a8d6b19::t_2455a6033d14d8 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_repository_checkout_error.py
+  s_6ed4995a8d6b19::t_7040e6883eddc0 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_repository_clone_error.py
+  s_6ed4995a8d6b19::t_0734263e9e4176 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_repository_forbidden_error.py
+  s_6ed4995a8d6b19::t_ca8a3b428ee523 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_repository_not_found_error.py
+  s_6ed4995a8d6b19::t_8ac8b4edc2916e 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_retry_status_exhausted.py
+  s_6ed4995a8d6b19::t_be12987ae216ad 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_retry_status_retrying.py
+  s_6ed4995a8d6b19::t_fd3e54a16d3a0c 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_retry_status_terminal.py
+  s_6ed4995a8d6b19::t_4ca02f9bae8725 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_search_result_block.py
+  s_6ed4995a8d6b19::t_cb5084e2d0e410 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_search_result_citations.py
+  s_6ed4995a8d6b19::t_6d494ed1ea2c48 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_search_result_content.py
+  s_6ed4995a8d6b19::t_144b74a926f6d9 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_send_session_events.py
+  s_6ed4995a8d6b19::t_c18a7ca82c8ee4 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_budget_reached.py
+  s_6ed4995a8d6b19::t_9171e1285275ec 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_deleted_event.py
+  s_6ed4995a8d6b19::t_c939ce5a9744f8 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_end_turn.py
+  s_6ed4995a8d6b19::t_9866db415f4189 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_error_event.py
+  s_6ed4995a8d6b19::t_0628658415cd68 1-27
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_refusal.py
+  s_6ed4995a8d6b19::t_d77b277ed78640 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_refusal_stop_details.py
+  s_6ed4995a8d6b19::t_e6484c55bad1a8 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_requires_action.py
+  s_6ed4995a8d6b19::t_5628b8d3ebdd49 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_resource.py
+  s_6ed4995a8d6b19::t_6e1d7297aa812d 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_retries_exhausted.py
+  s_6ed4995a8d6b19::t_6fea962dd492f6 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_status_idle_event.py
+  s_6ed4995a8d6b19::t_73cdd221d8cf2a 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_status_rescheduled_event.py
+  s_6ed4995a8d6b19::t_b9c81207ed70d9 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_status_running_event.py
+  s_6ed4995a8d6b19::t_5749c50d6a6a6d 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_status_terminated_event.py
+  s_6ed4995a8d6b19::t_9e5cf4c056fd25 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_thread.py
+  s_6ed4995a8d6b19::t_36851dd11d74d6 1-31
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_thread_created_event.py
+  s_6ed4995a8d6b19::t_2f9e7ffc66c748 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_thread_stats.py
+  s_6ed4995a8d6b19::t_961cb4dc2750bd 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_thread_status.py
+  s_6ed4995a8d6b19::t_6e2eb35537d025 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_thread_status_idle_event.py
+  s_6ed4995a8d6b19::t_5ef21f2fdfa638 1-26
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_thread_status_rescheduled_event.py
+  s_6ed4995a8d6b19::t_de945709a86fd1 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_thread_status_running_event.py
+  s_6ed4995a8d6b19::t_2bae81282acc51 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_thread_status_terminated_event.py
+  s_6ed4995a8d6b19::t_240e8b3d36ea9c 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_thread_usage.py
+  s_6ed4995a8d6b19::t_00044ee7e2571e 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_session_usage_snapshot.py
+  s_6ed4995a8d6b19::t_b4c904f6fe040f 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_span_model_request_end_event.py
+  s_6ed4995a8d6b19::t_aa3ac144f5b342 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_span_model_request_start_event.py
+  s_6ed4995a8d6b19::t_da1de7e97492d1 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_span_model_usage.py
+  s_6ed4995a8d6b19::t_30cb7cc43bd1c7 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_span_outcome_evaluation_end_event.py
+  s_6ed4995a8d6b19::t_a7bdbf1fff2a63 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_span_outcome_evaluation_ongoing_event.py
+  s_6ed4995a8d6b19::t_be51b1940906b9 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_span_outcome_evaluation_start_event.py
+  s_6ed4995a8d6b19::t_d76cbecc8caf15 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_text_block.py
+  s_6ed4995a8d6b19::t_5a3db5265962db 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_text_rubric.py
+  s_6ed4995a8d6b19::t_e5ba91e0d5aa2a 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_thread_limit_workflow_run_error.py
+  s_6ed4995a8d6b19::t_2dcaa93c8c86e7 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_timeout_workflow_run_error.py
+  s_6ed4995a8d6b19::t_bcac1a2314f8a3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_unknown_error.py
+  s_6ed4995a8d6b19::t_41a89ddb568506 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_unknown_workflow_run_error.py
+  s_6ed4995a8d6b19::t_14d13a84958a84 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_url_document_source.py
+  s_6ed4995a8d6b19::t_ad7e8c4645b1cd 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_url_image_source.py
+  s_6ed4995a8d6b19::t_cd107204a3131c 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_user_custom_tool_result_event.py
+  s_6ed4995a8d6b19::t_b7a04348277a0d 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_user_define_outcome_event.py
+  s_6ed4995a8d6b19::t_899c0c3a5b203b 1-22
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_user_interrupt_event.py
+  s_6ed4995a8d6b19::t_17d374e87cd5b5 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_user_message_event.py
+  s_6ed4995a8d6b19::t_07aa094b1bc313 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_user_tool_confirmation_event.py
+  s_6ed4995a8d6b19::t_d1f8753b50f938 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_created_event.py
+  s_6ed4995a8d6b19::t_6e4949dbe0cd36 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_error.py
+  s_6ed4995a8d6b19::t_9bb1dc720c6d6d 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_error_event.py
+  s_6ed4995a8d6b19::t_7a367f2880333f 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_phase.py
+  s_6ed4995a8d6b19::t_c10b75eaba558d 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_phase_ended_event.py
+  s_6ed4995a8d6b19::t_a2612a8f8b67b9 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_phase_started_event.py
+  s_6ed4995a8d6b19::t_af57439f682566 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_result.py
+  s_6ed4995a8d6b19::t_1af9c5f02dd3ef 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_result_completed.py
+  s_6ed4995a8d6b19::t_0d6ea07ab3055d 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_result_error.py
+  s_6ed4995a8d6b19::t_ad030dfe326fd6 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_result_stopped.py
+  s_6ed4995a8d6b19::t_2e80265951d379 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_status_ended_event.py
+  s_6ed4995a8d6b19::t_1e1d00b899ae67 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_status_idle_event.py
+  s_6ed4995a8d6b19::t_6bb99c12468913 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/sessions/beta_managed_agents_workflow_run_status_running_event.py
+  s_6ed4995a8d6b19::t_91ba18b1fd3d2b 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/skills/beta_deleted_skill_version.py
+  s_6ed4995a8d6b19::t_0272cd9fd3ea27 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/skills/beta_skill_version.py
+  s_6ed4995a8d6b19::t_d904504ffa8f8e 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/tunnels/beta_tunnel_certificate.py
+  s_6ed4995a8d6b19::t_95ef1363490aa1 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/user_profiles/beta_user_profile_action_url.py
+  s_6ed4995a8d6b19::t_5a4fc998ddc708 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_credential.py
+  s_6ed4995a8d6b19::t_b72b27a89070c0 1-25
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_credential_validation.py
+  s_6ed4995a8d6b19::t_0cd5b618acc9d0 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_credential_validation_status.py
+  s_6ed4995a8d6b19::t_2078068a91b66c 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_deleted_credential.py
+  s_6ed4995a8d6b19::t_d6952a4b393d93 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_environment_variable_auth_response.py
+  s_6ed4995a8d6b19::t_7f48c07fedf575 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_injection_location_response.py
+  s_6ed4995a8d6b19::t_35302926a6a5ac 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_limited_credential_networking_response.py
+  s_6ed4995a8d6b19::t_3a34267553fd35 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_mcp_oauth_auth_response.py
+  s_6ed4995a8d6b19::t_57bd2299c63a37 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_mcp_oauth_refresh_response.py
+  s_6ed4995a8d6b19::t_61d4f83e649eb9 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_mcp_probe.py
+  s_6ed4995a8d6b19::t_0c70f39688b1f3 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_refresh_http_response.py
+  s_6ed4995a8d6b19::t_f148dba90b64f3 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_refresh_object.py
+  s_6ed4995a8d6b19::t_bd3361e86a1835 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_static_bearer_auth_response.py
+  s_6ed4995a8d6b19::t_564ef4dbe8a113 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_token_endpoint_auth_basic_response.py
+  s_6ed4995a8d6b19::t_1a8384df73e3b1 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_token_endpoint_auth_none_response.py
+  s_6ed4995a8d6b19::t_05b113c58abf40 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_token_endpoint_auth_post_response.py
+  s_6ed4995a8d6b19::t_c5ea9ddd86ce2e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta/vaults/beta_managed_agents_unrestricted_credential_networking_response.py
+  s_6ed4995a8d6b19::t_512cc1f001a1f3 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_api_error.py
+  s_6ed4995a8d6b19::t_5be09ed6f2f73f 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_authentication_error.py
+  s_6ed4995a8d6b19::t_ec007937a5c674 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_billing_error.py
+  s_6ed4995a8d6b19::t_3e621524455d4c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_currency.py
+  s_6ed4995a8d6b19::t_5e7c7f73a39eba 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_error.py
+  s_6ed4995a8d6b19::t_237228143e6e95 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_error_response.py
+  s_6ed4995a8d6b19::t_37e1040c8f4cb2 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_gateway_timeout_error.py
+  s_6ed4995a8d6b19::t_30b253df86ab53 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_invalid_request_error.py
+  s_6ed4995a8d6b19::t_32b04b3ea54303 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_monetary_amount.py
+  s_6ed4995a8d6b19::t_2ff9cc4cc94d9f 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_not_found_error.py
+  s_6ed4995a8d6b19::t_42302e08a36d83 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_overloaded_error.py
+  s_6ed4995a8d6b19::t_9feaa8fd6a61ce 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_permission_error.py
+  s_6ed4995a8d6b19::t_55d2351531a2c5 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/beta_rate_limit_error.py
+  s_6ed4995a8d6b19::t_9c82d111036b29 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_click_target.py
+  s_6ed4995a8d6b19::t_c588c2fb8e8bd4 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_close_tab_input.py
+  s_6ed4995a8d6b19::t_85878ebf6efdbb 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_close_tab_tool_use_block.py
+  s_6ed4995a8d6b19::t_5765b6a29a8e72 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_coordinate_target.py
+  s_6ed4995a8d6b19::t_6ea02ced110f90 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_double_click_input.py
+  s_6ed4995a8d6b19::t_9a5d1520b3db60 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_double_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_eb40760e6d37dd 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_file_upload_input.py
+  s_6ed4995a8d6b19::t_038743886639f5 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_file_upload_tool_use_block.py
+  s_6ed4995a8d6b19::t_7f6f5964303d04 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_find_input.py
+  s_6ed4995a8d6b19::t_3beb415b7164a2 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_find_tool_use_block.py
+  s_6ed4995a8d6b19::t_02440f5e4b6a6a 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_form_input_input.py
+  s_6ed4995a8d6b19::t_b429fb177f7afa 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_form_input_tool_use_block.py
+  s_6ed4995a8d6b19::t_5046b78f9b43bc 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_form_input_value.py
+  s_6ed4995a8d6b19::t_fc952d361d6fb2 1-5
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_get_page_text_input.py
+  s_6ed4995a8d6b19::t_32b5b1d6059fd4 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_get_page_text_tool_use_block.py
+  s_6ed4995a8d6b19::t_1f2768e88910e9 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_hold_key_input.py
+  s_6ed4995a8d6b19::t_36016efbae9ef5 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_hold_key_tool_use_block.py
+  s_6ed4995a8d6b19::t_8889c2b04a32cc 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_hover_input.py
+  s_6ed4995a8d6b19::t_774e29ef615a0d 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_hover_tool_use_block.py
+  s_6ed4995a8d6b19::t_826b59986bf09b 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_javascript_exec_input.py
+  s_6ed4995a8d6b19::t_4a53d6bdd0bf34 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_javascript_exec_tool_use_block.py
+  s_6ed4995a8d6b19::t_9ea4ea493dc5d2 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_key_input.py
+  s_6ed4995a8d6b19::t_57ba685f3a4ea1 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_key_tool_use_block.py
+  s_6ed4995a8d6b19::t_0c7fa82826f30d 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_left_click_drag_input.py
+  s_6ed4995a8d6b19::t_405b5c45da7fb7 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_left_click_drag_tool_use_block.py
+  s_6ed4995a8d6b19::t_e13748de74bd32 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_left_click_input.py
+  s_6ed4995a8d6b19::t_0d1b286ba2309e 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_left_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_82c5fed6ffdced 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_left_mouse_down_input.py
+  s_6ed4995a8d6b19::t_5d2092ace90bf8 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_left_mouse_down_tool_use_block.py
+  s_6ed4995a8d6b19::t_a007e627bbc376 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_left_mouse_up_input.py
+  s_6ed4995a8d6b19::t_236bb42cddd032 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_left_mouse_up_tool_use_block.py
+  s_6ed4995a8d6b19::t_6d65e5cb4e6ac2 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_list_tabs_input.py
+  s_6ed4995a8d6b19::t_1bf99a2bd2d4c1 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_list_tabs_tool_use_block.py
+  s_6ed4995a8d6b19::t_738a1564f78a83 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_middle_click_input.py
+  s_6ed4995a8d6b19::t_9f67ea2aa09ea0 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_middle_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_c35affc8ca1058 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_mouse_move_input.py
+  s_6ed4995a8d6b19::t_f9c3f1f2beb87a 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_mouse_move_tool_use_block.py
+  s_6ed4995a8d6b19::t_4b75842af38905 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_navigate_input.py
+  s_6ed4995a8d6b19::t_7911e3e980ae07 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_navigate_tool_use_block.py
+  s_6ed4995a8d6b19::t_1cde3b98ec7019 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_new_tab_input.py
+  s_6ed4995a8d6b19::t_f7a0ab1c0f5c18 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_new_tab_tool_use_block.py
+  s_6ed4995a8d6b19::t_df3c8f3d05c147 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_read_console_input.py
+  s_6ed4995a8d6b19::t_1e1e32b4fe2e2e 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_read_console_tool_use_block.py
+  s_6ed4995a8d6b19::t_08aa5b3e2892e9 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_read_network_input.py
+  s_6ed4995a8d6b19::t_9ccfbab5c1b755 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_read_network_tool_use_block.py
+  s_6ed4995a8d6b19::t_77ec189d09f885 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_read_page_filter.py
+  s_6ed4995a8d6b19::t_466a54494b971b 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_read_page_input.py
+  s_6ed4995a8d6b19::t_076c7780d3af37 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_read_page_tool_use_block.py
+  s_6ed4995a8d6b19::t_95d75defce8e5c 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_ref_target.py
+  s_6ed4995a8d6b19::t_34598216f1b9da 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_right_click_input.py
+  s_6ed4995a8d6b19::t_33d24ce1370d95 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_right_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_f687c962acc245 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_screenshot_input.py
+  s_6ed4995a8d6b19::t_2442239fc6954d 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_screenshot_tool_use_block.py
+  s_6ed4995a8d6b19::t_6441dfb1e2ccb8 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_scroll_direction.py
+  s_6ed4995a8d6b19::t_33b54ca51e7ab0 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_scroll_input.py
+  s_6ed4995a8d6b19::t_56a49cbde779c1 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_scroll_to_input.py
+  s_6ed4995a8d6b19::t_f55692fbb5c8c1 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_scroll_to_tool_use_block.py
+  s_6ed4995a8d6b19::t_3305574b7c618a 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_scroll_tool_use_block.py
+  s_6ed4995a8d6b19::t_764959ca0a04ce 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_switch_tab_input.py
+  s_6ed4995a8d6b19::t_a6c2536a4d6d44 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_switch_tab_tool_use_block.py
+  s_6ed4995a8d6b19::t_af4f94e6705a6e 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_triple_click_input.py
+  s_6ed4995a8d6b19::t_1b901183815c50 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_triple_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_1ff99d154e07ed 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_type_input.py
+  s_6ed4995a8d6b19::t_a24a586869abd6 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_type_tool_use_block.py
+  s_6ed4995a8d6b19::t_955726810b49e7 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_wait_input.py
+  s_6ed4995a8d6b19::t_e077e6573fc080 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_wait_tool_use_block.py
+  s_6ed4995a8d6b19::t_8a31dbdb1b3908 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_zoom_input.py
+  s_6ed4995a8d6b19::t_e696a49574a079 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/browser_zoom_tool_use_block.py
+  s_6ed4995a8d6b19::t_a5a426b62dd186 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/cache_creation.py
+  s_6ed4995a8d6b19::t_6fe741e450c89e 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/cache_miss_messages_changed.py
+  s_6ed4995a8d6b19::t_c2418822f0793d 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/cache_miss_model_changed.py
+  s_6ed4995a8d6b19::t_d4af2acf6da98d 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/cache_miss_previous_message_not_found.py
+  s_6ed4995a8d6b19::t_b76e811219c2e1 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/cache_miss_reason.py
+  s_6ed4995a8d6b19::t_315d98a3bee4fc 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/cache_miss_system_changed.py
+  s_6ed4995a8d6b19::t_5a51e4db143ea4 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/cache_miss_tools_changed.py
+  s_6ed4995a8d6b19::t_2177a8829e9543 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/cache_miss_unavailable.py
+  s_6ed4995a8d6b19::t_38ef1393c83f59 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/capability_support.py
+  s_6ed4995a8d6b19::t_b56b9f5e07245c 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/citation_char_location.py
+  s_6ed4995a8d6b19::t_927d60c4d083c0 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/citation_content_block_location.py
+  s_6ed4995a8d6b19::t_e540f578608325 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/citation_page_location.py
+  s_6ed4995a8d6b19::t_551b95afb76c58 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/citations_config.py
+  s_6ed4995a8d6b19::t_804076c15fe4fa 1-6
+tests/benchmarks/corpus/anthropic/anthropic/types/citations_delta.py
+  s_6ed4995a8d6b19::t_dbef05be6a6178 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/citations_search_result_location.py
+  s_6ed4995a8d6b19::t_ac45e6fa9004b1 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/citations_web_search_result_location.py
+  s_6ed4995a8d6b19::t_82cba23eabc035 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/code_execution_output_block.py
+  s_6ed4995a8d6b19::t_2477bb10d7f699 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/code_execution_result_block.py
+  s_6ed4995a8d6b19::t_0d3c42e6cd28da 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/code_execution_tool_result_block.py
+  s_6ed4995a8d6b19::t_8754d738dfa2a3 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/code_execution_tool_result_block_content.py
+  s_6ed4995a8d6b19::t_0f0bbdd85a1379 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/code_execution_tool_result_error.py
+  s_6ed4995a8d6b19::t_aa09af415a0d0d 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/code_execution_tool_result_error_code.py
+  s_6ed4995a8d6b19::t_4f2eceba7e7c4a 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_cursor_position_input.py
+  s_6ed4995a8d6b19::t_bd01e8cef426ff 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_cursor_position_tool_use_block.py
+  s_6ed4995a8d6b19::t_c19abf8448cf16 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_double_click_input.py
+  s_6ed4995a8d6b19::t_f178b1ecbc9248 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_double_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_a06e7ab1f3cc4c 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_hold_key_input.py
+  s_6ed4995a8d6b19::t_d8c1b449d9cbd1 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_hold_key_tool_use_block.py
+  s_6ed4995a8d6b19::t_c54df09e363087 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_key_input.py
+  s_6ed4995a8d6b19::t_cde5f913c675f0 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_key_tool_use_block.py
+  s_6ed4995a8d6b19::t_e0a68efc14d98a 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_left_click_drag_input.py
+  s_6ed4995a8d6b19::t_81ccdbc5350568 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_left_click_drag_tool_use_block.py
+  s_6ed4995a8d6b19::t_0e2d52174eff34 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_left_click_input.py
+  s_6ed4995a8d6b19::t_f6293766d64837 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_left_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_0354bcc3206dca 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_left_mouse_down_input.py
+  s_6ed4995a8d6b19::t_7163a10b543d34 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_left_mouse_down_tool_use_block.py
+  s_6ed4995a8d6b19::t_d2c1e379564100 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_left_mouse_up_input.py
+  s_6ed4995a8d6b19::t_ac933eaae7fa7b 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_left_mouse_up_tool_use_block.py
+  s_6ed4995a8d6b19::t_ee2c6ea41f0370 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_middle_click_input.py
+  s_6ed4995a8d6b19::t_23adedb3b84ca2 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_middle_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_fbebf7945f6a1d 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_mouse_move_input.py
+  s_6ed4995a8d6b19::t_4bcc4e268c8899 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_mouse_move_tool_use_block.py
+  s_6ed4995a8d6b19::t_099257cd16380b 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_right_click_input.py
+  s_6ed4995a8d6b19::t_d3c3334aa6e6b4 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_right_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_c8fb4e2725cded 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_screenshot_input.py
+  s_6ed4995a8d6b19::t_4fa81fa4a42c17 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_screenshot_tool_use_block.py
+  s_6ed4995a8d6b19::t_b5ac298cd921a0 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_scroll_direction.py
+  s_6ed4995a8d6b19::t_88435ca2b001d5 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_scroll_input.py
+  s_6ed4995a8d6b19::t_50d608a404a525 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_scroll_tool_use_block.py
+  s_6ed4995a8d6b19::t_0f2b9e096b47ad 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_triple_click_input.py
+  s_6ed4995a8d6b19::t_612d8bc29fb3bb 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_triple_click_tool_use_block.py
+  s_6ed4995a8d6b19::t_0803ab2725788b 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_type_input.py
+  s_6ed4995a8d6b19::t_92517ae542ec8c 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_type_tool_use_block.py
+  s_6ed4995a8d6b19::t_0e070e961db4c4 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_wait_input.py
+  s_6ed4995a8d6b19::t_4baa277f3c1576 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_wait_tool_use_block.py
+  s_6ed4995a8d6b19::t_b32a020da283a3 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_zoom_input.py
+  s_6ed4995a8d6b19::t_5abc0da69a7f99 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/computer_zoom_tool_use_block.py
+  s_6ed4995a8d6b19::t_cf95d978641baa 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/container.py
+  s_6ed4995a8d6b19::t_d8c74cfa69a436 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/container_skill.py
+  s_6ed4995a8d6b19::t_7afd1e32dc984f 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/container_upload_block.py
+  s_6ed4995a8d6b19::t_8edce6b0fe8eeb 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/content_block.py
+  s_6ed4995a8d6b19::t_5a404dac41a09c 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/context_management_capability.py
+  s_6ed4995a8d6b19::t_5882e064a52c49 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/deleted_file.py
+  s_6ed4995a8d6b19::t_7493ea24329e33 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/deleted_skill.py
+  s_6ed4995a8d6b19::t_488c1cc224fc66 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/deleted_user_profile.py
+  s_6ed4995a8d6b19::t_2aac550db9233a 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/diagnostics.py
+  s_6ed4995a8d6b19::t_344c61c9bed13d 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/direct_caller.py
+  s_6ed4995a8d6b19::t_8421a928589433 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/document_block.py
+  s_6ed4995a8d6b19::t_4695d6b6d9910c 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/effort_capability.py
+  s_6ed4995a8d6b19::t_85d2f59639e81c 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/encrypted_code_execution_result_block.py
+  s_6ed4995a8d6b19::t_e22533b2a94a0e 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/file_metadata.py
+  s_6ed4995a8d6b19::t_ee8d6d6a6906fb 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/input_json_delta.py
+  s_6ed4995a8d6b19::t_0af5ca98213ca9 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/message.py
+  s_6ed4995a8d6b19::t_3d259f2dbc1aa1 1-25
+tests/benchmarks/corpus/anthropic/anthropic/types/message_delta_usage.py
+  s_6ed4995a8d6b19::t_7500bf3f6fcdce 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/message_tokens_count.py
+  s_6ed4995a8d6b19::t_168502292d6c6b 1-6
+tests/benchmarks/corpus/anthropic/anthropic/types/messages/deleted_message_batch.py
+  s_6ed4995a8d6b19::t_165732c2153382 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/messages/message_batch.py
+  s_6ed4995a8d6b19::t_e0aae17cb4a570 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/messages/message_batch_canceled_result.py
+  s_6ed4995a8d6b19::t_4ae0368719de49 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/messages/message_batch_errored_result.py
+  s_6ed4995a8d6b19::t_03f127fb9f6903 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/messages/message_batch_expired_result.py
+  s_6ed4995a8d6b19::t_867f8063a8b570 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/messages/message_batch_individual_response.py
+  s_6ed4995a8d6b19::t_73625865c18448 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/messages/message_batch_request_counts.py
+  s_6ed4995a8d6b19::t_2b2767b7a8454c 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/messages/message_batch_result.py
+  s_6ed4995a8d6b19::t_b68d5b1ab630bb 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/messages/message_batch_succeeded_result.py
+  s_6ed4995a8d6b19::t_e11705bb2aa113 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/model.py
+  s_6ed4995a8d6b19::t_aa30720bdfdacf 1-5
+tests/benchmarks/corpus/anthropic/anthropic/types/model_capabilities.py
+  s_6ed4995a8d6b19::t_a592695ed962c5 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/model_info.py
+  s_6ed4995a8d6b19::t_146b308e6703ef 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/model_line.py
+  s_6ed4995a8d6b19::t_97d351cd50da6e 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/allowed_inference_geo.py
+  s_6ed4995a8d6b19::t_405cec65a29cd2 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/api_key.py
+  s_6ed4995a8d6b19::t_05c49a680317c5 1-25
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/api_key_created_by.py
+  s_6ed4995a8d6b19::t_c445066d6f950a 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/api_key_organization_scope.py
+  s_6ed4995a8d6b19::t_f531a9a81b8639 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/api_key_service_account_actor.py
+  s_6ed4995a8d6b19::t_58de694d487299 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/api_key_user_actor.py
+  s_6ed4995a8d6b19::t_6c50001ac55d2b 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/api_key_workspace_scope.py
+  s_6ed4995a8d6b19::t_23209624490333 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/aws_external_key_config.py
+  s_6ed4995a8d6b19::t_8ed3fe5c59a1bb 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/azure_external_key_config.py
+  s_6ed4995a8d6b19::t_109dca6c603392 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/compliance_settings_state.py
+  s_6ed4995a8d6b19::t_6f5a3c738c9873 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/compliance_settings_state_disabled.py
+  s_6ed4995a8d6b19::t_21265eb5ab7754 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/compliance_settings_state_enabled.py
+  s_6ed4995a8d6b19::t_5c74594c85f6e6 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/data_residency.py
+  s_6ed4995a8d6b19::t_562799d354456e 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/external_key.py
+  s_6ed4995a8d6b19::t_caf894147575ff 1-29
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/external_key_attached_attachment.py
+  s_6ed4995a8d6b19::t_b1c41f73112677 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/external_key_delete_response.py
+  s_6ed4995a8d6b19::t_86d1aed39b6baf 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/external_key_unattached_attachment.py
+  s_6ed4995a8d6b19::t_15a45048b6458b 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/external_key_validate_response.py
+  s_6ed4995a8d6b19::t_e07bb0eabfd51e 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/federation_issuer.py
+  s_6ed4995a8d6b19::t_a0f9e2d24438cd 1-33
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/federation_issuer_poll_status.py
+  s_6ed4995a8d6b19::t_f385f3b0baa74f 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/federation_rule.py
+  s_6ed4995a8d6b19::t_752fe2fcbb28b7 1-39
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/federation_rule_match.py
+  s_6ed4995a8d6b19::t_6c1e05fb2888ad 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/federation_rule_workspace.py
+  s_6ed4995a8d6b19::t_e0aa536613baf6 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/jwks_discovery.py
+  s_6ed4995a8d6b19::t_79f75bc4998b73 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/jwks_explicit_url.py
+  s_6ed4995a8d6b19::t_5450ce985e23ba 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/jwks_inline.py
+  s_6ed4995a8d6b19::t_eb3302799a63d8 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/rules/workspace_remove_response.py
+  s_6ed4995a8d6b19::t_b0057aa607aebd 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/federation/service_account_target.py
+  s_6ed4995a8d6b19::t_f2ad6b089ba2a0 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/gcp_external_key_config.py
+  s_6ed4995a8d6b19::t_e97009ee15d63c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/invite_delete_response.py
+  s_6ed4995a8d6b19::t_27dc283b15ba54 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_compliance_settings.py
+  s_6ed4995a8d6b19::t_765f2f0d44d64e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_invite.py
+  s_6ed4995a8d6b19::t_fd5d0caad38742 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_rate_limit.py
+  s_6ed4995a8d6b19::t_2102b1e71db0f3 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_rate_limit_batch_group.py
+  s_6ed4995a8d6b19::t_769a0a931749b0 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_rate_limit_files_group.py
+  s_6ed4995a8d6b19::t_14cc70e354e109 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_rate_limit_model_group.py
+  s_6ed4995a8d6b19::t_81a5f688717cf2 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_rate_limit_skills_group.py
+  s_6ed4995a8d6b19::t_c2220a28a6d878 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_rate_limit_token_count_group.py
+  s_6ed4995a8d6b19::t_1201f8d26a3826 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_rate_limit_value.py
+  s_6ed4995a8d6b19::t_af11ca836aba26 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_rate_limit_web_search_group.py
+  s_6ed4995a8d6b19::t_d176014fe56b15 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/organization_user.py
+  s_6ed4995a8d6b19::t_207634ce88e5d3 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/service_account.py
+  s_6ed4995a8d6b19::t_73b54afb38e305 1-24
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/service_account_workspace_member.py
+  s_6ed4995a8d6b19::t_f73fb8fcb3a87b 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/service_accounts/workspace_remove_response.py
+  s_6ed4995a8d6b19::t_07529088517deb 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/user_remove_response.py
+  s_6ed4995a8d6b19::t_4692fc787954ae 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/workspace.py
+  s_6ed4995a8d6b19::t_52b3e14467b2a8 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/workspace_member.py
+  s_6ed4995a8d6b19::t_1c7717f99867de 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/workspace_role.py
+  s_6ed4995a8d6b19::t_c3751710265135 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/workspaces/member_remove_response.py
+  s_6ed4995a8d6b19::t_b8da4a56c12d59 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/workspaces/service_account_remove_response.py
+  s_6ed4995a8d6b19::t_db5aeb36366cb2 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/workspaces/workspace_rate_limit.py
+  s_6ed4995a8d6b19::t_0f8c74d38dd948 1-21
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/workspaces/workspace_rate_limit_organization_source.py
+  s_6ed4995a8d6b19::t_9104fe9e66c681 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/workspaces/workspace_rate_limit_value.py
+  s_6ed4995a8d6b19::t_ab95d2cf65f35c 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/organization/workspaces/workspace_rate_limit_workspace_source.py
+  s_6ed4995a8d6b19::t_688776b334003b 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/organization_info.py
+  s_6ed4995a8d6b19::t_9ce3c15cc6d74e 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/organization_role.py
+  s_6ed4995a8d6b19::t_29192f0966f7ff 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/output_tokens_details.py
+  s_6ed4995a8d6b19::t_61b67547b01d06 1-6
+tests/benchmarks/corpus/anthropic/anthropic/types/parsed_message.py
+  s_6ed4995a8d6b19::t_81ac78ab2fc6ec 1-29
+tests/benchmarks/corpus/anthropic/anthropic/types/plain_text_source.py
+  s_6ed4995a8d6b19::t_b791b37069138c 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/raw_content_block_delta.py
+  s_6ed4995a8d6b19::t_6294182fbb2abf 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/raw_content_block_delta_event.py
+  s_6ed4995a8d6b19::t_3897c8de3cbb51 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/raw_content_block_start_event.py
+  s_6ed4995a8d6b19::t_400df9701b8e8a 1-23
+tests/benchmarks/corpus/anthropic/anthropic/types/raw_content_block_stop_event.py
+  s_6ed4995a8d6b19::t_034e1a67820314 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/raw_message_delta_event.py
+  s_6ed4995a8d6b19::t_c97eed89090f20 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/raw_message_start_event.py
+  s_6ed4995a8d6b19::t_8788f6ec14e461 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/raw_message_stop_event.py
+  s_6ed4995a8d6b19::t_cdfa61bc92122b 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/redacted_thinking_block.py
+  s_6ed4995a8d6b19::t_b468416c8cc3cc 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/refusal_stop_details.py
+  s_6ed4995a8d6b19::t_0ac1922896e715 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/server_tool_caller.py
+  s_6ed4995a8d6b19::t_d3d1d98b047cc3 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/server_tool_caller_20260120.py
+  s_6ed4995a8d6b19::t_fbf38efabeffe7 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/server_tool_usage.py
+  s_6ed4995a8d6b19::t_2a5efc7b66234b 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/server_tool_use_block.py
+  s_6ed4995a8d6b19::t_6fc746bd0d670a 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/server_tools_capability.py
+  s_6ed4995a8d6b19::t_32cc3681fba35e 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/api_error_object.py
+  s_6ed4995a8d6b19::t_72bb2ba9c2128c 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/authentication_error.py
+  s_6ed4995a8d6b19::t_42f89f35501909 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/billing_error.py
+  s_6ed4995a8d6b19::t_9f03e11cc1e120 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/error_object.py
+  s_6ed4995a8d6b19::t_b29621c2b246c5 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/error_response.py
+  s_6ed4995a8d6b19::t_6a538a98fd47ab 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/gateway_timeout_error.py
+  s_6ed4995a8d6b19::t_e5fc69095473ed 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/invalid_request_error.py
+  s_6ed4995a8d6b19::t_fa5b2d38f3cd8a 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/not_found_error.py
+  s_6ed4995a8d6b19::t_ed2b26a9350da8 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/overloaded_error.py
+  s_6ed4995a8d6b19::t_ca0f0068231611 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/permission_error.py
+  s_6ed4995a8d6b19::t_8b604ecd46ee8b 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/shared/rate_limit_error.py
+  s_6ed4995a8d6b19::t_7b6648e3840422 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/signature_delta.py
+  s_6ed4995a8d6b19::t_1e5a009da9c642 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/skill.py
+  s_6ed4995a8d6b19::t_4afd7c4a363825 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/skill_source.py
+  s_6ed4995a8d6b19::t_58cfe7079ed9d9 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/skills/deleted_skill_version.py
+  s_6ed4995a8d6b19::t_0ab8f24bdfdccb 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/skills/skill_version.py
+  s_6ed4995a8d6b19::t_e1b17a33496515 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/stop_reason.py
+  s_6ed4995a8d6b19::t_1aed4077217e4e 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/text_block.py
+  s_6ed4995a8d6b19::t_d9c3309302fe43 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/text_citation.py
+  s_6ed4995a8d6b19::t_b3c41465d40c65 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/text_delta.py
+  s_6ed4995a8d6b19::t_00f1e104448c20 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/text_editor_code_execution_create_result_block.py
+  s_6ed4995a8d6b19::t_bcd94c349cae4d 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/text_editor_code_execution_str_replace_result_block.py
+  s_6ed4995a8d6b19::t_b0c79b5dd12472 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/text_editor_code_execution_tool_result_block.py
+  s_6ed4995a8d6b19::t_eab229108e50e3 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/text_editor_code_execution_tool_result_error.py
+  s_6ed4995a8d6b19::t_3ab3a804b46a74 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/text_editor_code_execution_tool_result_error_code.py
+  s_6ed4995a8d6b19::t_d0d2d8822d12b2 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/text_editor_code_execution_view_result_block.py
+  s_6ed4995a8d6b19::t_6029950677c54b 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/thinking_block.py
+  s_6ed4995a8d6b19::t_0993db74c274ad 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/thinking_capability.py
+  s_6ed4995a8d6b19::t_05ddb466de1350 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/thinking_delta.py
+  s_6ed4995a8d6b19::t_b301d6b630c656 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/thinking_types.py
+  s_6ed4995a8d6b19::t_d39e64ecdd2cf2 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/tool_reference_block.py
+  s_6ed4995a8d6b19::t_7880997998661e 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/tool_search_tool_result_block.py
+  s_6ed4995a8d6b19::t_e2b0d06fc7baf1 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/tool_search_tool_result_error.py
+  s_6ed4995a8d6b19::t_adf58f08009b98 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/tool_search_tool_result_error_code.py
+  s_6ed4995a8d6b19::t_ec14cba7b1ea23 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/tool_search_tool_search_result_block.py
+  s_6ed4995a8d6b19::t_820f5f19da2621 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/tool_use_block.py
+  s_6ed4995a8d6b19::t_518b14e2e844f3 1-17
+tests/benchmarks/corpus/anthropic/anthropic/types/tool_use_caller.py
+  s_6ed4995a8d6b19::t_a2279a033ed3cc 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/usage.py
+  s_6ed4995a8d6b19::t_fc3dde6d7d7e30 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile.py
+  s_6ed4995a8d6b19::t_1a077ef61fb232 1-29
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_access_type.py
+  s_6ed4995a8d6b19::t_757cc72f3c053f 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_cyber_program.py
+  s_6ed4995a8d6b19::t_980605c0e2bb86 1-15
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_cyber_requirements.py
+  s_6ed4995a8d6b19::t_3a39746508a63e 1-10
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_cyber_tier.py
+  s_6ed4995a8d6b19::t_e44dac67f97568 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_efs_feature.py
+  s_6ed4995a8d6b19::t_6dc72d60cb9b52 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_efs_program.py
+  s_6ed4995a8d6b19::t_3b7bef9cad9f57 1-13
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_enforcement_action.py
+  s_6ed4995a8d6b19::t_1a02614ceb3be7 1-8
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_enforcement_action_ban.py
+  s_6ed4995a8d6b19::t_80cfa0bd80c419 1-19
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_enforcement_action_next_step.py
+  s_6ed4995a8d6b19::t_1dc6734946cdad 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_enforcement_action_reason.py
+  s_6ed4995a8d6b19::t_a26a04c23780a4 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_enforcement_action_restriction.py
+  s_6ed4995a8d6b19::t_29d4bffadf4e6f 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_enforcement_status.py
+  s_6ed4995a8d6b19::t_7b0066eef1029e 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_external_user_account_status.py
+  s_6ed4995a8d6b19::t_fb249c07786297 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_external_user_details.py
+  s_6ed4995a8d6b19::t_a80a7136475cb9 1-20
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_external_user_entity_type.py
+  s_6ed4995a8d6b19::t_2f281e70c7039d 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_program_status.py
+  s_6ed4995a8d6b19::t_a56c39386d2c21 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profile_programs.py
+  s_6ed4995a8d6b19::t_e699106586b255 1-14
+tests/benchmarks/corpus/anthropic/anthropic/types/user_profiles/user_profile_action_url.py
+  s_6ed4995a8d6b19::t_43bc0d4fc02b86 1-11
+tests/benchmarks/corpus/anthropic/anthropic/types/web_fetch_block.py
+  s_6ed4995a8d6b19::t_9e7ec385d85d45 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/web_fetch_tool_result_block.py
+  s_6ed4995a8d6b19::t_9b4476707b6db4 1-18
+tests/benchmarks/corpus/anthropic/anthropic/types/web_fetch_tool_result_error_block.py
+  s_6ed4995a8d6b19::t_236c41d43b2e97 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/web_fetch_tool_result_error_code.py
+  s_6ed4995a8d6b19::t_70ae4c7a66bb55 1-4
+tests/benchmarks/corpus/anthropic/anthropic/types/web_search_result_block.py
+  s_6ed4995a8d6b19::t_a27fc78011aa18 1-12
+tests/benchmarks/corpus/anthropic/anthropic/types/web_search_tool_result_block.py
+  s_6ed4995a8d6b19::t_fd1fc76bef889a 1-16
+tests/benchmarks/corpus/anthropic/anthropic/types/web_search_tool_result_block_content.py
+  s_6ed4995a8d6b19::t_22fb8b85702eed 1-7
+tests/benchmarks/corpus/anthropic/anthropic/types/web_search_tool_result_error.py
+  s_6ed4995a8d6b19::t_97ce9495915160 1-9
+tests/benchmarks/corpus/anthropic/anthropic/types/web_search_tool_result_error_code.py
+  s_6ed4995a8d6b19::t_65e713d1baace2 1-4
+tests/benchmarks/corpus/anthropic/httpx2/__init__.py
+  s_6ed4995a8d6b19::t_feb2bea383fdf7 1-3
+tests/benchmarks/corpus/anthropic/httpx2/_config.py
+  s_6ed4995a8d6b19::t_87799aae685ddf 1-52
+tests/benchmarks/corpus/anthropic/httpx2/_types.py
+  s_6ed4995a8d6b19::t_0bf2717ddedbcf 1-3
+tests/benchmarks/corpus/anthropic/manifest.json
+  s_6ed4995a8d6b19::t_8c11464848c6aa 1-5964
+tests/benchmarks/test_sdk_model_corpus.py
+  s_6ed4995a8d6b19::t_a2121b993c8469 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a08eb4379774f8d75888e74c76b5f3a6597401c2",
+  "prompts": {},
+  "sessions": {
+    "s_6ed4995a8d6b19": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18801-c79f-7032-94e0-36fcbd7d8b74",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
