@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError, core_schema
+from pydantic_core import ModelFieldsSet, SchemaValidator, ValidationError, core_schema
 
 # each side has to run in its own process, because the path is chosen once per process
 pytestmark = pytest.mark.skipif(sys.platform == 'emscripten', reason='no subprocesses on emscripten')
@@ -485,3 +485,17 @@ def test_streamed_containers_share_json_depth_budget(kind: str, depth: int, empt
         with pytest.raises(ValidationError) as streamed:
             validator.validate_json(document)
         assert streamed.value.errors(include_url=False) == ordinary.value.errors(include_url=False)
+
+
+@pytest.mark.parametrize('width', [0, 1, 65])
+def test_streamed_model_uses_model_fields_set(width: int) -> None:
+    fields = {f'x{i}': INT for i in range(width)}
+    validator = SchemaValidator(_model('FieldsSet', fields))
+    assert validator._stream_plan_accepted
+    document = json.dumps({name: index for index, name in enumerate(fields)})
+    streamed = validator.validate_json(document)
+    ordinary = validator.validate_json(document, by_name=True)
+    assert type(streamed.__pydantic_fields_set__) is ModelFieldsSet
+    assert streamed.__pydantic_fields_set__ == set(fields)
+    assert streamed.__pydantic_fields_set__ == ordinary.__pydantic_fields_set__
+    assert streamed.__dict__ == ordinary.__dict__
