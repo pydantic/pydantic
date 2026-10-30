@@ -114,25 +114,30 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_cache import (
-    _NOT_PURE as _NOT_PURE,
+    MAX_KEY_VALUE_SIZE,
+    encode_metadata_item,
+    is_cacheable_default,
 )
 from ._schema_cache import (
-    _PURE_ANNOTATION_CACHE_SIZE as _PURE_ANNOTATION_CACHE_SIZE,
+    NOT_PURE as _NOT_PURE,
 )
 from ._schema_cache import (
-    _PURE_ANNOTATION_MAX_LITERAL_BYTES as _PURE_ANNOTATION_MAX_LITERAL_BYTES,
+    copy_pure_schema as _copy_pure_schema,
 )
 from ._schema_cache import (
-    _copy_pure_schema as _copy_pure_schema,
+    model_field_schema_cache as _model_field_schema_cache,
 )
 from ._schema_cache import (
-    _normalize_tuple_args as _normalize_tuple_args,
+    normalize_tuple_args as _normalize_tuple_args,
 )
 from ._schema_cache import (
-    _pure_annotation_cache_key as _pure_annotation_cache_key,
+    pure_annotation_cache_key as _pure_annotation_cache_key,
 )
 from ._schema_cache import (
-    _pure_annotation_schema_cache as _pure_annotation_schema_cache,
+    pure_annotation_schema_cache as _pure_annotation_schema_cache,
+)
+from ._schema_cache import (
+    store as _store_in_cache,
 )
 from ._schema_gather import MissingDefinitionError, gather_schemas_for_cleaning
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
@@ -1342,8 +1347,14 @@ class GenerateSchema:
         decorators: DecoratorInfos,
     ) -> core_schema.ModelField:
         """Prepare a ModelField to represent a model field."""
+        cache_key = self._field_schema_cache_key(field_info, decorators)
+        if cache_key is not None:
+            cached = _model_field_schema_cache.get(cache_key)
+            if cached is not None:
+                return _copy_pure_schema(cached)
+
         schema, metadata = self._common_field_schema(name, field_info, decorators)
-        return core_schema.model_field(
+        field_schema = core_schema.model_field(
             schema,
             serialization_exclude=field_info.exclude,
             validation_alias=_convert_to_aliases(field_info.validation_alias),
@@ -1351,6 +1362,100 @@ class GenerateSchema:
             serialization_exclude_if=field_info.exclude_if,
             frozen=field_info.frozen,
             metadata=metadata,
+        )
+        if cache_key is not None:
+            # Store a pristine copy, as the returned schema may be mutated downstream:
+            _store_in_cache(_model_field_schema_cache, cache_key, _copy_pure_schema(field_schema))
+        return field_schema
+
+    def _field_schema_cache_key(self, field_info: FieldInfo, decorators: DecoratorInfos) -> Any | None:
+        """Return a cache key for the complete `model-field` schema node, or `None` if not cacheable.
+
+        The complete node for a field is cacheable when everything that can influence it is captured
+        by the key: the (pure) annotation, encodable metadata, string aliases, title, description,
+        the `frozen` flag and an immutable default value. Additionally:
+
+        - no decorator (field/V1-style validator, field serializer) must apply to any field,
+        - no other `FieldInfo` attribute feeding the node may be set — checked on the attributes
+          themselves (and not e.g. on `FieldInfo._attributes_set`), as they can also be set by
+          title/alias generators or by users mutating `model_fields` entries before a rebuild
+          (attributes participating in the key are safe regardless of how they were set, as any
+          difference in their values produces a different key),
+        - the configuration must not set `json_encoders` (which alter the generated schema).
+        """
+        if (
+            decorators.field_validators
+            or decorators.validators
+            or decorators.field_serializers
+            or field_info._qualifiers
+        ):
+            return None
+        if not (
+            field_info.default_factory is None
+            and field_info.validate_default is None
+            and field_info.discriminator is None
+            and field_info.exclude is None
+            and field_info.exclude_if is None
+            and field_info.examples is None
+            and field_info.deprecated is None
+            and field_info.json_schema_extra is None
+            and field_info.field_title_generator is None
+        ):
+            return None
+        alias = field_info.alias
+        validation_alias = field_info.validation_alias
+        serialization_alias = field_info.serialization_alias
+        title = field_info.title
+        description = field_info.description
+        frozen = field_info.frozen
+        # The string values below go into the cache key as they are, so an unbounded one would
+        # be retained until the cache resets - and being unique to its field, it would never
+        # have been reused anyway. The length test rides along with the type test that was
+        # already here, so it costs nothing for the usual `None`:
+        _limit = MAX_KEY_VALUE_SIZE
+        if not (
+            (alias is None or (type(alias) is str and len(alias) <= _limit))
+            and (validation_alias is None or (type(validation_alias) is str and len(validation_alias) <= _limit))
+            and (
+                serialization_alias is None or (type(serialization_alias) is str and len(serialization_alias) <= _limit)
+            )
+            and (title is None or (type(title) is str and len(title) <= _limit))
+            and (description is None or (type(description) is str and len(description) <= _limit))
+            and (frozen is None or frozen is False or frozen is True)
+        ):
+            return None
+        default = field_info.default
+        if default is not PydanticUndefined and not is_cacheable_default(default):
+            return None
+        if self._config_wrapper.config_dict.get('json_encoders'):
+            return None
+        if field_info.metadata:
+            metadata_keys: list[Any] = []
+            for item in field_info.metadata:
+                item_key = encode_metadata_item(item)
+                if item_key is None:
+                    return None
+                metadata_keys.append(item_key)
+            metadata_key = tuple(metadata_keys)
+        else:
+            metadata_key = ()
+        try:
+            annotation_key = _pure_annotation_cache_key(field_info.annotation)
+        except TypeError:  # unhashable annotation (or part of it)
+            return None
+        if annotation_key is _NOT_PURE:
+            return None
+        return (
+            annotation_key,
+            metadata_key,
+            alias,
+            validation_alias,
+            serialization_alias,
+            title,
+            description,
+            frozen,
+            type(default),
+            default,
         )
 
     def _generate_dc_field_schema(
@@ -2443,13 +2548,8 @@ class GenerateSchema:
             if schema.get('ref') is not None:
                 schema = self.defs.create_definition_reference_schema(schema)
             if cache_key is not _NOT_PURE:
-                if len(_pure_annotation_schema_cache) >= _PURE_ANNOTATION_CACHE_SIZE:
-                    # Keep the cache bounded (see `_PURE_ANNOTATION_CACHE_SIZE`). Clearing it wholesale
-                    # (rather than evicting individual entries) keeps this a single atomic `dict`
-                    # operation, so no locking is required on free-threaded builds:
-                    _pure_annotation_schema_cache.clear()
                 # Store a pristine copy, as the returned schema may be mutated downstream:
-                _pure_annotation_schema_cache[cache_key] = _copy_pure_schema(schema)
+                _store_in_cache(_pure_annotation_schema_cache, cache_key, _copy_pure_schema(schema))
                 return schema
 
             return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
