@@ -271,3 +271,33 @@ def test_annotation_with_failing_hash_falls_back_to_evaluation(error: type[Excep
     value = Arbitrary()
     assert Model(value=value).value is value
     assert Model.model_fields['value'].annotation is Arbitrary
+
+
+@pytest.mark.thread_unsafe
+def test_legacy_validators_added_and_removed_after_caching(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Before(BaseModel):
+        value: UUID
+
+    value = UUID(int=0)
+    assert Before(value=value).value == value
+
+    def validate(value: Any, info: core_schema.ValidationInfo) -> str:
+        return 'hooked'
+
+    def validators(cls: type[UUID]) -> Any:
+        yield validate
+
+    with monkeypatch.context() as patch:
+        patch.setattr(UUID, '__get_validators__', classmethod(validators), raising=False)
+        assert _schema_cache._verified_leaf_class_key(UUID) is _schema_cache.NOT_PURE
+        with pytest.warns(DeprecationWarning, match='__get_validators__'):
+
+            class During(BaseModel):
+                value: UUID
+
+        assert During(value=value).value == 'hooked'
+
+    class After(BaseModel):
+        value: UUID
+
+    assert After(value=value).value == value

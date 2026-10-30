@@ -330,6 +330,7 @@ def _verified_leaf_class_key(tp: Any) -> Any:
         _normalize_hook(getattr(tp, '__get_pydantic_core_schema__', None)) is not core_hook
         or _normalize_hook(getattr(tp, '__get_pydantic_json_schema__', None)) is not json_hook
         or _normalize_hook(getattr(tp, '__modify_schema__', None)) is not modify_hook
+        or getattr(tp, '__get_validators__', None) is not None
     ):
         return NOT_PURE
     if core_hook is None:
