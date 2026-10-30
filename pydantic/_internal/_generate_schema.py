@@ -148,13 +148,13 @@ def _is_simple_schema_type(obj: Any) -> bool:
     """Recognize exact builtin scalars that cannot define custom schema hooks."""
     return (
         obj is str
-        or obj is bytes
         or obj is int
-        or obj is float
         or obj is bool
-        or obj is complex
-        or obj is None
+        or obj is float
+        or obj is bytes
         or obj is NoneType
+        or obj is None
+        or obj is complex
     )
 
 
