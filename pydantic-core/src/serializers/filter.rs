@@ -36,10 +36,39 @@ fn map_negative_index<'py>(value: &Bound<'py, PyAny>, len: Option<usize>) -> PyR
     }
 }
 
+fn has_negative_indices(include_or_exclude: &Bound<'_, PyAny>) -> bool {
+    if let Ok(dict) = include_or_exclude.cast::<PyDict>() {
+        for (k, _) in dict.iter() {
+            if let Ok(i) = k.extract::<isize>() {
+                if i < 0 {
+                    return true;
+                }
+            }
+        }
+        false
+    } else if let Ok(set) = include_or_exclude.cast::<PySet>() {
+        for v in set.iter() {
+            if let Ok(i) = v.extract::<isize>() {
+                if i < 0 {
+                    return true;
+                }
+            }
+        }
+        false
+    } else {
+        false
+    }
+}
+
 fn map_negative_indices<'py>(
     include_or_exclude: &Bound<'py, PyAny>,
     len: Option<usize>,
 ) -> PyResult<Bound<'py, PyAny>> {
+    // Fast path: if there are no negative indices, avoid cloning/rebuilding PyDict or PySet per element
+    if !has_negative_indices(include_or_exclude) {
+        return Ok(include_or_exclude.clone());
+    }
+
     let py = include_or_exclude.py();
     if let Ok(exclude_dict) = include_or_exclude.cast::<PyDict>() {
         let out = PyDict::new(py);
