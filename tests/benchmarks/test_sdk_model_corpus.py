@@ -14,7 +14,11 @@ from .model_corpus import CorpusImporter
 
 # Import isolation changes process-wide module state.
 pytestmark = pytest.mark.thread_unsafe
-LIBRARIES = ['openai', 'anthropic']
+LIBRARIES = [
+    'openai',
+    'anthropic',
+    pytest.param('google-genai', marks=pytest.mark.skipif(sys.version_info < (3, 11), reason='Requires Python 3.11+')),
+]
 
 
 @pytest.fixture(scope='module', params=LIBRARIES)
