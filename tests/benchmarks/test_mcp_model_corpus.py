@@ -7,7 +7,7 @@ from types import ModuleType
 
 from pydantic import BaseModel
 
-SOURCE = Path(__file__).parent / 'corpus' / 'mcp' / 'models.py.txt'
+SOURCE = Path(__file__).parent / 'corpus' / 'mcp' / 'mcp_types' / '_types.py'
 CODE = compile(SOURCE.read_text(), str(SOURCE), 'exec')
 
 
