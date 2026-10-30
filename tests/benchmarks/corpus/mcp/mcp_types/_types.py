@@ -1,10 +1,10 @@
-# Frozen from mcp-types 2.3.0, mcp_types/_types.py. See README.md and LICENSE.
+# Frozen from MCP 2.3.0; see corpus README.md and LICENSE.
 from __future__ import annotations
 from typing import Annotated, Any, ClassVar, Final, Generic, Literal, TypeAlias, TypeVar, get_args
 from pydantic import BaseModel, ConfigDict, Field, FileUrl, TypeAdapter, model_validator
 from pydantic.alias_generators import to_camel
 from typing_extensions import NotRequired, Self, TypedDict
-RequestId = Annotated[int, Field(strict=True)] | str
+from mcp_types.jsonrpc import RequestId
 DEFAULT_NEGOTIATED_VERSION: Final[str] = '2025-03-26'
 ProgressToken = str | int
 Role = Literal['user', 'assistant']
@@ -469,10 +469,6 @@ class SamplingMessage(MCPModel):
     content: SamplingMessageContentBlock | list[SamplingMessageContentBlock]
     meta: Meta | None = Field(alias='_meta', default=None)
 
-    @property
-    def content_as_list(self) -> list[SamplingMessageContentBlock]:
-        return self.content if isinstance(self.content, list) else [self.content]
-
 class EmbeddedResource(MCPModel):
     type: Literal['resource'] = 'resource'
     resource: TextResourceContents | BlobResourceContents
@@ -598,10 +594,6 @@ class CreateMessageResultWithTools(Result):
     model: str
     stop_reason: StopReason | None = None
 
-    @property
-    def content_as_list(self) -> list[SamplingMessageContentBlock]:
-        return self.content if isinstance(self.content, list) else [self.content]
-
 class ResourceTemplateReference(MCPModel):
     type: Literal['ref/resource'] = 'ref/resource'
     uri: str
@@ -707,10 +699,6 @@ class InputRequiredResult(Result):
         if not self.input_requests and self.request_state is None:
             raise ValueError('InputRequiredResult requires at least one of input_requests or request_state')
         return self
-InputResponseRequestParams.model_rebuild()
-ReadResourceRequestParams.model_rebuild()
-GetPromptRequestParams.model_rebuild()
-CallToolRequestParams.model_rebuild()
 ClientRequest = PingRequest | InitializeRequest | CompleteRequest | SetLevelRequest | GetPromptRequest | ListPromptsRequest | ListResourcesRequest | ListResourceTemplatesRequest | ReadResourceRequest | SubscribeRequest | UnsubscribeRequest | CallToolRequest | ListToolsRequest | DiscoverRequest | SubscriptionsListenRequest
 client_request_adapter = TypeAdapter[ClientRequest](ClientRequest)
 ClientNotification = CancelledNotification | ProgressNotification | InitializedNotification | RootsListChangedNotification

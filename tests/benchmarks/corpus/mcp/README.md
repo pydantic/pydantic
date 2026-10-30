@@ -1,22 +1,34 @@
 # MCP model corpus
 
-Frozen from `mcp-types==2.3.0`, `mcp_types/_types.py`, the protocol version-superset
-models. This is a model-building workload, not an SDK import benchmark.
+Frozen from `mcp==2.3.0` and `mcp-types==2.3.0`. The corpus covers all 518
+module-level Pydantic model declarations in both distributions, including client,
+server, authentication, JSON-RPC, version-superset protocol models and both
+version-specific wire-model packages. Their exported generic specializations
+bring the complete runtime inventory to 553 models across 29 model modules.
 
-The source retains model classes, inheritance, annotations, defaults, validators,
-aliases, configuration, and the six protocol union TypeAdapters. Comments and
-standalone docstrings are removed. The sole SDK import, `RequestId`, is inlined
-verbatim from `mcp_types/jsonrpc.py`. No MCP installation is needed.
+Original package names and relative Python file paths are preserved under `mcp/`
+and `mcp_types/`. Supporting definitions live at their original paths too; parent
+packages without model dependencies have empty initializers. No MCP installation,
+HTTP client, async framework, or web framework is needed.
 
-Upstream source SHA-256: `0d07007bf5052c5fe123d6f12addae8fdcd4eabfd2b3a2fd639c3a47675b7d98`.
-The upstream MIT license is reproduced in LICENSE.
+Model fields, defaults, inheritance, configuration, validators, serializers,
+computed fields, custom initialization and schema hooks are retained. Unrelated
+SDK execution methods, documentation and imports are removed. Supporting types
+retain the declarations and schema hooks needed to build these models; this is
+not a runnable copy of the SDK. The RequestId alias is imported from its original
+`mcp_types/jsonrpc.py` file rather than inlined.
 
-The benchmark compiles the frozen source before measurement, then executes it in
-a fresh registered module namespace and completes every exposed model schema.
-Pydantic is already imported. Interpreter startup, source parsing/compilation,
-SDK imports, and subprocess overhead are excluded. New classes prevent reuse of
-the preceding run's model schemas and generic specializations; process-wide
-Pydantic caches can still be warm. This is not cold-interpreter startup.
+`manifest.json` records upstream distribution versions, SHA-256 hashes for every
+extracted source file, the full model inventory keyed by original module and
+class name, and each module's model declarations. The upstream MIT license is
+reproduced in LICENSE. Update the snapshot and manifest together: a dependency
+update is an explicit benchmark workload change.
 
-Keep this snapshot stable when comparing Pydantic versions. Updates are explicit
-workload changes and should record their upstream version and source hash.
+Before measurement, sources are compiled and Pydantic is imported. Each measured
+invocation imports the corpus through an in-memory importer under its original
+module names and completes every discovered schema. Sources never fall back to
+an installed MCP package. Existing MCP modules are restored afterward, including
+on failure. Every run creates a fresh module tree and model graph, while
+process-wide Pydantic caches may be warm. Source compilation, disk imports,
+interpreter startup and subprocess overhead are excluded. This is a model-building
+benchmark, not cold-interpreter or SDK startup.
