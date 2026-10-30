@@ -101,8 +101,6 @@ DECORATOR_FULLNAMES = {
     'pydantic.functional_validators.model_validator',
     'pydantic.functional_serializers.serializer',
     'pydantic.functional_serializers.model_serializer',
-    'pydantic.deprecated.class_validators.validator',
-    'pydantic.deprecated.class_validators.root_validator',
 }
 IMPLICIT_CLASSMETHOD_DECORATOR_FULLNAMES = DECORATOR_FULLNAMES - {'pydantic.functional_serializers.model_serializer'}
 
@@ -570,11 +568,11 @@ class PydanticModelTransformer:
         return True
 
     def adjust_decorator_signatures(self) -> None:
-        """When we decorate a function `f` with `pydantic.validator(...)`, `pydantic.field_validator`
+        """When we decorate a function `f` with `pydantic.field_validator(...)`
         or `pydantic.serializer(...)`, mypy sees `f` as a regular method taking a `self` instance,
         even though pydantic internally wraps `f` with `classmethod` if necessary.
 
-        Teach mypy this by marking any function whose outermost decorator is a `validator()`,
+        Teach mypy this by marking any function whose outermost decorator is a
         `field_validator()` or `serializer()` call as a `classmethod`.
         """
         for sym in self._cls.info.names.values():

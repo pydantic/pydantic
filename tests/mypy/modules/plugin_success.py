@@ -3,7 +3,7 @@ from typing import Any, ClassVar, Generic, Optional, TypeVar, Union
 
 from typing_extensions import Self
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel, create_model, field_validator, model_validator, validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, create_model, field_validator, model_validator
 from pydantic.dataclasses import dataclass
 
 
@@ -272,7 +272,7 @@ MyDataClass(foo='foo', bar='bar')
 
 
 def get_my_custom_validator(field_name: str) -> Any:
-    @validator(field_name, allow_reuse=True)
+    @field_validator(field_name)
     def my_custom_validator(cls: Any, v: int) -> int:
         return v
 

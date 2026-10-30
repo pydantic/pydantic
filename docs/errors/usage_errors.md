@@ -785,16 +785,6 @@ Documenting the JSON Schema input type is only possible for validators where the
 value can be anything. That is why it isn't available for `after` validators, where
 the value is first validated against the type annotation.
 
-## Root validator, `pre`, `skip_on_failure` {#root-validator-pre-skip}
-
-If you use `@root_validator` with `pre=False` (the default) you MUST specify `skip_on_failure=True`.
-The `skip_on_failure=False` option is no longer available.
-
-If you were not trying to set `skip_on_failure=False`, you can safely set `skip_on_failure=True`.
-If you do, this root validator will no longer be called if validation fails for any of the fields.
-
-Please see the [Migration Guide](../migration.md) for more details.
-
 ## `model_serializer` instance methods {#model-serializer-instance-method}
 
 `@model_serializer` must be applied to instance methods.
@@ -834,40 +824,6 @@ try:
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'model-serializer-instance-method'
-```
-
-## `validator`, `field`, `config`, and `info` {#validator-field-config-info}
-
-The `field` and `config` parameters are not available in Pydantic V2.
-Please use the `info` parameter instead.
-
-You can access the configuration via `info.config`,
-but it is a dictionary instead of an object like it was in Pydantic V1.
-
-The `field` argument is no longer available.
-
-## Pydantic V1 validator signature {#validator-v1-signature}
-
-This error is raised when you use an unsupported signature for Pydantic V1-style validator.
-
-```python
-import warnings
-
-from pydantic import BaseModel, PydanticUserError, validator
-
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-
-try:
-
-    class Model(BaseModel):
-        a: int
-
-        @validator('a')
-        def check_a(cls, value, foo):
-            return value
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'validator-v1-signature'
 ```
 
 ## Unrecognized `field_validator` signature {#validator-signature}

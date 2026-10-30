@@ -65,7 +65,6 @@ if TYPE_CHECKING:
 
     MISSING = pydantic_core.MISSING
     ValidationError = pydantic_core.ValidationError
-    from .deprecated.class_validators import root_validator, validator
     from .deprecated.config import BaseConfig, Extra
     from .deprecated.tools import *
     from .root_model import RootModel
@@ -87,9 +86,6 @@ __all__ = (
     'ModelWrapValidatorHandler',
     # JSON Schema
     'WithJsonSchema',
-    # deprecated V1 functional validators, these are imported via `__getattr__` below
-    'root_validator',
-    'validator',
     # functional serializers
     'field_serializer',
     'model_serializer',
@@ -411,8 +407,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'FieldSerializationInfo': ('pydantic_core', '.core_schema'),
     'SerializerFunctionWrapHandler': ('pydantic_core', '.core_schema'),
     # deprecated, mostly not included in __all__
-    'root_validator': (__spec__.parent, '.deprecated.class_validators'),
-    'validator': (__spec__.parent, '.deprecated.class_validators'),
     'BaseConfig': (__spec__.parent, '.deprecated.config'),
     'Extra': (__spec__.parent, '.deprecated.config'),
     'parse_obj_as': (__spec__.parent, '.deprecated.tools'),

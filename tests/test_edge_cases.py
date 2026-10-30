@@ -36,7 +36,6 @@ from pydantic import (
     ConfigDict,
     GetCoreSchemaHandler,
     PrivateAttr,
-    PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
     PydanticUndefinedAnnotation,
     PydanticUserError,
@@ -48,8 +47,6 @@ from pydantic import (
     errors,
     field_validator,
     model_validator,
-    root_validator,
-    validator,
 )
 from pydantic._internal._model_construction import ModelMetaclass
 from pydantic._internal._typing_extra import safe_get_annotations
@@ -2489,22 +2486,6 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         def my_model_validator(cls, values, handler, info):
             raise NotImplementedError
 
-        with pytest.warns(PydanticDeprecatedSince20):
-
-            @root_validator(skip_on_failure=True)
-            @classmethod
-            @abstractmethod
-            def my_root_validator(cls, values):
-                raise NotImplementedError
-
-        with pytest.warns(PydanticDeprecatedSince20):
-
-            @validator('side')
-            @classmethod
-            @abstractmethod
-            def my_validator(cls, value, **kwargs):
-                raise NotImplementedError
-
         @model_serializer(mode='wrap')
         @abstractmethod
         def my_model_serializer(self, handler, info):
@@ -2532,9 +2513,7 @@ def test_abstractmethod_missing_for_all_decorators(bases):
             " 'my_field_validator',"
             " 'my_model_serializer',"
             " 'my_model_validator',"
-            " 'my_root_validator',"
-            " 'my_serializer',"
-            " 'my_validator'"
+            " 'my_serializer'"
         ),
     ):
         Square(side=1.0)

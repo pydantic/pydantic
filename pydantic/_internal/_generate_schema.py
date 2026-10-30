@@ -81,10 +81,7 @@ from ..warnings import (
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _type_refs, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadata, update_core_metadata
-from ._core_utils import (
-    get_ref,
-    is_list_like_schema_with_items_schema,
-)
+from ._core_utils import get_ref
 from ._decorators import (
     Decorator,
     DecoratorInfos,
@@ -92,8 +89,6 @@ from ._decorators import (
     FieldValidatorDecoratorInfo,
     ModelSerializerDecoratorInfo,
     ModelValidatorDecoratorInfo,
-    RootValidatorDecoratorInfo,
-    ValidatorDecoratorInfo,
     get_attribute_from_bases,
     inspect_field_serializer,
     inspect_model_serializer,
@@ -129,11 +124,9 @@ if sys.version_info >= (3, 15):
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
 
-FieldDecoratorInfo: TypeAlias = ValidatorDecoratorInfo | FieldValidatorDecoratorInfo | FieldSerializerDecoratorInfo
+FieldDecoratorInfo: TypeAlias = FieldValidatorDecoratorInfo | FieldSerializerDecoratorInfo
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
-AnyFieldDecorator = (
-    Decorator[ValidatorDecoratorInfo] | Decorator[FieldValidatorDecoratorInfo] | Decorator[FieldSerializerDecoratorInfo]
-)
+AnyFieldDecorator = Decorator[FieldValidatorDecoratorInfo] | Decorator[FieldSerializerDecoratorInfo]
 
 ModifyCoreSchemaWrapHandler: TypeAlias = GetCoreSchemaHandler
 GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
@@ -219,44 +212,6 @@ def filter_field_decorator_info_by_field(
     validator_functions: Iterable[Decorator[FieldDecoratorInfoType]], field: str
 ) -> list[Decorator[FieldDecoratorInfoType]]:
     return [dec for dec in validator_functions if check_validator_fields_against_field_name(dec.info, field)]
-
-
-def apply_each_item_validators(
-    schema: core_schema.CoreSchema,
-    each_item_validators: list[Decorator[ValidatorDecoratorInfo]],
-) -> core_schema.CoreSchema:
-    # This V1 compatibility shim should eventually be removed
-
-    # fail early if each_item_validators is empty
-    if not each_item_validators:
-        return schema
-
-    # push down any `each_item=True` validators
-    # note that this won't work for any Annotated types that get wrapped by a function validator
-    # but that's okay because that didn't exist in V1
-    if schema['type'] == 'nullable':
-        schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators)
-        return schema
-    elif schema['type'] == 'missing-sentinel' and 'schema' in schema:
-        schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators)
-        return schema
-    elif schema['type'] == 'tuple':
-        if (variadic_item_index := schema.get('variadic_item_index')) is not None:
-            schema['items_schema'][variadic_item_index] = apply_validators(
-                schema['items_schema'][variadic_item_index],
-                each_item_validators,
-            )
-    elif is_list_like_schema_with_items_schema(schema):
-        inner_schema = schema.get('items_schema', core_schema.any_schema())
-        schema['items_schema'] = apply_validators(inner_schema, each_item_validators)
-    elif schema['type'] == 'dict':
-        inner_schema = schema.get('values_schema', core_schema.any_schema())
-        schema['values_schema'] = apply_validators(inner_schema, each_item_validators)
-    else:
-        raise TypeError(
-            f'`@validator(..., each_item=True)` cannot be applied to fields with a schema of {schema["type"]}'
-        )
-    return schema
 
 
 def _extract_json_schema_info_from_field_info(
@@ -810,7 +765,6 @@ class GenerateSchema:
                 If it is not possible to generate pydantic-core schema.
             TypeError:
                 - If `alias_generator` returns a disallowed type (must be str, AliasPath or AliasChoices).
-                - If V1 style validator with `each_item=True` applied on a wrong field.
             PydanticUserError:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
                 - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
@@ -891,12 +845,11 @@ class GenerateSchema:
 
                 decorators = cls.__pydantic_decorators__
                 computed_fields = decorators.computed_fields
-                if decorators.field_validators or decorators.field_serializers or decorators.validators:
+                if decorators.field_validators or decorators.field_serializers:
                     check_decorator_fields_exist(
                         chain(
                             decorators.field_validators.values(),
                             decorators.field_serializers.values(),
-                            decorators.validators.values(),
                         ),
                         {*fields.keys(), *computed_fields.keys()},
                     )
@@ -959,8 +912,7 @@ class GenerateSchema:
                         extras_keys_schema=extras_keys_schema,
                         model_name=cls.__name__,
                     )
-                    inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
-                    inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
+                    inner_schema = apply_model_validators(fields_schema, model_validators, 'inner')
 
                     model_schema = core_schema.model_schema(
                         cls,
@@ -1321,20 +1273,6 @@ class GenerateSchema:
                     source_type,
                     annotations + validators_from_decorators,
                 )
-
-        if decorators.validators:
-            # This V1 compatibility shim should eventually be removed
-            # push down any `each_item=True` validators
-            # note that this won't work for any Annotated types that get wrapped by a function validator
-            # but that's okay because that didn't exist in V1
-            this_field_validators = filter_field_decorator_info_by_field(decorators.validators.values(), name)
-            if _validators_require_validate_default(this_field_validators):
-                field_info.validate_default = True
-            each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
-            this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
-            schema = apply_each_item_validators(schema, each_item_validators)
-
-            schema = apply_validators(schema, this_field_validators)
 
         # the default validator needs to go outside of any other validators
         # so that it is the topmost validator for the field validator
@@ -1997,10 +1935,8 @@ class GenerateSchema:
                     collect_init_only=has_post_init,
                 )
 
-                inner_schema = apply_validators(args_schema, decorators.root_validators.values())
-
                 model_validators = decorators.model_validators.values()
-                inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
+                inner_schema = apply_model_validators(args_schema, model_validators, 'inner')
 
                 core_config = self._config_wrapper.core_config(title=dataclass.__name__)
 
@@ -2577,64 +2513,6 @@ class GenerateSchema:
         if ref:
             schema['ref'] = ref  # type: ignore
         return schema
-
-
-_VALIDATOR_F_MATCH: Mapping[
-    tuple[FieldValidatorModes, Literal['no-info', 'with-info']],
-    Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema],
-] = {
-    ('before', 'no-info'): lambda f, schema: core_schema.no_info_before_validator_function(f, schema),
-    ('after', 'no-info'): lambda f, schema: core_schema.no_info_after_validator_function(f, schema),
-    ('plain', 'no-info'): lambda f, _: core_schema.no_info_plain_validator_function(f),
-    ('wrap', 'no-info'): lambda f, schema: core_schema.no_info_wrap_validator_function(f, schema),
-    ('before', 'with-info'): lambda f, schema: core_schema.with_info_before_validator_function(f, schema),
-    ('after', 'with-info'): lambda f, schema: core_schema.with_info_after_validator_function(f, schema),
-    ('plain', 'with-info'): lambda f, _: core_schema.with_info_plain_validator_function(f),
-    ('wrap', 'with-info'): lambda f, schema: core_schema.with_info_wrap_validator_function(f, schema),
-}
-
-
-# TODO V3: this function is only used for deprecated decorators. It should
-# be removed once we drop support for those.
-def apply_validators(
-    schema: core_schema.CoreSchema,
-    validators: Iterable[Decorator[RootValidatorDecoratorInfo]]
-    | Iterable[Decorator[ValidatorDecoratorInfo]]
-    | Iterable[Decorator[FieldValidatorDecoratorInfo]],
-) -> core_schema.CoreSchema:
-    """Apply validators to a schema.
-
-    Args:
-        schema: The schema to apply validators on.
-        validators: An iterable of validators.
-
-    Returns:
-        The updated schema.
-    """
-    for validator in validators:
-        # Actually, type could be 'field' or 'model', but this is only used for deprecated
-        # decorators, so let's not worry about it.
-        info_arg = inspect_validator(validator.func, mode=validator.info.mode, type='field')
-        val_type = 'with-info' if info_arg else 'no-info'
-
-        schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, schema)
-    return schema
-
-
-def _validators_require_validate_default(validators: Iterable[Decorator[ValidatorDecoratorInfo]]) -> bool:
-    """In v1, if any of the validators for a field had `always=True`, the default value would be validated.
-
-    This serves as an auxiliary function for re-implementing that logic, by looping over a provided
-    collection of (v1-style) ValidatorDecoratorInfo's and checking if any of them have `always=True`.
-
-    We should be able to drop this function and the associated logic calling it once we drop support
-    for v1-style validator decorators. (Or we can extend it and keep it if we add something equivalent
-    to the v1-validator `always` kwarg to `field_validator`.)
-    """
-    for validator in validators:
-        if validator.info.always:
-            return True
-    return False
 
 
 def _convert_to_aliases(
