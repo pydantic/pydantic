@@ -1306,6 +1306,24 @@ def test_bytesize_conversions(input_value, output, human_bin, human_dec, human_s
     assert m.size.human_readable(separator=' ') == human_sep
 
 
+def test_bytesize_human_readable_boundaries():
+    # Binary boundaries (fixes #14056)
+    assert ByteSize(1048575).human_readable() == '1.0MiB'
+    assert ByteSize(1048576).human_readable() == '1.0MiB'
+    assert ByteSize(1073741823).human_readable() == '1.0GiB'
+    assert ByteSize(1073741824).human_readable() == '1.0GiB'
+    assert ByteSize(-1048575).human_readable() == '-1.0MiB'
+    assert ByteSize(1048575).human_readable(separator=' ') == '1.0 MiB'
+
+    # Decimal boundaries (fixes #14056)
+    assert ByteSize(999_999).human_readable(decimal=True) == '1.0MB'
+    assert ByteSize(1_000_000).human_readable(decimal=True) == '1.0MB'
+    assert ByteSize(999_999_999).human_readable(decimal=True) == '1.0GB'
+    assert ByteSize(1_000_000_000).human_readable(decimal=True) == '1.0GB'
+    assert ByteSize(-999_999).human_readable(decimal=True) == '-1.0MB'
+    assert ByteSize(999_999).human_readable(decimal=True, separator=' ') == '1.0 MB'
+
+
 def test_bytesize_to():
     class Model(BaseModel):
         size: ByteSize
