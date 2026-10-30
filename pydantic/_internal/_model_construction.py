@@ -396,7 +396,7 @@ def inspect_namespace(
         A `ModelNamespaceInfo` instance.
 
     Raises:
-        PydanticUserError: If there is a `__root__` field in model, or if a private attribute name is invalid.
+        PydanticUserError: If a private attribute name is invalid.
     """
     from ..fields import ModelPrivateAttr
 
@@ -408,12 +408,6 @@ def inspect_namespace(
     ignored_names: set[str] = set()
     private_candidates: list[str] = []
     field_candidates: list[str] = []
-
-    if '__root__' in namespace:
-        # This only checks for assignment, `collect_model_fields()` will raise if only an annotated `__root__` is defined:
-        raise PydanticUserError(
-            "To define root models, use `pydantic.RootModel` rather than a field called '__root__'", code=None
-        )
 
     for var_name, value in namespace.items():
         if var_name == 'model_config' or var_name == '__pydantic_extra__':

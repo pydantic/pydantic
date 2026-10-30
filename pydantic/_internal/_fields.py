@@ -287,12 +287,6 @@ def collect_model_fields(  # noqa: C901
     private_attributes: dict[str, ModelPrivateAttr] = {}
 
     if namespace_info is not None:
-        if '__root__' in cls_annotations:
-            # This check also exists in `inspect_namespace()`, but for assignments only:
-            raise PydanticUserError(
-                "To define root models, use `pydantic.RootModel` rather than a field called '__root__'", code=None
-            )
-
         if 'model_config' in cls_annotations and not namespace_info.model_config_assigned:
             raise PydanticUserError(
                 '`model_config` cannot be used as a model field name. Use `model_config` for model configuration.',
