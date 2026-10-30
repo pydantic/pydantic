@@ -1376,10 +1376,10 @@ class GenerateSchema:
             if len(args) >= 2:
                 nullable = False
                 for arg in args:
-                    if arg is str or arg is bytes or arg is int or arg is float or arg is bool or arg is complex:
-                        continue
-                    elif arg is NoneType:
+                    if arg is NoneType:
                         nullable = True
+                    elif arg is str or arg is bool or arg is int or arg is float or arg is bytes or arg is complex:
+                        continue
                     else:
                         break
                 else:
