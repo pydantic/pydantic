@@ -83,13 +83,6 @@ dev = [
     'jsonschema',
     'time-machine; platform_python_implementation != "PyPy"',
 ]
-benchmark-startup = [
-    # Note: bumping deps here can change benchmarks results (see tests/benchmarks/library_startup/README.md):
-    'mcp==2.3.0',
-    'openai==3.41.0',
-    'anthropic==2.3.0',
-    'google-genai==2.34.0; python_version >= "3.11"',
-]
 coverage = [
     'coverage[toml]',
 ]
@@ -230,7 +223,7 @@ unconfirmed_label = 'pending'
 [tool.ruff]
 line-length = 120
 target-version = 'py310'
-extend-exclude = ['pydantic/v1', 'tests/mypy', 'tests/pydantic_core']
+extend-exclude = ['pydantic/v1', 'tests/mypy', 'tests/pydantic_core', 'tests/benchmarks/corpus']
 
 [tool.ruff.lint]
 select = [

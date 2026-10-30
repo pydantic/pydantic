@@ -291,7 +291,8 @@ impl NestedLookup {
         mut record_extra: impl FnMut(&'a str, &'a JsonValue<'j>),
     ) {
         let mut candidates = vec![None; self.paths.len()];
-        let mut visited = vec![0_u64; self.branch_count.div_ceil(64)];
+        let mut visited = SmallVec::<[u64; 1]>::new();
+        visited.resize(self.branch_count.div_ceil(64), 0);
         let mut stack = SmallVec::<[NestedFrame<'_, '_, '_>; 1]>::new();
 
         for (key, value) in &**object {
