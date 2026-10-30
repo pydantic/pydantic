@@ -993,7 +993,10 @@ impl ModelFieldsValidator {
     ) -> Result<Option<ValidatedModelFields<'py>>, StreamStop> {
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
-        LookupType::from_bools(validate_by_alias, validate_by_name)?;
+        if LookupType::from_bools(validate_by_alias, validate_by_name).is_err() {
+            // Let ordinary validation parse the whole document before reporting bad flags.
+            return Ok(None);
+        }
         // on the stack for all but the widest models: this is allocated once per object read,
         // and it was half of everything the streaming path allocated
         let mut slots: SmallVec<[Option<Taken<'py>>; SLOTS_ON_STACK]> = (0..self.fields.len()).map(|_| None).collect();

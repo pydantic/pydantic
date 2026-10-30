@@ -338,6 +338,22 @@ def test_streaming_matches_the_tree(case: str) -> None:
     assert tree['results'] == stream['results']
 
 
+def test_invalid_lookup_flags_preserve_json_error_precedence() -> None:
+    validator = SchemaValidator(
+        core_schema.model_schema(
+            _cls('BadLookupFlags'),
+            core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
+            config=core_schema.CoreConfig(validate_by_alias=False, validate_by_name=False),
+        )
+    )
+    assert validator._stream_plan_accepted
+
+    with pytest.raises(ValidationError, match='Invalid JSON: trailing characters'):
+        validator.validate_json('{"x": 1} trailing')
+    with pytest.raises(ValueError, match='cannot both be set to `False`'):
+        validator.validate_json('{"x": 1}')
+
+
 @pytest.mark.parametrize('hook', ['__del__', '__new__'])
 def test_model_object_hooks_decline_streaming(hook: str) -> None:
     calls: list[str] = []
