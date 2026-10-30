@@ -1,0 +1,20 @@
+tests/benchmarks/test_json_nested_models.py
+  s_629bbbd6524d1d::t_77284ef69f31f2 8,20-27
+  s_629bbbd6524d1d::t_3f9a6ca0aea1f0 28-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3fe08254e199208277382864408404b0c30ca8e5",
+  "prompts": {},
+  "sessions": {
+    "s_629bbbd6524d1d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1887c-b79d-7b33-a619-aba5fa98b8ff",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
