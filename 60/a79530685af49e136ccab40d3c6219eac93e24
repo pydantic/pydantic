@@ -1,0 +1,23 @@
+tests/benchmarks/corpus/mcp/LICENSE
+  s_6ed4995a8d6b19::t_3bc6a09822861e 1-21
+tests/benchmarks/corpus/mcp/README.md
+  s_6ed4995a8d6b19::t_7daf4b774f7e93 1-22
+tests/benchmarks/corpus/mcp/models.py.txt
+  s_6ed4995a8d6b19::t_9978d337786916 1-725
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "60a79530685af49e136ccab40d3c6219eac93e24",
+  "prompts": {},
+  "sessions": {
+    "s_6ed4995a8d6b19": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18801-c79f-7032-94e0-36fcbd7d8b74",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
