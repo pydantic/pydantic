@@ -96,11 +96,11 @@ git switch -c my-new-feature-branch
 ### Writing tests
 
 Pydantic currently has two separate test suites: the Pydantic test suite (located in `tests/`), and the `pydantic-core` test suite (located in `pydantic-core/tests`).
-`pydantic-core/tests` is symlinked under `tests/pydantic-core/`, so that a single `pytest` invocation can run all of them. For it to work, you may need to
+`pydantic-core/tests` is symlinked under `tests/pydantic_core/`, so that a single `pytest` invocation can run all of them. For it to work, you may need to
 enable the [`core.symlinks`](https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks) Git option.
 
 When adding new tests, prefer adding them in `tests`, using the Pydantic Python API. Most `pydantic-core` tests are using internal APIs (e.g. `SchemaValidator`).
-Make sure to look for the right place to add a test, read the existing test files first. Tests related to types must go in `test/test_types/`
+Make sure to look for the right place to add a test, read the existing test files first. Tests related to types must go in `tests/types/` (one file per type, e.g. `tests/types/test_uuid.py`)
 (create a file if it doesn't exist yet).
 
 When introcuding a test for a specific issue/feature request, mention the issue link as a docstring, e.g.:

@@ -1,7 +1,8 @@
 from __future__ import annotations as _annotations
 
 import typing
-from copy import deepcopy
+from collections.abc import MutableSet
+from copy import copy, deepcopy
 from enum import Enum
 from typing import Any
 
@@ -98,7 +99,7 @@ def _iter(
 def _copy_and_set_values(
     self: Model,
     values: dict[str, Any],
-    fields_set: set[str],
+    fields_set: MutableSet[str],
     extra: dict[str, Any] | None = None,
     private: dict[str, Any] | None = None,
     *,
@@ -207,7 +208,7 @@ def _calculate_keys(
 
     keys: typing.AbstractSet[str]
     if exclude_unset:
-        keys = self.__pydantic_fields_set__.copy()
+        keys = copy(self.__pydantic_fields_set__)
     else:
         keys = set(self.__dict__.keys())
         keys = keys | (self.__pydantic_extra__ or {}).keys()
