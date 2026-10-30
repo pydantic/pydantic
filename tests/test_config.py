@@ -1,4 +1,5 @@
 import copy
+import json
 import re
 import sys
 from collections.abc import Callable, Iterable
@@ -33,7 +34,7 @@ from pydantic.dataclasses import rebuild_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
-from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecatedSince211
+from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecatedSince211, PydanticDeprecationWarning
 
 from .conftest import CallCounter
 
@@ -538,6 +539,32 @@ def test_config_inheritance_with_annotations():
         model_config: ConfigDict = {'str_to_lower': True}
 
     assert Child.model_config == {'extra': 'allow', 'str_to_lower': True}
+
+
+def test_json_encoders_model() -> None:
+    with pytest.warns(PydanticDeprecationWarning):
+
+        class Model(BaseModel):
+            model_config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
+            value: Decimal
+            x: int
+
+    assert json.loads(Model(value=Decimal('1.1'), x=1).model_dump_json()) == {'value': '2.2', 'x': '3'}
+
+
+@pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecationWarning')
+def test_json_encoders_type_adapter() -> None:
+    config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
+
+    ta = TypeAdapter(int, config=config)
+    assert json.loads(ta.dump_json(1)) == '3'
+
+    ta = TypeAdapter(Decimal, config=config)
+    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
+
+    ta = TypeAdapter(Decimal | int, config=config)
+    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
+    assert json.loads(ta.dump_json(1)) == '2'
 
 
 @pytest.mark.parametrize('defer_build', [True, False])

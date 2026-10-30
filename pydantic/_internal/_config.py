@@ -15,7 +15,7 @@ from pydantic_core import core_schema
 from typing_extensions import Self
 
 from ..aliases import AliasGenerator
-from ..config import ConfigDict, ExtraValues, JsonDict, JsonSchemaExtraCallable
+from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince210
 
@@ -102,6 +102,7 @@ class ConfigWrapper:
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
     json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
+    json_encoders: dict[type[object], JsonEncoder] | None
 
     # new in V2
     strict: bool
@@ -281,6 +282,7 @@ config_defaults = ConfigDict(
     validate_return=False,
     protected_namespaces=('model_validate', 'model_dump'),
     hide_input_in_errors=False,
+    json_encoders=None,
     defer_build=False,
     schema_generator=None,
     plugin_settings=None,

@@ -23,6 +23,7 @@ __all__ = ('ConfigDict', 'with_config')
 JsonValue: TypeAlias = Union[int, float, str, bool, None, list['JsonValue'], 'JsonDict']
 JsonDict: TypeAlias = dict[str, JsonValue]
 
+JsonEncoder = Callable[[Any], Any]
 
 JsonSchemaExtraCallable: TypeAlias = Callable[[JsonDict], None] | Callable[[JsonDict, type[Any]], None]
 
@@ -442,6 +443,16 @@ class ConfigDict(TypedDict, total=False):
 
     json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     """A dict or callable to provide extra JSON schema properties. Defaults to `None`."""
+
+    json_encoders: dict[type[object], JsonEncoder] | None
+    """
+    A `dict` of custom JSON encoders for specific types. Defaults to `None`.
+
+    /// version-deprecated | v2
+    This configuration option is deprecated. Use [custom serializers](../concepts/serialization.md#custom-serializers)
+    instead.
+    ///
+    """
 
     # new in V2
     strict: bool
