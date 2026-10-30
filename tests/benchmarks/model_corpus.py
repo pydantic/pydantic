@@ -12,6 +12,8 @@ from types import CodeType, ModuleType
 
 from pydantic import BaseModel
 
+IS_PYPY = sys.implementation.name == 'pypy'
+
 
 class CorpusImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
     def __init__(self, directory: Path) -> None:
@@ -48,7 +50,12 @@ class CorpusImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         for name in previous:
             sys.modules.pop(name)
         sys.meta_path.insert(0, self)
+        previous_limit = sys.getrecursionlimit() if IS_PYPY else None
         try:
+            # PyPy uses this limit as a native-stack budget. Deep SDK graphs can
+            # overflow cpyext's default budget instead of raising RecursionError.
+            if previous_limit is not None and previous_limit < 2000:
+                sys.setrecursionlimit(2000)
             modules = [importlib.import_module(name) for name in self.manifest['declarations']]
             models = list(
                 dict.fromkeys(
@@ -69,3 +76,5 @@ class CorpusImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                 if self.is_corpus_module(name):
                     sys.modules.pop(name)
             sys.modules.update(previous)
+            if previous_limit is not None and previous_limit < 2000:
+                sys.setrecursionlimit(previous_limit)

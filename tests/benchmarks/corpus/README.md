@@ -31,11 +31,13 @@ the arbitrary-type schema shape without transport implementations. These are
 benchmark fixtures, not runnable SDKs. See individual corpus READMEs for details.
 
 `model_corpus.py` compiles the source outside measurement. Each measured invocation
-imports a fresh package graph in memory, completes every schema, and restores any
+imports a fresh package graph in memory, eagerly builds schemas during class
+definition, completes remaining forward references, and restores any
 pre-existing packages and import hooks even on failure. Missing modules cannot
 fall back to an installed SDK. Tests verify exact declaration coverage, eager
 completion, fresh class identities, representative payloads, import isolation and
-minimum-version syntax. All tests that manipulate global import state run serially.
+minimum-version syntax. SDK deferral is explicitly disabled, including SDK
+environment switches, to avoid deep deferred rebuild chains. All tests that manipulate global import state run serially.
 Process-wide Pydantic and Python caches can still be warm: this measures model
 building, not cold SDK or interpreter startup.
 
@@ -48,3 +50,9 @@ uv run --no-sync pytest tests/benchmarks/test_mcp_model_corpus.py tests/benchmar
 For CodSpeed, add `--codspeed`. The existing CI workflow already includes both
 benchmark files. Snapshot updates are explicit workload changes and should update
 provenance, declaration inventories and coverage checks together.
+
+On PyPy, the importer temporarily raises a smaller recursion limit to 2,000,
+then restores it on success or failure. PyPy maps this limit to usable native
+stack space; the default budget can overflow in cpyext while building the deep
+SDK graphs. CPython's limit is untouched. See [PyPy's documented stack-limit
+behavior](https://doc.pypy.org/cpython_differences.html).

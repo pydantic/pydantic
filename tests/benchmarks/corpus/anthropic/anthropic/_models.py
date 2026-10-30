@@ -21,7 +21,7 @@ class _ConfigProtocol(Protocol):
     allow_population_by_field_name: bool
 
 class BaseModel(pydantic.BaseModel):
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra='allow', defer_build=coerce_boolean(os.environ.get('DEFER_PYDANTIC_BUILD', 'true')))
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra='allow', defer_build=False)
 
     @classmethod
     @override

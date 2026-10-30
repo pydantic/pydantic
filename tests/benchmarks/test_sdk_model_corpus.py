@@ -10,6 +10,7 @@ import pytest
 
 from pydantic import BaseModel
 
+from . import model_corpus
 from .model_corpus import CorpusImporter
 
 # Import isolation changes process-wide module state.
@@ -39,6 +40,7 @@ def test_sdk_model_corpus(
     expected = {f'{module}:{name}' for module, names in corpus.manifest['declarations'].items() for name in names}
     assert actual == expected
     assert all(model.__pydantic_complete__ for model in models)
+    assert all(not model.model_config.get('defer_build') for model in models)
 
 
 def test_sdk_corpus_fresh_models(corpus: CorpusImporter) -> None:
@@ -87,3 +89,32 @@ def test_sdk_corpus_validation(corpus: CorpusImporter) -> None:
     result = models[model].model_validate(data).model_dump(exclude_none=True)
     for name, value in data.items():
         assert result[name] == value
+
+
+@pytest.mark.parametrize('initial_limit', [1000, 3000])
+@pytest.mark.parametrize('fails', [False, True])
+def test_sdk_corpus_stack_budget(
+    corpus: CorpusImporter, monkeypatch: pytest.MonkeyPatch, initial_limit: int, fails: bool
+) -> None:
+    current = initial_limit
+    changes: list[int] = []
+
+    def set_limit(value: int) -> None:
+        nonlocal current
+        changes.append(value)
+        current = value
+
+    monkeypatch.setattr(model_corpus, 'IS_PYPY', True)
+    monkeypatch.setattr(sys, 'getrecursionlimit', lambda: current)
+    monkeypatch.setattr(sys, 'setrecursionlimit', set_limit)
+    root = corpus.roots[0]
+    monkeypatch.setitem(corpus.manifest, 'declarations', {root: []})
+    code = 'raise RuntimeError("broken corpus")' if fails else ''
+    monkeypatch.setitem(corpus.sources, root, (compile(code, '<stack budget>', 'exec'), True))
+    if fails:
+        with pytest.raises(RuntimeError, match='broken corpus'):
+            corpus.build_models()
+    else:
+        assert corpus.build_models() == []
+    assert current == initial_limit
+    assert changes == ([2000, initial_limit] if initial_limit < 2000 else [])

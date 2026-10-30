@@ -313,7 +313,7 @@ def _format_collection(obj: Any, *, indent_level: int, indent_delta: int, max_le
     return f'{brackets[0]}\n' + ',\n'.join(elements) + f',\n{indent}{brackets[1]}'
 
 class BaseModel(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(alias_generator=alias_generators.to_camel, populate_by_name=True, from_attributes=True, protected_namespaces=(), extra='forbid', arbitrary_types_allowed=True, ser_json_bytes='base64', val_json_bytes='base64', ignored_types=(typing.TypeVar,), defer_build=True)
+    model_config = pydantic.ConfigDict(alias_generator=alias_generators.to_camel, populate_by_name=True, from_attributes=True, protected_namespaces=(), extra='forbid', arbitrary_types_allowed=True, ser_json_bytes='base64', val_json_bytes='base64', ignored_types=(typing.TypeVar,), defer_build=False)
 
     @pydantic.model_validator(mode='before')
     @classmethod

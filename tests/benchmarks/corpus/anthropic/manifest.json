@@ -5960,5 +5960,6 @@
       "sort enum members"
     ],
     "upstream_outcome_sha256": "39f5d7e6627991fe6f9a070a15f33fdfb2daca9bec95464ad67d19bdc5c094bd"
-  }
+  },
+  "eager_schema_building": true
 }

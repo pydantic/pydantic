@@ -2256,5 +2256,6 @@
       "sort enum members"
     ],
     "upstream_outcome_sha256": "e587e480547b3f635c4236ea977c271538e434bf30fdcb18abcce96a555e3922"
-  }
+  },
+  "eager_schema_building": true
 }

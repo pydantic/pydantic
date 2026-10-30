@@ -11,8 +11,10 @@ Fields, inheritance, defaults, configuration, validators, serializers and schema
 hooks are retained. Class docstrings are retained for schema descriptions and definition identity.
 Attribute and function documentation, unrelated execution methods and transport
 machinery are removed. Pydantic-v1 and TYPE_CHECKING-only branches are excluded;
-runtime Python-version branches are retained. Deferred schemas are completed
-inside every measured run. This is a frozen workload, not a runnable SDK.
+runtime Python-version branches are retained. Deferral is explicitly disabled (`defer_build=False`) so schemas are built
+as classes are defined; a final completion pass resolves forward references.
+This overrides SDK defaults and environment switches, avoids deep deferred
+rebuild chains, and keeps every measured run eager. This is a frozen workload, not a runnable SDK.
 
 The shared importer compiles sources before measurement, imports a fresh isolated
 package graph and builds all model schemas under CPU simulation. Source parsing,

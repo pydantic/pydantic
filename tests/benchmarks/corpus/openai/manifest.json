@@ -8288,5 +8288,6 @@
       "sort enum members"
     ],
     "upstream_outcome_sha256": "1e11f16893994dd96aac0cd6e8d83d05371730cfc7dc3171520f192b7244bc9a"
-  }
+  },
+  "eager_schema_building": true
 }
