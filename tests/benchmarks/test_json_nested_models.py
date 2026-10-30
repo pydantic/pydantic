@@ -5,7 +5,7 @@ import json
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 
 class Inner(BaseModel):
@@ -17,9 +17,19 @@ class Outer(BaseModel):
     items: list[Inner]
 
 
+MODEL_LIST = TypeAdapter(list[Inner])
+
+
+@pytest.mark.benchmark(group='nested JSON model')
+def test_top_level_model_list_valid_json_1000(benchmark: BenchmarkFixture) -> None:
+    data = json.dumps([{'i': i, 's': str(i)} for i in range(1000)]).encode()
+    assert len(MODEL_LIST.validate_json(data)) == 1000
+    benchmark(MODEL_LIST.validate_json, data)
+
+
 @pytest.fixture(scope='module')
 def nested_model_json() -> tuple[bytes, bytes, bytes]:
-    items = [{'i': i, 's': str(i)} for i in range(100)]
+    items = [{'i': i, 's': str(i)} for i in range(1000)]
     valid = json.dumps({'items': items}).encode()
     items[-1]['i'] = 'bad'
     type_error = json.dumps({'items': items}).encode()
@@ -28,10 +38,12 @@ def nested_model_json() -> tuple[bytes, bytes, bytes]:
 
 
 @pytest.mark.benchmark(group='nested JSON model')
-def test_nested_model_valid_json(benchmark: BenchmarkFixture, nested_model_json: tuple[bytes, bytes, bytes]) -> None:
+def test_nested_model_valid_json_1000(
+    benchmark: BenchmarkFixture, nested_model_json: tuple[bytes, bytes, bytes]
+) -> None:
     valid, _, _ = nested_model_json
     result = Outer.model_validate_json(valid)
-    assert len(result.items) == 100
+    assert len(result.items) == 1000
     benchmark(Outer.model_validate_json, valid)
 
 
@@ -45,7 +57,7 @@ def _reject(data: bytes) -> None:
 
 
 @pytest.mark.benchmark(group='nested JSON model')
-def test_nested_model_late_type_error(
+def test_nested_model_late_type_error_1000(
     benchmark: BenchmarkFixture, nested_model_json: tuple[bytes, bytes, bytes]
 ) -> None:
     _, type_error, _ = nested_model_json
@@ -54,7 +66,9 @@ def test_nested_model_late_type_error(
 
 
 @pytest.mark.benchmark(group='nested JSON model')
-def test_nested_model_trailing_json(benchmark: BenchmarkFixture, nested_model_json: tuple[bytes, bytes, bytes]) -> None:
+def test_nested_model_trailing_json_1000(
+    benchmark: BenchmarkFixture, nested_model_json: tuple[bytes, bytes, bytes]
+) -> None:
     _, _, trailing_json = nested_model_json
     _reject(trailing_json)
     benchmark(_reject, trailing_json)
