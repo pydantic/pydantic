@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+import collections.abc
 import functools
 import inspect
 from collections.abc import Awaitable, Callable
@@ -14,6 +15,62 @@ from ._config import ConfigWrapper
 from ._generate_schema import GenerateSchema, ValidateCallSupportedTypes
 from ._namespace_utils import MappingNamespace, NsResolver, ns_for_function
 from ._typing_extra import signature_no_eval
+
+
+class _IdempotentIterable(collections.abc.Iterator):
+    """A wrapper around one-shot iterators/generators that preserves read elements,
+    preventing earlier candidate union branches in validate_call from draining
+    the iterable before an Iterable branch is evaluated.
+    """
+
+    __slots__ = ('_iterable', '_cached', '_exhausted', '_next_index')
+
+    def __init__(self, iterable: collections.abc.Iterable[Any]) -> None:
+        self._iterable = iter(iterable)
+        self._cached: list[Any] = []
+        self._exhausted = False
+        self._next_index = 0
+
+    def __iter__(self) -> collections.abc.Iterator[Any]:
+        index = 0
+        while True:
+            if index < len(self._cached):
+                yield self._cached[index]
+                index += 1
+            elif not self._exhausted:
+                try:
+                    item = next(self._iterable)
+                except StopIteration:
+                    self._exhausted = True
+                    break
+                self._cached.append(item)
+                index += 1
+                yield item
+            else:
+                break
+
+    def __next__(self) -> Any:
+        if self._next_index < len(self._cached):
+            item = self._cached[self._next_index]
+            self._next_index += 1
+            return item
+        elif not self._exhausted:
+            try:
+                item = next(self._iterable)
+            except StopIteration:
+                self._exhausted = True
+                raise
+            self._cached.append(item)
+            self._next_index += 1
+            return item
+        else:
+            raise StopIteration
+
+
+def _wrap_iterators(val: Any) -> Any:
+    if isinstance(val, (collections.abc.Iterator, collections.abc.Generator)) and not isinstance(val, _IdempotentIterable):
+        return _IdempotentIterable(val)
+    return val
 
 
 def extract_function_name(func: ValidateCallSupportedTypes) -> str:
@@ -133,6 +190,9 @@ class ValidateCallWrapper:
     def __call__(self, /, *args: Any, **kwargs: Any) -> Any:
         if not self.__pydantic_complete__:
             self._create_validators()
+
+        args = tuple(_wrap_iterators(a) for a in args)
+        kwargs = {k: _wrap_iterators(v) for k, v in kwargs.items()}
 
         res = self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
         if self.__return_pydantic_validator__:

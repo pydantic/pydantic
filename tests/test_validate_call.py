@@ -3,6 +3,7 @@ import inspect
 import pickle
 import re
 import sys
+import typing
 from collections import UserDict
 from datetime import datetime, timezone
 from functools import partial
@@ -1349,3 +1350,19 @@ def test_validate_call_self_parameter() -> None:
         return self
 
     assert func(self=1) == 1
+
+
+def test_validate_call_iterable_union_order():
+    """https://github.com/pydantic/pydantic/issues/10504"""
+
+    @validate_call
+    def back(tags: dict[str, object] | list[dict[str, object]] | typing.Iterable[dict[str, object]]):
+        return list(tags)
+
+    @validate_call
+    def front(tags: typing.Iterable[dict[str, object]] | dict[str, object] | list[dict[str, object]]):
+        return list(tags)
+
+    input_data = [{'key': 'val1'}, {'key': 'val2'}]
+    assert back(iter(input_data)) == input_data
+    assert front(iter(input_data)) == input_data
