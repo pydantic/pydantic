@@ -168,9 +168,6 @@ def run_example(example: CodeExample, eval_example: EvalExample, mocker: Any) ->
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
 @pytest.mark.parametrize('example', list(find_examples(str(SOURCES_ROOT), skip=sys.platform == 'win32')), ids=str)
 def test_docstrings_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):
-    if str(example.path).startswith(str(SOURCES_ROOT / 'v1')):
-        pytest.skip('skip v1 examples')
-
     run_example(example, eval_example, mocker)
 
 
