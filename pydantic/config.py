@@ -14,7 +14,6 @@ from .errors import PydanticUserError
 from .warnings import PydanticDeprecatedSince211
 
 if TYPE_CHECKING:
-    from ._internal._generate_schema import GenerateSchema as _GenerateSchema
     from .fields import ComputedFieldInfo, FieldInfo
 
 __all__ = ('ConfigDict', 'with_config')
@@ -806,16 +805,6 @@ class ConfigDict(TypedDict, total=False):
 
     plugin_settings: dict[str, object] | None
     """A `dict` of settings for plugins. Defaults to `None`."""
-
-    schema_generator: type[_GenerateSchema] | None
-    """
-    The `GenerateSchema` class to use during core schema generation.
-
-    /// version-deprecated | v2.10
-    The `GenerateSchema` class is private and highly subject to change. This setting
-    no longer has any effect.
-    ///
-    """
 
     json_schema_serialization_defaults_required: bool
     """

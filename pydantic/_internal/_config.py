@@ -1,6 +1,5 @@
 from __future__ import annotations as _annotations
 
-import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
 from re import Pattern
@@ -17,10 +16,8 @@ from typing_extensions import Self
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
-from ..warnings import PydanticDeprecatedSince210
 
 if TYPE_CHECKING:
-    from .._internal._schema_generation_shared import GenerateSchema
     from ..fields import ComputedFieldInfo, FieldInfo
 
 # Maps the `ConfigDict` keys that have a `CoreConfig` counterpart to the corresponding
@@ -121,7 +118,6 @@ class ConfigWrapper:
     hide_input_in_errors: bool
     defer_build: bool
     plugin_settings: dict[str, object] | None
-    schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
     json_schema_mode_override: Literal['validation', 'serialization', None]
     coerce_numbers_to_str: bool
@@ -284,7 +280,6 @@ config_defaults = ConfigDict(
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
-    schema_generator=None,
     plugin_settings=None,
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,
@@ -338,22 +333,7 @@ def prepare_config(config: ConfigDict | dict[str, Any] | None) -> ConfigDict:
     # mutate the mapping provided by the user:
     config = config.copy()
 
-    config_dict = cast(ConfigDict, config)
-    check_deprecated(config_dict)
-    return config_dict
+    return cast(ConfigDict, config)
 
 
 config_keys = set(ConfigDict.__annotations__.keys())
-
-
-def check_deprecated(config_dict: ConfigDict) -> None:
-    """Check for deprecated config keys and warn the user.
-
-    Args:
-        config_dict: The input config.
-    """
-    if config_dict.get('schema_generator') is not None:
-        warnings.warn(
-            'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
-            PydanticDeprecatedSince210,
-        )
