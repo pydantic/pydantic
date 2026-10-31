@@ -1,7 +1,5 @@
 """Logic for creating models."""
 
-# Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
-# TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
 # ruff: noqa: UP035
 
 from __future__ import annotations as _annotations
@@ -19,7 +17,6 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Generic,
     Literal,
     TypeVar,
@@ -171,7 +168,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __class_vars__: ClassVar[set[str]]
     """The names of the class variables defined on the model."""
 
-    __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]  # noqa: UP006
+    __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
     """Metadata about the private attributes of the model."""
 
     __signature__: ClassVar[Signature]
@@ -198,7 +195,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     and the `parameter` item maps to the `__parameter__` attribute of generic classes.
     """
 
-    __pydantic_parent_namespace__: ClassVar[Dict[str, Any] | None] = None  # noqa: UP006
+    __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None] = None
     """Parent namespace of the model, used for automatic rebuilding of models."""
 
     __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
@@ -213,13 +210,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
     """The `pydantic-core` `SchemaValidator` used to validate instances of the model."""
 
-    __pydantic_fields__: ClassVar[Dict[str, FieldInfo]]  # noqa: UP006
+    __pydantic_fields__: ClassVar[dict[str, FieldInfo]]
     """A dictionary of field names and their corresponding [`FieldInfo`][pydantic.fields.FieldInfo] objects."""
 
-    __pydantic_setattr_handlers__: ClassVar[Dict[str, Callable[[BaseModel, str, Any], None]]]  # noqa: UP006
+    __pydantic_setattr_handlers__: ClassVar[dict[str, Callable[[BaseModel, str, Any], None]]]
     """`__setattr__` handlers. Memoizing the handlers leads to a dramatic performance improvement in `__setattr__`"""
 
-    __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
+    __pydantic_computed_fields__: ClassVar[dict[str, ComputedFieldInfo]]
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
 
     __pydantic_extra_info__: ClassVar[PydanticExtraInfo | None]
@@ -228,13 +225,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This is a private attribute, not meant to be used outside Pydantic.
     """
 
-    __pydantic_extra__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
+    __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
 
     __pydantic_fields_set__: MutableSet[str] = _model_construction.NoInitField(init=False)
     """The names of fields explicitly set during instantiation."""
 
-    __pydantic_private__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
+    __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """Values of private attributes set on the model instance."""
 
     if not TYPE_CHECKING:
@@ -280,7 +277,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
     @property
-    def model_extra(self) -> Dict[str, Any] | None:  # noqa: UP006
+    def model_extra(self) -> dict[str, Any] | None:
         """Get extra fields set during validation.
 
         Returns:
@@ -455,7 +452,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
         polymorphic_serialization: bool | None = None,
-    ) -> Dict[str, Any]:  # noqa: UP006
+    ) -> dict[str, Any]:
         """!!! abstract "Usage Documentation"
             [`model_dump`](../concepts/serialization.md#python-mode)
 
@@ -581,7 +578,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         mode: JsonSchemaMode = 'validation',
         *,
         union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
-    ) -> Dict[str, Any]:  # noqa: UP006
+    ) -> dict[str, Any]:
         """Generates a JSON schema for a model class.
 
         Args:
@@ -1021,7 +1018,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def __deepcopy__(self, memo: Dict[int, Any] | None = None) -> Self:  # noqa: UP006
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
         """Returns a deep copy of the model."""
         if memo is None:
             memo = {}
@@ -1179,7 +1176,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         def __replace__(self, **changes: Any) -> Self:
             return self.model_copy(update=changes)
 
-    def __getstate__(self) -> Dict[Any, Any]:  # noqa: UP006
+    def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
         if private:
             private = {k: v for k, v in private.items() if v is not PydanticUndefined}
@@ -1190,7 +1187,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             '__pydantic_private__': private,
         }
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:  # noqa: UP006
+    def __setstate__(self, state: dict[Any, Any]) -> None:
         _object_setattr(self, '__pydantic_fields_set__', state.get('__pydantic_fields_set__', {}))
         _object_setattr(self, '__pydantic_extra__', state.get('__pydantic_extra__', {}))
         _object_setattr(self, '__pydantic_private__', state.get('__pydantic_private__', {}))
