@@ -562,6 +562,47 @@ jobs:
       - run: cargo test
         working-directory: pydantic-core
 
+  core-test-graalpy:
+    name: core / Test on GraalPy ${{ matrix.python-version }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['graalpy3.12', 'graalpy3.13']
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install rust stable
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
+        with:
+          toolchain: stable
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          lookup-only: false # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      # `pytest-codspeed` depends on `cffi`, which can't be built on GraalPy:
+      - name: Install dependencies
+        run: uv sync --all-packages --group testing-extra --no-install-package pytest-codspeed --no-install-package cffi
+        env:
+          RUST_BACKTRACE: 1
+          UV_PYTHON_PREFERENCE: only-managed
+
+      - run: uv pip freeze
+      # `pytest-examples` is not installed on GraalPy:
+      - run: uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py
+
   core-test-msrv:
     name: core / Test MSRV
 
@@ -1059,7 +1100,7 @@ jobs:
     if: always()
     outputs:
       result: ${{ steps.all-green.outputs.result }}
-    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-debug, core-build-pyemscripten]
+    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-graalpy, core-test-debug, core-build-pyemscripten]
     runs-on: ubuntu-latest
 
     steps:
