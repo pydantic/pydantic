@@ -38,7 +38,6 @@ def dataclass(
     unsafe_hash: bool = False,
     frozen: bool = False,
     config: ConfigDict | None = None,
-    validate_on_init: bool | None = None,
     kw_only: bool = ...,
     slots: bool = ...,
 ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
@@ -57,7 +56,6 @@ def dataclass(
     unsafe_hash: bool = False,
     frozen: bool | None = None,
     config: ConfigDict | None = None,
-    validate_on_init: bool | None = None,
     kw_only: bool = ...,
     slots: bool = ...,
 ) -> type[PydanticDataclass]: ...
@@ -72,7 +70,6 @@ def dataclass(
     unsafe_hash: bool = False,
     frozen: bool | None = None,
     config: ConfigDict | None = None,
-    validate_on_init: bool | None = None,
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
@@ -101,8 +98,6 @@ def dataclass(
         frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
             attributes to be modified after it has been initialized. If not set, the value from the provided `config` argument will be used (and will default to `False` otherwise).
         config: The Pydantic config to use for the `dataclass`.
-        validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses
-            are validated on init.
         kw_only: Determines if `__init__()` method parameters must be specified by keyword only. Defaults to `False`.
         slots: Determines if the generated class should be a 'slots' `dataclass`, which does not allow the addition of
             new attributes after instantiation.
@@ -111,10 +106,9 @@ def dataclass(
         A decorator that accepts a class as its argument and returns a Pydantic `dataclass`.
 
     Raises:
-        AssertionError: Raised if `init` is not `False` or `validate_on_init` is `False`.
+        AssertionError: Raised if `init` is not `False`.
     """
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
-    assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.

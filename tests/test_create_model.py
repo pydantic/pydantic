@@ -441,15 +441,9 @@ def test_create_model_namespace() -> None:
         Model(a=-1)
 
 
-def test_create_model_namespace_precedence_over_validators() -> None:
-    Model = create_model(
-        'Model',
-        a=int,
-        __validators__={'value': lambda self: 'from_validators'},
-        __namespace__={'value': lambda self: 'from_namespace'},
-    )
-
-    assert Model(a=1).value() == 'from_namespace'
+def test_create_model_validators_argument_removed() -> None:
+    with pytest.raises(TypeError, match="use '__namespace__' instead"):
+        create_model('Model', a=int, __validators__={'value': lambda self: 1})
 
 
 def test_create_model_namespace_field_name_clash() -> None:

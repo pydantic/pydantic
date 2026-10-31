@@ -2667,7 +2667,7 @@ wasm = [
 [[package]]
 name = "pydantic-docs"
 version = "0.0.1"
-source = { git = "https://github.com/pydantic/pydantic-docs#6f657b30593b00cf5f7c0b7eca74e83b3b6b7819" }
+source = { git = "https://github.com/pydantic/pydantic-docs#51a5fa18eb3fefc71fe566c58fc0682183a9bbb1" }
 dependencies = [
     { name = "click" },
     { name = "markdown" },
