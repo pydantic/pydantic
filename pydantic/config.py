@@ -2,19 +2,16 @@
 
 from __future__ import annotations as _annotations
 
-import warnings
 from collections.abc import Callable
 from re import Pattern
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, cast, overload
 
-from typing_extensions import TypedDict, Unpack, deprecated
+from typing_extensions import TypedDict, Unpack
 
 from .aliases import AliasGenerator
 from .errors import PydanticUserError
-from .warnings import PydanticDeprecatedSince211
 
 if TYPE_CHECKING:
-    from ._internal._generate_schema import GenerateSchema as _GenerateSchema
     from .fields import ComputedFieldInfo, FieldInfo
 
 __all__ = ('ConfigDict', 'with_config')
@@ -807,16 +804,6 @@ class ConfigDict(TypedDict, total=False):
     plugin_settings: dict[str, object] | None
     """A `dict` of settings for plugins. Defaults to `None`."""
 
-    schema_generator: type[_GenerateSchema] | None
-    """
-    The `GenerateSchema` class to use during core schema generation.
-
-    /// version-deprecated | v2.10
-    The `GenerateSchema` class is private and highly subject to change. This setting
-    no longer has any effect.
-    ///
-    """
-
     json_schema_serialization_defaults_required: bool
     """
     Whether fields with default values should be marked as required in the serialization schema. Defaults to `False`.
@@ -1212,11 +1199,6 @@ _TypeT = TypeVar('_TypeT', bound=type)
 
 
 @overload
-@deprecated('Passing `config` as a keyword argument is deprecated. Pass `config` as a positional argument instead.')
-def with_config(*, config: ConfigDict) -> Callable[[_TypeT], _TypeT]: ...
-
-
-@overload
 def with_config(config: ConfigDict, /) -> Callable[[_TypeT], _TypeT]: ...
 
 
@@ -1250,10 +1232,6 @@ def with_config(config: ConfigDict | None = None, /, **kwargs: Any) -> Callable[
         #> {'x': 'abc'}
         ```
 
-    /// deprecated-removed | v2.11 v3
-    Passing `config` as a keyword argument.
-    ///
-
     /// version-changed | v2.11
     Keyword arguments can be provided directly instead of a config dictionary.
     ///
@@ -1261,15 +1239,7 @@ def with_config(config: ConfigDict | None = None, /, **kwargs: Any) -> Callable[
     if config is not None and kwargs:
         raise ValueError('Cannot specify both `config` and keyword arguments')
 
-    if len(kwargs) == 1 and (kwargs_conf := kwargs.get('config')) is not None:
-        warnings.warn(
-            'Passing `config` as a keyword argument is deprecated. Pass `config` as a positional argument instead',
-            category=PydanticDeprecatedSince211,
-            stacklevel=2,
-        )
-        final_config = cast(ConfigDict, kwargs_conf)
-    else:
-        final_config = config if config is not None else cast(ConfigDict, kwargs)
+    final_config = config if config is not None else cast(ConfigDict, kwargs)
 
     def inner(class_: _TypeT, /) -> _TypeT:
         # Ideally, we would check for `class_` to either be a `TypedDict` or a stdlib dataclass.

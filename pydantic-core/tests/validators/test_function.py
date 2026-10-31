@@ -655,10 +655,7 @@ def test_model_field_validator_reuse() -> None:
     # When a type alias with a validator function is used on multiple fields,
     # its core schema is only generated once (with the first field_name) and reused.
     # See https://github.com/pydantic/pydantic/issues/11737
-    with pytest.warns(
-        DeprecationWarning, match='`field_name` argument on `with_info_plain_validator_function` is deprecated'
-    ):
-        validator = core_schema.with_info_plain_validator_function(f, field_name='x')
+    validator = core_schema.with_info_plain_validator_function(f)
 
     v = SchemaValidator(
         core_schema.model_schema(
@@ -842,10 +839,7 @@ def test_typed_dict_validator_reuse() -> None:
     # When a type alias with a validator function is used on multiple fields,
     # its core schema is only generated once (with the first field_name) and reused.
     # See https://github.com/pydantic/pydantic/issues/11737
-    with pytest.warns(
-        DeprecationWarning, match='`field_name` argument on `with_info_plain_validator_function` is deprecated'
-    ):
-        validator = core_schema.with_info_plain_validator_function(f, field_name='x')
+    validator = core_schema.with_info_plain_validator_function(f)
 
     v = SchemaValidator(
         core_schema.typed_dict_schema(
@@ -873,10 +867,7 @@ def test_dataclass_validator_reuse() -> None:
     # When a type alias with a validator function is used on multiple fields,
     # its core schema is only generated once (with the first field_name) and reused.
     # See https://github.com/pydantic/pydantic/issues/11737
-    with pytest.warns(
-        DeprecationWarning, match='`field_name` argument on `with_info_plain_validator_function` is deprecated'
-    ):
-        validator = core_schema.with_info_plain_validator_function(f, field_name='x')
+    validator = core_schema.with_info_plain_validator_function(f)
 
     v = SchemaValidator(
         core_schema.dataclass_schema(

@@ -664,6 +664,28 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-instance-method'
 ```
 
+## Model *after* validator on a class method {#model-after-validator-classmethod}
+
+This error is raised when you apply a [model *after* validator](../concepts/validators.md#model-after-validator)
+on a class method. Model *after* validators must be instance methods.
+
+```python
+from pydantic import BaseModel, PydanticUserError, model_validator
+
+try:
+
+    class Model(BaseModel):
+        a: int = 1
+
+        @model_validator(mode='after')
+        @classmethod
+        def check_model(cls, model):
+            return model
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'model-after-validator-classmethod'
+```
+
 ## `json_schema_input_type` used with the wrong mode {#validator-input-type}
 
 This error is raised when you explicitly specify a value for the `json_schema_input_type`

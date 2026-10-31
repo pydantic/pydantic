@@ -41,8 +41,8 @@ from ._typing_extra import parent_frame_namespace
 from ._utils import LazyClassAttribute, SafeGetItemProxy
 
 if TYPE_CHECKING:
+    from ..fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from ..fields import Field as PydanticModelField
-    from ..fields import FieldInfo, ModelPrivateAttr
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
     from ._fields import PydanticExtraInfo
@@ -318,6 +318,16 @@ class ModelMetaclass(ABCMeta):
                 class_vars.update(base.__class_vars__)
                 private_attributes.update(base.__private_attributes__)
         return field_names, class_vars, private_attributes
+
+    @property
+    def model_fields(self) -> dict[str, FieldInfo]:
+        """A mapping of field names to their respective [`FieldInfo`][pydantic.fields.FieldInfo] instances."""
+        return getattr(self, '__pydantic_fields__', {})
+
+    @property
+    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
+        """A mapping of computed field names to their respective [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances."""
+        return getattr(self, '__pydantic_computed_fields__', {})
 
     @property
     def __pydantic_fields_complete__(self) -> bool:

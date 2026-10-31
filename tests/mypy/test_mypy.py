@@ -106,7 +106,7 @@ cases: list[ParameterSet | tuple[str, str]] = [
         ('mypy-plugin.ini', 'generics.py'),
         ('mypy-plugin.ini', 'root_models.py'),
         ('mypy-plugin.ini', 'plugin_strict_fields.py'),
-        ('mypy-plugin.ini', 'final_with_default.py'),
+        ('mypy-plugin-strict.ini', 'final_with_default.py'),
         ('mypy-plugin.ini', 'create_model_var.py'),
         ('mypy-plugin.ini', 'import_cycle.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),

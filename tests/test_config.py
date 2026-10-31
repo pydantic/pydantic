@@ -26,7 +26,6 @@ from pydantic import (
     with_config,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
-from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
@@ -34,7 +33,7 @@ from pydantic.dataclasses import rebuild_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
-from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecatedSince211, PydanticDeprecationWarning
+from pydantic.warnings import PydanticDeprecationWarning
 
 from .conftest import CallCounter
 
@@ -380,8 +379,6 @@ def test_multiple_inheritance_config():
 @pytest.mark.thread_unsafe(reason='Flaky')
 def test_config_wrapper_match():
     localns = {
-        '_GenerateSchema': GenerateSchema,
-        'GenerateSchema': GenerateSchema,
         'JsonValue': JsonValue,
         'FieldInfo': FieldInfo,
         'ComputedFieldInfo': ComputedFieldInfo,
@@ -432,8 +429,6 @@ def test_config_validation_error_cause():
 
 def test_config_defaults_match():
     localns = {
-        '_GenerateSchema': GenerateSchema,
-        'GenerateSchema': GenerateSchema,
         'FieldInfo': FieldInfo,
         'ComputedFieldInfo': ComputedFieldInfo,
     }
@@ -766,7 +761,7 @@ def test_partial_creation_with_defer_build():
         for name, field in model.model_fields.items():
             if field.is_required() and name in optionals:
                 assert field.annotation is not None
-                override_fields[name] = (field.annotation | None, FieldInfo.merge_field_infos(field, default=None))
+                override_fields[name] = (field.annotation | None, Field(default=None))
 
         return create_model(f'Partial{model.__name__}', __base__=model, **override_fields)
 
@@ -818,16 +813,6 @@ def test_with_config_kwargs() -> None:
     assert TypeAdapter(TD).validate_python({'a': 1}) == {'a': '1'}
 
 
-def test_with_config_keyword_argument_deprecated() -> None:
-    with pytest.warns(PydanticDeprecatedSince211):
-
-        @with_config(config={'coerce_numbers_to_str': True})
-        class TD(TypedDict):
-            a: str
-
-    assert TypeAdapter(TD).validate_python({'a': 1}) == {'a': '1'}
-
-
 def test_with_config_positional_and_keyword_error() -> None:
     with pytest.raises(ValueError):
 
@@ -841,22 +826,6 @@ def test_empty_config_with_annotations():
         model_config: ConfigDict = {}
 
     assert Model.model_config == {}
-
-
-def test_generate_schema_deprecation_warning() -> None:
-    with pytest.warns(
-        PydanticDeprecatedSince210, match='The `schema_generator` setting has been deprecated since v2.10.'
-    ) as all_warnings:
-
-        class Model(BaseModel):
-            model_config = ConfigDict(schema_generator=GenerateSchema)
-
-            a: int
-
-    # The notice is emitted once per config, not once per core config build:
-    assert len(all_warnings) == 1
-    # The setting no longer has any effect:
-    assert Model(a=1).a == 1
 
 
 def test_populate_by_name_still_effective() -> None:

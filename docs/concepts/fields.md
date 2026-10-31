@@ -123,7 +123,7 @@ print(field_info.metadata)
 #> [Gt(gt=1), WithJsonSchema(json_schema={'extra': 'data'}, mode=None)]
 ```
 
-/// deprecated-removed | v2.11 v3
+/// version-changed | v3
 [`model_fields`][pydantic.main.BaseModel.model_fields] can only be accessed from the class object, not the instance.
 ///
 

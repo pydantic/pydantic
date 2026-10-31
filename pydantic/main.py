@@ -279,28 +279,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
-    @_utils.deprecated_instance_property
-    @classmethod
-    def model_fields(cls) -> Dict[str, FieldInfo]:  # noqa: UP006
-        """A mapping of field names to their respective [`FieldInfo`][pydantic.fields.FieldInfo] instances.
-
-        !!! warning
-            Accessing this attribute from a model instance is deprecated, and will not work in Pydantic V3.
-            Instead, you should access this attribute from the model class.
-        """
-        return getattr(cls, '__pydantic_fields__', {})
-
-    @_utils.deprecated_instance_property
-    @classmethod
-    def model_computed_fields(cls) -> Dict[str, ComputedFieldInfo]:  # noqa: UP006
-        """A mapping of computed field names to their respective [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances.
-
-        !!! warning
-            Accessing this attribute from a model instance is deprecated, and will not work in Pydantic V3.
-            Instead, you should access this attribute from the model class.
-        """
-        return getattr(cls, '__pydantic_computed_fields__', {})
-
     @property
     def model_extra(self) -> Dict[str, Any] | None:  # noqa: UP006
         """Get extra fields set during validation.

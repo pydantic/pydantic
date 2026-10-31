@@ -47,6 +47,7 @@ PydanticErrorCodes = Literal[
     'create-model-field-definitions',
     'create-model-namespace',
     'validator-instance-method',
+    'model-after-validator-classmethod',
     'validator-input-type',
     'model-serializer-instance-method',
     'validator-signature',

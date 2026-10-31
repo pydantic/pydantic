@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, 
 from warnings import warn
 
 import annotated_types
-import typing_extensions
 from pydantic_core import MISSING, PydanticUndefined
 from typing_extensions import Self, TypedDict, TypeForm, Unpack, deprecated
 from typing_inspection import typing_objects
@@ -27,7 +26,6 @@ from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
 from .aliases import AliasChoices, AliasGenerator, AliasPath
 from .config import JsonDict
 from .errors import PydanticForbiddenQualifier, PydanticUserError
-from .json_schema import PydanticJsonSchemaWarning
 
 if TYPE_CHECKING:
     from ._internal._config import ConfigWrapper
@@ -592,8 +590,7 @@ class FieldInfo(_repr.Representation):
 
         # TODO check for classvar and error?
 
-        # TODO infer from the default, this can be done in v3 once we treat final fields with
-        # a default as proper fields and not class variables:
+        # TODO infer from the default (e.g. for `x: Final = 1`), as type checkers do:
         type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
         final = 'final' in inspected_ann.qualifiers
         metadata = inspected_ann.metadata
@@ -742,77 +739,6 @@ class FieldInfo(_repr.Representation):
         merged_field_info = cls(**merged_kwargs)
         merged_field_info.metadata = merged_metadata
         return merged_field_info
-
-    @staticmethod
-    @typing_extensions.deprecated(
-        "The 'merge_field_infos()' method is deprecated and will be removed in a future version. "
-        'If you relied on this method, please open an issue in the Pydantic issue tracker.',
-        category=None,
-    )
-    def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
-        """Merge `FieldInfo` instances keeping only explicitly set attributes.
-
-        Later `FieldInfo` instances override earlier ones.
-
-        Returns:
-            FieldInfo: A merged FieldInfo instance.
-        """
-        if len(field_infos) == 1:
-            # No merging necessary, but we still need to make a copy and apply the overrides
-            field_info = field_infos[0]._copy()
-            field_info._attributes_set.update(overrides)
-
-            default_override = overrides.pop('default', PydanticUndefined)
-            if default_override is Ellipsis:
-                default_override = PydanticUndefined
-            if default_override is not PydanticUndefined:
-                field_info.default = default_override
-
-            for k, v in overrides.items():
-                setattr(field_info, k, v)
-            return field_info  # type: ignore
-
-        merged_field_info_kwargs: dict[str, Any] = {}
-        metadata = {}
-        for field_info in field_infos:
-            attributes_set = field_info._attributes_set.copy()
-
-            try:
-                json_schema_extra = attributes_set.pop('json_schema_extra')
-                existing_json_schema_extra = merged_field_info_kwargs.get('json_schema_extra')
-
-                if existing_json_schema_extra is None:
-                    merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
-                if isinstance(existing_json_schema_extra, dict):
-                    if isinstance(json_schema_extra, dict):
-                        merged_field_info_kwargs['json_schema_extra'] = {
-                            **existing_json_schema_extra,
-                            **json_schema_extra,
-                        }
-                    if callable(json_schema_extra):
-                        warn(
-                            'Composing `dict` and `callable` type `json_schema_extra` is not supported.'
-                            'The `callable` type is being ignored.'
-                            "If you'd like support for this behavior, please open an issue on pydantic.",
-                            PydanticJsonSchemaWarning,
-                        )
-                elif callable(json_schema_extra):
-                    # if ever there's a case of a callable, we'll just keep the last json schema extra spec
-                    merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
-            except KeyError:
-                pass
-
-            # later FieldInfo instances override everything except json_schema_extra from earlier FieldInfo instances
-            merged_field_info_kwargs.update(attributes_set)
-
-            for x in field_info.metadata:
-                if not isinstance(x, FieldInfo):
-                    metadata[type(x)] = x
-
-        merged_field_info_kwargs.update(overrides)
-        field_info = FieldInfo(**merged_field_info_kwargs)
-        field_info.metadata = list(metadata.values())
-        return field_info
 
     @staticmethod
     def _from_dataclass_field(dc_field: DataclassField[Any]) -> FieldInfo:

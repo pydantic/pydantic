@@ -15,11 +15,6 @@ class Model2(TypedDict):
     pass
 
 
-@with_config(config=ConfigDict(str_to_lower=True))  # type: ignore[deprecated]  # pyright: ignore[reportDeprecated]  # pyrefly: ignore[deprecated]
-class Model3(TypedDict):
-    pass
-
-
 assert_type(Model1, type[Model1])
 
 model = Model1(a='ABC')
