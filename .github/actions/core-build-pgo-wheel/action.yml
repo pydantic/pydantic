@@ -37,7 +37,7 @@ runs:
       with:
         working-directory: ${{ inputs.working-directory }}
         # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
-        maturin-version: v1.15.0
+        maturin-version: v1.16.0
         manylinux: auto
         # `uv` is needed for the maturin `pgo-command` to use it
         before-script-linux: |

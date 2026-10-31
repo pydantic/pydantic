@@ -65,7 +65,7 @@ jobs:
         with:
           working-directory: pydantic-core
           # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
-          maturin-version: v1.15.0
+          maturin-version: v1.16.0
           command: sdist
           args: --out dist
           rust-toolchain: stable
@@ -119,11 +119,11 @@ jobs:
           - os: linux
             manylinux: auto
             target: x86_64
-            interpreter: pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: pypy3.11 graalpy3.12 graalpy3.13
           - os: linux
             manylinux: auto
             target: aarch64
-            interpreter: graalpy3.11 graalpy3.12
+            interpreter: graalpy3.12 graalpy3.13
             # PyPy 8.0 (`pp80` ABI) requires glibc 2.28:
           - os: linux
             manylinux: '2_28'
@@ -148,10 +148,10 @@ jobs:
           # arm pypy and older pythons which can't be run on the arm hardware for PGO
           - os: macos
             target: x86_64
-            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11 graalpy3.12
           - os: macos
             target: aarch64
-            interpreter: pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: pypy3.11 graalpy3.12 graalpy3.13
           - os: macos
             target: x86_64
             interpreter: pypy3.11-pp80
@@ -217,7 +217,7 @@ jobs:
         with:
           working-directory: pydantic-core
           # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
-          maturin-version: v1.15.0
+          maturin-version: v1.16.0
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
           args: --release --locked --out dist --interpreter ${{ steps.pypy-pp80.outputs.interpreter || matrix.interpreter-path || matrix.interpreter || '3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11' }}
@@ -363,7 +363,7 @@ jobs:
         with:
           working-directory: pydantic-core
           # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
-          maturin-version: v1.15.0
+          maturin-version: v1.16.0
           target: wasm32-unknown-emscripten
           args: --release --locked --out dist --interpreter ${{ matrix.python-version }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
@@ -561,6 +561,53 @@ jobs:
       - run: uv run pytest tests/pydantic_core
       - run: cargo test
         working-directory: pydantic-core
+
+  core-test-graalpy:
+    name: core / Test on GraalPy ${{ matrix.python-version }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['graalpy3.12', 'graalpy3.13']
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install rust stable
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
+        with:
+          toolchain: stable
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          lookup-only: false # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      # - `cffi` (a dependency of `pytest-codspeed`) can't be built on GraalPy.
+      # - `sqlalchemy` (only used in docs tests) fails to import on GraalPy 3.13 (`immutabledict object is immutable`),
+      #   and its `greenlet` dependency can't be built on GraalPy 3.13.
+      - name: Install dependencies
+        run: uv sync --all-packages --group testing-extra --no-install-package pytest-codspeed --no-install-package cffi --no-install-package sqlalchemy --no-install-package greenlet
+        env:
+          RUST_BACKTRACE: 1
+          UV_PYTHON_PREFERENCE: only-managed
+
+      - run: uv pip freeze
+      # `pytest-examples` is not installed on GraalPy.
+      # `test_with_default.py` crashes GraalPy 3.13 during assertion rewriting,
+      # until https://github.com/oracle/graalpython/pull/1129 is released:
+      - run: uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py $EXTRA_PYTEST_ARGS
+        env:
+          EXTRA_PYTEST_ARGS: ${{ matrix.python-version == 'graalpy3.13' && '--ignore=tests/pydantic_core/validators/test_with_default.py' || '' }}
 
   core-test-msrv:
     name: core / Test MSRV
@@ -1059,7 +1106,7 @@ jobs:
     if: always()
     outputs:
       result: ${{ steps.all-green.outputs.result }}
-    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-debug, core-build-pyemscripten]
+    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-graalpy, core-test-debug, core-build-pyemscripten]
     runs-on: ubuntu-latest
 
     steps:

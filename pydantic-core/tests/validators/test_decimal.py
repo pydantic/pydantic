@@ -122,8 +122,9 @@ def test_decimal_three_tuple_constructor(py_and_json: PyAndJson, input_value, ex
     assert isinstance(output, Decimal)
 
 
-skip_pypy_unbounded_exponent = pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy', reason='Decimal exponents are unbounded on PyPy'
+skip_unbounded_exponent = pytest.mark.skipif(
+    platform.python_implementation() in {'PyPy', 'GraalVM'},
+    reason='Decimal exponents are unbounded on PyPy and GraalPy',
 )
 
 
@@ -135,8 +136,8 @@ skip_pypy_unbounded_exponent = pytest.mark.skipif(
         (0, (1,), 'x'),  # `ValueError`: invalid special exponent
         (0, (1,), 1.5),  # `ValueError`: non-integer exponent
         # `OverflowError`: exponent doesn't fit in a `Py_ssize_t`
-        pytest.param((0, (1,), 10**30), marks=skip_pypy_unbounded_exponent),
-        pytest.param((0, (1,), -(10**30)), marks=skip_pypy_unbounded_exponent),
+        pytest.param((0, (1,), 10**30), marks=skip_unbounded_exponent),
+        pytest.param((0, (1,), -(10**30)), marks=skip_unbounded_exponent),
     ],
     ids=repr,
 )
