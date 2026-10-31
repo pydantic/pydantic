@@ -602,8 +602,12 @@ jobs:
           UV_PYTHON_PREFERENCE: only-managed
 
       - run: uv pip freeze
-      # `pytest-examples` is not installed on GraalPy:
-      - run: uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py -v
+      # `pytest-examples` is not installed on GraalPy.
+      # `test_with_default.py` crashes GraalPy 3.13 during assertion rewriting,
+      # until https://github.com/oracle/graalpython/pull/1129 is released:
+      - run: uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py $EXTRA_PYTEST_ARGS
+        env:
+          EXTRA_PYTEST_ARGS: ${{ matrix.python-version == 'graalpy3.13' && '--ignore=tests/pydantic_core/validators/test_with_default.py' || '' }}
 
   core-test-msrv:
     name: core / Test MSRV
