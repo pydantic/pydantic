@@ -592,8 +592,7 @@ class FieldInfo(_repr.Representation):
 
         # TODO check for classvar and error?
 
-        # TODO infer from the default, this can be done in v3 once we treat final fields with
-        # a default as proper fields and not class variables:
+        # TODO infer from the default (e.g. for `x: Final = 1`), as type checkers do:
         type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
         final = 'final' in inspected_ann.qualifiers
         metadata = inspected_ann.metadata

@@ -37,7 +37,6 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     PrivateAttr,
-    PydanticDeprecatedSince211,
     PydanticSchemaGenerationError,
     PydanticUndefinedAnnotation,
     PydanticUserError,
@@ -2224,36 +2223,23 @@ def test_frozen_field_decl_without_default_val(ann, value):
 
 @pytest.mark.parametrize(
     'ann',
-    [Final, Final[int]],
-    ids=['no-arg', 'with-arg'],
+    [Final, Final[int], Annotated[Final[int], 'meta']],
+    ids=['no-arg', 'with-arg', 'annotated'],
 )
-def test_deprecated_final_field_decl_with_default_val(ann):
-    with pytest.warns(PydanticDeprecatedSince211):
+def test_final_field_decl_with_default_val(ann):
+    """https://github.com/pydantic/pydantic/issues/11119"""
 
-        class Model(BaseModel):
-            a: ann = 10
+    class Model(BaseModel):
+        a: ann = 10
 
-    assert 'a' in Model.__class_vars__
-    assert 'a' not in Model.model_fields
-
-
-@pytest.mark.parametrize(
-    'ann',
-    [Final, Final[int]],
-    ids=['no-arg', 'with-arg'],
-)
-def test_deprecated_annotated_final_field_decl_with_default_val(ann):
-    with pytest.warns(PydanticDeprecatedSince211):
-
-        class Model(BaseModel):
-            a: Annotated[ann, ...] = 10
-
-    assert 'a' in Model.__class_vars__
-    assert 'a' not in Model.model_fields
+    assert 'a' not in Model.__class_vars__
+    assert Model.model_fields['a'].frozen
+    assert Model.model_fields['a'].default == 10
+    assert Model().a == 10
+    assert Model(a=20).a == 20
 
 
-@pytest.mark.xfail(reason="When rebuilding fields, we don't consider the field as a class variable")
-def test_deprecated_final_field_with_default_val_rebuild():
+def test_final_field_with_default_val_rebuild():
     class Model(BaseModel):
         a: 'Final[MyInt]' = 1
 
@@ -2261,8 +2247,9 @@ def test_deprecated_final_field_with_default_val_rebuild():
 
     Model.model_rebuild()
 
-    assert 'a' in Model.__class_vars__
-    assert 'a' not in Model.model_fields
+    assert 'a' not in Model.__class_vars__
+    assert Model.model_fields['a'].frozen
+    assert Model(a=2).a == 2
 
 
 def test_final_field_reassignment():

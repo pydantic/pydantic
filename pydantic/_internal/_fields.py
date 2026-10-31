@@ -15,7 +15,6 @@ from typing_extensions import TypeForm, TypeIs, get_args, get_origin  # noqa: UP
 from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource
 
-from pydantic import PydanticDeprecatedSince211
 from pydantic.errors import PydanticUserError
 
 from ..aliases import AliasGenerator
@@ -452,17 +451,6 @@ def collect_model_fields(  # noqa: C901
             field_info._original_annotation = ann_type
             if not evaluated:
                 field_info._complete = False
-            elif 'final' in field_info._qualifiers and not field_info.is_required():
-                warnings.warn(
-                    f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
-                    'class variable, but it will be considered as a normal field in V3 to be aligned with dataclasses. If you '
-                    f'still want {ann_name!r} to be considered as a class variable, annotate it as: `ClassVar[<type>] = <default>.`',
-                    category=PydanticDeprecatedSince211,
-                    # Incorrect when `create_model` is used, but the chance that final with a default is used is low in that case:
-                    stacklevel=4,
-                )
-                class_vars.add(ann_name)
-                continue
 
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
