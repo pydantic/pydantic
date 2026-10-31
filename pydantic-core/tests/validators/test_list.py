@@ -537,7 +537,7 @@ def test_list_allowed_inputs_python(testcase: ListInputTestCase):
 def test_list_dict_items_input(testcase: ListInputTestCase) -> None:
     v = SchemaValidator(
         core_schema.list_schema(
-            core_schema.tuple_positional_schema([core_schema.int_schema(), core_schema.int_schema()]),
+            core_schema.tuple_schema([core_schema.int_schema(), core_schema.int_schema()]),
             strict=testcase.strict,
         )
     )

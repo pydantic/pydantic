@@ -13,7 +13,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, ForwardRef, cast
 
 import typing_extensions
-from typing_extensions import deprecated, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
+from typing_extensions import get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
 from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
@@ -401,19 +401,6 @@ def eval_type(
             raise
         else:
             raise RecursionError(f'{e.args[0]}\n{message}')
-
-
-@deprecated(
-    '`eval_type_lenient()` is deprecated, use `try_eval_type()` instead.',
-    category=None,
-)
-def eval_type_lenient(
-    value: Any,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-) -> Any:  # pragma: no cover
-    ev, _ = try_eval_type(value, globalns, localns)
-    return ev
 
 
 def _eval_type(

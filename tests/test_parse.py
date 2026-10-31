@@ -1,7 +1,7 @@
 import pytest
 from pydantic_core import CoreSchema
 
-from pydantic import BaseModel, GetJsonSchemaHandler, PydanticUserError, ValidationError, model_validator, parse_obj_as
+from pydantic import BaseModel, GetJsonSchemaHandler, ValidationError, model_validator
 from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
 
@@ -58,20 +58,11 @@ def test_model_validate_wrong_model():
     ]
 
 
-def test_root_model_error():
-    with pytest.raises(
-        PydanticUserError, match="To define root models, use `pydantic.RootModel` rather than a field called '__root__'"
-    ):
-
-        class MyModel(BaseModel):
-            __root__: str
-
-
 def test_model_validate_root():
     class MyModel(BaseModel):
         root: str
 
-        # Note that the following three definitions require no changes across all __root__ models
+        # Note that the following three definitions require no changes across all root models
         # I couldn't see a nice way to create a decorator that reduces the boilerplate,
         # but if we want to discourage this pattern, perhaps that's okay?
         @model_validator(mode='before')
@@ -166,7 +157,6 @@ def test_parse_nested_root_list():
     assert isinstance(m.nested.root[0], NestedData)
 
 
-@pytest.mark.filterwarnings('ignore:`parse_obj_as` is deprecated.*:DeprecationWarning')
 def test_parse_nested_root_tuple():
     class NestedData(BaseModel):
         id: str
@@ -199,7 +189,7 @@ def test_parse_nested_root_tuple():
     assert isinstance(m.nested[0], NestedModel)
     assert isinstance(m.nested[0].root[1], NestedData)
 
-    nested = parse_obj_as(NestedModel, data)
+    nested = NestedModel.model_validate(data)
     assert isinstance(nested, NestedModel)
 
 

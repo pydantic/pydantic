@@ -74,12 +74,16 @@ def test_list_str_fallback():
 
 
 def test_tuple_any():
-    v = SchemaSerializer(core_schema.tuple_variable_schema(core_schema.any_schema()))
+    v = SchemaSerializer(variadic_tuple_schema(core_schema.any_schema()))
     assert v.to_python(('a', 'b', 'c')) == ('a', 'b', 'c')
     assert v.to_python(('a', 'b', 'c'), mode='json') == ['a', 'b', 'c']
     assert v.to_json(('a', 'b', 'c')) == b'["a","b","c"]'
 
     assert v.to_json(('a', 'b', 'c'), indent=2) == b'[\n  "a",\n  "b",\n  "c"\n]'
+
+
+def variadic_tuple_schema(items_schema=None, **kwargs):
+    return core_schema.tuple_schema([items_schema or core_schema.any_schema()], variadic_item_index=0, **kwargs)
 
 
 def as_list(*items):
@@ -90,9 +94,7 @@ def as_tuple(*items):
     return tuple(items)
 
 
-@pytest.mark.parametrize(
-    'schema_func,seq_f', [(core_schema.list_schema, as_list), (core_schema.tuple_variable_schema, as_tuple)]
-)
+@pytest.mark.parametrize('schema_func,seq_f', [(core_schema.list_schema, as_list), (variadic_tuple_schema, as_tuple)])
 def test_include(schema_func, seq_f):
     v = SchemaSerializer(
         schema_func(core_schema.any_schema(), serialization=core_schema.filter_seq_schema(include={1, 3, 5}))
@@ -115,9 +117,7 @@ def test_include(schema_func, seq_f):
     ]
 
 
-@pytest.mark.parametrize(
-    'schema_func,seq_f', [(core_schema.list_schema, as_list), (core_schema.tuple_variable_schema, as_tuple)]
-)
+@pytest.mark.parametrize('schema_func,seq_f', [(core_schema.list_schema, as_list), (variadic_tuple_schema, as_tuple)])
 def test_negative(schema_func, seq_f):
     v = SchemaSerializer(schema_func(core_schema.any_schema()))
     assert v.to_python(seq_f('a', 'b', 'c', 'd', 'e')) == seq_f('a', 'b', 'c', 'd', 'e')
@@ -128,9 +128,7 @@ def test_negative(schema_func, seq_f):
     assert v.to_json(seq_f('a', 'b', 'c', 'd', 'e'), include={-1, -2}) == b'["d","e"]'
 
 
-@pytest.mark.parametrize(
-    'schema_func,seq_f', [(core_schema.list_schema, as_list), (core_schema.tuple_variable_schema, as_tuple)]
-)
+@pytest.mark.parametrize('schema_func,seq_f', [(core_schema.list_schema, as_list), (variadic_tuple_schema, as_tuple)])
 def test_include_dict(schema_func, seq_f):
     v = SchemaSerializer(
         schema_func(core_schema.any_schema(), serialization=core_schema.filter_seq_schema(include={1, 3, 5}))
@@ -142,9 +140,7 @@ def test_include_dict(schema_func, seq_f):
     assert v.to_python(seq_f(0, 1, 2, 3, 4), include={2}) == seq_f(1, 2, 3)
 
 
-@pytest.mark.parametrize(
-    'schema_func,seq_f', [(core_schema.list_schema, as_list), (core_schema.tuple_variable_schema, as_tuple)]
-)
+@pytest.mark.parametrize('schema_func,seq_f', [(core_schema.list_schema, as_list), (variadic_tuple_schema, as_tuple)])
 def test_exclude(schema_func, seq_f):
     v = SchemaSerializer(
         schema_func(core_schema.any_schema(), serialization=core_schema.filter_seq_schema(exclude={1, 3, 5}))
@@ -209,9 +205,7 @@ def test_filter_runtime_more(include, exclude, expected):
     assert v.to_python(list('abcdefgh'), include=include, exclude=exclude) == expected
 
 
-@pytest.mark.parametrize(
-    'schema_func,seq_f', [(core_schema.list_schema, as_list), (core_schema.tuple_variable_schema, as_tuple)]
-)
+@pytest.mark.parametrize('schema_func,seq_f', [(core_schema.list_schema, as_list), (variadic_tuple_schema, as_tuple)])
 @pytest.mark.parametrize(
     'include,exclude',
     [
@@ -231,7 +225,7 @@ def test_include_error_call_time(schema_func, seq_f, include, exclude):
 
 
 def test_tuple_fallback():
-    v = SchemaSerializer(core_schema.tuple_variable_schema(core_schema.any_schema()))
+    v = SchemaSerializer(variadic_tuple_schema(core_schema.any_schema()))
     with pytest.warns(
         UserWarning,
         match=r"Expected `tuple\[any, ...\]` - serialized value may not be as expected \[input_value='apple', input_type=str\]",
@@ -396,7 +390,7 @@ def test_list_dict_key():
 
 
 def test_tuple_var_dict_key():
-    s = SchemaSerializer(core_schema.dict_schema(core_schema.tuple_variable_schema(), core_schema.int_schema()))
+    s = SchemaSerializer(core_schema.dict_schema(variadic_tuple_schema(), core_schema.int_schema()))
     with pytest.warns(UserWarning, match=r'Expected `tuple\[any, ...\]`.+input_type=str'):
         assert s.to_python({'xx': 1}) == {'xx': 1}
 
@@ -408,8 +402,8 @@ def test_tuple_var_dict_key():
 def test_tuple_pos_dict_key():
     s = SchemaSerializer(
         core_schema.dict_schema(
-            core_schema.tuple_positional_schema(
-                [core_schema.int_schema(), core_schema.str_schema()], extras_schema=core_schema.int_schema()
+            core_schema.tuple_schema(
+                [core_schema.int_schema(), core_schema.str_schema(), core_schema.int_schema()], variadic_item_index=2
             ),
             core_schema.int_schema(),
         )

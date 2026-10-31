@@ -83,7 +83,6 @@ def test_import_pydantic(subprocess_run_code):
     imported_modules = json.loads(output)
     # debug(imported_modules)
     assert 'pydantic' in imported_modules
-    assert 'pydantic.deprecated' not in imported_modules
 
 
 # language=Python

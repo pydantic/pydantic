@@ -34,5 +34,5 @@ k = Knight()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
 
 assert_type(Knight.model_fields, dict[str, FieldInfo])
 assert_type(Knight.model_computed_fields, dict[str, ComputedFieldInfo])
-assert_type(k.model_fields, dict[str, FieldInfo])  # type: ignore[deprecated]  # pyright: ignore[reportDeprecated]  # pyrefly: ignore[deprecated]
-assert_type(k.model_computed_fields, dict[str, ComputedFieldInfo])  # type: ignore[deprecated]  # pyright: ignore[reportDeprecated]  # pyrefly: ignore[deprecated]
+k.model_fields  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]  # pyrefly: ignore[missing-attribute]
+k.model_computed_fields  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]  # pyrefly: ignore[missing-attribute]

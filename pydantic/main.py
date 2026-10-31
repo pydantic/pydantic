@@ -1,9 +1,5 @@
 """Logic for creating models."""
 
-# Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
-# TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
-# ruff: noqa: UP035
-
 from __future__ import annotations as _annotations
 
 import operator
@@ -11,29 +7,26 @@ import sys
 import threading
 import types
 import warnings
-from collections.abc import Generator, Mapping
+from collections.abc import Callable, Generator, Mapping, MutableSet
 from copy import copy, deepcopy
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
-    Dict,
     Generic,
     Literal,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
     overload,
 )
 
-import pydantic_core
-import typing_extensions
 from pydantic_core import PydanticUndefined, ValidationError
-from typing_extensions import Self, Sentinel, TypeAlias, TypeForm, Unpack
+from typing_extensions import Self, Sentinel, TypeForm, Unpack
 
-from . import PydanticDeprecatedSince20, PydanticDeprecatedSince211
+from . import PydanticDeprecatedSince211
 from ._internal import (
     _config,
     _decorators,
@@ -47,7 +40,6 @@ from ._internal import (
     _typing_extra,
     _utils,
 )
-from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict, ExtraValues
@@ -58,14 +50,11 @@ from .version import version_short
 
 if TYPE_CHECKING:
     from inspect import Signature
-    from pathlib import Path
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
     from ._internal._fields import PydanticExtraInfo
     from ._internal._namespace_utils import MappingNamespace
-    from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
-    from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 
 
@@ -148,7 +137,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_core_schema__: The core schema of the model.
         __pydantic_custom_init__: Whether the model has a custom `__init__` function.
         __pydantic_decorators__: Metadata containing the decorators defined on the model.
-            This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
         __pydantic_generic_metadata__: A dictionary containing metadata about generic Pydantic models.
             The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
             and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
@@ -178,7 +166,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __class_vars__: ClassVar[set[str]]
     """The names of the class variables defined on the model."""
 
-    __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]  # noqa: UP006
+    __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
     """Metadata about the private attributes of the model."""
 
     __signature__: ClassVar[Signature]
@@ -195,8 +183,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
     __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos] = _decorators.DecoratorInfos()
-    """Metadata containing the decorators defined on the model.
-    This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1."""
+    """Metadata containing the decorators defined on the model."""
 
     __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
     """A dictionary containing metadata about generic Pydantic models.
@@ -206,7 +193,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     and the `parameter` item maps to the `__parameter__` attribute of generic classes.
     """
 
-    __pydantic_parent_namespace__: ClassVar[Dict[str, Any] | None] = None  # noqa: UP006
+    __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None] = None
     """Parent namespace of the model, used for automatic rebuilding of models."""
 
     __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
@@ -221,15 +208,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
     """The `pydantic-core` `SchemaValidator` used to validate instances of the model."""
 
-    __pydantic_fields__: ClassVar[Dict[str, FieldInfo]]  # noqa: UP006
-    """A dictionary of field names and their corresponding [`FieldInfo`][pydantic.fields.FieldInfo] objects.
-    This replaces `Model.__fields__` from Pydantic V1.
-    """
+    __pydantic_fields__: ClassVar[dict[str, FieldInfo]]
+    """A dictionary of field names and their corresponding [`FieldInfo`][pydantic.fields.FieldInfo] objects."""
 
-    __pydantic_setattr_handlers__: ClassVar[Dict[str, Callable[[BaseModel, str, Any], None]]]  # noqa: UP006
+    __pydantic_setattr_handlers__: ClassVar[dict[str, Callable[[BaseModel, str, Any], None]]]
     """`__setattr__` handlers. Memoizing the handlers leads to a dramatic performance improvement in `__setattr__`"""
 
-    __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
+    __pydantic_computed_fields__: ClassVar[dict[str, ComputedFieldInfo]]
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
 
     __pydantic_extra_info__: ClassVar[PydanticExtraInfo | None]
@@ -238,13 +223,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This is a private attribute, not meant to be used outside Pydantic.
     """
 
-    __pydantic_extra__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
+    __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
 
-    __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
+    __pydantic_fields_set__: MutableSet[str] = _model_construction.NoInitField(init=False)
     """The names of fields explicitly set during instantiation."""
 
-    __pydantic_private__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
+    __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """Values of private attributes set on the model instance."""
 
     if not TYPE_CHECKING:
@@ -289,30 +274,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
-    @_utils.deprecated_instance_property
-    @classmethod
-    def model_fields(cls) -> Dict[str, FieldInfo]:  # noqa: UP006
-        """A mapping of field names to their respective [`FieldInfo`][pydantic.fields.FieldInfo] instances.
-
-        !!! warning
-            Accessing this attribute from a model instance is deprecated, and will not work in Pydantic V3.
-            Instead, you should access this attribute from the model class.
-        """
-        return getattr(cls, '__pydantic_fields__', {})
-
-    @_utils.deprecated_instance_property
-    @classmethod
-    def model_computed_fields(cls) -> Dict[str, ComputedFieldInfo]:  # noqa: UP006
-        """A mapping of computed field names to their respective [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances.
-
-        !!! warning
-            Accessing this attribute from a model instance is deprecated, and will not work in Pydantic V3.
-            Instead, you should access this attribute from the model class.
-        """
-        return getattr(cls, '__pydantic_computed_fields__', {})
-
     @property
-    def model_extra(self) -> Dict[str, Any] | None:  # noqa: UP006
+    def model_extra(self) -> dict[str, Any] | None:
         """Get extra fields set during validation.
 
         Returns:
@@ -321,7 +284,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_extra__
 
     @property
-    def model_fields_set(self) -> set[str]:
+    def model_fields_set(self) -> MutableSet[str]:
         """Returns the set of fields that have been explicitly set on this model instance.
 
         Returns:
@@ -465,7 +428,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 copied.__dict__.update(update)  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
 
-            copied.__pydantic_fields_set__.update(update.keys())
+            for name in update:
+                copied.__pydantic_fields_set__.add(name)
 
         return copied
 
@@ -486,7 +450,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
         polymorphic_serialization: bool | None = None,
-    ) -> Dict[str, Any]:  # noqa: UP006
+    ) -> dict[str, Any]:
         """!!! abstract "Usage Documentation"
             [`model_dump`](../concepts/serialization.md#python-mode)
 
@@ -612,7 +576,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         mode: JsonSchemaMode = 'validation',
         *,
         union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
-    ) -> Dict[str, Any]:  # noqa: UP006
+    ) -> dict[str, Any]:
         """Generates a JSON schema for a model class.
 
         Args:
@@ -1052,7 +1016,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def __deepcopy__(self, memo: Dict[int, Any] | None = None) -> Self:  # noqa: UP006
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
         """Returns a deep copy of the model."""
         if memo is None:
             memo = {}
@@ -1061,7 +1025,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         memo[id(self)] = m
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
         _object_setattr(m, '__pydantic_extra__', deepcopy(self.__pydantic_extra__, memo=memo))
-        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
+        # This next line doesn't need a deepcopy because __pydantic_fields_set__ only contains strings,
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
 
@@ -1210,7 +1174,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         def __replace__(self, **changes: Any) -> Self:
             return self.model_copy(update=changes)
 
-    def __getstate__(self) -> Dict[Any, Any]:  # noqa: UP006
+    def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
         if private:
             private = {k: v for k, v in private.items() if v is not PydanticUndefined}
@@ -1221,7 +1185,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             '__pydantic_private__': private,
         }
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:  # noqa: UP006
+    def __setstate__(self, state: dict[Any, Any]) -> None:
         _object_setattr(self, '__pydantic_fields_set__', state.get('__pydantic_fields_set__', {}))
         _object_setattr(self, '__pydantic_extra__', state.get('__pydantic_extra__', {}))
         _object_setattr(self, '__pydantic_private__', state.get('__pydantic_private__', {}))
@@ -1361,409 +1325,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __str__(self) -> str:
         return self.__repr_str__(' ')
 
-    # ##### Deprecated methods from v1 #####
-    @property
-    @typing_extensions.deprecated(
-        'The `__fields__` attribute is deprecated, use the `model_fields` class property instead.', category=None
-    )
-    def __fields__(self) -> Dict[str, FieldInfo]:  # noqa: UP006
-        warnings.warn(
-            'The `__fields__` attribute is deprecated, use the `model_fields` class property instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        return getattr(type(self), '__pydantic_fields__', {})
-
-    @property
-    @typing_extensions.deprecated(
-        'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.',
-        category=None,
-    )
-    def __fields_set__(self) -> set[str]:
-        warnings.warn(
-            'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        return self.__pydantic_fields_set__
-
-    @typing_extensions.deprecated('The `dict` method is deprecated; use `model_dump` instead.', category=None)
-    def dict(  # noqa: D102
-        self,
-        *,
-        include: IncEx | None = None,
-        exclude: IncEx | None = None,
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-    ) -> Dict[str, Any]:  # noqa UP006
-        warnings.warn(
-            'The `dict` method is deprecated; use `model_dump` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        return self.model_dump(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-        )
-
-    @typing_extensions.deprecated('The `json` method is deprecated; use `model_dump_json` instead.', category=None)
-    def json(  # noqa: D102
-        self,
-        *,
-        include: IncEx | None = None,
-        exclude: IncEx | None = None,
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        encoder: Callable[[Any], Any] | None = PydanticUndefined,  # type: ignore[assignment]
-        models_as_dict: bool = PydanticUndefined,  # type: ignore[assignment]
-        **dumps_kwargs: Any,
-    ) -> str:
-        warnings.warn(
-            'The `json` method is deprecated; use `model_dump_json` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        if encoder is not PydanticUndefined:
-            raise TypeError('The `encoder` argument is no longer supported; use field serializers instead.')
-        if models_as_dict is not PydanticUndefined:
-            raise TypeError('The `models_as_dict` argument is no longer supported; use a model serializer instead.')
-        if dumps_kwargs:
-            raise TypeError('`dumps_kwargs` keyword arguments are no longer supported.')
-        return self.model_dump_json(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-        )
-
-    @classmethod
-    @typing_extensions.deprecated('The `parse_obj` method is deprecated; use `model_validate` instead.', category=None)
-    def parse_obj(cls, obj: Any) -> Self:  # noqa: D102
-        warnings.warn(
-            'The `parse_obj` method is deprecated; use `model_validate` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        return cls.model_validate(obj)
-
-    @classmethod
-    @typing_extensions.deprecated(
-        'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
-        'otherwise load the data then use `model_validate` instead.',
-        category=None,
-    )
-    def parse_raw(  # noqa: D102
-        cls,
-        b: str | bytes,
-        *,
-        content_type: str | None = None,
-        encoding: str = 'utf8',
-        proto: DeprecatedParseProtocol | None = None,
-        allow_pickle: bool = False,
-    ) -> Self:  # pragma: no cover
-        warnings.warn(
-            'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
-            'otherwise load the data then use `model_validate` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        from .deprecated import parse
-
-        try:
-            obj = parse.load_str_bytes(
-                b,
-                proto=proto,
-                content_type=content_type,
-                encoding=encoding,
-                allow_pickle=allow_pickle,
-            )
-        except (ValueError, TypeError) as exc:
-            import json
-
-            # try to match V1
-            if isinstance(exc, UnicodeDecodeError):
-                type_str = 'value_error.unicodedecode'
-            elif isinstance(exc, json.JSONDecodeError):
-                type_str = 'value_error.jsondecode'
-            elif isinstance(exc, ValueError):
-                type_str = 'value_error'
-            else:
-                type_str = 'type_error'
-
-            # ctx is missing here, but since we've added `input` to the error, we're not pretending it's the same
-            error: pydantic_core.InitErrorDetails = {
-                # The type: ignore on the next line is to ignore the requirement of LiteralString
-                'type': pydantic_core.PydanticCustomError(type_str, str(exc)),  # type: ignore
-                'loc': ('__root__',),
-                'input': b,
-            }
-            raise pydantic_core.ValidationError.from_exception_data(cls.__name__, [error])
-        return cls.model_validate(obj)
-
-    @classmethod
-    @typing_extensions.deprecated(
-        'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
-        'use `model_validate_json`, otherwise `model_validate` instead.',
-        category=None,
-    )
-    def parse_file(  # noqa: D102
-        cls,
-        path: str | Path,
-        *,
-        content_type: str | None = None,
-        encoding: str = 'utf8',
-        proto: DeprecatedParseProtocol | None = None,
-        allow_pickle: bool = False,
-    ) -> Self:
-        warnings.warn(
-            'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
-            'use `model_validate_json`, otherwise `model_validate` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        from .deprecated import parse
-
-        obj = parse.load_file(
-            path,
-            proto=proto,
-            content_type=content_type,
-            encoding=encoding,
-            allow_pickle=allow_pickle,
-        )
-        return cls.parse_obj(obj)
-
-    @classmethod
-    @typing_extensions.deprecated(
-        'The `from_orm` method is deprecated; set '
-        "`model_config['from_attributes']=True` and use `model_validate` instead.",
-        category=None,
-    )
-    def from_orm(cls, obj: Any) -> Self:  # noqa: D102
-        warnings.warn(
-            'The `from_orm` method is deprecated; set '
-            "`model_config['from_attributes']=True` and use `model_validate` instead.",
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        if not cls.model_config.get('from_attributes', None):
-            raise PydanticUserError(
-                'You must set the config attribute `from_attributes=True` to use from_orm', code=None
-            )
-        return cls.model_validate(obj)
-
-    @classmethod
-    @typing_extensions.deprecated('The `construct` method is deprecated; use `model_construct` instead.', category=None)
-    def construct(cls, _fields_set: set[str] | None = None, **values: Any) -> Self:  # noqa: D102
-        warnings.warn(
-            'The `construct` method is deprecated; use `model_construct` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        return cls.model_construct(_fields_set=_fields_set, **values)
-
-    @typing_extensions.deprecated(
-        'The `copy` method is deprecated; use `model_copy` instead. '
-        'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.',
-        category=None,
-    )
-    def copy(
-        self,
-        *,
-        include: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        update: Dict[str, Any] | None = None,  # noqa UP006
-        deep: bool = False,
-    ) -> Self:  # pragma: no cover
-        """Returns a copy of the model.
-
-        !!! warning "Deprecated"
-            This method is now deprecated; use `model_copy` instead.
-
-        If you need `include` or `exclude`, use:
-
-        ```python {test="skip" lint="skip"}
-        data = self.model_dump(include=include, exclude=exclude, round_trip=True)
-        data = {**data, **(update or {})}
-        copied = self.model_validate(data)
-        ```
-
-        Args:
-            include: Optional set or mapping specifying which fields to include in the copied model.
-            exclude: Optional set or mapping specifying which fields to exclude in the copied model.
-            update: Optional dictionary of field-value pairs to override field values in the copied model.
-            deep: If True, the values of fields that are Pydantic models will be deep-copied.
-
-        Returns:
-            A copy of the model with included, excluded and updated fields as specified.
-        """
-        warnings.warn(
-            'The `copy` method is deprecated; use `model_copy` instead. '
-            'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        from .deprecated import copy_internals
-
-        values = dict(
-            copy_internals._iter(
-                self, to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False
-            ),
-            **(update or {}),
-        )
-        if self.__pydantic_private__ is None:
-            private = None
-        else:
-            private = {k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined}
-
-        if self.__pydantic_extra__ is None:
-            extra: dict[str, Any] | None = None
-        else:
-            extra = self.__pydantic_extra__.copy()
-            for k in list(self.__pydantic_extra__):
-                if k not in values:  # k was in the exclude
-                    extra.pop(k)
-            for k in list(values):
-                if k in self.__pydantic_extra__:  # k must have come from extra
-                    extra[k] = values.pop(k)
-
-        # new `__pydantic_fields_set__` can have unset optional fields with a set value in `update` kwarg
-        if update:
-            fields_set = self.__pydantic_fields_set__ | update.keys()
-        else:
-            fields_set = set(self.__pydantic_fields_set__)
-
-        # removing excluded fields from `__pydantic_fields_set__`
-        if exclude:
-            fields_set -= set(exclude)
-
-        return copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
-
-    @classmethod
-    @typing_extensions.deprecated('The `schema` method is deprecated; use `model_json_schema` instead.', category=None)
-    def schema(  # noqa: D102
-        cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
-    ) -> Dict[str, Any]:  # noqa UP006
-        warnings.warn(
-            'The `schema` method is deprecated; use `model_json_schema` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        return cls.model_json_schema(by_alias=by_alias, ref_template=ref_template)
-
-    @classmethod
-    @typing_extensions.deprecated(
-        'The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.',
-        category=None,
-    )
-    def schema_json(  # noqa: D102
-        cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
-    ) -> str:  # pragma: no cover
-        warnings.warn(
-            'The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        import json
-
-        from .deprecated.json import pydantic_encoder
-
-        return json.dumps(
-            cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),
-            default=pydantic_encoder,
-            **dumps_kwargs,
-        )
-
-    @classmethod
-    @typing_extensions.deprecated('The `validate` method is deprecated; use `model_validate` instead.', category=None)
-    def validate(cls, value: Any) -> Self:  # noqa: D102
-        warnings.warn(
-            'The `validate` method is deprecated; use `model_validate` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        return cls.model_validate(value)
-
-    @classmethod
-    @typing_extensions.deprecated(
-        'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.',
-        category=None,
-    )
-    def update_forward_refs(cls, **localns: Any) -> None:  # noqa: D102
-        warnings.warn(
-            'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        if localns:  # pragma: no cover
-            raise TypeError('`localns` arguments are not longer accepted.')
-        cls.model_rebuild(force=True)
-
-    @typing_extensions.deprecated(
-        'The private method `_iter` will be removed and should no longer be used.', category=None
-    )
-    def _iter(self, *args: Any, **kwargs: Any) -> Any:
-        warnings.warn(
-            'The private method `_iter` will be removed and should no longer be used.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        from .deprecated import copy_internals
-
-        return copy_internals._iter(self, *args, **kwargs)
-
-    @typing_extensions.deprecated(
-        'The private method `_copy_and_set_values` will be removed and should no longer be used.',
-        category=None,
-    )
-    def _copy_and_set_values(self, *args: Any, **kwargs: Any) -> Any:
-        warnings.warn(
-            'The private method `_copy_and_set_values` will be removed and should no longer be used.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        from .deprecated import copy_internals
-
-        return copy_internals._copy_and_set_values(self, *args, **kwargs)
-
-    @classmethod
-    @typing_extensions.deprecated(
-        'The private method `_get_value` will be removed and should no longer be used.',
-        category=None,
-    )
-    def _get_value(cls, *args: Any, **kwargs: Any) -> Any:
-        warnings.warn(
-            'The private method `_get_value` will be removed and should no longer be used.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        from .deprecated import copy_internals
-
-        return copy_internals._get_value(cls, *args, **kwargs)
-
-    @typing_extensions.deprecated(
-        'The private method `_calculate_keys` will be removed and should no longer be used.',
-        category=None,
-    )
-    def _calculate_keys(self, *args: Any, **kwargs: Any) -> Any:
-        warnings.warn(
-            'The private method `_calculate_keys` will be removed and should no longer be used.',
-            category=PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-        from .deprecated import copy_internals
-
-        return copy_internals._calculate_keys(self, *args, **kwargs)
-
 
 ModelT = TypeVar('ModelT', bound=BaseModel)
 
@@ -1786,7 +1347,6 @@ def create_model(
     __doc__: str | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, Callable[..., Any]] | None = None,
     __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
@@ -1803,7 +1363,6 @@ def create_model(
     __doc__: str | None = None,
     __base__: type[ModelT] | tuple[type[ModelT], ...],
     __module__: str = __name__,
-    __validators__: dict[str, Callable[..., Any]] | None = None,
     __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
@@ -1819,7 +1378,6 @@ def create_model(  # noqa: C901
     __doc__: str | None = None,
     __base__: type[ModelT] | tuple[type[ModelT], ...] | None = None,
     __module__: str | None = None,
-    __validators__: dict[str, Callable[..., Any]] | None = None,
     __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
@@ -1843,22 +1401,16 @@ def create_model(  # noqa: C901
         __base__: The base class or classes for the new model.
         __module__: The name of the module that the model belongs to;
             if `None`, the value is taken from `sys._getframe(1)`
-        __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to
-            be added to the model, and the values are the validation methods themselves. You can read more about functional
-            validators [here](../concepts/validators.md#field-validators).
-
-            /// version-changed | v2.14
-            It is now recommended to use the `__namespace__` argument, which isn't restricted to validators.
-            `__validators__` will be deprecated in v3.
-            ///
         __namespace__: A dictionary of attributes to add to the class namespace of the new model, such as
             [validators](../concepts/validators.md), methods or [computed fields][pydantic.computed_field].
-            Keys take precedence over the ones from `__validators__`, and must not clash with any of the field names
-            or with the attributes that have a dedicated argument (`__annotations__`, `__module__`, `__qualname__`,
-            `__doc__` and `model_config`).
+            Keys must not clash with any of the field names or with the attributes that have a dedicated argument
+            (`__annotations__`, `__module__`, `__qualname__`, `__doc__` and `model_config`).
 
             /// version-added | v2.14
-            This argument replaces `__validators__`, which will be deprecated in v3.
+            ///
+
+            /// version-removed | v3
+            The `__validators__` argument was removed, use `__namespace__` instead.
             ///
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __qualname__: The qualified name of the newly created model.
@@ -1879,6 +1431,13 @@ def create_model(  # noqa: C901
         __base__ = (cast('type[ModelT]', BaseModel),)
     elif not isinstance(__base__, tuple):
         __base__ = (__base__,)
+
+    if '__validators__' in field_definitions:
+        # Would otherwise be silently ignored, as a dunder field definition.
+        # TODO: remove this check in the next major version:
+        raise TypeError(
+            "create_model() got an unexpected keyword argument '__validators__', use '__namespace__' instead"
+        )
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
@@ -1921,8 +1480,6 @@ def create_model(  # noqa: C901
         namespace['__doc__'] = __doc__
     if __qualname__ is not None:
         namespace['__qualname__'] = __qualname__
-    if __validators__:
-        namespace.update(__validators__)
     if __namespace__:
         namespace.update(__namespace__)
     namespace.update(fields)
@@ -1942,6 +1499,3 @@ def create_model(  # noqa: C901
         _create_model_module=__module__,
         **kwds,
     )
-
-
-__getattr__ = getattr_migration(__name__)

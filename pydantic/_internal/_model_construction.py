@@ -17,12 +17,11 @@ from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import (
     TypeAliasType,
     dataclass_transform,
-    deprecated,
 )
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
-from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
+from ..warnings import GenericBeforeBaseModelWarning
 from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
 from ._fields import (
@@ -42,8 +41,8 @@ from ._typing_extra import parent_frame_namespace
 from ._utils import LazyClassAttribute, SafeGetItemProxy
 
 if TYPE_CHECKING:
+    from ..fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from ..fields import Field as PydanticModelField
-    from ..fields import FieldInfo, ModelPrivateAttr
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
     from ._fields import PydanticExtraInfo
@@ -321,16 +320,14 @@ class ModelMetaclass(ABCMeta):
         return field_names, class_vars, private_attributes
 
     @property
-    @deprecated(
-        'The `__fields__` attribute is deprecated, use the `model_fields` class property instead.', category=None
-    )
-    def __fields__(self) -> dict[str, FieldInfo]:
-        warnings.warn(
-            'The `__fields__` attribute is deprecated, use the `model_fields` class property instead.',
-            PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
+    def model_fields(self) -> dict[str, FieldInfo]:
+        """A mapping of field names to their respective [`FieldInfo`][pydantic.fields.FieldInfo] instances."""
         return getattr(self, '__pydantic_fields__', {})
+
+    @property
+    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
+        """A mapping of computed field names to their respective [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances."""
+        return getattr(self, '__pydantic_computed_fields__', {})
 
     @property
     def __pydantic_fields_complete__(self) -> bool:
@@ -350,12 +347,6 @@ class ModelMetaclass(ABCMeta):
             extra_complete = True
 
         return all(field_info._complete for field_info in field_infos.values()) and extra_complete
-
-    def __dir__(self) -> list[str]:
-        attributes = list(super().__dir__())
-        if '__fields__' in attributes:
-            attributes.remove('__fields__')
-        return attributes
 
 
 def init_private_attributes(self: BaseModel, context: Any, /) -> None:
@@ -415,7 +406,7 @@ def inspect_namespace(
         A `ModelNamespaceInfo` instance.
 
     Raises:
-        PydanticUserError: If there is a `__root__` field in model, or if a private attribute name is invalid.
+        PydanticUserError: If a private attribute name is invalid.
     """
     from ..fields import ModelPrivateAttr
 
@@ -427,12 +418,6 @@ def inspect_namespace(
     ignored_names: set[str] = set()
     private_candidates: list[str] = []
     field_candidates: list[str] = []
-
-    if '__root__' in namespace:
-        # This only checks for assignment, `collect_model_fields()` will raise if only an annotated `__root__` is defined:
-        raise PydanticUserError(
-            "To define root models, use `pydantic.RootModel` rather than a field called '__root__'", code=None
-        )
 
     for var_name, value in namespace.items():
         if var_name == 'model_config' or var_name == '__pydantic_extra__':

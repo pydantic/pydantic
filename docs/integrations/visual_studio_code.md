@@ -221,7 +221,7 @@ So, this is the equivalent of the previous example, without the additional varia
 
 Pydantic has a rich set of [Model Configurations][pydantic.config.ConfigDict] available.
 
-These configurations can be set in an internal `class Config` on each model:
+These configurations can be set using the `model_config` attribute on each model:
 
 ```python {hl_lines="9-10"}
 from pydantic import BaseModel

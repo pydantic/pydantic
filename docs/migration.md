@@ -1,6 +1,10 @@
 ---
-description: Migrating from Pydantic V1.
+description: Migrating from Pydantic V1 to Pydantic V2.
 ---
+
+!!! warning
+    This guide covers the migration from Pydantic V1 to Pydantic V2, and is kept for reference.
+    It does not cover the changes introduced in later major versions.
 
 Pydantic V2 introduces a number of changes to the API, including some breaking changes.
 
@@ -47,6 +51,9 @@ Then you'll want to do:
 See more about it on the [Bump Pydantic](https://github.com/pydantic/bump-pydantic) repository.
 
 ## Continue using Pydantic V1 features
+
+!!! note
+    The `pydantic.v1` namespace described in this section was removed in Pydantic V3.
 
 Pydantic V1 is still available when you need it, though we recommend migrating to
 Pydantic V2 for its improvements and new features.

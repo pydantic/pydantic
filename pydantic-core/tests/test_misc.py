@@ -232,16 +232,6 @@ def test_unicode_error_input_repr() -> None:
     assert expected == actual
 
 
-def test_core_schema_import_field_validation_info():
-    with pytest.warns(DeprecationWarning, match='`FieldValidationInfo` is deprecated, use `ValidationInfo` instead.'):
-        core_schema.FieldValidationInfo
-
-
-def test_core_schema_import_missing():
-    with pytest.raises(AttributeError, match="module 'pydantic_core' has no attribute 'foobar'"):
-        core_schema.foobar
-
-
 def test_internal_error():
     v = SchemaValidator(
         core_schema.model_schema(

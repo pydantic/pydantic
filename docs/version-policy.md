@@ -1,13 +1,3 @@
-First of all, we recognize that the transitions from Pydantic V1 to V2 has been and will be painful for some users.
-We're sorry about this pain :pray:, it was an unfortunate but necessary step to correct design mistakes of V1.
-
-**There will not be another breaking change of this magnitude!**
-
-## Pydantic V1
-
-Active development of V1 has already stopped, however critical bug fixes and security vulnerabilities will be fixed in V1 until
-the release of Pydantic V3.
-
 ## Pydantic V2
 
 We will not intentionally make breaking changes in minor releases of V2.
