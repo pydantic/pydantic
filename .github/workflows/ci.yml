@@ -592,17 +592,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
-      # `cffi` (a dependency of `pytest-codspeed`) can't be built on GraalPy, and `greenlet` (a dependency of `sqlalchemy`,
-      # only required for its asyncio support) can't be built on GraalPy 3.13:
+      # - `cffi` (a dependency of `pytest-codspeed`) can't be built on GraalPy.
+      # - `sqlalchemy` (only used in docs tests) fails to import on GraalPy 3.13 (`immutabledict object is immutable`),
+      #   and its `greenlet` dependency can't be built on GraalPy 3.13.
       - name: Install dependencies
-        run: uv sync --all-packages --group testing-extra --no-install-package pytest-codspeed --no-install-package cffi --no-install-package greenlet
+        run: uv sync --all-packages --group testing-extra --no-install-package pytest-codspeed --no-install-package cffi --no-install-package sqlalchemy --no-install-package greenlet
         env:
           RUST_BACKTRACE: 1
           UV_PYTHON_PREFERENCE: only-managed
 
       - run: uv pip freeze
       # `pytest-examples` is not installed on GraalPy:
-      - run: uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py
+      - run: uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py -v
 
   core-test-msrv:
     name: core / Test MSRV
