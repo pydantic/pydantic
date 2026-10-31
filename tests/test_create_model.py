@@ -8,13 +8,11 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
-    PydanticDeprecatedSince20,
     PydanticUserError,
     ValidationError,
     computed_field,
     create_model,
     field_validator,
-    validator,
 )
 
 
@@ -37,8 +35,6 @@ def test_create_model() -> None:
 
     assert FooModel.model_fields['qux'].title == 'QUX'
 
-    assert not FooModel.__pydantic_decorators__.validators
-    assert not FooModel.__pydantic_decorators__.root_validators
     assert not FooModel.__pydantic_decorators__.field_validators
     assert not FooModel.__pydantic_decorators__.field_serializers
 
@@ -239,13 +235,11 @@ def test_inheritance_validators_always():
 
 
 def test_inheritance_validators_all():
-    with pytest.warns(PydanticDeprecatedSince20, match='Pydantic V1 style `@validator` validators are deprecated'):
-
-        class BarModel(BaseModel):
-            @validator('*')
-            @classmethod
-            def check_all(cls, v):
-                return v * 2
+    class BarModel(BaseModel):
+        @field_validator('*')
+        @classmethod
+        def check_all(cls, v):
+            return v * 2
 
     model = create_model('FooModel', a=(int, ...), b=(int, ...), __base__=BarModel)
     assert model(a=2, b=6).model_dump() == {'a': 4, 'b': 12}

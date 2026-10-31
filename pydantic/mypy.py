@@ -33,7 +33,6 @@ from mypy.nodes import (
     FuncDef,
     IfStmt,
     JsonDict,
-    MemberExpr,
     NameExpr,
     PassStmt,
     PlaceholderNode,
@@ -51,7 +50,6 @@ from mypy.plugin import (
     CheckerPluginInterface,
     ClassDefContext,
     DynamicClassDefContext,
-    MethodContext,
     Plugin,
     ReportConfigContext,
     SemanticAnalyzerPluginInterface,
@@ -101,8 +99,6 @@ DECORATOR_FULLNAMES = {
     'pydantic.functional_validators.model_validator',
     'pydantic.functional_serializers.serializer',
     'pydantic.functional_serializers.model_serializer',
-    'pydantic.deprecated.class_validators.validator',
-    'pydantic.deprecated.class_validators.root_validator',
 }
 IMPLICIT_CLASSMETHOD_DECORATOR_FULLNAMES = DECORATOR_FULLNAMES - {'pydantic.functional_serializers.model_serializer'}
 
@@ -150,12 +146,6 @@ class PydanticPlugin(Plugin):
         """Update Pydantic `ModelMetaclass` definition."""
         if fullname in (MODEL_METACLASS_FULLNAME, ROOT_MODEL_METACLASS_FULLNAME):
             return self._pydantic_model_metaclass_marker_callback
-        return None
-
-    def get_method_hook(self, fullname: str) -> Callable[[MethodContext], Type] | None:
-        """Adjust return type of `from_orm` method call."""
-        if fullname.endswith('.from_orm'):
-            return from_attributes_callback
         return None
 
     def get_dynamic_class_hook(self, fullname: str) -> Callable[[DynamicClassDefContext], None] | None:
@@ -287,32 +277,6 @@ class PydanticPluginConfig:
     def to_data(self) -> dict[str, Any]:
         """Returns a dict of config names to their values."""
         return {key: getattr(self, key) for key in self.__slots__}
-
-
-def from_attributes_callback(ctx: MethodContext) -> Type:
-    """Raise an error if from_attributes is not enabled."""
-    model_type: Instance
-    ctx_type = ctx.type
-    if isinstance(ctx_type, TypeType):
-        ctx_type = ctx_type.item
-    if isinstance(ctx_type, CallableType) and isinstance(ctx_type.ret_type, Instance):
-        model_type = ctx_type.ret_type  # called on the class
-    elif isinstance(ctx_type, Instance):
-        model_type = ctx_type  # called on an instance (unusual, but still valid)
-    else:  # pragma: no cover
-        detail = f'ctx.type: {ctx_type} (of type {ctx_type.__class__.__name__})'
-        error_unexpected_behavior(detail, ctx.api, ctx.context)
-        return ctx.default_return_type
-    pydantic_metadata = model_type.type.metadata.get(METADATA_KEY)
-    if pydantic_metadata is None:
-        return ctx.default_return_type
-    if not model_type.type.has_base(BASEMODEL_FULLNAME):
-        # not a Pydantic v2 model
-        return ctx.default_return_type
-    from_attributes = pydantic_metadata.get('config', {}).get('from_attributes')
-    if from_attributes is not True:
-        error_from_attributes(model_type.type.name, ctx.api, ctx.context)
-    return ctx.default_return_type
 
 
 class PydanticModelField:
@@ -497,7 +461,6 @@ class PydanticModelTransformer:
     tracked_config_fields: set[str] = {
         'extra',
         'frozen',
-        'from_attributes',
         'populate_by_name',
         'validate_by_alias',
         'validate_by_name',
@@ -570,11 +533,11 @@ class PydanticModelTransformer:
         return True
 
     def adjust_decorator_signatures(self) -> None:
-        """When we decorate a function `f` with `pydantic.validator(...)`, `pydantic.field_validator`
+        """When we decorate a function `f` with `pydantic.field_validator(...)`
         or `pydantic.serializer(...)`, mypy sees `f` as a regular method taking a `self` instance,
         even though pydantic internally wraps `f` with `classmethod` if necessary.
 
-        Teach mypy this by marking any function whose outermost decorator is a `validator()`,
+        Teach mypy this by marking any function whose outermost decorator is a
         `field_validator()` or `serializer()` call as a `classmethod`.
         """
         for sym in self._cls.info.names.values():
@@ -614,35 +577,23 @@ class PydanticModelTransformer:
         # Handle `model_config`
         stmt: Statement | None = None
         for stmt in cls.defs.body:
-            if not isinstance(stmt, (AssignmentStmt, ClassDef)):
+            if not isinstance(stmt, AssignmentStmt):
                 continue
 
-            if isinstance(stmt, AssignmentStmt):
-                lhs = stmt.lvalues[0]
-                if not isinstance(lhs, NameExpr) or lhs.name != 'model_config':
-                    continue
+            lhs = stmt.lvalues[0]
+            if not isinstance(lhs, NameExpr) or lhs.name != 'model_config':
+                continue
 
-                if isinstance(stmt.rvalue, CallExpr):  # calls to `dict` or `ConfigDict`
-                    for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args, strict=True):
-                        if arg_name is None:
-                            continue
-                        config.update(self.get_config_update(arg_name, arg, lax_extra=True))
-                elif isinstance(stmt.rvalue, DictExpr):  # dict literals
-                    for key_expr, value_expr in stmt.rvalue.items:
-                        if not isinstance(key_expr, StrExpr):
-                            continue
-                        config.update(self.get_config_update(key_expr.value, value_expr))
-
-            elif isinstance(stmt, ClassDef):
-                if stmt.name != 'Config':  # 'deprecated' Config-class
-                    continue
-                for substmt in stmt.defs.body:
-                    if not isinstance(substmt, AssignmentStmt):
+            if isinstance(stmt.rvalue, CallExpr):  # calls to `dict` or `ConfigDict`
+                for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args, strict=True):
+                    if arg_name is None:
                         continue
-                    lhs = substmt.lvalues[0]
-                    if not isinstance(lhs, NameExpr):
+                    config.update(self.get_config_update(arg_name, arg, lax_extra=True))
+            elif isinstance(stmt.rvalue, DictExpr):  # dict literals
+                for key_expr, value_expr in stmt.rvalue.items:
+                    if not isinstance(key_expr, StrExpr):
                         continue
-                    config.update(self.get_config_update(lhs.name, substmt.rvalue))
+                    config.update(self.get_config_update(key_expr.value, value_expr))
 
             if has_config_kwargs:
                 self._api.fail(
@@ -1070,12 +1021,10 @@ class PydanticModelTransformer:
         if name == 'extra':
             if isinstance(arg, StrExpr):
                 forbid_extra = arg.value == 'forbid'
-            elif isinstance(arg, MemberExpr):
-                forbid_extra = arg.name == 'forbid'
             else:
                 if not lax_extra:
                     # Only emit an error for other types of `arg` (e.g., `NameExpr`, `ConditionalExpr`, etc.) when
-                    # reading from a config class, etc. If a ConfigDict is used, then we don't want to emit an error
+                    # reading from class kwargs or a dict literal. If a ConfigDict is used, then we don't want to emit an error
                     # because you'll get type checking from the ConfigDict itself.
                     #
                     # It would be nice if we could introspect the types better otherwise, but I don't know what the API
@@ -1269,7 +1218,6 @@ class ModelConfigData:
         self,
         forbid_extra: bool | None = None,
         frozen: bool | None = None,
-        from_attributes: bool | None = None,
         populate_by_name: bool | None = None,
         validate_by_alias: bool | None = None,
         validate_by_name: bool | None = None,
@@ -1278,7 +1226,6 @@ class ModelConfigData:
     ):
         self.forbid_extra = forbid_extra
         self.frozen = frozen
-        self.from_attributes = from_attributes
         self.populate_by_name = populate_by_name
         self.validate_by_alias = validate_by_alias
         self.validate_by_name = validate_by_name
@@ -1310,18 +1257,12 @@ def is_root_model(info: TypeInfo) -> bool:
     return info.has_base(ROOT_MODEL_FULLNAME)
 
 
-ERROR_ORM = ErrorCode('pydantic-orm', 'Invalid from_attributes call', 'Pydantic')
 ERROR_CONFIG = ErrorCode('pydantic-config', 'Invalid config value', 'Pydantic')
 ERROR_ALIAS = ErrorCode('pydantic-alias', 'Dynamic alias disallowed', 'Pydantic')
 ERROR_UNEXPECTED = ErrorCode('pydantic-unexpected', 'Unexpected behavior', 'Pydantic')
 ERROR_UNTYPED = ErrorCode('pydantic-field', 'Untyped field disallowed', 'Pydantic')
 ERROR_FIELD_DEFAULTS = ErrorCode('pydantic-field', 'Invalid Field defaults', 'Pydantic')
 ERROR_EXTRA_FIELD_ROOT_MODEL = ErrorCode('pydantic-field', 'Extra field on RootModel subclass', 'Pydantic')
-
-
-def error_from_attributes(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
-    """Emits an error when the model does not have `from_attributes=True`."""
-    api.fail(f'"{model_name}" does not have from_attributes=True', context, code=ERROR_ORM)
 
 
 def error_invalid_config_value(name: str, api: SemanticAnalyzerPluginInterface, context: Context) -> None:

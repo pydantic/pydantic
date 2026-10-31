@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, cast,
 
 from typing_extensions import TypedDict, Unpack, deprecated
 
-from ._migration import getattr_migration
 from .aliases import AliasGenerator
 from .errors import PydanticUserError
 from .warnings import PydanticDeprecatedSince211
@@ -179,9 +178,6 @@ class ConfigDict(TypedDict, total=False):
     Whether models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
     a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the
     attributes are hashable. Defaults to `False`.
-
-    Note:
-        On V1, the inverse of this setting was called `allow_mutation`, and was `True` by default.
     """
 
     populate_by_name: bool
@@ -453,8 +449,8 @@ class ConfigDict(TypedDict, total=False):
     A `dict` of custom JSON encoders for specific types. Defaults to `None`.
 
     /// version-deprecated | v2
-    This configuration option is a carryover from v1. We originally planned to remove it in v2 but didn't have a 1:1 replacement
-    so we are keeping it for now. It is still deprecated and will likely be removed in the future.
+    This configuration option is deprecated. Use [custom serializers](../concepts/serialization.md#custom-serializers)
+    instead.
     ///
     """
 
@@ -1290,6 +1286,3 @@ def with_config(config: ConfigDict | None = None, /, **kwargs: Any) -> Callable[
         return class_
 
     return inner
-
-
-__getattr__ = getattr_migration(__name__)

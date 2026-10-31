@@ -1,6 +1,10 @@
 ---
-description: Migrating from Pydantic V1.
+description: Migrating from Pydantic V1 to Pydantic V2.
 ---
+
+!!! warning
+    This guide covers the migration from Pydantic V1 to Pydantic V2, and is kept for reference.
+    It does not cover the changes introduced in later major versions.
 
 Pydantic V2 introduces a number of changes to the API, including some breaking changes.
 

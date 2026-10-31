@@ -1,8 +1,6 @@
 from importlib import import_module
 from typing import TYPE_CHECKING
-from warnings import warn
 
-from ._migration import getattr_migration
 from .version import VERSION, _ensure_pydantic_core_version
 
 _ensure_pydantic_core_version()
@@ -65,9 +63,6 @@ if TYPE_CHECKING:
 
     MISSING = pydantic_core.MISSING
     ValidationError = pydantic_core.ValidationError
-    from .deprecated.class_validators import root_validator, validator
-    from .deprecated.config import BaseConfig, Extra
-    from .deprecated.tools import *
     from .root_model import RootModel
 
 __version__ = VERSION
@@ -87,9 +82,6 @@ __all__ = (
     'ModelWrapValidatorHandler',
     # JSON Schema
     'WithJsonSchema',
-    # deprecated V1 functional validators, these are imported via `__getattr__` below
-    'root_validator',
-    'validator',
     # functional serializers
     'field_serializer',
     'model_serializer',
@@ -99,16 +91,12 @@ __all__ = (
     # config
     'ConfigDict',
     'with_config',
-    # deprecated V1 config, these are imported via `__getattr__` below
-    'BaseConfig',
-    'Extra',
     # validate_call
     'validate_call',
     # errors
     'PydanticErrorCodes',
     'PydanticUserError',
     'PydanticSchemaGenerationError',
-    'PydanticImportError',
     'PydanticUndefinedAnnotation',
     'PydanticInvalidForJsonSchema',
     'PydanticForbiddenQualifier',
@@ -151,10 +139,6 @@ __all__ = (
     'validate_email',
     # root_model
     'RootModel',
-    # deprecated tools, these are imported via `__getattr__` below
-    'parse_obj_as',
-    'schema_of',
-    'schema_json_of',
     # types
     'Strict',
     'StrictStr',
@@ -197,7 +181,6 @@ __all__ = (
     'StrictBytes',
     'StrictInt',
     'StrictFloat',
-    'PaymentCardNumber',
     'ByteSize',
     'PastDate',
     'FutureDate',
@@ -279,7 +262,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PydanticErrorCodes': (__spec__.parent, '.errors'),
     'PydanticUserError': (__spec__.parent, '.errors'),
     'PydanticSchemaGenerationError': (__spec__.parent, '.errors'),
-    'PydanticImportError': (__spec__.parent, '.errors'),
     'PydanticUndefinedAnnotation': (__spec__.parent, '.errors'),
     'PydanticInvalidForJsonSchema': (__spec__.parent, '.errors'),
     'PydanticForbiddenQualifier': (__spec__.parent, '.errors'),
@@ -363,7 +345,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'StrictBytes': (__spec__.parent, '.types'),
     'StrictInt': (__spec__.parent, '.types'),
     'StrictFloat': (__spec__.parent, '.types'),
-    'PaymentCardNumber': (__spec__.parent, '.types'),
     'ByteSize': (__spec__.parent, '.types'),
     'PastDate': (__spec__.parent, '.types'),
     'SocketPath': (__spec__.parent, '.types'),
@@ -410,36 +391,13 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'ValidatorFunctionWrapHandler': ('pydantic_core', '.core_schema'),
     'FieldSerializationInfo': ('pydantic_core', '.core_schema'),
     'SerializerFunctionWrapHandler': ('pydantic_core', '.core_schema'),
-    # deprecated, mostly not included in __all__
-    'root_validator': (__spec__.parent, '.deprecated.class_validators'),
-    'validator': (__spec__.parent, '.deprecated.class_validators'),
-    'BaseConfig': (__spec__.parent, '.deprecated.config'),
-    'Extra': (__spec__.parent, '.deprecated.config'),
-    'parse_obj_as': (__spec__.parent, '.deprecated.tools'),
-    'schema_of': (__spec__.parent, '.deprecated.tools'),
-    'schema_json_of': (__spec__.parent, '.deprecated.tools'),
-    # deprecated dynamic imports
-    'FieldValidationInfo': ('pydantic_core', '.core_schema'),
-    'GenerateSchema': (__spec__.parent, '._internal._generate_schema'),
 }
-_deprecated_dynamic_imports = {'FieldValidationInfo', 'GenerateSchema'}
-
-_getattr_migration = getattr_migration(__name__)
 
 
 def __getattr__(attr_name: str) -> object:
-    if attr_name in _deprecated_dynamic_imports:
-        from pydantic.warnings import PydanticDeprecatedSince20
-
-        warn(
-            f'Importing {attr_name} from `pydantic` is deprecated. This feature is either no longer supported, or is not public.',
-            PydanticDeprecatedSince20,
-            stacklevel=2,
-        )
-
     dynamic_attr = _dynamic_imports.get(attr_name)
     if dynamic_attr is None:
-        return _getattr_migration(attr_name)
+        raise AttributeError(f'module {__name__!r} has no attribute {attr_name!r}')
 
     package, module_name = dynamic_attr
 
@@ -452,7 +410,7 @@ def __getattr__(attr_name: str) -> object:
         result = getattr(module, attr_name)
         g = globals()
         for k, (_, v_module_name) in _dynamic_imports.items():
-            if v_module_name == module_name and k not in _deprecated_dynamic_imports:
+            if v_module_name == module_name:
                 g[k] = getattr(module, k)
         return result
 

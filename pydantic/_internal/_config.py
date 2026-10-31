@@ -17,13 +17,11 @@ from typing_extensions import Self
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
-from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
+from ..warnings import PydanticDeprecatedSince210
 
 if TYPE_CHECKING:
     from .._internal._schema_generation_shared import GenerateSchema
     from ..fields import ComputedFieldInfo, FieldInfo
-
-DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
 
 # Maps the `ConfigDict` keys that have a `CoreConfig` counterpart to the corresponding
 # `CoreConfig` key (`'title'` is omitted as it requires special handling, see `ConfigWrapper.core_config()`):
@@ -137,7 +135,7 @@ class ConfigWrapper:
     url_preserve_empty_path: bool
     polymorphic_serialization: bool
 
-    def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
+    def __init__(self, config: ConfigDict | dict[str, Any] | None, *, check: bool = True):
         if check:
             self.config_dict = prepare_config(config)
         else:
@@ -172,15 +170,7 @@ class ConfigWrapper:
             if config:
                 config_new.update(config.copy())
 
-        config_class_from_namespace = namespace.get('Config')
-        config_dict_from_namespace = namespace.get('model_config')
-
-        if config_class_from_namespace and config_dict_from_namespace:
-            raise PydanticUserError('"Config" and "model_config" cannot be used together', code='config-both')
-
-        config_from_namespace = config_dict_from_namespace or prepare_config(config_class_from_namespace)
-
-        config_new.update(config_from_namespace)
+        config_new.update(namespace.get('model_config') or {})
 
         for k in list(kwargs.keys()):
             if k in config_keys:
@@ -332,8 +322,8 @@ def _build_effective_config(config: ConfigDict) -> ConfigDict:
     return config
 
 
-def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> ConfigDict:
-    """Create a `ConfigDict` instance from an existing dict, a class (e.g. old class-based config) or None.
+def prepare_config(config: ConfigDict | dict[str, Any] | None) -> ConfigDict:
+    """Create a `ConfigDict` instance from an existing dict or None.
 
     Args:
         config: The input config.
@@ -344,13 +334,9 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
     if config is None:
         return ConfigDict()
 
-    if not isinstance(config, dict):
-        warnings.warn(DEPRECATION_MESSAGE, PydanticDeprecatedSince20, stacklevel=4)
-        config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
-    else:
-        # Copy, so that the `ConfigWrapper` owns its configuration and can never
-        # mutate the mapping provided by the user:
-        config = config.copy()
+    # Copy, so that the `ConfigWrapper` owns its configuration and can never
+    # mutate the mapping provided by the user:
+    config = config.copy()
 
     config_dict = cast(ConfigDict, config)
     check_deprecated(config_dict)
@@ -358,32 +344,6 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
 
 
 config_keys = set(ConfigDict.__annotations__.keys())
-
-
-V2_REMOVED_KEYS = {
-    'allow_mutation',
-    'error_msg_templates',
-    'fields',
-    'getter_dict',
-    'smart_union',
-    'underscore_attrs_are_private',
-    'json_loads',
-    'json_dumps',
-    'copy_on_model_validation',
-    'post_init_call',
-}
-V2_RENAMED_KEYS = {
-    'allow_population_by_field_name': 'validate_by_name',
-    'anystr_lower': 'str_to_lower',
-    'anystr_strip_whitespace': 'str_strip_whitespace',
-    'anystr_upper': 'str_to_upper',
-    'keep_untouched': 'ignored_types',
-    'max_anystr_length': 'str_max_length',
-    'min_anystr_length': 'str_min_length',
-    'orm_mode': 'from_attributes',
-    'schema_extra': 'json_schema_extra',
-    'validate_all': 'validate_default',
-}
 
 
 def check_deprecated(config_dict: ConfigDict) -> None:
@@ -397,12 +357,3 @@ def check_deprecated(config_dict: ConfigDict) -> None:
             'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
             PydanticDeprecatedSince210,
         )
-
-    deprecated_removed_keys = V2_REMOVED_KEYS & config_dict.keys()
-    deprecated_renamed_keys = V2_RENAMED_KEYS.keys() & config_dict.keys()
-    if deprecated_removed_keys or deprecated_renamed_keys:
-        renamings = {k: V2_RENAMED_KEYS[k] for k in sorted(deprecated_renamed_keys)}
-        renamed_bullets = [f'* {k!r} has been renamed to {v!r}' for k, v in renamings.items()]
-        removed_bullets = [f'* {k!r} has been removed' for k in sorted(deprecated_removed_keys)]
-        message = '\n'.join(['Valid config keys have changed in V2:'] + renamed_bullets + removed_bullets)
-        warnings.warn(message, UserWarning)

@@ -259,9 +259,7 @@ pydocstyle = { convention = 'google' }
 'tests/test_main.py' = ['PIE807']
 'tests/*' = ['D', 'B', 'C4']
 'pydantic/_internal/_known_annotated_metadata.py' = ['PIE800']
-'pydantic/deprecated/*' = ['D', 'PYI', 'UP007']
 'pydantic/color.py' = ['PYI']
-'pydantic/_internal/_decorators_v1.py' = ['PYI']
 'pydantic/json_schema.py' = ['D']
 "release/*.py" = ["T201"]  # print statements in release scripts
 
@@ -275,7 +273,7 @@ quote-style = 'single'
 
 [tool.coverage.run]
 source = ['pydantic', 'pydantic_core']
-omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
+omit = ['pydantic/v1/*']
 branch = true
 relative_files = true
 context = '${CONTEXT}'

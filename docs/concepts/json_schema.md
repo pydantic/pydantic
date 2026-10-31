@@ -159,8 +159,7 @@ print(json.dumps(main_model_schema, indent=2))  # (2)!
 2. Calling `json.dumps` on the schema dict produces a JSON string.
 
 The [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] class lets you create an object with methods for validating, serializing,
-and producing JSON schemas for arbitrary types. This serves as a complete replacement for `schema_of` in
-Pydantic V1 (which is now deprecated).
+and producing JSON schemas for arbitrary types.
 
 Here's an example of generating JSON schema from a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter]:
 

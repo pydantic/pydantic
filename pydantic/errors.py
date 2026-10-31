@@ -9,13 +9,11 @@ from typing_inspection.introspection import Qualifier
 
 from pydantic._internal import _repr
 
-from ._migration import getattr_migration
 from .version import version_short
 
 __all__ = (
     'PydanticUserError',
     'PydanticUndefinedAnnotation',
-    'PydanticImportError',
     'PydanticSchemaGenerationError',
     'PydanticInvalidForJsonSchema',
     'PydanticForbiddenQualifier',
@@ -28,7 +26,6 @@ __all__ = (
 DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{version_short()}/u/'
 PydanticErrorCodes = Literal[
     'class-not-fully-defined',
-    'custom-json-schema',
     'decorator-invalid-fields',
     'decorator-missing-arguments',
     'decorator-missing-field',
@@ -41,23 +38,17 @@ PydanticErrorCodes = Literal[
     'typed-dict-version',
     'model-field-overridden',
     'model-field-missing-annotation',
-    'config-both',
-    'removed-kwargs',
     'circular-reference-schema',
     'invalid-for-json-schema',
     'json-schema-already-used',
     'base-model-instantiated',
     'undefined-annotation',
     'schema-for-unknown-type',
-    'import-error',
     'create-model-field-definitions',
     'create-model-namespace',
     'validator-instance-method',
     'validator-input-type',
-    'root-validator-pre-skip',
     'model-serializer-instance-method',
-    'validator-field-config-info',
-    'validator-v1-signature',
     'validator-signature',
     'field-serializer-signature',
     'model-serializer-signature',
@@ -127,17 +118,6 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
         return cls(name=name_error.name, message=str(name_error))
 
 
-class PydanticImportError(PydanticErrorMixin, ImportError):
-    """An error raised when an import fails due to module changes between V1 and V2.
-
-    Attributes:
-        message: Description of the error.
-    """
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message, code='import-error')
-
-
 class PydanticSchemaGenerationError(PydanticUserError):
     """An error raised during failures to generate a `CoreSchema` for some type.
 
@@ -180,6 +160,3 @@ class PydanticForbiddenQualifier(PydanticUserError):
             ),
             code=None,
         )
-
-
-__getattr__ = getattr_migration(__name__)

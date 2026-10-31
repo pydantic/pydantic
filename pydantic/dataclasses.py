@@ -14,7 +14,6 @@ from typing_extensions import dataclass_transform
 
 from ._internal import _config, _decorators, _mock_val_ser, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
-from ._migration import getattr_migration
 from .config import ConfigDict
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, PrivateAttr
@@ -38,7 +37,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: ConfigDict | type[object] | None = None,
+    config: ConfigDict | None = None,
     validate_on_init: bool | None = None,
     kw_only: bool = ...,
     slots: bool = ...,
@@ -57,7 +56,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool | None = None,
-    config: ConfigDict | type[object] | None = None,
+    config: ConfigDict | None = None,
     validate_on_init: bool | None = None,
     kw_only: bool = ...,
     slots: bool = ...,
@@ -72,7 +71,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool | None = None,
-    config: ConfigDict | type[object] | None = None,
+    config: ConfigDict | None = None,
     validate_on_init: bool | None = None,
     kw_only: bool = False,
     slots: bool = False,
@@ -288,8 +287,6 @@ def _pydantic_fields_complete(cls: type[PydanticDataclass]) -> bool:
     """
     return all(field_info._complete for field_info in cls.__pydantic_fields__.values())
 
-
-__getattr__ = getattr_migration(__name__)
 
 if sys.version_info < (3, 11):
     # Monkeypatch dataclasses.InitVar so that typing doesn't error if it occurs as a type when evaluating type hints

@@ -53,7 +53,6 @@ from pydantic import (
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic.v1 import BaseModel as BaseModelV1
 
 
 def test_success():
@@ -3923,21 +3922,6 @@ def test_shadow_attribute_no_warn_stdlib_dataclass() -> None:
         assert len(captured_warnings) == 0
 
 
-def test_field_name_deprecated_method_name() -> None:
-    """https://github.com/pydantic/pydantic/issues/11912"""
-
-    with pytest.warns(UserWarning):
-
-        class Model(BaseModel):
-            # `collect_model_fields()` will special case these to not use
-            # the deprecated methods as default values:
-            dict: int
-            schema: str
-
-        assert Model.model_fields['dict'].is_required()
-        assert Model.model_fields['schema'].is_required()
-
-
 def test_inherited_class_vars(create_module):
     @create_module
     def module():
@@ -4012,19 +3996,6 @@ def test_subclassing_gen_schema_warns() -> None:
     with pytest.warns(UserWarning, match='Subclassing `GenerateSchema` is not supported.'):
 
         class MyGenSchema(GenerateSchema): ...
-
-
-def test_nested_v1_model_warns() -> None:
-    with pytest.warns(
-        UserWarning,
-        match=r'Mixing V1 models and V2 models \(or constructs, like `TypeAdapter`\) is not supported. Please upgrade `V1Model` to V2.',
-    ):
-
-        class V1Model(BaseModelV1):
-            a: int
-
-        class V2Model(BaseModel):
-            inner: V1Model
 
 
 @pytest.mark.skipif(sys.version_info < (3, 13), reason='requires python 3.13')
