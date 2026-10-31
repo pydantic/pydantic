@@ -1087,7 +1087,7 @@ def test_loc_with_dots(pydantic_version):
         core_schema.typed_dict_schema(
             {
                 'a': core_schema.typed_dict_field(
-                    core_schema.tuple_positional_schema([core_schema.int_schema(), core_schema.int_schema()]),
+                    core_schema.tuple_schema([core_schema.int_schema(), core_schema.int_schema()]),
                     validation_alias='foo.bar',
                 )
             }

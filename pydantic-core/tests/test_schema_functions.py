@@ -432,18 +432,3 @@ def test_expected_serialization_types(return_schema):
 def test_err_on_invalid() -> None:
     with pytest.raises(SchemaError, match='Cannot construct schema with `InvalidSchema` member.'):
         SchemaValidator(core_schema.invalid_schema())
-
-
-def test_deprecation_warning() -> None:
-    with pytest.deprecated_call(
-        match='The `field_name` argument on `with_info_before_validator_function` is deprecated'
-    ):
-        core_schema.with_info_before_validator_function(val_function, schema={'type': 'int'}, field_name='foo')
-
-
-def test_enum_schema_missing_deprecation_warning() -> None:
-    class MyEnum(Enum):
-        a = 1
-
-    with pytest.deprecated_call(match=r'The `missing` argument on `enum_schema\(\)` is deprecated and no longer used'):
-        core_schema.enum_schema(MyEnum, list(MyEnum.__members__.values()), missing=MyEnum._missing_)
