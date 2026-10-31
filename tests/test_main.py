@@ -1116,6 +1116,26 @@ def test_class_var():
     assert list(MyOtherModel.model_fields.keys()) == ['c']
 
 
+def test_model_fields_class_only() -> None:
+    class Model(BaseModel):
+        x: int
+        y: int = 2
+
+        @computed_field
+        @property
+        def area(self) -> int:
+            return self.x * self.y
+
+    assert list(Model.model_fields) == ['x', 'y']
+    assert list(Model.model_computed_fields) == ['area']
+
+    m = Model(x=1)
+    with pytest.raises(AttributeError, match="'Model' object has no attribute 'model_fields'"):
+        m.model_fields  # pyright: ignore[reportAttributeAccessIssue]
+    with pytest.raises(AttributeError, match="'Model' object has no attribute 'model_computed_fields'"):
+        m.model_computed_fields  # pyright: ignore[reportAttributeAccessIssue]
+
+
 def test_fields_set():
     class MyModel(BaseModel):
         a: int
