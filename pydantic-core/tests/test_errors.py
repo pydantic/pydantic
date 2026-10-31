@@ -263,6 +263,7 @@ all_errors = [
         {'method_name': 'isinstance'},
     ),
     ('recursion_loop', 'Recursion error - cyclic reference detected', None),
+    ('recursion_depth_exceeded', 'Recursion error - maximum validation depth exceeded', None),
     ('model_type', 'Input should be a valid dictionary or instance of Foobar', {'class_name': 'Foobar'}),
     ('model_attributes_type', 'Input should be a valid dictionary or object to extract fields from', None),
     ('dataclass_exact_type', 'Input should be an instance of Foobar', {'class_name': 'Foobar'}),

@@ -173,6 +173,7 @@ error_types! {
     // ---------------------
     // recursion error
     RecursionLoop {},
+    RecursionDepthExceeded {},
     // ---------------------
     // typed dict specific errors
     Missing {},
@@ -504,6 +505,7 @@ impl ErrorType {
                 "Cannot check `{method_name}` when validating from json, use a JsonOrPython validator instead"
             }
             Self::RecursionLoop { .. } => "Recursion error - cyclic reference detected",
+            Self::RecursionDepthExceeded { .. } => "Recursion error - maximum validation depth exceeded",
             Self::Missing { .. } => "Field required",
             Self::FrozenField { .. } => "Field is frozen",
             Self::FrozenInstance { .. } => "Instance is frozen",
