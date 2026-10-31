@@ -173,6 +173,7 @@ impl TupleSerializer {
     ) -> PyResult<Result<(), E>> {
         let n_items = tuple.len();
         let mut py_tuple_iter = tuple.iter();
+        let filter = self.filter.for_sequence(state, Some(n_items));
 
         macro_rules! use_serializers {
             ($serializers_iter:expr) => {
@@ -180,7 +181,7 @@ impl TupleSerializer {
                     let Some(element) = py_tuple_iter.next() else {
                         break;
                     };
-                    if let Some(next_include_exclude) = self.filter.index_filter(index, state, Some(n_items))? {
+                    if let Some(next_include_exclude) = filter.index_filter(index)? {
                         let state = &mut state.scoped_include_exclude(next_include_exclude);
                         if let Err(e) = f(TupleSerializerEntry {
                             item: element,
@@ -229,7 +230,7 @@ impl TupleSerializer {
                     warned = true;
                 }
                 let index = i + self.serializers.len();
-                if let Some(next_include_exclude) = self.filter.index_filter(index, state, Some(n_items))? {
+                if let Some(next_include_exclude) = filter.index_filter(index)? {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     if let Err(e) = f(TupleSerializerEntry {
                         item: element,

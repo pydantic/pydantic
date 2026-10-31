@@ -200,6 +200,7 @@ impl NamedTupleSerializer {
         }
 
         let mut py_tuple_iter = tuple.iter();
+        let filter = self.filter.for_sequence(state, Some(n_items));
 
         for (index, serializer) in self.serializers.iter().enumerate() {
             let Some(element) = py_tuple_iter.next() else {
@@ -210,7 +211,7 @@ impl NamedTupleSerializer {
                     )));
                 break;
             };
-            if let Some(next_include_exclude) = self.filter.index_filter(index, state, Some(n_items))? {
+            if let Some(next_include_exclude) = filter.index_filter(index)? {
                 let state = &mut state.scoped_include_exclude(next_include_exclude);
                 if let Err(e) = f(NamedTupleSerializerEntry {
                     item: element,

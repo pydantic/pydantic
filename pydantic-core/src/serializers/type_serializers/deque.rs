@@ -70,9 +70,10 @@ impl TypeSerializer for DequeSerializer {
                 let item_serializer = self.item_serializer.as_ref();
 
                 let mut items = Vec::with_capacity(len);
+                let filter = self.filter.for_sequence(state, Some(len));
                 for (index, element) in value.try_iter()?.enumerate() {
                     let element = element?;
-                    let op_next = self.filter.index_filter(index, state, Some(len))?;
+                    let op_next = filter.index_filter(index)?;
                     if let Some(next_include_exclude) = op_next {
                         let state = &mut state.scoped_include_exclude(next_include_exclude);
                         items.push(item_serializer.to_python(&element, state)?);
@@ -110,12 +111,10 @@ impl TypeSerializer for DequeSerializer {
                 let mut seq = serializer.serialize_seq(Some(len))?;
                 let item_serializer = self.item_serializer.as_ref();
 
+                let filter = self.filter.for_sequence(state, Some(len));
                 for (index, element) in value.try_iter().map_err(py_err_se_err)?.enumerate() {
                     let element = element.map_err(py_err_se_err)?;
-                    let op_next = self
-                        .filter
-                        .index_filter(index, state, Some(len))
-                        .map_err(py_err_se_err)?;
+                    let op_next = filter.index_filter(index).map_err(py_err_se_err)?;
                     if let Some(next_include_exclude) = op_next {
                         let state = &mut state.scoped_include_exclude(next_include_exclude);
                         let item_serialize = PydanticSerializer::new(&element, item_serializer, state);
