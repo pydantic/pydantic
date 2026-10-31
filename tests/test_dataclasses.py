@@ -13,6 +13,7 @@ from typing import (
     Annotated,
     Any,
     ClassVar,
+    Final,
     Generic,
     Literal,
     Optional,
@@ -3403,3 +3404,24 @@ def test_polymorphic_serialization_with_model_serializer(config: bool, runtime: 
     else:
         assert serializer.to_python(ClassB(a=123, b='test'), **kwargs) == 'ClassA'
         assert serializer.to_json(ClassB(a=123, b='test'), **kwargs) == b'"ClassA"'
+
+
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators())
+def test_bare_final_field_type_inferred_from_dataclass_field(dataclass_decorator) -> None:
+    """https://github.com/pydantic/pydantic/issues/11119"""
+
+    @dataclass_decorator
+    class Model:
+        a: Final = dataclasses.field(default=1)
+        b: Final = dataclasses.field(default_factory=dict)
+        c: Final = dataclasses.field(default_factory=lambda: 1)
+
+    ta = TypeAdapter(Model)
+    m = ta.validate_python({'a': '2', 'c': 'any value'})
+    assert (m.a, m.b, m.c) == (2, {}, 'any value')
+
+    with pytest.raises(
+        ValidationError,
+        check=lambda e: [err['type'] for err in e.errors()] == ['int_parsing', 'dict_type'],
+    ):
+        ta.validate_python({'a': 'not an int', 'b': 'not a dict'})

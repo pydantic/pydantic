@@ -653,6 +653,9 @@ except ValidationError as e:
 
 1. Since `name` field is frozen, the assignment is not allowed.
 
+Fields can also be made immutable using the [`Final`][typing.Final] type qualifier (e.g. `name: Final[str]`).
+If no type is provided (e.g. `name: Final = 'John'`), it is inferred from the default value.
+
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#exclude}

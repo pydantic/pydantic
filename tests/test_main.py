@@ -2239,6 +2239,51 @@ def test_final_field_decl_with_default_val(ann):
     assert Model(a=20).a == 20
 
 
+_T = TypeVar('_T')
+
+
+class _UserGeneric(Generic[_T]):
+    pass
+
+
+class _UserGenericModel(BaseModel, Generic[_T]):
+    pass
+
+
+@pytest.mark.parametrize(
+    ['value', 'expected_type'],
+    [
+        (1, int),
+        (None, type(None)),
+        (Field(default='a'), str),
+        (Field(default_factory=list), list),
+        (Field(default_factory=list[int]), list[int]),
+        (Field(default_factory=_UserGeneric[int]), _UserGeneric[int]),
+        (Field(default_factory=_UserGenericModel[int]), _UserGenericModel[int]),
+        (Field(default_factory=lambda: 1), Any),
+        (Field(...), Any),
+    ],
+)
+def test_bare_final_field_type_inferred_from_default(value: Any, expected_type: Any) -> None:
+    """https://github.com/pydantic/pydantic/issues/11119"""
+
+    class Model(BaseModel, arbitrary_types_allowed=True):
+        a: Final = value
+
+    assert Model.model_fields['a'].annotation == expected_type
+    assert Model.model_fields['a'].frozen
+
+
+def test_bare_final_field_type_inferred_from_default_validation() -> None:
+    class Model(BaseModel):
+        a: Final = 1
+
+    assert Model(a='2').a == 2
+
+    with pytest.raises(ValidationError, check=lambda e: e.errors()[0]['type'] == 'int_parsing'):
+        Model(a='not an int')
+
+
 def test_final_field_with_default_val_rebuild():
     class Model(BaseModel):
         a: 'Final[MyInt]' = 1
