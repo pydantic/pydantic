@@ -3190,9 +3190,12 @@ def test_recursion_loop_error_validate_strings_cyclic() -> None:
     platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
     reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
 )
-def test_recursion_loop_error_validate_strings_deep() -> None:
+@pytest.mark.parametrize('method', ['model_validate', 'model_validate_strings'])
+def test_recursion_depth_exceeded_error(method: str) -> None:
+    """Deeply nested but acyclic input should not be reported as a cyclic reference."""
+
     class Model(BaseModel):
-        x: Optional['Model'] = None
+        x: 'Model | None' = None
 
     # deeper than the recursion guard limit (at most 255), but not too deep as freeing
     # deeply nested dicts can exhaust the stack on Pyodide:
@@ -3200,8 +3203,54 @@ def test_recursion_loop_error_validate_strings_deep() -> None:
     for _ in range(1_000):
         data = {'x': data}
 
-    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
-        Model.model_validate_strings(data)
+    with pytest.raises(ValidationError) as exc_info:
+        getattr(Model, method)(data)
+
+    errors = exc_info.value.errors(include_url=False)
+    assert len(errors) == 1
+    assert errors[0]['type'] == 'recursion_depth_exceeded'
+    assert errors[0]['msg'] == 'Recursion error - maximum validation depth exceeded'
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+def test_serialization_depth_exceeded_error() -> None:
+    class Model(BaseModel):
+        x: 'Model | None' = None
+
+    m = Model()
+    for _ in range(1_000):
+        m = Model(x=m)
+
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
+        m.model_dump()
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+def test_serialization_depth_exceeded_error_discriminated_union() -> None:
+    """In Python mode, the union serializer catches the depth error, warns and falls back to inferring the type."""
+
+    class Leaf(BaseModel):
+        type: Literal['leaf'] = 'leaf'
+
+    class Node(BaseModel):
+        type: Literal['node'] = 'node'
+        child: Annotated['Node | Leaf', Field(discriminator='type')]
+
+    m = Leaf()
+    for _ in range(1_000):
+        m = Node(child=m)
+
+    with pytest.warns(UserWarning, match='Maximum serialization depth exceeded'):
+        m.model_dump()
+
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
+        m.model_dump(mode='json')
 
 
 def test_protected_namespace_default():

@@ -126,10 +126,10 @@ def test_cycle_change():
 
     f = Foobar()
 
-    with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
         to_jsonable_python(f, fallback=fallback_func_change_id)
 
-    with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
         to_json(f, fallback=fallback_func_change_id)
 
 
