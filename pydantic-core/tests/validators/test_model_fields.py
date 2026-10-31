@@ -711,7 +711,7 @@ def test_aliases_debug():
     assert 'rest: [\n' in repr(v)
 
 
-def get_int_key():
+def test_get_int_key():
     v = SchemaValidator(
         core_schema.model_fields_schema(
             fields={
@@ -721,7 +721,7 @@ def get_int_key():
             }
         )
     )
-    assert v.validate_python({'foo': {3: 33}}) == ({'field_a': 33}, {}, {'field_a'})
+    assert v.validate_python({'foo': {3: 33}}) == ({'field_a': 33}, None, {'field_a'})
 
 
 class GetItemThing:
