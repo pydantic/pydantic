@@ -4,7 +4,6 @@ from __future__ import annotations as _annotations
 
 __all__ = (
     'PydanticDeprecatedSince20',
-    'PydanticDeprecatedSince29',
     'PydanticDeprecatedSince210',
     'PydanticDeprecatedSince211',
     'PydanticDeprecatedSince212',
@@ -54,13 +53,6 @@ class PydanticDeprecatedSince20(PydanticDeprecationWarning):
 
     def __init__(self, message: str, *args: object) -> None:
         super().__init__(message, *args, since=(2, 0), expected_removal=(3, 0))
-
-
-class PydanticDeprecatedSince29(PydanticDeprecationWarning):
-    """A specific `PydanticDeprecationWarning` subclass defining functionality deprecated since Pydantic 2.9."""
-
-    def __init__(self, message: str, *args: object) -> None:
-        super().__init__(message, *args, since=(2, 9), expected_removal=(3, 0))
 
 
 class PydanticDeprecatedSince210(PydanticDeprecationWarning):
