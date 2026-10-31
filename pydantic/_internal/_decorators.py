@@ -190,7 +190,7 @@ class Decorator(Generic[DecoratorInfoType]):
         cls_: Any,
         *,
         cls_var_name: str,
-        cls_ref: str | None = None,
+        cls_ref: str,
         info: DecoratorInfoType,
     ) -> Decorator[DecoratorInfoType]:
         """Build a new decorator.
@@ -204,9 +204,6 @@ class Decorator(Generic[DecoratorInfoType]):
         Returns:
             The new decorator instance.
         """
-        # For backwards compatibility for users using this (private!) method. TODO v3: make `cls_ref` required:
-        cls_ref = cls_ref if cls_ref is not None else _type_refs.any_class_type_ref(cls_)
-
         func = get_attribute_from_bases(cls_, cls_var_name)
         func = unwrap_wrapped_function(func, unwrap_partial=False)
         if not callable(func):
