@@ -1291,6 +1291,8 @@ def test_generic_without_params_error():
         ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB', '6.2 EiB'),
         ('8bit', 1, '1B', '1B', '1 B'),
         ('1kbit', 125, '125B', '125B', '125 B'),
+        (1048575, 1048575, '1.0MiB', '1.0MB', '1.0 MiB'),
+        (999_999, 999_999, '976.6KiB', '1.0MB', '976.6 KiB'),
     ),
 )
 def test_bytesize_conversions(input_value, output, human_bin, human_dec, human_sep):
