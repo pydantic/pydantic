@@ -707,10 +707,6 @@ def test_model_construct_with_alias_choices_and_path() -> None:
     assert MyModel.model_construct(AAA={'aaa': 'a_value'}).a == 'a_value'
 
 
-@pytest.mark.xfail(
-    reason='`model_construct()` does not rebuild incomplete models, and relies on `FieldInfo` instances '
-    'that may be incomplete (here, the `Field()` metadata is part of the unevaluated annotation).',
-)
 def test_model_construct_incomplete_model() -> None:
     # When making this test work, look at `test_string_annotation_union_type()` which assumes `model_construct()`
     # doesn't rebuild the model.

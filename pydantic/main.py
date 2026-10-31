@@ -353,6 +353,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A new instance of the `Model` class with validated data.
         """
+        if not cls.__pydantic_complete__:
+            cls.model_rebuild(_parent_namespace_depth=3, raise_errors=False)
+
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
         fields_set = set()
