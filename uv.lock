@@ -2491,7 +2491,7 @@ all = [
     { name = "mkdocstrings-python" },
     { name = "mypy" },
     { name = "packaging" },
-    { name = "pydantic-docs", git = "https://github.com/pydantic/pydantic-docs?rev=039f8b084f2a900b8f6e008d704a9d9308179de3" },
+    { name = "pydantic-docs", git = "https://github.com/pydantic/pydantic-docs" },
     { name = "pydantic-extra-types", specifier = ">=2.10.6" },
     { name = "pydantic-settings" },
     { name = "pyodide-build" },
@@ -2545,7 +2545,7 @@ docs = [
     { name = "mkdocs-material" },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
-    { name = "pydantic-docs", git = "https://github.com/pydantic/pydantic-docs?rev=039f8b084f2a900b8f6e008d704a9d9308179de3" },
+    { name = "pydantic-docs", git = "https://github.com/pydantic/pydantic-docs" },
     { name = "pydantic-extra-types", specifier = ">=2.10.6" },
     { name = "pydantic-settings" },
     { name = "pyupgrade" },
@@ -2667,7 +2667,7 @@ wasm = [
 [[package]]
 name = "pydantic-docs"
 version = "0.0.1"
-source = { git = "https://github.com/pydantic/pydantic-docs?rev=039f8b084f2a900b8f6e008d704a9d9308179de3#039f8b084f2a900b8f6e008d704a9d9308179de3" }
+source = { git = "https://github.com/pydantic/pydantic-docs#51a5fa18eb3fefc71fe566c58fc0682183a9bbb1" }
 dependencies = [
     { name = "click" },
     { name = "markdown" },
