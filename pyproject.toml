@@ -223,7 +223,7 @@ unconfirmed_label = 'pending'
 [tool.ruff]
 line-length = 120
 target-version = 'py310'
-extend-exclude = ['pydantic/v1', 'tests/mypy', 'tests/pydantic_core', 'tests/benchmarks/corpus']
+extend-exclude = ['tests/mypy', 'tests/pydantic_core', 'tests/benchmarks/corpus']
 
 [tool.ruff.lint]
 select = [
@@ -273,7 +273,6 @@ quote-style = 'single'
 
 [tool.coverage.run]
 source = ['pydantic', 'pydantic_core']
-omit = ['pydantic/v1/*']
 branch = true
 relative_files = true
 context = '${CONTEXT}'
@@ -296,14 +295,14 @@ source = [
 
 [tool.pyright]
 include = ['pydantic', 'tests/test_pipeline.py']
-exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py', 'pydantic/v1']
+exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py']
 # reportUnnecessaryTypeIgnoreComment can't be set since we run pyright with multiple python versions
 # reportUnnecessaryTypeIgnoreComment = true
 strict = ['tests/test_pipeline.py']
 enableExperimentalFeatures = true
 
 [tool.codespell]
-skip = '.git,env*,pydantic/v1/*,uv.lock'
+skip = '.git,env*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
 ignore-words-list = 'gir,ser,crate,deques,nam'
