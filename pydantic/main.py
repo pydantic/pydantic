@@ -1435,7 +1435,8 @@ def create_model(  # noqa: C901
         __base__ = (__base__,)
 
     if '__validators__' in field_definitions:
-        # Would otherwise be silently ignored, as a dunder field definition:
+        # Would otherwise be silently ignored, as a dunder field definition.
+        # TODO: remove this check in the next major version:
         raise TypeError(
             "create_model() got an unexpected keyword argument '__validators__', use '__namespace__' instead"
         )
