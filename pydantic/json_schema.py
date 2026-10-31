@@ -38,10 +38,10 @@ from typing import (
 import pydantic_core
 from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import assert_never, deprecated, final
+from typing_extensions import assert_never, deprecated
 from typing_inspection.introspection import get_literal_values
 
-from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
+from pydantic.warnings import PydanticDeprecatedSince29
 
 from ._internal import (
     _config,
@@ -1074,28 +1074,6 @@ class GenerateJsonSchema:
         json_schema = {'type': 'array', 'items': items_schema}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
-
-    @deprecated('`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.', category=None)
-    @final
-    def tuple_positional_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Replaced by `tuple_schema`."""
-        warnings.warn(
-            '`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.',
-            PydanticDeprecatedSince26,
-            stacklevel=2,
-        )
-        return self.tuple_schema(schema)
-
-    @deprecated('`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.', category=None)
-    @final
-    def tuple_variable_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Replaced by `tuple_schema`."""
-        warnings.warn(
-            '`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.',
-            PydanticDeprecatedSince26,
-            stacklevel=2,
-        )
-        return self.tuple_schema(schema)
 
     def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a tuple schema e.g. `tuple[int,

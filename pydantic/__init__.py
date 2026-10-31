@@ -51,7 +51,6 @@ if TYPE_CHECKING:
     from .validate_call_decorator import validate_call
     from .warnings import (
         PydanticDeprecatedSince20,
-        PydanticDeprecatedSince26,
         PydanticDeprecatedSince29,
         PydanticDeprecatedSince210,
         PydanticDeprecatedSince211,
@@ -209,7 +208,6 @@ __all__ = (
     'VERSION',
     # warnings
     'PydanticDeprecatedSince20',
-    'PydanticDeprecatedSince26',
     'PydanticDeprecatedSince29',
     'PydanticDeprecatedSince210',
     'PydanticDeprecatedSince211',
@@ -372,7 +370,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'TypeAdapter': (__spec__.parent, '.type_adapter'),
     # warnings
     'PydanticDeprecatedSince20': (__spec__.parent, '.warnings'),
-    'PydanticDeprecatedSince26': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince29': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince210': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince211': (__spec__.parent, '.warnings'),
