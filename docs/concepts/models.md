@@ -1486,6 +1486,10 @@ except ValidationError as e:
 The `__namespace__` argument.
 ///
 
+/// version-removed | v3
+The `__validators__` argument, use `__namespace__` instead.
+///
+
 !!! note
     To pickle a dynamically created model:
 

@@ -207,7 +207,7 @@ required-version = '>=0.13.0'
 
 [tool.uv.sources]
 pydantic-core = { workspace = true }
-pydantic-docs = { git = "https://github.com/pydantic/pydantic-docs" }
+pydantic-docs = { git = "https://github.com/pydantic/pydantic-docs", rev = "039f8b084f2a900b8f6e008d704a9d9308179de3" }
 
 [tool.uv.workspace]
 members = [

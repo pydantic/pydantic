@@ -1410,6 +1410,10 @@ def create_model(  # noqa: C901
 
             /// version-added | v2.14
             ///
+
+            /// version-removed | v3
+            The `__validators__` argument was removed, use `__namespace__` instead.
+            ///
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __qualname__: The qualified name of the newly created model.
         **field_definitions: Field definitions of the new model. Either:
