@@ -33,7 +33,7 @@ from pydantic.dataclasses import rebuild_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
-from pydantic.warnings import PydanticDeprecatedSince211, PydanticDeprecationWarning
+from pydantic.warnings import PydanticDeprecationWarning
 
 from .conftest import CallCounter
 
@@ -809,16 +809,6 @@ def test_with_config_kwargs() -> None:
     @with_config(coerce_numbers_to_str=True)
     class TD(TypedDict):
         a: str
-
-    assert TypeAdapter(TD).validate_python({'a': 1}) == {'a': '1'}
-
-
-def test_with_config_keyword_argument_deprecated() -> None:
-    with pytest.warns(PydanticDeprecatedSince211):
-
-        @with_config(config={'coerce_numbers_to_str': True})
-        class TD(TypedDict):
-            a: str
 
     assert TypeAdapter(TD).validate_python({'a': 1}) == {'a': '1'}
 
