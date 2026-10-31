@@ -1,7 +1,5 @@
 """Logic for creating models."""
 
-# ruff: noqa: UP035
-
 from __future__ import annotations as _annotations
 
 import operator
@@ -9,16 +7,16 @@ import sys
 import threading
 import types
 import warnings
-from collections.abc import Generator, Mapping, MutableSet
+from collections.abc import Callable, Generator, Mapping, MutableSet
 from copy import copy, deepcopy
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Generic,
     Literal,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
@@ -26,7 +24,7 @@ from typing import (
 )
 
 from pydantic_core import PydanticUndefined, ValidationError
-from typing_extensions import Self, Sentinel, TypeAlias, TypeForm, Unpack
+from typing_extensions import Self, Sentinel, TypeForm, Unpack
 
 from . import PydanticDeprecatedSince211
 from ._internal import (
