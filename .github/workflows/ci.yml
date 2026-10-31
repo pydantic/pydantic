@@ -592,9 +592,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
-      # `pytest-codspeed` depends on `cffi`, which can't be built on GraalPy:
+      # `cffi` (a dependency of `pytest-codspeed`) can't be built on GraalPy, and `greenlet` (a dependency of `sqlalchemy`,
+      # only required for its asyncio support) can't be built on GraalPy 3.13:
       - name: Install dependencies
-        run: uv sync --all-packages --group testing-extra --no-install-package pytest-codspeed --no-install-package cffi
+        run: uv sync --all-packages --group testing-extra --no-install-package pytest-codspeed --no-install-package cffi --no-install-package greenlet
         env:
           RUST_BACKTRACE: 1
           UV_PYTHON_PREFERENCE: only-managed
