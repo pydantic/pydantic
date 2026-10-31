@@ -1349,7 +1349,6 @@ def create_model(
     __doc__: str | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, Callable[..., Any]] | None = None,
     __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
@@ -1366,7 +1365,6 @@ def create_model(
     __doc__: str | None = None,
     __base__: type[ModelT] | tuple[type[ModelT], ...],
     __module__: str = __name__,
-    __validators__: dict[str, Callable[..., Any]] | None = None,
     __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
@@ -1382,7 +1380,6 @@ def create_model(  # noqa: C901
     __doc__: str | None = None,
     __base__: type[ModelT] | tuple[type[ModelT], ...] | None = None,
     __module__: str | None = None,
-    __validators__: dict[str, Callable[..., Any]] | None = None,
     __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
@@ -1406,22 +1403,12 @@ def create_model(  # noqa: C901
         __base__: The base class or classes for the new model.
         __module__: The name of the module that the model belongs to;
             if `None`, the value is taken from `sys._getframe(1)`
-        __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to
-            be added to the model, and the values are the validation methods themselves. You can read more about functional
-            validators [here](../concepts/validators.md#field-validators).
-
-            /// version-changed | v2.14
-            It is now recommended to use the `__namespace__` argument, which isn't restricted to validators.
-            `__validators__` will be deprecated in v3.
-            ///
         __namespace__: A dictionary of attributes to add to the class namespace of the new model, such as
             [validators](../concepts/validators.md), methods or [computed fields][pydantic.computed_field].
-            Keys take precedence over the ones from `__validators__`, and must not clash with any of the field names
-            or with the attributes that have a dedicated argument (`__annotations__`, `__module__`, `__qualname__`,
-            `__doc__` and `model_config`).
+            Keys must not clash with any of the field names or with the attributes that have a dedicated argument
+            (`__annotations__`, `__module__`, `__qualname__`, `__doc__` and `model_config`).
 
             /// version-added | v2.14
-            This argument replaces `__validators__`, which will be deprecated in v3.
             ///
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __qualname__: The qualified name of the newly created model.
@@ -1442,6 +1429,12 @@ def create_model(  # noqa: C901
         __base__ = (cast('type[ModelT]', BaseModel),)
     elif not isinstance(__base__, tuple):
         __base__ = (__base__,)
+
+    if '__validators__' in field_definitions:
+        # Would otherwise be silently ignored, as a dunder field definition:
+        raise TypeError(
+            "create_model() got an unexpected keyword argument '__validators__', use '__namespace__' instead"
+        )
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
@@ -1484,8 +1477,6 @@ def create_model(  # noqa: C901
         namespace['__doc__'] = __doc__
     if __qualname__ is not None:
         namespace['__qualname__'] = __qualname__
-    if __validators__:
-        namespace.update(__validators__)
     if __namespace__:
         namespace.update(__namespace__)
     namespace.update(fields)

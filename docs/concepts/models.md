@@ -1483,9 +1483,7 @@ except ValidationError as e:
    creation of a class using the [`types` module utilities](https://docs.python.org/3/library/types.html#dynamic-type-creation).
 
 /// version-added | v2.14
-The `__namespace__` argument. Unlike `__validators__`, it isn't restricted to validators and can be used
-to provide any attribute to the class namespace (such as computed fields, properties or methods).
-It is now recommended to use `__namespace__` instead of `__validators__`, which will be deprecated in v3.
+The `__namespace__` argument.
 ///
 
 !!! note
