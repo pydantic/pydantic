@@ -245,8 +245,6 @@ impl GeneralFieldsSerializer {
                 }
             };
 
-            let state = &mut state.scoped_set_field_name(Some(key_str.as_py_str().bind(py).clone()));
-
             if let Some(field) = op_field {
                 if field.required {
                     used_req_fields += 1;
@@ -259,9 +257,11 @@ impl GeneralFieldsSerializer {
                     continue;
                 };
 
+                let state = &mut state.scoped_set_field_name(Some(key_str.as_py_str().bind(py).clone()));
                 let state = &mut state.scoped_include_exclude(next_include_exclude);
                 map.serialize_entry_string_key(field.get_key(&state.extra), &value, serializer, state)?;
             } else if self.mode == FieldsMode::TypedDictAllow {
+                let state = &mut state.scoped_set_field_name(Some(key_str.as_py_str().bind(py).clone()));
                 self.serialize_extra(&key_str, &value, state, missing_sentinel, extras_serializer, &mut map)?;
             } else if state.check == SerCheck::Strict {
                 return Err(unexpected_field(&key_str, model).into());
