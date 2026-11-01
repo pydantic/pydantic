@@ -317,3 +317,19 @@ def test_int_validate_json(input_value, expected):
             ta.validate_json(input_value)
     else:
         assert ta.validate_json(input_value) == expected
+
+
+@pytest.mark.parametrize('value', ['0-1', '00-5', '0_-1', '0-1.0', '0-0', '-0-1'])
+def test_int_str_interior_minus_sign(value: str) -> None:
+    ta = TypeAdapter(int)
+
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer, unable to parse string as an integer'):
+        ta.validate_python(value)
+
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer, unable to parse string as an integer'):
+        ta.validate_json(json.dumps(value))
+
+
+@pytest.mark.parametrize('value,expected', [('-0001', -1), ('-00_1', -1), ('-0', 0), ('-00', 0)])
+def test_int_str_negative_leading_zeros(value: str, expected: int) -> None:
+    assert TypeAdapter(int).validate_python(value) == expected
