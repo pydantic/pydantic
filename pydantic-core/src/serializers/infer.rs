@@ -44,6 +44,12 @@ pub(crate) fn infer_to_python<'py>(
     infer_to_python_known(state.extra.ob_type_lookup.get_type(value), value, state)
 }
 
+/// Whether values of this type can't contain other values, and so can't be part of a reference cycle
+/// (which means that they don't need to go through the recursion guard, only the depth limit applies).
+fn is_leaf(ob_type: ObType) -> bool {
+    matches!(ob_type, ObType::None | ObType::Bool | ObType::Int | ObType::Str)
+}
+
 // arbitrary ids to identify that we recursed through infer_to_{python,json}_known
 // We just need them to be different from definition ref slot ids, which start at 0
 const INFER_DEF_REF_ID: usize = usize::MAX;
@@ -56,6 +62,15 @@ pub(crate) fn infer_to_python_known<'py>(
     let py = value.py();
 
     let is_json = matches!(state.extra.mode, SerMode::Json);
+
+    if is_leaf(ob_type) {
+        // returned as is in both modes; if the depth limit is reached, the value is also returned as is in python mode
+        if is_json {
+            state.check_recursion_depth()?;
+        }
+        return Ok(value.clone().unbind());
+    }
+
     let mut guard = match state.recursion_guard(value, INFER_DEF_REF_ID) {
         Ok(v) => v,
         Err(e) => {
@@ -119,6 +134,8 @@ pub(crate) fn infer_to_python_known<'py>(
                 let v = value.extract::<f64>()?;
                 match type_serializers::float::inf_nan_to_python(py, v, state.config.inf_nan_mode) {
                     Some(v) => v,
+                    // (not `==`, which also matches `FloatSubclass`)
+                    None if matches!(ob_type, ObType::Float) => value.clone().unbind(),
                     None => v.into_py_any(py)?,
                 }
             }
@@ -344,18 +361,34 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
     state: &mut SerializationState<'py>,
 ) -> Result<S::Ok, S::Error> {
     let extra_serialize_unknown = state.extra.serialize_unknown;
-    let mut guard = match state.recursion_guard(value, INFER_DEF_REF_ID) {
-        Ok(v) => v,
-        Err(e) => {
-            return if extra_serialize_unknown {
-                serializer.serialize_str("...")
-            } else {
-                Err(py_err_se_err(e))
-            };
+    let on_recursion_error = |e: PyErr, serializer: S| {
+        if extra_serialize_unknown {
+            serializer.serialize_str("...")
+        } else {
+            Err(py_err_se_err(e))
         }
     };
-    let state = guard.state();
 
+    if is_leaf(ob_type) {
+        if let Err(e) = state.check_recursion_depth() {
+            return on_recursion_error(e, serializer);
+        }
+        return infer_serialize_known_unguarded(ob_type, value, serializer, state);
+    }
+
+    let mut guard = match state.recursion_guard(value, INFER_DEF_REF_ID) {
+        Ok(v) => v,
+        Err(e) => return on_recursion_error(e, serializer),
+    };
+    infer_serialize_known_unguarded(ob_type, value, serializer, guard.state())
+}
+
+fn infer_serialize_known_unguarded<'py, S: Serializer>(
+    ob_type: ObType,
+    value: &Bound<'py, PyAny>,
+    serializer: S,
+    state: &mut SerializationState<'py>,
+) -> Result<S::Ok, S::Error> {
     macro_rules! serialize {
         ($t:ty) => {
             match value.extract::<$t>() {
