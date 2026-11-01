@@ -73,7 +73,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           subject-path: pydantic-core/dist/*
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_core_pypi_files_sdist
           path: pydantic-core/dist
@@ -234,7 +234,7 @@ jobs:
         with:
           subject-path: pydantic-core/dist/*
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_core_pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
           path: pydantic-core/dist
@@ -300,7 +300,7 @@ jobs:
         with:
           subject-path: pydantic-core/dist/*
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_core_pypi_files_${{ matrix.platform.os }}_${{ matrix.interpreter }}
           path: pydantic-core/dist
@@ -377,7 +377,7 @@ jobs:
         with:
           subject-path: pydantic-core/dist/*
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_core_pypi_files_pyemscripten_${{ matrix.python-version }}
           path: pydantic-core/dist
@@ -807,7 +807,7 @@ jobs:
         with:
           subject-path: dist/*
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_pypi_files
           path: dist
@@ -912,7 +912,7 @@ jobs:
 
       - name: Store coverage files
         if: '!startsWith(matrix.python-version, ''pypy'')'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
           path: coverage
@@ -966,7 +966,7 @@ jobs:
           CONTEXT: linux-mypy
 
       - name: Store coverage files
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-mypy
           path: coverage
@@ -1031,14 +1031,14 @@ jobs:
       - run: uv run coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
       - name: Store coverage data
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-data
           path: .coverage
           include-hidden-files: true
 
       - name: Store coverage HTML
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-html
           path: htmlcov
@@ -1068,7 +1068,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Store coverage comment
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.coverage-comment.outputs.COMMENT_FILE_WRITTEN == 'true'
         with:
           name: python-coverage-comment-action
