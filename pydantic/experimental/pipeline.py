@@ -650,14 +650,16 @@ def _apply_constraint(  # noqa: C901
         s = _check_func(check_not_in, f'not in {values}', s)
     else:
         assert isinstance(constraint, Pattern)
-        if s and s['type'] == 'str':
+        # A pattern already set by a previous step must not be overridden:
+        if s and s['type'] == 'str' and 'pattern' not in s:
             s = s.copy()
             s['pattern'] = constraint
         else:
 
             def check_pattern(v: object) -> bool:
                 assert isinstance(v, str)
-                return constraint.match(v) is not None
+                # Same semantics as the `pattern` constraint of the `str` core schema:
+                return constraint.search(v) is not None
 
             s = _check_func(check_pattern, f'~ {constraint.pattern}', s)
     return s

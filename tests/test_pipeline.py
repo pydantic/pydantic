@@ -662,3 +662,23 @@ def test_validate_as_ellipsis_preserves_other_steps() -> None:
     ta = TypeAdapter[float](Annotated[float, validate_as(str).transform(lambda v: v.split()[0]).validate_as(...)])
 
     assert ta.validate_python('12 ab') == 12.0
+
+
+def test_repeated_str_pattern_keeps_previous_pattern() -> None:
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).str_pattern(r'^\d+$').str_pattern(r'^1')])
+    assert ta.validate_python('123') == '123'
+    with pytest.raises(ValidationError):
+        ta.validate_python('1abc')
+    with pytest.raises(ValidationError):
+        ta.validate_python('234')
+
+
+def test_str_pattern_not_on_str_schema_is_not_anchored() -> None:
+    """The pattern is searched in the string, as when it is set on the `str` core schema."""
+    ta_str_schema = TypeAdapter[str](Annotated[str, validate_as(str).str_pattern('b')])
+    assert ta_str_schema.validate_python('abc') == 'abc'
+
+    ta_after_transform = TypeAdapter[str](Annotated[str, validate_as(str).transform(str.title).str_pattern('b')])
+    assert ta_after_transform.validate_python('abc') == 'Abc'
+    with pytest.raises(ValidationError):
+        ta_after_transform.validate_python('xyz')
