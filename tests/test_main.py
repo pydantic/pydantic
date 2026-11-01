@@ -28,7 +28,14 @@ from uuid import UUID, uuid4
 
 import pydantic_core
 import pytest
-from pydantic_core import CoreSchema, ModelFieldsSet, PydanticOmit, PydanticUndefined, core_schema
+from pydantic_core import (
+    CoreSchema,
+    ModelFieldsSet,
+    PydanticOmit,
+    PydanticSerializationError,
+    PydanticUndefined,
+    core_schema,
+)
 
 from pydantic import (
     AfterValidator,
@@ -3251,6 +3258,34 @@ def test_serialization_depth_exceeded_error_discriminated_union() -> None:
 
     with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
         m.model_dump(mode='json')
+
+
+@pytest.mark.parametrize('leaf', [1, 'a', True, None])
+def test_serialization_depth_exceeded_error_leaf_value(leaf: Any) -> None:
+    """Values that can't contain other values are subject to the depth limit as well when inferring types."""
+
+    limit = pydantic_core._pydantic_core._recursion_limit
+    ta = TypeAdapter(Any)
+
+    def nest(depth: int) -> Any:
+        data = leaf
+        for _ in range(depth):
+            data = [data]
+        return data
+
+    # the leaf is right at the limit:
+    data = nest(limit - 1)
+    assert ta.dump_python(data, mode='json') == data
+    assert json.loads(ta.dump_json(data)) == data
+
+    # the leaf is one level too deep:
+    data = nest(limit)
+    assert ta.dump_python(data) == data
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
+        ta.dump_python(data, mode='json')
+    with pytest.raises(PydanticSerializationError, match='Maximum serialization depth exceeded'):
+        ta.dump_json(data)
+    assert b'"..."' in pydantic_core.to_json(data, serialize_unknown=True)
 
 
 def test_protected_namespace_default():
