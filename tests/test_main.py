@@ -3260,6 +3260,10 @@ def test_serialization_depth_exceeded_error_discriminated_union() -> None:
         m.model_dump(mode='json')
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
 @pytest.mark.parametrize('leaf', [1, 'a', True, None])
 def test_serialization_depth_exceeded_error_leaf_value(leaf: Any) -> None:
     """Values that can't contain other values are subject to the depth limit as well when inferring types."""
