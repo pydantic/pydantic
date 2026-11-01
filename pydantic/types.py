@@ -2062,7 +2062,9 @@ class ByteSize(int):
 
         num = float(self)
         for unit in units:
-            if abs(num) < divisor:
+            # pick the unit from the rounded value: a size just below the next
+            # unit would otherwise print at the divisor (e.g. 1024.0KiB)
+            if round(abs(num), 1) < divisor:
                 if unit == 'B':
                     return f'{num:0.0f}{separator}{unit}'
                 else:
