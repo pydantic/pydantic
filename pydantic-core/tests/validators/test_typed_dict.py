@@ -602,14 +602,17 @@ class GetItemThing:
         return 321
 
 
-def get_custom_getitem():
+def test_custom_getitem():
     v = SchemaValidator(
         core_schema.typed_dict_schema(
-            fields={'field_a': core_schema.typed_dict_field(validation_alias=['foo'], schema=core_schema.int_schema())}
+            fields={
+                'field_a': core_schema.typed_dict_field(
+                    validation_alias=['bar', 'foo'], schema=core_schema.int_schema()
+                )
+            }
         )
     )
-    assert v.validate_python(GetItemThing()) == ({'field_a': 321}, {'field_a'})
-    assert v.validate_python({'bar': GetItemThing()}) == ({'field_a': 321}, {'field_a'})
+    assert v.validate_python({'bar': GetItemThing()}) == {'field_a': 321}
 
 
 @pytest.mark.parametrize('input_value', [{'foo': {'bar': 42}}, {'foo': 42}, {'field_a': 42}], ids=repr)
