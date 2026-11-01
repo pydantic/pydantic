@@ -1175,7 +1175,7 @@ class NameEmail(_repr.Representation):
             return input_value
 
     def __str__(self) -> str:
-        if '@' in self.name:
+        if self.name and not _unquoted_name_regex.fullmatch(self.name):
             return f'"{self.name}" <{self.email}>'
 
         return f'{self.name} <{self.email}>'
@@ -1338,9 +1338,12 @@ else:
             return cls(input_value)  # type: ignore[return-value]
 
 
+_name_chars = r'[\w.!#$%&\'*+\-/=?^_`{|}~]'
+_unquoted_name_regex = re.compile(rf'(?:{_name_chars}+\s+)*{_name_chars}+')
+
+
 def _build_pretty_email_regex() -> re.Pattern[str]:
-    name_chars = r'[\w.!#$%&\'*+\-/=?^_`{|}~]'
-    unquoted_name_group = rf'((?:{name_chars}+\s+)*{name_chars}+)'
+    unquoted_name_group = rf'({_unquoted_name_regex.pattern})'
     quoted_name_group = r'"((?:[^"]|\")+)"'
     email_group = r'<(.+)>'
     return re.compile(rf'\s*(?:{unquoted_name_group}|{quoted_name_group})?\s*{email_group}\s*')
