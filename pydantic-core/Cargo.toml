@@ -29,7 +29,7 @@ rust-version = "1.88"
 # but needs a bit of work to make sure it's not used in the codebase
 pyo3 = { version = "0.30.1", features = ["num-bigint", "py-clone", "smallvec"] }
 regex = "1.13.1"
-lru = "0.18.5"
+lru = "0.19.0"
 strum = { version = "0.28", features = ["derive"] }
 strum_macros = "0.28"
 serde_json = { version = "1.0.151", features = ["arbitrary_precision"] }
@@ -42,7 +42,7 @@ url = "2.5.8"
 # idna is already required by url, added here to be explicit
 idna = "1.1.0"
 base64 = "0.23.1"
-num-bigint = "0.4.6"
+num-bigint = "0.5.1"
 num-traits = "0.2.19"
 uuid = "1.23.2"
 jiter = { version = "0.18.0", features = ["python"] }
