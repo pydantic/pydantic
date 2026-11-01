@@ -664,7 +664,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
         }
 
         // No value, or `UseDefault` raised, try default pathway
-        match field.validator.default_value(py, Some(field.name.clone()), state) {
+        match field.validator.default_value(py, Some(field.name.as_str()), state) {
             Ok(Some(value)) => {
                 // Default value exists, and passed validation if required
                 self.model_dict.set_item(&field.name, value)?;

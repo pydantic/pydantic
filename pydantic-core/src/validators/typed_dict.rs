@@ -247,7 +247,7 @@ impl Validator for TypedDictValidator {
                     continue;
                 }
 
-                match field.validator.default_value(py, Some(field.name.clone()), state) {
+                match field.validator.default_value(py, Some(field.name.as_str()), state) {
                     Ok(Some(value)) => {
                         // Default value exists, and passed validation if required
                         output_dict.set_item(&field.name, value)?;

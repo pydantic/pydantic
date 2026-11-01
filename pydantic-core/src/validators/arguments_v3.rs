@@ -395,7 +395,7 @@ impl ArgumentsV3Validator {
                         if let Some(value) =
                             parameter
                                 .validator
-                                .default_value(py, Some(parameter.name.clone()), state)?
+                                .default_value(py, Some(parameter.name.as_str()), state)?
                         {
                             if matches!(
                                 parameter.mode,
@@ -590,7 +590,7 @@ impl ArgumentsV3Validator {
                 (None, None) => {
                     if let Some(value) = parameter
                         .validator
-                        .default_value(py, Some(parameter.name.clone()), state)?
+                        .default_value(py, Some(parameter.name.as_str()), state)?
                     {
                         if parameter.mode == ParameterMode::PositionalOnly {
                             output_args.push(value);
