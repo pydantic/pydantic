@@ -1284,7 +1284,7 @@ class GenerateSchema:
         nullable = False
         allow_missing = False
         for arg in args:
-            if arg is None or arg is NoneType:
+            if arg is NoneType:
                 nullable = True
             elif arg is MISSING:
                 allow_missing = True
