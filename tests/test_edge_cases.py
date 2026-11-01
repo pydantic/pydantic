@@ -2893,6 +2893,66 @@ def test_eq_with_cached_property():
     assert obj1 == obj2
 
 
+def test_eq_with_cached_property_non_bool_comparable():
+    """Test BaseModel.__eq__ when cached_property returns a non-bool-comparable value (GH-14068)."""
+
+    class NonBool:
+        def __eq__(self, other: object) -> 'NonBool':
+            return self
+
+        def __bool__(self) -> bool:
+            raise ValueError('The truth value of this object is ambiguous.')
+
+    class Model(BaseModel):
+        attr: int
+
+        @functools.cached_property
+        def cached(self) -> NonBool:
+            return NonBool()
+
+    obj1 = Model(attr=1)
+    obj2 = Model(attr=1)
+    obj3 = Model(attr=2)
+
+    # Compute cached property on both instances
+    _ = obj1.cached
+    _ = obj2.cached
+    _ = obj3.cached
+
+    # Equal models should return True without raising ValueError
+    assert obj1 == obj2
+    # Unequal models should return False
+    assert obj1 != obj3
+
+    try:
+        import numpy as np
+    except ImportError:
+        np = None  # pragma: no cover
+
+    if np is not None:
+
+        class NumpyModel(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            value: int
+
+            @functools.cached_property
+            def derived(self) -> np.ndarray:
+                return np.array([self.value, self.value])
+
+        a = NumpyModel(value=1)
+        b = NumpyModel(value=1)
+        c = NumpyModel(value=2)
+
+        assert a == b
+        _ = a.derived
+        assert a == b
+        _ = b.derived
+        _ = c.derived
+        assert a == b
+        assert a != c
+        assert {a: 1}[b] == 1
+
+
 def test_model_metaclass_on_other_class() -> None:
     """Test that `ModelMetaclass` can be used as a metaclass on an unrelated class.
 

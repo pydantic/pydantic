@@ -1216,14 +1216,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # See GH-7444 and GH-7825 for rationale and a performance benchmark
 
                 # First, do the fast (and sometimes faulty) __dict__ comparison
-                if self.__dict__ == other.__dict__:
-                    # If the check above passes, then pydantic fields are equal, we can return early
-                    return True
+                try:
+                    if self.__dict__ == other.__dict__:
+                        # If the check above passes, then pydantic fields are equal, we can return early
+                        return True
+                    fast_diff = True
+                except (ValueError, TypeError):
+                    fast_diff = False
 
                 # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
                 # early if there are no keys to ignore (we would just return False later on anyway)
                 model_fields = type(self).__pydantic_fields__.keys()
-                if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
+                if fast_diff and self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
                     return False
 
                 # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
