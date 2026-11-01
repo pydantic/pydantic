@@ -29,7 +29,6 @@ use crate::tools::{SchemaDict, py_err};
 use super::errors::se_err_py_err;
 use super::extra::SerializationState;
 use super::infer::{infer_json_key, infer_serialize, infer_to_python};
-use super::ob_type::{IsType, ObType};
 
 pub(crate) trait BuildSerializer: Sized {
     const EXPECTED_TYPE: &'static str;
@@ -429,12 +428,11 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
         state: &mut SerializationState<'py>,
         expected_type: &'static str,
     ) -> PyResult<Cow<'a, str>> {
-        match state.extra.ob_type_lookup.is_type(key, ObType::None) {
-            IsType::Exact | IsType::Subclass => py_err!(PyTypeError; "`{expected_type}` not valid as object key"),
-            IsType::False => {
-                state.warn_fallback_py(self.get_name(), key)?;
-                infer_json_key(key, state)
-            }
+        if key.is_none() {
+            py_err!(PyTypeError; "`{expected_type}` not valid as object key")
+        } else {
+            state.warn_fallback_py(self.get_name(), key)?;
+            infer_json_key(key, state)
         }
     }
 
