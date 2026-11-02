@@ -148,7 +148,3 @@ help:
 		'^.PHONY: .*?## .*$$' $(MAKEFILE_LIST) | \
 		sort | \
 		awk 'BEGIN {FS = ".PHONY: |## "}; {printf "\033[36m%-19s\033[0m %s\n", $$2, $$3}'
-
-.PHONY: update-v1  ## Update V1 namespace
-update-v1:
-	uv run ./update_v1.sh

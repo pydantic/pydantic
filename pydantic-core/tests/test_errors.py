@@ -263,6 +263,7 @@ all_errors = [
         {'method_name': 'isinstance'},
     ),
     ('recursion_loop', 'Recursion error - cyclic reference detected', None),
+    ('recursion_depth_exceeded', 'Recursion error - maximum validation depth exceeded', None),
     ('model_type', 'Input should be a valid dictionary or instance of Foobar', {'class_name': 'Foobar'}),
     ('model_attributes_type', 'Input should be a valid dictionary or object to extract fields from', None),
     ('dataclass_exact_type', 'Input should be an instance of Foobar', {'class_name': 'Foobar'}),
@@ -912,7 +913,9 @@ def test_error_json_unknown():
             'type': 'string_type',
             'loc': (),
             'msg': 'Input should be a valid string',
-            'input': HasRepr(IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.I)),
+            'input': HasRepr(
+                IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.IGNORECASE)
+            ),
         }
     ]
     # insert_assert(exc_info.value.json(include_url=False))
@@ -922,7 +925,7 @@ def test_error_json_unknown():
                 'type': 'string_type',
                 'loc': [],
                 'msg': 'Input should be a valid string',
-                'input': IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.I),
+                'input': IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.IGNORECASE),
             }
         ]
     )
@@ -1087,7 +1090,7 @@ def test_loc_with_dots(pydantic_version):
         core_schema.typed_dict_schema(
             {
                 'a': core_schema.typed_dict_field(
-                    core_schema.tuple_positional_schema([core_schema.int_schema(), core_schema.int_schema()]),
+                    core_schema.tuple_schema([core_schema.int_schema(), core_schema.int_schema()]),
                     validation_alias='foo.bar',
                 )
             }
@@ -1166,9 +1169,6 @@ def test_errors_include_url() -> None:
         ('PYDANTIC_ERRORS_INCLUDE_URL', 'True', True),
         ('PYDANTIC_ERRORS_INCLUDE_URL', 'no', False),
         ('PYDANTIC_ERRORS_INCLUDE_URL', '0', False),
-        # Legacy environment variable, will raise a deprecation warning:
-        ('PYDANTIC_ERRORS_OMIT_URL', '1', False),
-        ('PYDANTIC_ERRORS_OMIT_URL', None, True),
     ],
 )
 def test_errors_include_url_envvar(env_var, env_var_value, expected_to_have_url) -> None:
@@ -1182,17 +1182,15 @@ def test_errors_include_url_envvar(env_var, env_var_value, expected_to_have_url)
     env = os.environ.copy()
     # in case the ambient environment has env vars set
     env.pop('PYDANTIC_ERRORS_INCLUDE_URL', None)
-    env.pop('PYDANTIC_ERRORS_OMIT_URL', None)
     if env_var_value is not None:
         env[env_var] = env_var_value
     result = subprocess.run(
         [sys.executable, '-W', 'default', '-c', code],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        check=False,
         encoding='utf-8',
         env=env,
     )
     assert result.returncode == 1
-    if 'PYDANTIC_ERRORS_OMIT_URL' in env:
-        assert 'PYDANTIC_ERRORS_OMIT_URL is deprecated' in result.stdout
     assert ('https://errors.pydantic.dev' in result.stdout) == expected_to_have_url

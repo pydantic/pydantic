@@ -453,7 +453,7 @@ class MySequence(collections.abc.Sequence):
         return len(self._data)
 
     def __repr__(self) -> str:
-        return f'MySequence({repr(self._data)})'
+        return f'MySequence({self._data!r})'
 
 
 class MyMapping(collections.abc.Mapping):
@@ -470,7 +470,7 @@ class MyMapping(collections.abc.Mapping):
         return len(self._data)
 
     def __repr__(self) -> str:
-        return f'MyMapping({repr(self._data)})'
+        return f'MyMapping({self._data!r})'
 
 
 @dataclass
@@ -537,7 +537,7 @@ def test_list_allowed_inputs_python(testcase: ListInputTestCase):
 def test_list_dict_items_input(testcase: ListInputTestCase) -> None:
     v = SchemaValidator(
         core_schema.list_schema(
-            core_schema.tuple_positional_schema([core_schema.int_schema(), core_schema.int_schema()]),
+            core_schema.tuple_schema([core_schema.int_schema(), core_schema.int_schema()]),
             strict=testcase.strict,
         )
     )

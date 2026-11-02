@@ -274,7 +274,7 @@ def test_annotation_with_failing_hash_falls_back_to_evaluation(error: type[Excep
 
 
 @pytest.mark.thread_unsafe
-def test_legacy_validators_added_and_removed_after_caching(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_legacy_validators_are_ignored_after_caching(monkeypatch: pytest.MonkeyPatch) -> None:
     class Before(BaseModel):
         value: UUID
 
@@ -290,12 +290,11 @@ def test_legacy_validators_added_and_removed_after_caching(monkeypatch: pytest.M
     with monkeypatch.context() as patch:
         patch.setattr(UUID, '__get_validators__', classmethod(validators), raising=False)
         assert _schema_cache._verified_leaf_class_key(UUID) is _schema_cache.NOT_PURE
-        with pytest.warns(DeprecationWarning, match='__get_validators__'):
 
-            class During(BaseModel):
-                value: UUID
+        class During(BaseModel):
+            value: UUID
 
-        assert During(value=value).value == 'hooked'
+        assert During(value=value).value == value
 
     class After(BaseModel):
         value: UUID

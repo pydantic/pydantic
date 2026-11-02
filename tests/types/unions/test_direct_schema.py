@@ -1,27 +1,73 @@
 """Direct construction preserves the general union schema and field processing."""
 
+import datetime
+import re
+from decimal import Decimal
 from itertools import permutations
+from types import EllipsisType
 from typing import Annotated, Any, ForwardRef, Literal, Optional, TypeVar, Union
+from zoneinfo import ZoneInfo
 
 import pytest
-from pydantic_core import core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from pydantic import BaseModel, ConfigDict, Field, Tag, TypeAdapter, ValidationError, field_serializer, field_validator
 from pydantic._internal._config import ConfigWrapper
-from pydantic._internal._generate_schema import GenerateSchema
+from pydantic._internal._generate_schema import GenerateSchema, _is_simple_schema_type
+from pydantic.json_schema import GenerateJsonSchema
 
-SCALARS = (str, bytes, int, float, bool, complex, type(None))
+# None is normalized to NoneType by union construction (covered by test_union_spellings).
+SIMPLE_TYPES = tuple(
+    annotation
+    for annotation in (
+        str,
+        bytes,
+        int,
+        float,
+        bool,
+        complex,
+        type(None),
+        object,
+        datetime.date,
+        datetime.datetime,
+        datetime.time,
+        datetime.timedelta,
+        Decimal,
+        type,
+        EllipsisType,
+        re.Pattern,
+        ZoneInfo,
+    )
+    if _is_simple_schema_type(annotation)
+)
 
 
-@pytest.mark.parametrize('members', [*permutations(SCALARS, 2), *permutations(SCALARS, 3)])
-def test_direct_schema_matches_general_union(members: tuple[type, ...]) -> None:
+@pytest.mark.parametrize('members', [*permutations(SIMPLE_TYPES, 2), *permutations(SIMPLE_TYPES, 3)])
+def test_direct_schema_matches_general_union(monkeypatch: pytest.MonkeyPatch, members: tuple[type, ...]) -> None:
     annotation = members[0] | members[1]
     for member in members[2:]:
         annotation |= member
-    direct = GenerateSchema(ConfigWrapper({})).generate_schema(annotation)
     general = GenerateSchema(ConfigWrapper({}))._union_schema(annotation)
-    assert direct == general
+
+    def unexpected_fallback(self: GenerateSchema, annotation: Any) -> core_schema.CoreSchema:
+        raise AssertionError('simple unions must use the direct path')
+
+    monkeypatch.setattr(GenerateSchema, '_union_schema', unexpected_fallback)
+    direct = GenerateSchema(ConfigWrapper({})).generate_schema(annotation)
     assert direct is not general
+    if re.Pattern in members or ZoneInfo in members:
+        # These handlers create fresh JSON Schema callbacks (and a fresh attrgetter
+        # serializer for patterns), so dictionary equality would compare identities.
+        assert GenerateJsonSchema().generate(direct) == GenerateJsonSchema().generate(general)
+        for member, value in ((re.Pattern, 'x+'), (ZoneInfo, 'UTC'), (type(None), None)):
+            if member in members:
+                result = SchemaValidator(direct).validate_python(value)
+                expected = SchemaValidator(general).validate_python(value)
+                assert result == expected
+                assert type(result) is type(expected)
+                assert SchemaSerializer(direct).to_json(result) == SchemaSerializer(general).to_json(expected)
+    else:
+        assert direct == general
 
 
 @pytest.mark.parametrize(
