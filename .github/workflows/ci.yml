@@ -602,7 +602,7 @@ jobs:
 
   # test with a debug build as it picks up errors which optimised release builds do not
   core-test-debug:
-    name: core / Test with debug build (${{ matrix.python-version }})
+    name: core / Test with debug build (${{ matrix.python-version }}${{ matrix.features && format(', {0}', matrix.features) || '' }})
     runs-on: ubuntu-latest
 
     strategy:
