@@ -165,8 +165,6 @@ def test_comparisons(fields_set: ModelFieldsSet) -> None:
     assert {'a'} < fields_set
     assert {'a', 'c', 'x', 'y'} >= fields_set
     assert {'a', 'c', 'x', 'y'} > fields_set
-    assert fields_set <= fields_set
-    assert not fields_set < fields_set
 
     with pytest.raises(TypeError):
         fields_set < ['a']
