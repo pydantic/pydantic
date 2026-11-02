@@ -2296,6 +2296,13 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
+        annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
+
+        if not annotations:
+            # Fast path: nothing to apply, generate the core schema for the source type directly.
+            return transform_inner_schema(self.generate_schema(source_type))
+
+        pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
             if _is_simple_schema_type(obj):
