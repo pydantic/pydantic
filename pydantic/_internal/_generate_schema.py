@@ -137,6 +137,34 @@ _NONE_SCHEMA = core_schema.none_schema()
 _CALLABLE_SCHEMA = core_schema.callable_schema()
 
 
+_SIMPLE_SCHEMA_TYPES: frozenset[type[Any]] = frozenset(
+    {
+        str,
+        int,
+        bool,
+        float,
+        bytes,
+        complex,
+        NoneType,
+        object,
+        type,
+        EllipsisType,
+        re.Pattern,
+        datetime.datetime,
+        datetime.date,
+        datetime.time,
+        datetime.timedelta,
+        Decimal,
+        ZoneInfo,
+    }
+)
+"""Exact types handled directly, without checking for `__get_pydantic_core_schema__()`/`__get_pydantic_json_schema__()` methods."""
+
+
+def _is_simple_schema_type(obj: Any) -> bool:
+    return obj is None or (type(obj) is type and obj in _SIMPLE_SCHEMA_TYPES)
+
+
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
     """Return fresh copies of a fixed schema made only of immutable values."""
 
@@ -780,6 +808,11 @@ class GenerateSchema:
             PydanticUserError:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
         """
+        if _is_simple_schema_type(obj):
+            return _add_custom_serialization_from_json_encoders(
+                self._config_wrapper.json_encoders, obj, self._handlers[obj](self, obj)
+            )
+
         origin = get_origin(obj)
         schema: CoreSchema | None = None
         if origin is None:
@@ -2227,6 +2260,9 @@ class GenerateSchema:
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
+            if _is_simple_schema_type(obj):
+                return transform_inner_schema(self._handlers[obj](self, obj))
+
             origin = get_origin(obj)
             schema: CoreSchema | None = None
             if origin is None:
