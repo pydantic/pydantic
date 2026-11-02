@@ -1,0 +1,21 @@
+pydantic-core/src/validators/model.rs
+  s_c798fc01fe10fe::t_15b261c36207a8 79,93,95-97
+pydantic-core/tests/test_streaming_json.py
+  s_c798fc01fe10fe::t_1ff7d59246ffb0 364-365,383-385,391-394
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6d195cdb194fbd6d828cd5c25187cc79bc498633",
+  "prompts": {},
+  "sessions": {
+    "s_c798fc01fe10fe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19b84-7546-71b2-b163-e287dd788d86",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
