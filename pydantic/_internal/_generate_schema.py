@@ -1089,9 +1089,10 @@ class GenerateSchema:
     def _generate_schema_inner(self, obj: Any, origin: Any | None = PydanticUndefined) -> core_schema.CoreSchema:
         # Fast path: builtin scalar types (str, int, float, bool, bytes) have no origin,
         # are not generic, and can construct schemas immediately without introspection.
-        fast_factory = _FAST_SCALAR_SCHEMAS.get(obj)
-        if fast_factory is not None and (origin is None or origin is PydanticUndefined):
-            return fast_factory()
+        if isinstance(obj, type) and (origin is None or origin is PydanticUndefined):
+            fast_factory = _FAST_SCALAR_SCHEMAS.get(obj)
+            if fast_factory is not None:
+                return fast_factory()
 
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
