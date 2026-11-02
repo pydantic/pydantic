@@ -442,7 +442,7 @@ def test_enum_int_validation_should_fail_for_incorrect_decimal_value():
         v.validate_python((1, 2))
 
     with pytest.raises(ValidationError):
-        v.validate_python(Decimal(1.1))
+        v.validate_python(Decimal('1.1'))
 
 
 def test_enum_int_validation_should_fail_for_plain_type_without_eq_checking():
