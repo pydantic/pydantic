@@ -1,0 +1,41 @@
+pydantic-core/src/validators/mod.rs
+  s_687d2fedc98fc2::t_fcf5227fd645d3 148,587-593,612-624,647-676,1108-1125,1127-1133,1138-1163,1165,1167-1177,1179-1184,1187-1205
+  s_687d2fedc98fc2::t_9ced9afd5d3643 1103-1107,1126,1134-1137,1164,1166,1178,1185-1186
+  s_687d2fedc98fc2::t_cdf3eb0894444c 677,1206
+pydantic-core/src/validators/list.rs
+  s_687d2fedc98fc2::t_fcf5227fd645d3 24-26,31,40
+pydantic-core/src/validators/model_fields.rs
+  s_687d2fedc98fc2::t_fcf5227fd645d3 30,342-343,385,991-994,996-1016,1037-1041,1045-1048,1050,1052-1054,1056,1072,1079-1080,1088-1091,1093-1094,1096,1098,1100-1111,1115-1142,1144,1146-1148,1150-1153
+  s_687d2fedc98fc2::t_51dc1aa9b364de 1042-1043,1073-1078,1112-1114
+  s_687d2fedc98fc2::t_9ced9afd5d3643 481-485,1049,1051,1071,1097,1099,1143,1145,1149,1154
+  s_687d2fedc98fc2::t_981568a1ebf8c5 1055,1092,1095,1155
+pydantic-core/tests/test_streaming_json.py
+  s_687d2fedc98fc2::t_9ced9afd5d3643 182,201,220,234,239,577-578,662,688,792,841
+  s_687d2fedc98fc2::t_fcf5227fd645d3 17,262,579-661,663-687,689-791,793-840,842-886
+  s_687d2fedc98fc2::t_77ca3eb615ded6 20
+  s_687d2fedc98fc2::t_51dc1aa9b364de 116,138,288-289
+  s_687d2fedc98fc2::t_b6735a4b4c719f 1,111
+  s_687d2fedc98fc2::t_a63e65c4156af7 287
+pydantic-core/src/validators/with_default.rs
+  s_687d2fedc98fc2::t_fcf5227fd645d3 150-170
+pydantic-core/src/validators/shared/lookup_tree.rs
+  s_687d2fedc98fc2::t_fcf5227fd645d3 159-168,243-245,342-390
+pydantic-core/src/lookup_key.rs
+  s_687d2fedc98fc2::t_fcf5227fd645d3 59-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5cefba630c779fdea468be7c57c4540440d93bf5",
+  "prompts": {},
+  "sessions": {
+    "s_687d2fedc98fc2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19c42-0e8d-7252-a10e-edb35af59f32",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
