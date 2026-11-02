@@ -347,6 +347,8 @@ const SLOTS_ON_STACK: usize = 16;
 /// One model's plan.
 #[derive(Debug)]
 pub(crate) struct ModelPlan {
+    /// Present only for a top-level list of simple models.
+    root_list: Option<ContainerPlan>,
     /// Indices of the field roots in schema order.
     fields: Vec<usize>,
     /// Flat storage makes both building and dropping a plan independent of schema depth.
@@ -373,12 +375,35 @@ pub(crate) fn unwrap_prebuilt(validator: &CombinedValidator) -> &CombinedValidat
     current
 }
 
-/// Build the fixed decoding instructions for a supported root model.
+/// Build cached instructions for a model or a top-level list of simple models.
 pub(crate) fn root_plan(validator: &CombinedValidator) -> Option<ModelPlan> {
-    let CombinedValidator::Model(model) = unwrap_prebuilt(validator) else {
-        return None;
-    };
-    model.stream_fields()?.stream_plan(0)
+    match unwrap_prebuilt(validator) {
+        CombinedValidator::Model(model) => model.stream_fields()?.stream_plan(0),
+        CombinedValidator::List(list) => {
+            let list = list.stream_list()?;
+            let CombinedValidator::Model(model) = unwrap_prebuilt(list.items) else {
+                return None;
+            };
+            // List elements must be simple models, without another model nested inside.
+            let plan = model.stream_fields()?.stream_plan(1)?;
+            Some(ModelPlan {
+                root_list: Some(ContainerPlan {
+                    element: 0,
+                    min_length: list.min_length,
+                    max_length: list.max_length,
+                }),
+                fields: Vec::new(),
+                nodes: vec![FieldPlan {
+                    fast: Fast::Model(Box::new(NestedModelPlan {
+                        validator: Arc::clone(list.items),
+                        plan,
+                    })),
+                    nullable: false,
+                }],
+            })
+        }
+        _ => None,
+    }
 }
 
 /// Class hooks can change after schema construction, so check them for each call.
@@ -387,7 +412,11 @@ pub(crate) fn root_parts<'v>(
     validator: &'v CombinedValidator,
     plan: &ModelPlan,
 ) -> Option<(&'v Py<PyType>, &'v ModelFieldsValidator)> {
-    let CombinedValidator::Model(model) = unwrap_prebuilt(validator) else {
+    let validator = match unwrap_prebuilt(validator) {
+        CombinedValidator::List(list) => unwrap_prebuilt(list.stream_list()?.items),
+        validator => validator,
+    };
+    let CombinedValidator::Model(model) = validator else {
         return None;
     };
     for node in &plan.nodes {
@@ -418,6 +447,25 @@ pub(crate) fn take_root<'py>(
     plan: &ModelPlan,
     state: &mut ValidationState<'_, 'py>,
 ) -> Result<Option<Bound<'py, PyAny>>, StreamStop> {
+    if let Some(list_plan) = &plan.root_list {
+        if !matches!(jiter.peek()?, Peek::Array) {
+            return Ok(None);
+        }
+        return match take_list(py, jiter, plan, list_plan, state, 0)? {
+            Taken::Ready(value) => {
+                // Models stay as field bundles until the entire document is valid.
+                jiter.finish()?;
+                let list = value.cast::<PyList>().map_err(PyErr::from)?;
+                for index in 0..list.len() {
+                    if let Some(item) = materialize_nested(py, list.get_item(index)?, plan, list_plan.element)? {
+                        list.set_item(index, item)?;
+                    }
+                }
+                Ok(Some(value))
+            }
+            Taken::Raw => Ok(None),
+        };
+    }
     if !matches!(jiter.peek()?, Peek::Object) {
         return Ok(None);
     }
@@ -1059,7 +1107,11 @@ impl ModelFieldsValidator {
             }
             fields.push(root);
         }
-        Some(ModelPlan { fields, nodes })
+        Some(ModelPlan {
+            root_list: None,
+            fields,
+            nodes,
+        })
     }
 
     pub(crate) fn validate_json_streaming<'j, 'py>(
