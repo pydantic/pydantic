@@ -3489,8 +3489,8 @@ def model_schema(
     class MyModel:
         __slots__ = (
             '__dict__',
-            '__pydantic_fields_set__',
             '__pydantic_extra__',
+            '__pydantic_fields_set__',
             '__pydantic_private__',
         )
 
@@ -4125,7 +4125,7 @@ def call_schema(
         return_schema=core_schema.str_schema(),
     )
     v = SchemaValidator(schema)
-    assert v.validate_python((('hello', True))) == 'helloFalse'
+    assert v.validate_python(('hello', True)) == 'helloFalse'
     ```
 
     Args:
@@ -4237,8 +4237,8 @@ def json_schema(
     class MyModel:
         __slots__ = (
             '__dict__',
-            '__pydantic_fields_set__',
             '__pydantic_extra__',
+            '__pydantic_fields_set__',
             '__pydantic_private__',
         )
         field_a: str
