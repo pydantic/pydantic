@@ -129,7 +129,7 @@ class CoreConfig(TypedDict, total=False):
 
 IncExCall: TypeAlias = 'set[int | str] | dict[int | str, IncExCall] | None'
 
-ContextT = TypeVar('ContextT', covariant=True, default='Any | None')
+ContextT = TypeVar('ContextT', covariant=True, default='Any | None')  # noqa: PLC0105
 
 
 class SerializationInfo(Protocol[ContextT]):
@@ -458,7 +458,7 @@ def to_string_ser_schema(*, when_used: WhenUsed = 'json-unless-none') -> ToStrin
     Args:
         when_used: Same meaning as for [general_function_plain_ser_schema], but with a different default
     """
-    s = dict(type='to-string')
+    s = {'type': 'to-string'}
     if when_used != 'json-unless-none':
         # just to avoid extra elements in schema, and to use the actual default defined in rust
         s['when_used'] = when_used
