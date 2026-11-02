@@ -968,19 +968,25 @@ impl ModelFieldsValidator {
     ///
     /// `None` means this object is not one the fast path can finish: a value was not the exact type
     fn stream_plan_at(&self, py: Python<'_>, depth: u8) -> Option<ModelPlan<'_>> {
-        let streamable = matches!(self.extra_behavior, ExtraBehavior::Ignore)
-            && self.extras_validator.is_none()
-            && self.fields.iter().all(|field| {
-                field.lookup_path_collection.by_alias.is_empty()
-                    && simple_fast(&classify(py, &field.validator, depth).fast)
-            });
-        streamable.then(|| ModelPlan {
-            fields: self
-                .fields
-                .iter()
-                .map(|field| classify(py, &field.validator, depth))
-                .collect(),
-        })
+        if !matches!(self.extra_behavior, ExtraBehavior::Ignore) || self.extras_validator.is_some() {
+            return None;
+        }
+        let mut fields = Vec::new();
+        for field in &self.fields {
+            if !field.lookup_path_collection.by_alias.is_empty() {
+                return None;
+            }
+            let plan = classify(py, &field.validator, depth);
+            if !simple_fast(&plan.fast) {
+                return None;
+            }
+            if fields.is_empty() {
+                // Allocate once, only after the first field qualifies for streaming.
+                fields.reserve_exact(self.fields.len());
+            }
+            fields.push(plan);
+        }
+        Some(ModelPlan { fields })
     }
 
     pub(crate) fn validate_json_streaming<'j, 'py>(
