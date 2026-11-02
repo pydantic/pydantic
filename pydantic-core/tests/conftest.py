@@ -298,7 +298,7 @@ def import_execute(request, tmp_work_path: Path):
 @pytest.fixture
 def pydantic_version():
     try:
-        import pydantic
+        import pydantic  # noqa: TID251 (optional, guarded by `ImportError`)
 
         # include major and minor version only
         return '.'.join(pydantic.__version__.split('.')[:2])

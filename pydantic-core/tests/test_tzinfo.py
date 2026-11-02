@@ -11,9 +11,8 @@ from datetime import datetime, timedelta, timezone, tzinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import pytest
-from pydantic import TypeAdapter
 
-from pydantic_core import TzInfo
+from pydantic_core import SchemaValidator, TzInfo, core_schema
 
 
 class _ALWAYS_EQ:
@@ -241,7 +240,7 @@ def test_pickle(tz, pickler, unpickler, proto):
 
 
 def test_tzinfo_could_be_reused():
-    value = TypeAdapter(datetime).validate_python('2015-10-21T15:28:00.000000+01:00')
+    value = SchemaValidator(core_schema.datetime_schema()).validate_python('2015-10-21T15:28:00.000000+01:00')
 
     target = datetime(1955, 11, 12, 14, 38, tzinfo=value.tzinfo)
     assert target == datetime(1955, 11, 12, 14, 38, tzinfo=timezone(timedelta(hours=1)))
