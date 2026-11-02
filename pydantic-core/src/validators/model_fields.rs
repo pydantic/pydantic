@@ -306,7 +306,14 @@ pub(crate) enum Fast {
     List(Box<ContainerPlan>),
     /// an object with string keys whose values all come off the cursor the same way
     Dict(Box<ContainerPlan>),
-    Model(Arc<CombinedValidator>, Box<ModelPlan>),
+    Model(Box<NestedModelPlan>),
+}
+
+/// Owned instructions for a nested model, kept behind one pointer so field plans stay small.
+#[derive(Debug)]
+pub(crate) struct NestedModelPlan {
+    validator: Arc<CombinedValidator>,
+    plan: ModelPlan,
 }
 
 /// One field's plan: how to take its value, and whether null is also an answer for it.
@@ -384,8 +391,8 @@ pub(crate) fn root_parts<'v>(
         return None;
     };
     for node in &plan.nodes {
-        if let Fast::Model(validator, _) = &node.fast {
-            let CombinedValidator::Model(nested) = unwrap_prebuilt(validator) else {
+        if let Fast::Model(nested) = &node.fast {
+            let CombinedValidator::Model(nested) = unwrap_prebuilt(&nested.validator) else {
                 unreachable!("a model plan holds a model validator");
             };
             nested.stream_parts(py)?;
@@ -438,7 +445,7 @@ pub(crate) fn take_root<'py>(
 fn contains_nested_model(plan: &ModelPlan, mut index: usize) -> bool {
     loop {
         match &plan.nodes[index].fast {
-            Fast::Model(_, _) => return true,
+            Fast::Model(_) => return true,
             Fast::List(container) | Fast::Dict(container) => index = container.element,
             _ => return false,
         }
@@ -457,8 +464,8 @@ fn materialize_nested<'py>(
         return Ok(None);
     }
     match &field.fast {
-        Fast::Model(validator, _) => {
-            let CombinedValidator::Model(nested) = unwrap_prebuilt(validator) else {
+        Fast::Model(nested) => {
+            let CombinedValidator::Model(nested) = unwrap_prebuilt(&nested.validator) else {
                 unreachable!("a model plan holds a model validator");
             };
             let class = nested.stream_class();
@@ -470,7 +477,7 @@ fn materialize_nested<'py>(
             Ok(Some(instance))
         }
         Fast::List(plan) => {
-            let list = value.cast::<PyList>()?;
+            let list = value.cast::<PyList>().map_err(PyErr::from)?;
             for index in 0..list.len() {
                 if let Some(item) = materialize_nested(py, list.get_item(index)?, model_plan, plan.element)? {
                     list.set_item(index, item)?;
@@ -717,13 +724,13 @@ fn take_peeked<'py>(
         {
             coerce_scalar(py, jiter, validator, peek, state)?
         }
-        (Fast::Model(validator, plan), Peek::Object) => {
-            let CombinedValidator::Model(model) = unwrap_prebuilt(validator) else {
+        (Fast::Model(nested), Peek::Object) => {
+            let CombinedValidator::Model(model) = unwrap_prebuilt(&nested.validator) else {
                 unreachable!("a model plan holds a model validator");
             };
             let fields = model.stream_fields().expect("model schema checked when building plan");
             state.floor_exactness(Exactness::Strict);
-            match fields.validate_json_streaming(py, jiter, plan, state, depth)? {
+            match fields.validate_json_streaming(py, jiter, &nested.plan, state, depth)? {
                 Some((dict, _, fields_set)) => {
                     let fields_set = Bound::new(py, fields_set)?;
                     Taken::Ready(PyTuple::new(py, [dict.into_any(), fields_set.into_any()])?.into_any())
@@ -1031,7 +1038,13 @@ impl ModelFieldsValidator {
                     }
                     CombinedValidator::Model(model) if model_depth == 0 => {
                         let plan = model.stream_fields()?.stream_plan(model_depth + 1)?;
-                        (Fast::Model(Arc::clone(validator), Box::new(plan)), None)
+                        (
+                            Fast::Model(Box::new(NestedModelPlan {
+                                validator: Arc::clone(validator),
+                                plan,
+                            })),
+                            None,
+                        )
                     }
                     _ => return None,
                 };
