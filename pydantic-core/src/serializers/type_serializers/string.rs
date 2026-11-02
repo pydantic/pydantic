@@ -61,8 +61,7 @@ impl TypeSerializer for StrSerializer {
         state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         if let Ok(py_str) = key.cast::<PyString>() {
-            // FIXME py cow to avoid the copy
-            Ok(Cow::Owned(py_str.to_string_lossy().into_owned()))
+            Ok(py_str.to_string_lossy())
         } else {
             state.warn_fallback_py(self.get_name(), key)?;
             infer_json_key(key, state)

@@ -82,7 +82,6 @@ cases: list[ParameterSet | tuple[str, str]] = [
             'plugin_success.py',
             'plugin_fail.py',
             'plugin_success_baseConfig.py',
-            'plugin_fail_baseConfig.py',
             'pydantic_settings.py',
             'decorator_implicit_classmethod.py',
         ],
@@ -95,7 +94,6 @@ cases: list[ParameterSet | tuple[str, str]] = [
             'plugin_fail.py',
             'fail_defaults.py',
             'plugin_success_baseConfig.py',
-            'plugin_fail_baseConfig.py',
         ],
     ),
     # One-off cases
@@ -108,7 +106,7 @@ cases: list[ParameterSet | tuple[str, str]] = [
         ('mypy-plugin.ini', 'generics.py'),
         ('mypy-plugin.ini', 'root_models.py'),
         ('mypy-plugin.ini', 'plugin_strict_fields.py'),
-        ('mypy-plugin.ini', 'final_with_default.py'),
+        ('mypy-plugin-strict.ini', 'final_with_default.py'),
         ('mypy-plugin.ini', 'create_model_var.py'),
         ('mypy-plugin.ini', 'import_cycle.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
@@ -116,7 +114,6 @@ cases: list[ParameterSet | tuple[str, str]] = [
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
         ('pyproject-plugin-no-strict-optional.toml', 'no_strict_optional.py'),
         ('pyproject-plugin-strict-equality.toml', 'strict_equality.py'),
-        ('pyproject-plugin.toml', 'from_orm_v1_noconflict.py'),
     ],
 ]
 

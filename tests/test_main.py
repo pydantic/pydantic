@@ -28,7 +28,14 @@ from uuid import UUID, uuid4
 
 import pydantic_core
 import pytest
-from pydantic_core import CoreSchema, ModelFieldsSet, PydanticOmit, PydanticUndefined, core_schema
+from pydantic_core import (
+    CoreSchema,
+    ModelFieldsSet,
+    PydanticOmit,
+    PydanticSerializationError,
+    PydanticUndefined,
+    core_schema,
+)
 
 from pydantic import (
     AfterValidator,
@@ -37,7 +44,6 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     PrivateAttr,
-    PydanticDeprecatedSince211,
     PydanticSchemaGenerationError,
     PydanticUndefinedAnnotation,
     PydanticUserError,
@@ -53,7 +59,6 @@ from pydantic import (
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic.v1 import BaseModel as BaseModelV1
 
 
 def test_success():
@@ -1115,6 +1120,26 @@ def test_class_var():
         b = 2
 
     assert list(MyOtherModel.model_fields.keys()) == ['c']
+
+
+def test_model_fields_class_only() -> None:
+    class Model(BaseModel):
+        x: int
+        y: int = 2
+
+        @computed_field
+        @property
+        def area(self) -> int:
+            return self.x * self.y
+
+    assert list(Model.model_fields) == ['x', 'y']
+    assert list(Model.model_computed_fields) == ['area']
+
+    m = Model(x=1)
+    with pytest.raises(AttributeError, match="'Model' object has no attribute 'model_fields'"):
+        m.model_fields  # pyright: ignore[reportAttributeAccessIssue]
+    with pytest.raises(AttributeError, match="'Model' object has no attribute 'model_computed_fields'"):
+        m.model_computed_fields  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_fields_set():
@@ -2205,36 +2230,68 @@ def test_frozen_field_decl_without_default_val(ann, value):
 
 @pytest.mark.parametrize(
     'ann',
-    [Final, Final[int]],
-    ids=['no-arg', 'with-arg'],
+    [Final, Final[int], Annotated[Final[int], 'meta']],
+    ids=['no-arg', 'with-arg', 'annotated'],
 )
-def test_deprecated_final_field_decl_with_default_val(ann):
-    with pytest.warns(PydanticDeprecatedSince211):
+def test_final_field_decl_with_default_val(ann):
+    """https://github.com/pydantic/pydantic/issues/11119"""
 
-        class Model(BaseModel):
-            a: ann = 10
+    class Model(BaseModel):
+        a: ann = 10
 
-    assert 'a' in Model.__class_vars__
-    assert 'a' not in Model.model_fields
+    assert 'a' not in Model.__class_vars__
+    assert Model.model_fields['a'].frozen
+    assert Model.model_fields['a'].default == 10
+    assert Model().a == 10
+    assert Model(a=20).a == 20
+
+
+_T = TypeVar('_T')
+
+
+class _UserGeneric(Generic[_T]):
+    pass
+
+
+class _UserGenericModel(BaseModel, Generic[_T]):
+    pass
 
 
 @pytest.mark.parametrize(
-    'ann',
-    [Final, Final[int]],
-    ids=['no-arg', 'with-arg'],
+    ['value', 'expected_type'],
+    [
+        (1, int),
+        (None, type(None)),
+        (Field(default='a'), str),
+        (Field(default_factory=list), list),
+        (Field(default_factory=list[int]), list[int]),
+        (Field(default_factory=_UserGeneric[int]), _UserGeneric[int]),
+        (Field(default_factory=_UserGenericModel[int]), _UserGenericModel[int]),
+        (Field(default_factory=lambda: 1), Any),
+        (Field(...), Any),
+    ],
 )
-def test_deprecated_annotated_final_field_decl_with_default_val(ann):
-    with pytest.warns(PydanticDeprecatedSince211):
+def test_bare_final_field_type_inferred_from_default(value: Any, expected_type: Any) -> None:
+    """https://github.com/pydantic/pydantic/issues/11119"""
 
-        class Model(BaseModel):
-            a: Annotated[ann, ...] = 10
+    class Model(BaseModel, arbitrary_types_allowed=True):
+        a: Final = value
 
-    assert 'a' in Model.__class_vars__
-    assert 'a' not in Model.model_fields
+    assert Model.model_fields['a'].annotation == expected_type
+    assert Model.model_fields['a'].frozen
 
 
-@pytest.mark.xfail(reason="When rebuilding fields, we don't consider the field as a class variable")
-def test_deprecated_final_field_with_default_val_rebuild():
+def test_bare_final_field_type_inferred_from_default_validation() -> None:
+    class Model(BaseModel):
+        a: Final = 1
+
+    assert Model(a='2').a == 2
+
+    with pytest.raises(ValidationError, check=lambda e: e.errors()[0]['type'] == 'int_parsing'):
+        Model(a='not an int')
+
+
+def test_final_field_with_default_val_rebuild():
     class Model(BaseModel):
         a: 'Final[MyInt]' = 1
 
@@ -2242,8 +2299,9 @@ def test_deprecated_final_field_with_default_val_rebuild():
 
     Model.model_rebuild()
 
-    assert 'a' in Model.__class_vars__
-    assert 'a' not in Model.model_fields
+    assert 'a' not in Model.__class_vars__
+    assert Model.model_fields['a'].frozen
+    assert Model(a=2).a == 2
 
 
 def test_final_field_reassignment():
@@ -3139,9 +3197,12 @@ def test_recursion_loop_error_validate_strings_cyclic() -> None:
     platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
     reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
 )
-def test_recursion_loop_error_validate_strings_deep() -> None:
+@pytest.mark.parametrize('method', ['model_validate', 'model_validate_strings'])
+def test_recursion_depth_exceeded_error(method: str) -> None:
+    """Deeply nested but acyclic input should not be reported as a cyclic reference."""
+
     class Model(BaseModel):
-        x: Optional['Model'] = None
+        x: 'Model | None' = None
 
     # deeper than the recursion guard limit (at most 255), but not too deep as freeing
     # deeply nested dicts can exhaust the stack on Pyodide:
@@ -3149,8 +3210,86 @@ def test_recursion_loop_error_validate_strings_deep() -> None:
     for _ in range(1_000):
         data = {'x': data}
 
-    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'recursion_loop'):
-        Model.model_validate_strings(data)
+    with pytest.raises(ValidationError) as exc_info:
+        getattr(Model, method)(data)
+
+    errors = exc_info.value.errors(include_url=False)
+    assert len(errors) == 1
+    assert errors[0]['type'] == 'recursion_depth_exceeded'
+    assert errors[0]['msg'] == 'Recursion error - maximum validation depth exceeded'
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+def test_serialization_depth_exceeded_error() -> None:
+    class Model(BaseModel):
+        x: 'Model | None' = None
+
+    m = Model()
+    for _ in range(1_000):
+        m = Model(x=m)
+
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
+        m.model_dump()
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+def test_serialization_depth_exceeded_error_discriminated_union() -> None:
+    """In Python mode, the union serializer catches the depth error, warns and falls back to inferring the type."""
+
+    class Leaf(BaseModel):
+        type: Literal['leaf'] = 'leaf'
+
+    class Node(BaseModel):
+        type: Literal['node'] = 'node'
+        child: Annotated['Node | Leaf', Field(discriminator='type')]
+
+    m = Leaf()
+    for _ in range(1_000):
+        m = Node(child=m)
+
+    with pytest.warns(UserWarning, match='Maximum serialization depth exceeded'):
+        m.model_dump()
+
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
+        m.model_dump(mode='json')
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+@pytest.mark.parametrize('leaf', [1, 'a', True, None])
+def test_serialization_depth_exceeded_error_leaf_value(leaf: Any) -> None:
+    """Values that can't contain other values are subject to the depth limit as well when inferring types."""
+
+    limit = pydantic_core._pydantic_core._recursion_limit
+    ta = TypeAdapter(Any)
+
+    def nest(depth: int) -> Any:
+        data = leaf
+        for _ in range(depth):
+            data = [data]
+        return data
+
+    # the leaf is right at the limit:
+    data = nest(limit - 1)
+    assert ta.dump_python(data, mode='json') == data
+    assert json.loads(ta.dump_json(data)) == data
+
+    # the leaf is one level too deep:
+    data = nest(limit)
+    assert ta.dump_python(data) == data
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
+        ta.dump_python(data, mode='json')
+    with pytest.raises(PydanticSerializationError, match='Maximum serialization depth exceeded'):
+        ta.dump_json(data)
+    assert b'"..."' in pydantic_core.to_json(data, serialize_unknown=True)
 
 
 def test_protected_namespace_default():
@@ -3923,21 +4062,6 @@ def test_shadow_attribute_no_warn_stdlib_dataclass() -> None:
         assert len(captured_warnings) == 0
 
 
-def test_field_name_deprecated_method_name() -> None:
-    """https://github.com/pydantic/pydantic/issues/11912"""
-
-    with pytest.warns(UserWarning):
-
-        class Model(BaseModel):
-            # `collect_model_fields()` will special case these to not use
-            # the deprecated methods as default values:
-            dict: int
-            schema: str
-
-        assert Model.model_fields['dict'].is_required()
-        assert Model.model_fields['schema'].is_required()
-
-
 def test_inherited_class_vars(create_module):
     @create_module
     def module():
@@ -4012,19 +4136,6 @@ def test_subclassing_gen_schema_warns() -> None:
     with pytest.warns(UserWarning, match='Subclassing `GenerateSchema` is not supported.'):
 
         class MyGenSchema(GenerateSchema): ...
-
-
-def test_nested_v1_model_warns() -> None:
-    with pytest.warns(
-        UserWarning,
-        match=r'Mixing V1 models and V2 models \(or constructs, like `TypeAdapter`\) is not supported. Please upgrade `V1Model` to V2.',
-    ):
-
-        class V1Model(BaseModelV1):
-            a: int
-
-        class V2Model(BaseModel):
-            inner: V1Model
 
 
 @pytest.mark.skipif(sys.version_info < (3, 13), reason='requires python 3.13')
