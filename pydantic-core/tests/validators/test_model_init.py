@@ -391,7 +391,7 @@ def test_model_custom_init_revalidate():
             Model,
             core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
             custom_init=True,
-            config=dict(revalidate_instances='always'),
+            config={'revalidate_instances': 'always'},
         )
     )
 

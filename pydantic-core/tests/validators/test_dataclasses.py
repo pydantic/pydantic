@@ -354,7 +354,7 @@ def test_dataclass_subclass_subclass_revalidate():
     sub_foo2 = v.validate_python(sub_foo)
     assert sub_foo2 is not sub_foo
     assert type(sub_foo2) is FooDataclass
-    assert dataclasses.asdict(sub_foo2) == dict(a='hello', b=True)
+    assert dataclasses.asdict(sub_foo2) == {'a': 'hello', 'b': True}
 
 
 def test_dataclass_post_init():

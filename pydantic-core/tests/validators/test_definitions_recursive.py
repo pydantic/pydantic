@@ -389,7 +389,7 @@ def test_definition_list():
     assert v.validate_python([]) == []
     assert v.validate_python([[]]) == [[]]
 
-    data = list()
+    data = []
     data.append(data)
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python(data)

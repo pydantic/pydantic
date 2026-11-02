@@ -431,9 +431,9 @@ def test_base64():
         (lambda: datetime(2032, 1, 1), {}, b'"2032-01-01T00:00:00"'),
         (lambda: time(12, 34, 56), {}, b'"12:34:56"'),
         (lambda: timedelta(days=12, seconds=34, microseconds=56), {}, b'"P12DT34.000056S"'),
-        (lambda: timedelta(days=12, seconds=34, microseconds=56), dict(timedelta_mode='float'), b'1036834.000056'),
+        (lambda: timedelta(days=12, seconds=34, microseconds=56), {'timedelta_mode': 'float'}, b'1036834.000056'),
         (lambda: timedelta(seconds=-1), {}, b'"-PT1S"'),
-        (lambda: timedelta(seconds=-1), dict(timedelta_mode='float'), b'-1.0'),
+        (lambda: timedelta(seconds=-1), {'timedelta_mode': 'float'}, b'-1.0'),
         (lambda: {1, 2, 3}, {}, b'[1,2,3]'),
         (lambda: frozenset([1, 2, 3]), {}, b'[1,2,3]'),
         (lambda: deque([1, 2, 3]), {}, b'[1,2,3]'),
@@ -445,9 +445,9 @@ def test_base64():
         (lambda: iter((0, 1, 2, 3)), {}, b'[0,1,2,3]'),
         (lambda: iter(range(4)), {}, b'[0,1,2,3]'),
         (lambda: b'this is bytes', {}, b'"this is bytes"'),
-        (lambda: b'this is bytes', dict(bytes_mode='base64'), b'"dGhpcyBpcyBieXRlcw=="'),
+        (lambda: b'this is bytes', {'bytes_mode': 'base64'}, b'"dGhpcyBpcyBieXRlcw=="'),
         (lambda: bytearray(b'this is bytes'), {}, b'"this is bytes"'),
-        (lambda: bytearray(b'this is bytes'), dict(bytes_mode='base64'), b'"dGhpcyBpcyBieXRlcw=="'),
+        (lambda: bytearray(b'this is bytes'), {'bytes_mode': 'base64'}, b'"dGhpcyBpcyBieXRlcw=="'),
         (lambda: Decimal('12.34'), {}, b'"12.34"'),
         (lambda: MyEnum.a, {}, b'1'),
         (lambda: MyEnum.b, {}, b'"b"'),
@@ -671,14 +671,14 @@ def test_ser_json_int_subclass_value_larger_than_i64():
     schema = core_schema.model_schema(
         MyModel,
         core_schema.model_fields_schema(
-            dict(
-                stuff=core_schema.model_field(
+            {
+                'stuff': core_schema.model_field(
                     core_schema.dict_schema(
                         keys_schema=core_schema.str_schema(),
                         values_schema=core_schema.any_schema(),
                     )
                 )
-            )
+            }
         ),
     )
     s = SchemaSerializer(schema)

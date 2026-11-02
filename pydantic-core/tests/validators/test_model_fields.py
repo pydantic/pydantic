@@ -953,12 +953,12 @@ class MyDataclass:
         (ClassWithAttributes(), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
         (MyDataclass(), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
         (Cls(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
-        (dict(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
+        ({'a': 1, 'b': 2, 'c': 'ham'}, ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
         (Map(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
-        ((Cls(a=1, b=2), dict(c='ham')), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
-        ((Cls(a=1, b=2), dict(c='bacon')), ({'a': 1, 'b': 2, 'c': 'bacon'}, None, {'a', 'b', 'c'})),
-        ((Cls(a=1, b=2, c='ham'), dict(c='bacon')), ({'a': 1, 'b': 2, 'c': 'bacon'}, None, {'a', 'b', 'c'})),
-        ((Cls(a=1, b=2, c='ham'), dict(d='bacon')), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
+        ((Cls(a=1, b=2), {'c': 'ham'}), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
+        ((Cls(a=1, b=2), {'c': 'bacon'}), ({'a': 1, 'b': 2, 'c': 'bacon'}, None, {'a', 'b', 'c'})),
+        ((Cls(a=1, b=2, c='ham'), {'c': 'bacon'}), ({'a': 1, 'b': 2, 'c': 'bacon'}, None, {'a', 'b', 'c'})),
+        ((Cls(a=1, b=2, c='ham'), {'d': 'bacon'}), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
         # using type gives `__module__ == 'builtins'`
         (type('Testing', (), {}), Err('[type=model_attributes_type,')),
         (
