@@ -65,12 +65,12 @@ def test_list_str_fallback():
     ]
 
     all_warnings = ''.join([w.message.args[0] for w in warning_info.list])
-    assert all([x in all_warnings for x in expected_warnings])
+    assert all(x in all_warnings for x in expected_warnings)
 
     with pytest.raises(PydanticSerializationError) as warning_ex:
         v.to_json([1, 2, 3], warnings='error')
 
-    assert all([x in str(warning_ex.value) for x in expected_warnings])
+    assert all(x in str(warning_ex.value) for x in expected_warnings)
 
 
 def test_tuple_any():
