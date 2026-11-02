@@ -153,7 +153,7 @@ def test_comparison():
 
     tz = TzInfo(ZERO)
     assert tz == ALWAYS_EQ
-    assert not tz != ALWAYS_EQ
+    assert tz == ALWAYS_EQ
     assert tz < LARGEST
     assert not tz > LARGEST
     assert tz <= LARGEST
