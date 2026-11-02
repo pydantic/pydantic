@@ -6,7 +6,6 @@ import types
 import typing
 from collections import ChainMap
 from collections.abc import Generator, Mapping
-from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import reduce
 from itertools import zip_longest
@@ -19,6 +18,7 @@ from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
 from . import _type_refs, _typing_extra
+from ._contextlib import contextmanager
 from ._forward_ref import PydanticRecursiveRef
 from ._utils import all_identical, is_model_class
 
