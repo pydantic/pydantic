@@ -179,7 +179,7 @@ def test_comparison():
         else:
             assert tz != europe_london
             with pytest.raises(TypeError):
-                tz > europe_london
+                assert tz > europe_london
 
 
 @pytest.mark.parametrize('tz', [ACDT, EST])

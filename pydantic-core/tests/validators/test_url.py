@@ -1159,7 +1159,10 @@ def test_zero_schemas():
             Err('Input should be a valid URL, invalid international domain name [type=url_parsing,'),
         ),
         # NodeJS unicode -> double dot
-        ('http://google.com/\uff2e\uff2e/abc', {'scheme': 'http', 'host': 'google.com', 'path': '/%EF%BC%AE%EF%BC%AE/abc'}),
+        (
+            'http://google.com/\uff2e\uff2e/abc',
+            {'scheme': 'http', 'host': 'google.com', 'path': '/%EF%BC%AE%EF%BC%AE/abc'},
+        ),
         # Scheme without ://
         (
             "javascript:a='@google.com:12345/';alert(0)",
@@ -1477,7 +1480,13 @@ def test_multi_url_build_hosts_set_with_single_value(field) -> None:
         {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5432},
         {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5432},
     ]
-    kwargs = {'scheme': 'postgresql', 'hosts': hosts, 'path': 'database', 'query': 'sslmode=require', 'fragment': 'test'}
+    kwargs = {
+        'scheme': 'postgresql',
+        'hosts': hosts,
+        'path': 'database',
+        'query': 'sslmode=require',
+        'fragment': 'test',
+    }
     if field == 'port':
         kwargs[field] = 5432
     else:

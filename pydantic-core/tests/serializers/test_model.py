@@ -441,7 +441,8 @@ def test_advanced_exclude_nested_lists(exclude, expected):
         type('SubSubModel', (), {}),
         core_schema.model_fields_schema(
             {
-                'i': core_schema.model_field(core_schema.int_schema()), 'j': core_schema.model_field(core_schema.int_schema())
+                'i': core_schema.model_field(core_schema.int_schema()),
+                'j': core_schema.model_field(core_schema.int_schema()),
             }
         ),
     )

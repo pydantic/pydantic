@@ -101,11 +101,17 @@ def test_filter_args(params):
         {'include': {'1': {0}}, 'exclude': None, 'expected': {'1': [0]}},
         {'include': {'__all__': {0}}, 'exclude': None, 'expected': {'0': [0], '1': [0], '2': [0], '3': [0]}},
         {
-            'include': None, 'exclude': {'0': {'__all__'}}, 'expected': {'0': [], '1': [0, 1], '2': [0, 1, 2], '3': [0, 1, 2, 3]}
+            'include': None,
+            'exclude': {'0': {'__all__'}},
+            'expected': {'0': [], '1': [0, 1], '2': [0, 1, 2], '3': [0, 1, 2, 3]},
         },
         {'include': None, 'exclude': {'__all__': {'__all__'}}, 'expected': {'0': [], '1': [], '2': [], '3': []}},
         {'include': None, 'exclude': {'__all__': {0}}, 'expected': {'0': [], '1': [1], '2': [1, 2], '3': [1, 2, 3]}},
-        {'include': None, 'exclude': {'__all__': {0}, '3': {1}}, 'expected': {'0': [], '1': [1], '2': [1, 2], '3': [2, 3]}},
+        {
+            'include': None,
+            'exclude': {'__all__': {0}, '3': {1}},
+            'expected': {'0': [], '1': [1], '2': [1, 2], '3': [2, 3]},
+        },
     ],
 )
 def test_filter_args_nested(params):

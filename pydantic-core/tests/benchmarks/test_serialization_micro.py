@@ -9,6 +9,7 @@ from pydantic_core import SchemaSerializer, SchemaValidator, core_schema, to_jso
 
 DATA = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
 
+
 class TestBenchmarkSimpleModel:
     @pytest.fixture(scope='class')
     @classmethod

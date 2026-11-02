@@ -913,7 +913,9 @@ def test_error_json_unknown():
             'type': 'string_type',
             'loc': (),
             'msg': 'Input should be a valid string',
-            'input': HasRepr(IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.IGNORECASE)),
+            'input': HasRepr(
+                IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.IGNORECASE)
+            ),
         }
     ]
     # insert_assert(exc_info.value.json(include_url=False))

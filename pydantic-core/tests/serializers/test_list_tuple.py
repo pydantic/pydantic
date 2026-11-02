@@ -29,9 +29,11 @@ def test_list_fallback():
 
     with pytest.warns(UserWarning) as warning_info:
         assert v.to_json('apple') == b'"apple"'
-    "Expected `list[any]` - serialized value may not be as expected [input_value='apple', input_type=str]" in warning_info.list[
-        0
-    ].message.args[0]
+
+    assert (
+        "Expected `list[any]` - serialized value may not be as expected [input_value='apple', input_type=str]"
+        in warning_info.list[0].message.args[0]
+    )
 
     with pytest.warns(
         UserWarning,

@@ -255,7 +255,7 @@ def test_json_dict_complex_key():
     assert v.validate_json('{"1+2j": 2, "-3": 4}') == {complex(1, 2): 2, complex(-3, 0): 4}
     assert v.validate_json('{"1+2j": 2, "infj": 4}') == {complex(1, 2): 2, complex(0, float('inf')): 4}
     with pytest.raises(ValidationError, match='Input should be a valid complex string'):
-        v.validate_json('{"1+2j": 2, "": 4}') == {complex(1, 2): 2, complex(0, float('inf')): 4}
+        assert v.validate_json('{"1+2j": 2, "": 4}') == {complex(1, 2): 2, complex(0, float('inf')): 4}
 
 
 @pytest.mark.parametrize(
