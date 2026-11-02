@@ -1733,7 +1733,7 @@ def test_parameterized_with_annotated_forward_refs() -> None:
 
     assert M.model_fields['a'].metadata == [3]
     assert M.model_fields['b'].metadata == [3, 1]
-    assert M.model_fields['c'].metadata == [Gt(2), 3, 2]
+    assert M.model_fields['c'].metadata == [3, 2, Gt(2)]
 
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
@@ -1768,7 +1768,7 @@ M.model_rebuild()
 
     assert M.model_fields['a'].metadata == [3]
     assert M.model_fields['b'].metadata == [3, 1]
-    assert M.model_fields['c'].metadata == [Gt(2), 3, 2]
+    assert M.model_fields['c'].metadata == [3, 2, Gt(2)]
 
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')

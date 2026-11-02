@@ -36,7 +36,7 @@ from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
     get_origin,
 )
 
-from ._internal import _fields, _utils, _validators
+from ._internal import _constraints, _fields, _utils, _validators
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
@@ -728,7 +728,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
     pattern: str | Pattern[str] | None = None
     ascii_only: bool | None = None
 
-    def __iter__(self) -> Iterator[BaseMetadata]:
+    def __iter__(self) -> Iterator[BaseMetadata | _fields.PydanticMetadata]:
         if self.min_length is not None:
             yield MinLen(self.min_length)
         if self.max_length is not None:
@@ -742,7 +742,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
             or self.to_upper is not None
             or self.ascii_only is not None
         ):
-            yield _fields.pydantic_general_metadata(
+            yield from _constraints.constraints_from_kwargs(
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
@@ -1121,7 +1121,8 @@ def condecimal(
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
         annotated_types.MultipleOf(multiple_of) if multiple_of is not None else None,
-        _fields.pydantic_general_metadata(max_digits=max_digits, decimal_places=decimal_places),
+        _constraints.MaxDigits(max_digits) if max_digits is not None else None,
+        _constraints.DecimalPlaces(decimal_places) if decimal_places is not None else None,
         AllowInfNan(allow_inf_nan) if allow_inf_nan is not None else None,
     ]
 

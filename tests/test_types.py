@@ -2376,14 +2376,11 @@ def test_annotated_metadata_any_order() -> None:
     except ValueError as ex:
         assert '365 days' in str(ex)
 
-    # in this case, the Le constraint comes after the BeforeValidator, so we use functional validators
-    # from pydantic._internal._validators.py (in this case, less_than_or_equal_validator)
-    # which doesn't have access to fancy pydantic-core formatting for timedelta, so we get
-    # the raw timedelta repr in the error `datetime.timedelta(days=365`` vs the above `365 days`
+    # The position of the constraint doesn't matter, it is always applied on the `timedelta` schema:
     try:
         BeforeValidatorBeforeLe(v=366)
     except ValueError as ex:
-        assert 'datetime.timedelta(days=365)' in str(ex)
+        assert '365 days' in str(ex)
 
 
 @pytest.mark.parametrize(
