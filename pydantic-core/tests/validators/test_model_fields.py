@@ -1750,7 +1750,7 @@ def test_extra_behavior_forbid(
         config=config,
     )
 
-    m, model_extra, fields_set = v.validate_python({'f': 'x'}, extra=validate_fn_extra_kw)
+    m, _model_extra, fields_set = v.validate_python({'f': 'x'}, extra=validate_fn_extra_kw)
     assert m == {'f': 'x'}
     assert fields_set == {'f'}
 

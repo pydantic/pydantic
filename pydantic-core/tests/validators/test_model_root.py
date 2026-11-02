@@ -166,7 +166,7 @@ def test_extra():
     m = v.validate_python(1)
 
     with pytest.raises(AttributeError):
-        m.__pydantic_extra__
+        _ = m.__pydantic_extra__
 
 
 def test_fields_set():
