@@ -276,6 +276,10 @@ def get_model_type_hints(
                         hints[name] = try_eval_type(value, globalns, localns)
                     except Exception:
                         hints[name] = (value, False)
+                elif name == 'model_config':
+                    # `model_config` is never a field, and `collect_model_fields()` ignores its annotation,
+                    # so there is no need to evaluate it:
+                    hints[name] = (value, False)
                 else:
                     if base_model_fields is not None and name in base_model_fields:
                         # Avoid unnecessarily evaluating annotations from parent models, as we'll end up

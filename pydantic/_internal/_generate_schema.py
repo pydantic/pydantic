@@ -137,49 +137,32 @@ _NONE_SCHEMA = core_schema.none_schema()
 _CALLABLE_SCHEMA = core_schema.callable_schema()
 
 
-if sys.implementation.name == 'cpython':
+_SIMPLE_SCHEMA_TYPES: frozenset[type[Any]] = frozenset(
+    {
+        str,
+        int,
+        bool,
+        float,
+        bytes,
+        complex,
+        NoneType,
+        object,
+        type,
+        EllipsisType,
+        re.Pattern,
+        datetime.datetime,
+        datetime.date,
+        datetime.time,
+        datetime.timedelta,
+        Decimal,
+        ZoneInfo,
+    }
+)
+"""Exact types handled directly, without checking for `__get_pydantic_core_schema__()`/`__get_pydantic_json_schema__()` methods."""
 
-    def _is_simple_schema_type(obj: Any) -> bool:
-        """Recognize exact types that cannot define custom schema hooks."""
-        return (
-            obj is str
-            or obj is int
-            or obj is bool
-            or obj is float
-            or obj is bytes
-            or obj is NoneType
-            or obj is None
-            or obj is datetime.datetime
-            or obj is datetime.date
-            or obj is Decimal
-            or obj is object
-            or obj is datetime.timedelta
-            or obj is datetime.time
-            or obj is type
-            or obj is re.Pattern
-            or obj is ZoneInfo
-            or obj is complex
-            or obj is EllipsisType
-        )
 
-else:
-    # datetime, Decimal and ZoneInfo classes can define custom hooks on PyPy.
-    def _is_simple_schema_type(obj: Any) -> bool:
-        """Recognize exact types that cannot define custom schema hooks."""
-        return (
-            obj is str
-            or obj is int
-            or obj is bool
-            or obj is float
-            or obj is bytes
-            or obj is NoneType
-            or obj is None
-            or obj is object
-            or obj is type
-            or obj is re.Pattern
-            or obj is complex
-            or obj is EllipsisType
-        )
+def _is_simple_schema_type(obj: Any) -> bool:
+    return obj is None or (type(obj) is type and obj in _SIMPLE_SCHEMA_TYPES)
 
 
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
