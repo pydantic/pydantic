@@ -5,7 +5,6 @@ from __future__ import annotations as _annotations
 import copy
 import dataclasses
 import sys
-import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
 from functools import partial
@@ -22,7 +21,6 @@ from typing_extensions import TypeIs
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
-from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema, InvalidSchemaError
@@ -130,12 +128,6 @@ def complete_dataclass(
     if not _force_build and config_wrapper.defer_build:
         set_dataclass_mocks(cls)
         return False
-
-    if hasattr(cls, '__post_init_post_parse__'):
-        warnings.warn(
-            'Support for `__post_init_post_parse__` has been dropped, the method will not be called',
-            PydanticDeprecatedSince20,
-        )
 
     typevars_map = get_standard_typevars_map(cls)
     gen_schema = GenerateSchema(

@@ -1,0 +1,17 @@
+# File generated from our OpenAPI spec by Castiron. See CONTRIBUTING.md for details.
+
+# Frozen model corpus; modified from openai 3.41.0; see README.md and LICENSE.
+from typing import List
+from typing_extensions import Literal
+from ..._models import BaseModel
+from .beta_response_input_item import BetaResponseInputItem
+
+class BetaResponseInjectEvent(BaseModel):
+    """
+    Injects input items into an active response over a WebSocket connection.
+    The items are validated and committed atomically. Currently, the server
+    accepts client-owned tool outputs that resume a waiting agent.
+    """
+    input: List[BetaResponseInputItem]
+    response_id: str
+    type: Literal['response.inject']

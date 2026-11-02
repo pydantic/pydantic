@@ -60,6 +60,29 @@ ADDRESS = _model('Address', {'street': STR, 'city': STR})
 
 # name -> (schema, should the plan take it, documents)
 CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
+    'coerced_ints': (
+        _model(
+            'CoercedInts',
+            {
+                'numbers': core_schema.list_schema(INT),
+                'lookup': core_schema.dict_schema(STR, INT),
+            },
+        ),
+        True,
+        [
+            '{"numbers":[1,2,"3"],"lookup":{"x":"4"}}',
+            '{"numbers":["-3","+4"," 5 "],"lookup":{"x":"0"}}',
+            '{"numbers":[1,"invalid"],"lookup":{"x":4}}',
+            '{"numbers":[1,"3"],"lookup":{"x":"invalid"}}',
+            '{"numbers":[1,"3"],"lookup":{"x":4}} trailing',
+            '{"numbers":[1,"invalid"],"numbers":[2,"3"],"lookup":{"x":4}}',
+        ],
+    ),
+    'strict_ints': (
+        _model('StrictInts', {'numbers': core_schema.list_schema(core_schema.int_schema(strict=True))}),
+        True,
+        ['{"numbers":[1,2]}', '{"numbers":[1,"2"]}'],
+    ),
     'scalars': (
         _model('Scalars', {'i': INT, 's': STR, 'b': BOOL, 'f': FLOAT}),
         True,
@@ -128,8 +151,10 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
         ),
         True,
         [
-            '{"tags": ["a"], "nums": [1], "grid": [[1.5, 2]], "map": {"k": "v"},'
-            ' "models": {"a": {"street": "s", "city": "c"}}}',
+            (
+                '{"tags": ["a"], "nums": [1], "grid": [[1.5, 2]], "map": {"k": "v"},'
+                ' "models": {"a": {"street": "s", "city": "c"}}}'
+            ),
             '{"tags": [], "nums": [], "grid": [], "map": {}, "models": {}}',
             # an array that goes wrong part way through is already half converted
             '{"tags": ["a", 1], "nums": [1], "grid": [[1.5]], "map": {"k": "v"}, "models": {}}',
@@ -273,8 +298,10 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
         [
             '[{"street": "s", "city": "c"}]',
             '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}]',
-            '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}, {"street": "s", "city": "c"},'
-            ' {"street": "s", "city": "c"}]',
+            (
+                '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}, {"street": "s", "city": "c"},'
+                ' {"street": "s", "city": "c"}]'
+            ),
             '[]',
             '[{"street": 1, "city": "c"}, {"street": "s", "city": "c"}]',
         ],
@@ -326,14 +353,14 @@ def _child(case: str, in_array: bool = False) -> None:
         validator = SchemaValidator(core_schema.list_schema(items_schema=schema))
         docs = ['[' + ', '.join(d for d in docs if isinstance(d, str) and d.startswith('{')) + ']']
 
-    out = {'accepted': validator._stream_plan_accepted, 'results': []}
+    out = {'accepted': bool(validator._stream_plan_accepted), 'results': []}
     for doc in docs:
         try:
             out['results'].append(['ok', _dump(validator.validate_json(doc))])
         except ValidationError as e:
             out['results'].append(['err', e.errors(include_url=False)])
         # any difference at all is a difference, so nothing is allowed to escape here
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100
             out['results'].append(['exc', type(e).__name__, str(e)[:200]])
     print(json.dumps(out, default=repr))
 
@@ -352,7 +379,9 @@ def _run(case: str, stream: bool, in_array: bool = False) -> dict:
         'spec.loader.exec_module(module)\n'
         f'module._child({case!r}, in_array={in_array!r})\n'
     )
-    proc = subprocess.run([sys.executable, '-c', script], capture_output=True, text=True, cwd=ROOT, env=env)
+    proc = subprocess.run(
+        [sys.executable, '-c', script], check=False, capture_output=True, text=True, cwd=ROOT, env=env
+    )
     assert proc.returncode == 0, f'{case} ({"stream" if stream else "tree"}) failed:\n{proc.stderr[-3000:]}'
     return json.loads(proc.stdout)
 
@@ -370,9 +399,26 @@ def test_streaming_matches_the_tree(case: str) -> None:
     assert tree['results'] == stream['results']
 
 
+def test_invalid_lookup_flags_preserve_json_error_precedence() -> None:
+    validator = SchemaValidator(
+        core_schema.model_schema(
+            _cls('BadLookupFlags'),
+            core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
+            config=core_schema.CoreConfig(validate_by_alias=False, validate_by_name=False),
+        )
+    )
+    assert validator._stream_plan_accepted
+
+    with pytest.raises(ValidationError, match='Invalid JSON: trailing characters'):
+        validator.validate_json('{"x": 1} trailing')
+    with pytest.raises(ValueError, match='cannot both be set to `False`'):
+        validator.validate_json('{"x": 1}')
+
+
 @pytest.mark.parametrize('hook', ['__del__', '__new__'])
 @pytest.mark.parametrize('shape', ['root', 'nested', 'root_list'])
-def test_model_object_hooks_decline_streaming(hook: str, shape: str) -> None:
+@pytest.mark.parametrize('placement', ['direct', 'inherited', 'added'])
+def test_model_object_hooks_decline_streaming(hook: str, shape: str, placement: str) -> None:
     calls: list[str] = []
     base = _cls('Base')
 
@@ -390,7 +436,9 @@ def test_model_object_hooks_decline_streaming(hook: str, shape: str) -> None:
 
         namespace = {'__new__': allocator}
 
-    cls = type('Hooked', (base,), namespace)
+    if placement == 'inherited':
+        base = type('HookedBase', (base,), namespace)
+    cls = type('Hooked', (base,), namespace if placement == 'direct' else {})
     schema = core_schema.model_schema(
         cls=cls,
         schema=core_schema.model_fields_schema(fields={'value': core_schema.model_field(INT)}),
@@ -400,6 +448,13 @@ def test_model_object_hooks_decline_streaming(hook: str, shape: str) -> None:
     elif shape == 'root_list':
         schema = core_schema.list_schema(schema)
     validator = SchemaValidator(schema)
+    if placement == 'added':
+        assert validator._stream_plan_accepted
+        if hook == '__del__' and sys.implementation.name == 'pypy':
+            with pytest.warns(RuntimeWarning, match='a __del__ method added to an existing type will not be called'):
+                setattr(cls, hook, namespace[hook])
+        else:
+            setattr(cls, hook, namespace[hook])
     assert validator._stream_plan_accepted is False
     with pytest.raises(ValidationError):
         validator.validate_json(
@@ -532,3 +587,45 @@ def test_streamed_model_uses_model_fields_set(width: int) -> None:
     assert streamed.__pydantic_fields_set__ == set(fields)
     assert streamed.__pydantic_fields_set__ == ordinary.__pydantic_fields_set__
     assert streamed.__dict__ == ordinary.__dict__
+
+
+@pytest.mark.parametrize('kind', ['str', 'bool', 'int', 'float'])
+@pytest.mark.parametrize('schema_strict', [False, True])
+@pytest.mark.parametrize('strict', [None, False, True])
+@pytest.mark.parametrize('coerce_numbers', [False, True])
+@pytest.mark.parametrize('allow_inf_nan', [False, True])
+@pytest.mark.parametrize(
+    'value',
+    ['3', '1.0', 'true', 'off', 'invalid', 0, 1, 1.0, 1.5, True, False, None, 2**100, float('inf'), float('nan')],
+    ids=lambda value: f'{type(value).__name__}-{value!r}',
+)
+def test_streamed_scalar_validation_matches_ordinary(
+    kind: str, schema_strict: bool, strict: bool | None, coerce_numbers: bool, allow_inf_nan: bool, value: object
+) -> None:
+    scalar = getattr(core_schema, f'{kind}_schema')(strict=schema_strict)
+    validator = SchemaValidator(
+        _model(
+            'ScalarCoercions',
+            {
+                'scalar': scalar,
+                'items': core_schema.list_schema(scalar),
+                'map': core_schema.dict_schema(STR, scalar),
+            },
+        ),
+        config=core_schema.CoreConfig(coerce_numbers_to_str=coerce_numbers, allow_inf_nan=allow_inf_nan),
+    )
+    assert validator._stream_plan_accepted
+    document = json.dumps({'scalar': value, 'items': [value], 'map': {'x': value}})
+
+    def outcome(ordinary: bool) -> str:
+        try:
+            result = [
+                'ok',
+                _dump(validator.validate_json(document, strict=strict, **({'by_name': True} if ordinary else {}))),
+            ]
+        except ValidationError as error:
+            result = ['error', error.errors(include_url=False)]
+        # JSON gives NaN a stable representation while preserving types and float signs.
+        return json.dumps(result, default=repr)
+
+    assert outcome(False) == outcome(True)

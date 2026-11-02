@@ -66,17 +66,33 @@ pub struct ModelValidator {
 }
 
 impl ModelValidator {
-    /// Prototype support for the streaming json path: the shapes it can handle, and the pieces it
-    /// needs to build an instance itself.
-    pub(crate) fn stream_parts(&self, py: Python<'_>) -> Option<(&Py<PyType>, &Arc<CombinedValidator>)> {
+    /// Class already checked before parsing a streamed document.
+    pub(crate) fn stream_class(&self) -> &Py<PyType> {
+        &self.class
+    }
+
+    /// The fixed schema requirements for streaming, independent of mutable class hooks.
+    pub(crate) fn stream_fields(&self) -> Option<&super::model_fields::ModelFieldsValidator> {
         if self.custom_init || self.root_model || self.post_init.is_some() || self.frozen {
             return None;
         }
         if !matches!(self.revalidate, Revalidate::Never) {
             return None;
         }
+        let CombinedValidator::ModelFields(fields) = self.validator.as_ref() else {
+            return None;
+        };
+        Some(fields)
+    }
+
+    /// Check current class hooks before constructing a streamed instance.
+    pub(crate) fn stream_parts(
+        &self,
+        py: Python<'_>,
+    ) -> Option<(&Py<PyType>, &super::model_fields::ModelFieldsValidator)> {
+        let fields = self.stream_fields()?;
         let class = self.class.bind(py);
-        #[cfg(not(PyPy))]
+        #[cfg(not(any(PyPy, GraalPy)))]
         {
             // Speculative instances may be discarded before JSON parsing finishes. Inspect
             // current slots without invoking attribute hooks, including inherited hooks.
@@ -90,11 +106,11 @@ impl ModelValidator {
                 return None;
             }
         }
-        #[cfg(PyPy)]
+        #[cfg(any(PyPy, GraalPy))]
         {
-            // PyPy shares tp_new wrappers across Python classes, so compare the first
-            // __new__ definition in the MRO instead. Read type dictionaries directly to
-            // avoid executing custom metaclass attribute hooks.
+            // PyPy shares tp_new wrappers across Python classes, and GraalPy does not expose
+            // Python finalizers through tp_finalize. Inspect definitions in the MRO instead.
+            // Read type dictionaries directly to avoid custom metaclass attribute hooks.
             // SAFETY: ready Python types have tuple tp_mro and dict tp_dict entries.
             let (mro, object_dict) = unsafe {
                 (
@@ -127,7 +143,7 @@ impl ModelValidator {
                 }
             }
         }
-        Some((&self.class, &self.validator))
+        Some((&self.class, fields))
     }
 }
 

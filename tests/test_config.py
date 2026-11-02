@@ -15,11 +15,9 @@ from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 from typing_extensions import TypedDict
 
 from pydantic import (
-    BaseConfig,
     BaseModel,
     Field,
     PrivateAttr,
-    PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
     ValidationError,
     create_model,
@@ -28,7 +26,6 @@ from pydantic import (
     with_config,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
-from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
@@ -36,7 +33,7 @@ from pydantic.dataclasses import rebuild_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
-from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecatedSince211, PydanticDeprecationWarning
+from pydantic.warnings import PydanticDeprecationWarning
 
 from .conftest import CallCounter
 
@@ -77,35 +74,6 @@ def test_config_dict_missing_keys():
 
 
 class TestsBaseConfig:
-    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
-    def test_base_config_equality_defaults_of_config_dict_class(self):
-        for key, value in config_defaults.items():
-            assert getattr(BaseConfig, key) == value
-
-    def test_config_and_module_config_cannot_be_used_together(self):
-        with pytest.raises(PydanticUserError):
-
-            class MyModel(BaseModel):
-                model_config = ConfigDict(title='MyTitle')
-
-                class Config:
-                    title = 'MyTitleConfig'
-
-    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
-    def test_base_config_properly_converted_to_dict(self):
-        class MyConfig(BaseConfig):
-            title = 'MyTitle'
-            frozen = True
-
-        class MyBaseModel(BaseModel):
-            class Config(MyConfig): ...
-
-        class MyModel(MyBaseModel): ...
-
-        MyModel.model_config['title'] = 'MyTitle'
-        MyModel.model_config['frozen'] = True
-        assert 'str_to_lower' not in MyModel.model_config
-
     def test_base_config_custom_init_signature(self):
         class MyModel(BaseModel):
             id: int
@@ -350,117 +318,6 @@ class TestsBaseConfig:
         m = Model(a=40, b=10)
         assert m == m.model_copy()
 
-    def test_config_class_is_deprecated(self):
-        with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
-
-            class Config(BaseConfig):
-                pass
-
-        # typing-extensions swallows one of the warnings, so we need to support
-        # both ways for now.
-        assert len(all_warnings) in [1, 2]
-        expected_warnings = [
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-        ]
-        if len(all_warnings) == 2:
-            expected_warnings.insert(0, 'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead')
-        assert [w.message.message for w in all_warnings] == expected_warnings
-
-    def test_config_class_attributes_are_deprecated(self):
-        with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
-            assert BaseConfig.validate_assignment is False
-            assert BaseConfig().validate_assignment is False
-
-            class Config(BaseConfig):
-                pass
-
-            assert Config.validate_assignment is False
-            assert Config().validate_assignment is False
-        assert len(all_warnings) == 7
-        expected_warnings = {
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-            'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
-        }
-        assert set(w.message.message for w in all_warnings) <= expected_warnings
-
-    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
-    def test_config_class_missing_attributes(self):
-        with pytest.raises(AttributeError, match="type object 'BaseConfig' has no attribute 'missing_attribute'"):
-            BaseConfig.missing_attribute
-
-        with pytest.raises(AttributeError, match="'BaseConfig' object has no attribute 'missing_attribute'"):
-            BaseConfig().missing_attribute
-
-        class Config(BaseConfig):
-            pass
-
-        with pytest.raises(AttributeError, match="type object 'Config' has no attribute 'missing_attribute'"):
-            Config.missing_attribute
-
-        with pytest.raises(AttributeError, match="'Config' object has no attribute 'missing_attribute'"):
-            Config().missing_attribute
-
-
-def test_config_key_deprecation():
-    config_dict = {
-        'allow_mutation': None,
-        'error_msg_templates': None,
-        'fields': None,
-        'getter_dict': None,
-        'schema_extra': None,
-        'smart_union': None,
-        'underscore_attrs_are_private': None,
-        'allow_population_by_field_name': None,
-        'anystr_lower': None,
-        'anystr_strip_whitespace': None,
-        'anystr_upper': None,
-        'keep_untouched': None,
-        'max_anystr_length': None,
-        'min_anystr_length': None,
-        'orm_mode': None,
-        'validate_all': None,
-    }
-
-    warning_message = """
-Valid config keys have changed in V2:
-* 'allow_population_by_field_name' has been renamed to 'validate_by_name'
-* 'anystr_lower' has been renamed to 'str_to_lower'
-* 'anystr_strip_whitespace' has been renamed to 'str_strip_whitespace'
-* 'anystr_upper' has been renamed to 'str_to_upper'
-* 'keep_untouched' has been renamed to 'ignored_types'
-* 'max_anystr_length' has been renamed to 'str_max_length'
-* 'min_anystr_length' has been renamed to 'str_min_length'
-* 'orm_mode' has been renamed to 'from_attributes'
-* 'schema_extra' has been renamed to 'json_schema_extra'
-* 'validate_all' has been renamed to 'validate_default'
-* 'allow_mutation' has been removed
-* 'error_msg_templates' has been removed
-* 'fields' has been removed
-* 'getter_dict' has been removed
-* 'smart_union' has been removed
-* 'underscore_attrs_are_private' has been removed
-    """.strip()
-
-    with pytest.warns(UserWarning, match=re.escape(warning_message)):
-
-        class MyModel(BaseModel):
-            model_config = config_dict
-
-    with pytest.warns(UserWarning, match=re.escape(warning_message)):
-        create_model('MyCreatedModel', __config__=config_dict)
-
-    with pytest.warns(UserWarning, match=re.escape(warning_message)):
-
-        @pydantic_dataclass(config=config_dict)
-        class MyDataclass:
-            pass
-
-    with pytest.warns(UserWarning, match=re.escape(warning_message)):
-
-        @validate_call(config=config_dict)
-        def my_function():
-            pass
-
 
 def test_invalid_extra():
     ConfigDict(extra='invalid-value')
@@ -522,8 +379,6 @@ def test_multiple_inheritance_config():
 @pytest.mark.thread_unsafe(reason='Flaky')
 def test_config_wrapper_match():
     localns = {
-        '_GenerateSchema': GenerateSchema,
-        'GenerateSchema': GenerateSchema,
         'JsonValue': JsonValue,
         'FieldInfo': FieldInfo,
         'ComputedFieldInfo': ComputedFieldInfo,
@@ -574,8 +429,6 @@ def test_config_validation_error_cause():
 
 def test_config_defaults_match():
     localns = {
-        '_GenerateSchema': GenerateSchema,
-        'GenerateSchema': GenerateSchema,
         'FieldInfo': FieldInfo,
         'ComputedFieldInfo': ComputedFieldInfo,
     }
@@ -908,7 +761,7 @@ def test_partial_creation_with_defer_build():
         for name, field in model.model_fields.items():
             if field.is_required() and name in optionals:
                 assert field.annotation is not None
-                override_fields[name] = (field.annotation | None, FieldInfo.merge_field_infos(field, default=None))
+                override_fields[name] = (field.annotation | None, Field(default=None))
 
         return create_model(f'Partial{model.__name__}', __base__=model, **override_fields)
 
@@ -960,16 +813,6 @@ def test_with_config_kwargs() -> None:
     assert TypeAdapter(TD).validate_python({'a': 1}) == {'a': '1'}
 
 
-def test_with_config_keyword_argument_deprecated() -> None:
-    with pytest.warns(PydanticDeprecatedSince211):
-
-        @with_config(config={'coerce_numbers_to_str': True})
-        class TD(TypedDict):
-            a: str
-
-    assert TypeAdapter(TD).validate_python({'a': 1}) == {'a': '1'}
-
-
 def test_with_config_positional_and_keyword_error() -> None:
     with pytest.raises(ValueError):
 
@@ -983,22 +826,6 @@ def test_empty_config_with_annotations():
         model_config: ConfigDict = {}
 
     assert Model.model_config == {}
-
-
-def test_generate_schema_deprecation_warning() -> None:
-    with pytest.warns(
-        PydanticDeprecatedSince210, match='The `schema_generator` setting has been deprecated since v2.10.'
-    ) as all_warnings:
-
-        class Model(BaseModel):
-            model_config = ConfigDict(schema_generator=GenerateSchema)
-
-            a: int
-
-    # The notice is emitted once per config, not once per core config build:
-    assert len(all_warnings) == 1
-    # The setting no longer has any effect:
-    assert Model(a=1).a == 1
 
 
 def test_populate_by_name_still_effective() -> None:

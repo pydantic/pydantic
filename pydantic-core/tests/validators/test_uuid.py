@@ -119,8 +119,6 @@ def test_uuid_strict(input_value, expected):
         (UUID('04e4aeb3-8f20-30d0-8852-d295e1265eed'), 3, UUID('04e4aeb3-8f20-30d0-8852-d295e1265eed')),
         ('0e7ac198-9acd-4c0c-b4b4-761974bf71d7', 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
         (UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7'), 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
-        ('0e7ac198-9acd-4c0c-b4b4-761974bf71d7', 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
-        (UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7'), 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
         ('0194fdc2-5d6a-733c-97f9-2feeb9d2a609', 7, UUID('0194fdc2-5d6a-733c-97f9-2feeb9d2a609')),
         (UUID('0194fdc2-5d6a-733c-97f9-2feeb9d2a609'), 7, UUID('0194fdc2-5d6a-733c-97f9-2feeb9d2a609')),
         ('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05', 6, UUID('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05')),

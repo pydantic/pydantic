@@ -83,13 +83,6 @@ dev = [
     'jsonschema',
     'time-machine; platform_python_implementation != "PyPy"',
 ]
-benchmark-startup = [
-    # Note: bumping deps here can change benchmarks results (see tests/benchmarks/library_startup/README.md):
-    'mcp==2.3.0',
-    'openai==3.41.0',
-    'anthropic==2.3.0',
-    'google-genai==2.34.0; python_version >= "3.11"',
-]
 coverage = [
     'coverage[toml]',
 ]
@@ -230,7 +223,7 @@ unconfirmed_label = 'pending'
 [tool.ruff]
 line-length = 120
 target-version = 'py310'
-extend-exclude = ['pydantic/v1', 'tests/mypy', 'tests/pydantic_core']
+extend-exclude = ['tests/mypy', 'tests/pydantic_core', 'tests/benchmarks/corpus']
 
 [tool.ruff.lint]
 select = [
@@ -266,9 +259,7 @@ pydocstyle = { convention = 'google' }
 'tests/test_main.py' = ['PIE807']
 'tests/*' = ['D', 'B', 'C4']
 'pydantic/_internal/_known_annotated_metadata.py' = ['PIE800']
-'pydantic/deprecated/*' = ['D', 'PYI', 'UP007']
 'pydantic/color.py' = ['PYI']
-'pydantic/_internal/_decorators_v1.py' = ['PYI']
 'pydantic/json_schema.py' = ['D']
 "release/*.py" = ["T201"]  # print statements in release scripts
 
@@ -282,7 +273,6 @@ quote-style = 'single'
 
 [tool.coverage.run]
 source = ['pydantic', 'pydantic_core']
-omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
 branch = true
 relative_files = true
 context = '${CONTEXT}'
@@ -305,14 +295,14 @@ source = [
 
 [tool.pyright]
 include = ['pydantic', 'tests/test_pipeline.py']
-exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py', 'pydantic/v1']
+exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py']
 # reportUnnecessaryTypeIgnoreComment can't be set since we run pyright with multiple python versions
 # reportUnnecessaryTypeIgnoreComment = true
 strict = ['tests/test_pipeline.py']
 enableExperimentalFeatures = true
 
 [tool.codespell]
-skip = '.git,env*,pydantic/v1/*,uv.lock'
+skip = '.git,env*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
 ignore-words-list = 'gir,ser,crate,deques,nam'
