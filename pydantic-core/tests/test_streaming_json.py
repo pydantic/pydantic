@@ -390,8 +390,11 @@ def test_model_object_hooks_decline_streaming(hook: str, placement: str) -> None
     validator = SchemaValidator(schema)
     if placement == 'added':
         assert validator._stream_plan_accepted
-        for name, value in namespace.items():
-            setattr(cls, name, value)
+        if hook == '__del__' and sys.implementation.name == 'pypy':
+            with pytest.warns(RuntimeWarning, match='a __del__ method added to an existing type will not be called'):
+                setattr(cls, hook, namespace[hook])
+        else:
+            setattr(cls, hook, namespace[hook])
     assert validator._stream_plan_accepted is False
     with pytest.raises(ValidationError):
         validator.validate_json(b'{"value": 1} trailing')
