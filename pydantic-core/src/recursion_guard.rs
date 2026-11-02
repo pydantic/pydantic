@@ -131,6 +131,11 @@ impl RecursionState {
         }
     }
 
+    /// Whether increasing the depth (`incr_depth()`) would exceed the limit.
+    pub fn at_depth_limit(&self) -> bool {
+        self.depth >= RECURSION_GUARD_LIMIT
+    }
+
     pub fn decr_depth(&mut self) {
         // for the same reason as incr_depth, use saturating_sub
         self.depth = self.depth.saturating_sub(1);

@@ -260,7 +260,7 @@ impl Validator for ArgumentsValidator {
                 (None, None) => {
                     if let Some(value) = parameter
                         .validator
-                        .default_value(py, Some(parameter.name.clone()), state)?
+                        .default_value(py, Some(parameter.name.as_str()), state)?
                     {
                         if let Some(ref kwarg_key) = parameter.kwarg_key {
                             output_kwargs.set_item(kwarg_key, value)?;

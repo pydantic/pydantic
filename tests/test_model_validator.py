@@ -6,7 +6,7 @@ import pytest
 
 from pydantic import (
     BaseModel,
-    PydanticDeprecatedSince212,
+    PydanticUserError,
     ValidationInfo,
     ValidatorFunctionWrapHandler,
     model_validator,
@@ -144,52 +144,18 @@ def test_nested_models() -> None:
     calls.clear()
 
 
-def test_after_validator_wrong_signature() -> None:
-    with pytest.warns(PydanticDeprecatedSince212):
+@pytest.mark.parametrize('explicit_classmethod', [True, False])
+@pytest.mark.parametrize('with_info', [True, False])
+def test_after_validator_classmethod(explicit_classmethod: bool, with_info: bool) -> None:
+    def validator(cls, model, info: ValidationInfo):
+        return model
 
-        class Model1(BaseModel):
-            @model_validator(mode='after')
-            # This is converted into a class method, but deprecated
-            # as it should be an instance method:
-            def validator(cls, model, info: ValidationInfo):
-                assert isinstance(model, cls)
-                assert info.mode == 'python'
-                return model
+    def validator_no_info(cls, model):
+        return model
 
-    with pytest.warns(PydanticDeprecatedSince212):
+    func = validator if with_info else validator_no_info
 
-        class Model2(BaseModel):
-            @model_validator(mode='after')
-            # This is accepted as a class method, but deprecated
-            # as it should be an instance method:
-            @classmethod
-            def validator(cls, model, info: ValidationInfo):
-                assert isinstance(model, cls)
-                assert info.mode == 'python'
-                return model
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'model-after-validator-classmethod'):
 
-    with pytest.warns(PydanticDeprecatedSince212):
-
-        class Model3(BaseModel):
-            @model_validator(mode='after')
-            # This is converted into a class method, but deprecated
-            # as it should be an instance method:
-            def validator(cls, model):
-                assert isinstance(model, cls)
-                return model
-
-    with pytest.warns(PydanticDeprecatedSince212):
-
-        class Model4(BaseModel):
-            @model_validator(mode='after')
-            # This is accepted as a class method, but deprecated
-            # as it should be an instance method:
-            @classmethod
-            def validator(cls, model):
-                assert isinstance(model, cls)
-                return model
-
-    Model1()
-    Model2()
-    Model3()
-    Model4()
+        class Model(BaseModel):
+            check = model_validator(mode='after')(classmethod(func) if explicit_classmethod else func)

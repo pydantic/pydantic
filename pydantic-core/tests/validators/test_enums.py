@@ -254,8 +254,8 @@ def test_enum_exactness():
 
 def test_plain_enum_lists():
     class MyEnum(Enum):
-        a = [1]
-        b = [2]
+        a = [1]  # noqa: RUF012
+        b = [2]  # noqa: RUF012
 
     assert MyEnum([1]) is MyEnum.a
     v = SchemaValidator(core_schema.enum_schema(MyEnum, list(MyEnum.__members__.values())))
@@ -442,7 +442,7 @@ def test_enum_int_validation_should_fail_for_incorrect_decimal_value():
         v.validate_python((1, 2))
 
     with pytest.raises(ValidationError):
-        v.validate_python(Decimal(1.1))
+        v.validate_python(Decimal('1.1'))
 
 
 def test_enum_int_validation_should_fail_for_plain_type_without_eq_checking():
