@@ -602,15 +602,17 @@ jobs:
 
   # test with a debug build as it picks up errors which optimised release builds do not
   core-test-debug:
-    name: core / Test with debug build (${{ matrix.python-version }})
+    name: core / Test with debug build (${{ matrix.python-version }}${{ matrix.features && format(', {0}', matrix.features) || '' }})
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        python-version:
-          - '3.14'
-          - 'pypy3.11'
+        include:
+          - python-version: '3.14'
+            features: stream-verify
+          - python-version: 'pypy3.11'
+            features: ''
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -636,11 +638,13 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-packages --all-extras --group testing-extra
 
-      - run: uv run --no-sync maturin develop --uv
+      # Check streamed successes against ordinary validation on CPython.
+      - run: uv run --no-sync maturin develop --uv --features "${{ matrix.features }}"
         working-directory: pydantic-core
 
       - run: uv pip freeze
-      - run: uv run pytest
+      # Keep the feature-enabled extension installed by maturin.
+      - run: uv run --no-sync pytest
 
   core-test-python-debug:
     name: core / Test with debug Python (${{ matrix.python-version }})
