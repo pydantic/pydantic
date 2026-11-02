@@ -361,7 +361,8 @@ def test_invalid_lookup_flags_preserve_json_error_precedence() -> None:
 
 
 @pytest.mark.parametrize('hook', ['__del__', '__new__'])
-def test_model_object_hooks_decline_streaming(hook: str) -> None:
+@pytest.mark.parametrize('placement', ['direct', 'inherited', 'added'])
+def test_model_object_hooks_decline_streaming(hook: str, placement: str) -> None:
     calls: list[str] = []
     base = _cls('Base')
 
@@ -379,12 +380,18 @@ def test_model_object_hooks_decline_streaming(hook: str) -> None:
 
         namespace = {'__new__': allocator}
 
-    cls = type('Hooked', (base,), namespace)
+    if placement == 'inherited':
+        base = type('HookedBase', (base,), namespace)
+    cls = type('Hooked', (base,), namespace if placement == 'direct' else {})
     schema = core_schema.model_schema(
         cls=cls,
         schema=core_schema.model_fields_schema(fields={'value': core_schema.model_field(INT)}),
     )
     validator = SchemaValidator(schema)
+    if placement == 'added':
+        assert validator._stream_plan_accepted
+        for name, value in namespace.items():
+            setattr(cls, name, value)
     assert validator._stream_plan_accepted is False
     with pytest.raises(ValidationError):
         validator.validate_json(b'{"value": 1} trailing')
