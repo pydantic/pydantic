@@ -291,7 +291,7 @@ def _child(case: str, in_array: bool = False) -> None:
         validator = SchemaValidator(core_schema.list_schema(items_schema=schema))
         docs = ['[' + ', '.join(d for d in docs if isinstance(d, str) and d.startswith('{')) + ']']
 
-    out = {'accepted': validator._stream_plan_accepted, 'results': []}
+    out = {'accepted': bool(validator._stream_plan_accepted), 'results': []}
     for doc in docs:
         try:
             out['results'].append(['ok', _dump(validator.validate_json(doc))])
