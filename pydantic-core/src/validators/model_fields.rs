@@ -12,7 +12,7 @@ use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PyList, PySet, PyString, PyType};
+use pyo3::types::{PyDict, PyList, PySet, PyString, PyTuple, PyType};
 use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
@@ -393,17 +393,6 @@ pub(crate) fn root_plan(validator: &Arc<CombinedValidator>) -> Option<ModelPlan>
     (!matches!(root_fast(&plan), Fast::No)).then_some(plan)
 }
 
-/// Borrow the cached element model instructions for the separate root-array reader.
-pub(crate) fn array_model_plan(plan: &ModelPlan) -> Option<&ModelPlan> {
-    let Fast::List(container) = &plan.nodes[plan.fields[0]].fast else {
-        return None;
-    };
-    let Fast::Model(nested) = &plan.nodes[container.element].fast else {
-        return None;
-    };
-    Some(&nested.plan)
-}
-
 fn root_fast(plan: &ModelPlan) -> &Fast {
     let mut index = plan.fields[0];
     loop {
@@ -416,16 +405,19 @@ fn root_fast(plan: &ModelPlan) -> &Fast {
 
 /// Mutable allocation/finalizer hooks stay outside the cached structural plan.
 pub(crate) fn root_eligible(py: Python<'_>, plan: &ModelPlan) -> bool {
-    match root_fast(plan) {
+    !matches!(root_fast(plan), Fast::No) && model_hooks_valid(py, plan)
+}
+
+fn model_hooks_valid(py: Python<'_>, plan: &ModelPlan) -> bool {
+    plan.nodes.iter().all(|node| match &node.fast {
         Fast::Model(nested) => {
             let CombinedValidator::Model(model) = nested.validator.as_ref() else {
                 unreachable!()
             };
-            model.stream_parts(py).is_some()
+            model.stream_parts(py).is_some() && model_hooks_valid(py, &nested.plan)
         }
-        Fast::No => false,
         _ => true,
-    }
+    })
 }
 
 /// Containers and wrappers are walked iteratively. Only model nesting recurses, bounded at four.
@@ -500,8 +492,8 @@ pub(crate) enum Taken<'py> {
     Raw,
 }
 
-/// Construct a model after reading its fields. Root construction waits for the document suffix.
-fn build_model<'py>(
+/// Read one model into a field bundle without constructing a speculative instance.
+fn take_model<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
     nested: &NestedModel,
@@ -511,24 +503,18 @@ fn build_model<'py>(
     let CombinedValidator::Model(model) = nested.validator.as_ref() else {
         unreachable!()
     };
-    let Some((class, fields)) = model.stream_parts(py) else {
+    let Some((_, fields)) = model.stream_parts(py) else {
         skip_unused(jiter, depth)?;
         return Ok(Taken::Raw);
     };
     state.floor_exactness(Exactness::Strict);
-    let Some((model_dict, _extra, fields_set)) =
-        fields.validate_json_streaming(py, jiter, &nested.plan, state, depth)?
-    else {
+    let Some((dict, _, fields_set)) = fields.validate_json_streaming(py, jiter, &nested.plan, state, depth)? else {
         return Ok(Taken::Raw);
     };
-    if depth == 0 {
-        jiter.finish()?;
-    }
-    let instance = create_class(class.bind(py))?;
-    let none = py.None();
     let fields_set = Bound::new(py, fields_set)?;
-    set_model_attrs(&instance, &model_dict, none.bind(py), &fields_set)?;
-    Ok(Taken::Ready(instance))
+    Ok(Taken::Ready(
+        PyTuple::new(py, [dict.into_any(), fields_set.into_any()])?.into_any(),
+    ))
 }
 
 pub(crate) fn take_root<'py>(
@@ -537,9 +523,92 @@ pub(crate) fn take_root<'py>(
     plan: &ModelPlan,
     state: &mut ValidationState<'_, 'py>,
 ) -> Result<Option<Bound<'py, PyAny>>, StreamStop> {
-    match take_fast(py, jiter, plan, &plan.nodes[plan.fields[0]], state, 0)? {
-        Taken::Ready(value) => Ok(Some(value)),
+    let index = plan.fields[0];
+    match take_fast(py, jiter, plan, &plan.nodes[index], state, 0)? {
+        Taken::Ready(value) => {
+            // Construction, including storage descriptors, waits for the whole document.
+            jiter.finish()?;
+            if contains_nested_model(plan, index)
+                && let Some(instance) = materialize_nested(py, value.clone(), plan, index)?
+            {
+                return Ok(Some(instance));
+            }
+            Ok(Some(value))
+        }
         Taken::Raw => Ok(None),
+    }
+}
+
+fn contains_nested_model(plan: &ModelPlan, mut index: usize) -> bool {
+    loop {
+        match &plan.nodes[index].fast {
+            Fast::Model(_) => return true,
+            Fast::List(container) | Fast::Dict(container) => index = container.element,
+            _ => return false,
+        }
+    }
+}
+
+/// Replace the temporary fields of a nested model with its instance after JSON parsing succeeds.
+fn materialize_nested<'py>(
+    py: Python<'py>,
+    value: Bound<'py, PyAny>,
+    model_plan: &ModelPlan,
+    index: usize,
+) -> PyResult<Option<Bound<'py, PyAny>>> {
+    let field = &model_plan.nodes[index];
+    if field.nullable && pyo3::types::PyAnyMethods::is_none(&value) {
+        return Ok(None);
+    }
+    match &field.fast {
+        Fast::Model(nested) => {
+            let CombinedValidator::Model(model) = unwrap_prebuilt(&nested.validator) else {
+                unreachable!("a model plan holds a model validator");
+            };
+            let class = model.stream_class();
+            let fields = model.stream_fields().expect("model schema checked when building plan");
+            let pending = value.cast::<PyTuple>()?;
+            let model_dict = pending.get_item(0)?;
+            let fields_set = pending.get_item(1)?;
+            let provided = fields_set.cast::<ModelFieldsSet>()?;
+            let model_dict = model_dict.cast::<PyDict>()?;
+            for (field, &index) in std::iter::zip(&fields.fields, &nested.plan.fields) {
+                // Unvalidated stored defaults are already final values, not pending bundles.
+                if !contains_nested_model(&nested.plan, index)
+                    || !provided
+                        .borrow()
+                        .contains_value(py, field.name.as_py_str().bind(py).as_any())?
+                {
+                    continue;
+                }
+                let value = model_dict.get_item(&field.name)?.expect("streamed field is present");
+                if let Some(value) = materialize_nested(py, value, &nested.plan, index)? {
+                    model_dict.set_item(&field.name, value)?;
+                }
+            }
+            let instance = create_class(class.bind(py))?;
+            set_model_attrs(&instance, model_dict, py.None().bind(py), &fields_set)?;
+            Ok(Some(instance))
+        }
+        Fast::List(plan) => {
+            let list = value.cast::<PyList>().map_err(PyErr::from)?;
+            for index in 0..list.len() {
+                if let Some(item) = materialize_nested(py, list.get_item(index)?, model_plan, plan.element)? {
+                    list.set_item(index, item)?;
+                }
+            }
+            Ok(None)
+        }
+        Fast::Dict(plan) => {
+            let dict = value.cast::<PyDict>()?;
+            for (key, item) in dict.iter() {
+                if let Some(item) = materialize_nested(py, item, model_plan, plan.element)? {
+                    dict.set_item(key, item)?;
+                }
+            }
+            Ok(None)
+        }
+        _ => Ok(None),
     }
 }
 
@@ -771,7 +840,7 @@ fn take_peeked<'py>(
         }
         (Fast::List(plan), Peek::Array) => take_list(py, jiter, model_plan, plan, state, depth)?,
         (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, model_plan, plan, state, depth)?,
-        (Fast::Model(nested), Peek::Object) => build_model(py, jiter, nested, state, depth)?,
+        (Fast::Model(nested), Peek::Object) => take_model(py, jiter, nested, state, depth)?,
         // a field this path does not specialise, or a json type that does not match it: hand the
         // value to the field's own validator rather than giving up on the whole object
         _ => {

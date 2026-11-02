@@ -281,8 +281,45 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
         False,
         ['{"a": "x", "b": 1}', '{"a": "x"}'],
     ),
+    'two_nested_levels': (
+        _model('Outer2', {'middle': _model('Middle', {'address': ADDRESS})}),
+        True,
+        ['{"middle": {"address": {"street": "s", "city": "c"}}}'],
+    ),
+    'list_of_nested_models': (
+        _model('ListOfModels', {'items': core_schema.list_schema(ADDRESS)}),
+        True,
+        [
+            '{"items": [{"street": "s", "city": "c"}]}',
+            '{"items": [{"street": "s", "city": "c"}, {"street": 1, "city": "c"}]}',
+            '{"items": [{"street": "s", "city": "c"}]} trailing',
+        ],
+    ),
+    'root_model_list': (
+        core_schema.list_schema(items_schema=ADDRESS),
+        True,
+        [
+            '[{"street":"s","city":"c"},{"street":"t","city":"d"}]',
+            '[]',
+            '[{"street":1,"city":"c"},{"street":"t","city":"d"}]',
+            '[{"street":"s"}]',
+            '[null]',
+            '[{"street":"s","city":"c"}] trailing',
+        ],
+    ),
+    'root_list_with_nested': (
+        core_schema.list_schema(items_schema=_model('WithAddress', {'address': ADDRESS})),
+        True,
+        ['[{"address":{"street":"s","city":"c"}}]'],
+    ),
 }
 
+
+CASES['root_model_list_depth'] = (
+    core_schema.list_schema(items_schema=ADDRESS),
+    True,
+    ['[' + '[' * depth + '0' + ']' * depth + ']' for depth in (199, 200)],
+)
 
 LIST_ROOT = {'scalars', 'nested', 'containers', 'optional', 'aliases'}
 
@@ -382,8 +419,9 @@ def test_invalid_lookup_flags_preserve_json_error_precedence() -> None:
 
 
 @pytest.mark.parametrize('hook', ['__del__', '__new__'])
+@pytest.mark.parametrize('shape', ['root', 'nested', 'root_list'])
 @pytest.mark.parametrize('placement', ['direct', 'inherited', 'added'])
-def test_model_object_hooks_decline_streaming(hook: str, placement: str) -> None:
+def test_model_object_hooks_decline_streaming(hook: str, shape: str, placement: str) -> None:
     calls: list[str] = []
     base = _cls('Base')
 
@@ -408,6 +446,10 @@ def test_model_object_hooks_decline_streaming(hook: str, placement: str) -> None
         cls=cls,
         schema=core_schema.model_fields_schema(fields={'value': core_schema.model_field(INT)}),
     )
+    if shape == 'nested':
+        schema = _model('Outer', {'inner': schema})
+    elif shape == 'root_list':
+        schema = core_schema.list_schema(schema)
     validator = SchemaValidator(schema)
     if placement == 'added':
         assert validator._stream_plan_accepted
@@ -418,12 +460,19 @@ def test_model_object_hooks_decline_streaming(hook: str, placement: str) -> None
             setattr(cls, hook, namespace[hook])
     assert validator._stream_plan_accepted is False
     with pytest.raises(ValidationError):
-        validator.validate_json(b'{"value": 1} trailing')
+        validator.validate_json(
+            b'{"inner": {"value": 1}} trailing'
+            if shape == 'nested'
+            else b'[{"value": 1}] trailing'
+            if shape == 'root_list'
+            else b'{"value": 1} trailing'
+        )
     assert calls == []
 
 
 @pytest.mark.parametrize('raises', [False, True])
-def test_storage_descriptors_wait_for_complete_json(raises: bool) -> None:
+@pytest.mark.parametrize('shape', ['root', 'nested', 'root_list', 'mapping', 'deep_nested'])
+def test_storage_descriptors_wait_for_complete_json(raises: bool, shape: str) -> None:
     calls: list[None] = []
 
     class Model:
@@ -439,15 +488,27 @@ def test_storage_descriptors_wait_for_complete_json(raises: bool) -> None:
             if raises:
                 raise RuntimeError('storage descriptor ran')
 
-    validator = SchemaValidator(
-        core_schema.model_schema(
-            Model,
-            core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
-        )
+    schema = core_schema.model_schema(
+        Model,
+        core_schema.model_fields_schema({'x': core_schema.model_field(INT)}),
     )
+    document = '{"x":1}'
+    if shape == 'nested':
+        schema = _model('Outer', {'items': core_schema.list_schema(schema)})
+        document = '{"items":[' + document + ']}'
+    elif shape == 'root_list':
+        schema = core_schema.list_schema(schema)
+        document = '[' + document + ']'
+    elif shape == 'mapping':
+        schema = core_schema.dict_schema(STR, schema)
+        document = '{"item":' + document + '}'
+    elif shape == 'deep_nested':
+        schema = _model('Outer', {'middle': _model('Middle', {'item': schema})})
+        document = '{"middle":{"item":' + document + '}}'
+    validator = SchemaValidator(schema)
     assert validator._stream_plan_accepted
     with pytest.raises(ValidationError):
-        validator.validate_json('{"x":1} trailing')
+        validator.validate_json(document + ' trailing')
     assert calls == []
 
 
@@ -887,3 +948,15 @@ def test_streaming_excludes_models_with_custom_new(new_kind: str, shape: str) ->
     allocated.clear()
     validator.validate_json(document)
     assert allocated == expected
+
+
+def test_streamed_stored_model_default_is_not_materialized() -> None:
+    """Stored defaults are final values; only parsed model fields hold pending bundles."""
+    inner = _model('StoredInner', {'x': INT})
+    default = SchemaValidator(inner).validate_python({'x': 1})
+    validator = SchemaValidator(
+        _model('StoredOuter', {'inner': core_schema.with_default_schema(inner, default=default)})
+    )
+    assert validator._stream_plan_accepted
+    assert validator.validate_json('{}').inner is default
+    assert validator.validate_json('{"inner":{"x":2}}').inner.x == 2

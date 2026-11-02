@@ -590,8 +590,6 @@ impl SchemaValidator {
         if !model_fields::root_eligible(py, plan) {
             return None;
         }
-        let root = model_fields::unwrap_prebuilt(&self.validator);
-        let models = stream_array_of_models(py, root, plan);
 
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
@@ -610,18 +608,6 @@ impl SchemaValidator {
             None,
             self_instance,
         );
-        if let Some((class, item, mf, plan)) = models {
-            return Streamer {
-                py,
-                json_data,
-                class: class.bind(py),
-                item,
-                mf,
-                plan,
-            }
-            .array(&mut state);
-        }
-
         let mut jiter = jiter::Jiter::new(json_data);
         match model_fields::take_root(py, &mut jiter, plan, &mut state) {
             // trailing content is an error the ordinary path reports
@@ -642,38 +628,6 @@ impl SchemaValidator {
             self.validation_error_cause,
         )
     }
-}
-
-/// An array of models, the one shape that replays a failed element on its own rather than
-/// replaying the whole document. Every other shape, a single model included, goes through the
-/// plan like any other value.
-type StreamArrayOfModels<'a> = (
-    &'a Py<PyType>,
-    &'a CombinedValidator,
-    &'a model_fields::ModelFieldsValidator,
-    &'a model_fields::ModelPlan,
-);
-
-fn stream_array_of_models<'v>(
-    py: Python<'_>,
-    root: &'v CombinedValidator,
-    plan: &'v model_fields::ModelPlan,
-) -> Option<StreamArrayOfModels<'v>> {
-    let CombinedValidator::List(list) = root else {
-        return None;
-    };
-    let list = list.stream_list()?;
-    // this path builds the list itself, so it cannot honour a bound or `fail_fast`; such a list
-    // is left to the ordinary plan, whose reader does check the length
-    if list.min_length.is_some() || list.max_length.is_some() || list.fail_fast {
-        return None;
-    }
-    let item = model_fields::unwrap_prebuilt(list.items);
-    let CombinedValidator::Model(model_v) = item else {
-        return None;
-    };
-    let (class, mf) = model_v.stream_parts(py)?;
-    Some((class, item, mf, model_fields::array_model_plan(plan)?))
 }
 
 pub trait BuildValidator: Sized {
@@ -1098,110 +1052,6 @@ impl<T: Validator> Validator for Box<T> {
 
     fn get_name(&self) -> &str {
         (**self).get_name()
-    }
-}
-
-enum StreamedItem<'j, 'py> {
-    Ready(Bound<'py, PyAny>),
-    Raw(jiter::JsonValue<'j>),
-}
-
-/// The pieces the streaming path above needs to read one document.
-struct Streamer<'a, 'py> {
-    py: Python<'py>,
-    json_data: &'a [u8],
-    class: &'a Bound<'py, PyType>,
-    item: &'a CombinedValidator,
-    mf: &'a model_fields::ModelFieldsValidator,
-    plan: &'a model_fields::ModelPlan,
-}
-
-impl<'py> Streamer<'_, 'py> {
-    /// One object from the cursor as a finished model instance, or `None` if the fast path could
-    /// not finish it. Either way the object has been consumed.
-    fn object(
-        &self,
-        jiter: &mut jiter::Jiter<'_>,
-        state: &mut ValidationState<'_, 'py>,
-    ) -> Option<ValResult<Bound<'py, PyAny>>> {
-        let fields = match self.mf.validate_json_streaming(self.py, jiter, self.plan, state, 1) {
-            Ok(Some(fields)) => fields,
-            // the object could not be finished, or the cursor hit something it will not read:
-            // either way the caller takes the ordinary path
-            Ok(None) | Err(model_fields::StreamStop::Cursor) => return None,
-            Err(model_fields::StreamStop::Py(err)) => return Some(Err(err.into())),
-        };
-        let (model_dict, _extra, fields_set) = fields;
-        let fields_set = match Bound::new(self.py, fields_set) {
-            Ok(value) => value,
-            Err(err) => return Some(Err(err.into())),
-        };
-        let none = self.py.None();
-        let built = model::create_class(self.class).and_then(|instance| {
-            model::set_model_attrs(&instance, &model_dict, none.bind(self.py), &fields_set).map(|()| instance)
-        });
-        Some(built.map_err(Into::into))
-    }
-
-    fn array(&self, state: &mut ValidationState<'_, 'py>) -> Option<ValResult<Py<PyAny>>> {
-        let mut jiter = jiter::Jiter::new(self.json_data);
-        if !matches!(jiter.peek().ok()?, jiter::Peek::Array) {
-            return None;
-        }
-        // Parsing and speculative model construction must not run field callbacks. Retain
-        // fallback elements until the entire document has been checked, including its suffix.
-        let mut items = Vec::new();
-
-        let mut peek = jiter.known_array().ok()?;
-        while let Some(p) = peek {
-            let start = jiter.current_index();
-            let built = if matches!(p, jiter::Peek::Object) {
-                self.object(&mut jiter, state)
-            } else {
-                jiter.known_skip(p).ok()?;
-                None
-            };
-            items.push(match built {
-                Some(Ok(instance)) => StreamedItem::Ready(instance),
-                Some(Err(err)) => return Some(Err(err)),
-                None => StreamedItem::Raw(
-                    jiter::JsonValue::parse(&self.json_data[start..jiter.current_index()], true).ok()?,
-                ),
-            });
-            peek = jiter.array_step().ok()?;
-        }
-        if jiter.finish().is_err() {
-            return None;
-        }
-        // A verification build must not compare callback results by executing them twice.
-        // Mixed arrays take the ordinary path once; fully streamed arrays are still compared.
-        #[cfg(feature = "stream-verify")]
-        if items.iter().any(|item| matches!(item, StreamedItem::Raw(_))) {
-            return None;
-        }
-        let list = pyo3::types::PyList::empty(self.py);
-        let mut errors: Vec<crate::errors::ValLineError> = Vec::new();
-        for (index, item) in items.into_iter().enumerate() {
-            let result = match item {
-                StreamedItem::Ready(instance) => Ok(instance.unbind()),
-                StreamedItem::Raw(value) => self.item.validate(self.py, &value, state),
-            };
-            match result {
-                Ok(validated) => {
-                    if let Err(err) = list.append(validated) {
-                        return Some(Err(err.into()));
-                    }
-                }
-                Err(ValError::LineErrors(line_errors)) => {
-                    errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
-                }
-                Err(err) => return Some(Err(err)),
-            }
-        }
-        if !errors.is_empty() {
-            return Some(Err(ValError::LineErrors(errors)));
-        }
-        Some(Ok(list.into_any().unbind()))
     }
 }
 
