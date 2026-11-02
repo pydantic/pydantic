@@ -13,7 +13,7 @@ from pydantic_core import ModelFieldsSet, SchemaSerializer, SchemaValidator, cor
 
 
 class MyModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
 
 def make_validator(extra_behavior: str = 'ignore', **kwargs: Any) -> SchemaValidator:

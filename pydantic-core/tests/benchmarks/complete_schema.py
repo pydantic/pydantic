@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 def schema(*, strict: bool = False) -> CoreSchema:
     class MyModel:
         # __slots__ is not required, but it avoids __pydantic_fields_set__ falling into __dict__
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     def append_func(input_value, info):
         return f'{input_value} Changed'
@@ -351,7 +351,7 @@ def input_data_wrong():
 def wrap_schema_in_root_model(schema: CoreSchema) -> CoreSchema:
     class MyRootModel:
         # __slots__ is not required, but it avoids __pydantic_fields_set__ falling into __dict__
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     return {
         'type': 'model',

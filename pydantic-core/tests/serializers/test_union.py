@@ -405,7 +405,7 @@ def test_union_literal_with_other_type(data, json_value):
 
 def test_union_serializes_model_subclass_from_definition() -> None:
     class BaseModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         def __init__(self, **kwargs: Any):
             for key, value in kwargs.items():
@@ -458,7 +458,7 @@ def test_union_serializes_model_subclass_from_definition() -> None:
 
 def test_union_serializes_list_of_model_subclass_from_definition() -> None:
     class BaseModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         def __init__(self, **kwargs: Any):
             for key, value in kwargs.items():

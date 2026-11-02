@@ -207,7 +207,7 @@ def test_wrap_validator_handler_does_not_traverse_shared_validator_tree() -> Non
     """https://github.com/pydantic/pydantic/issues/13817"""
 
     class Model:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     handlers = []
 

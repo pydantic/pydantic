@@ -5,7 +5,7 @@ from pydantic_core import PydanticUndefined, SchemaValidator, ValidationError, c
 
 def test_model_root():
     class RootModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: list[int]
 
     v = SchemaValidator(
@@ -33,7 +33,7 @@ def test_model_root():
 
 def test_revalidate():
     class RootModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: list[int]
 
     v = SchemaValidator(
@@ -56,7 +56,7 @@ def test_revalidate():
 
 def test_revalidate_with_default():
     class RootModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: int = 42
 
     v = SchemaValidator(
@@ -82,7 +82,7 @@ def test_revalidate_with_default():
 
 def test_init():
     class RootModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: str
 
     v = SchemaValidator(
@@ -97,7 +97,7 @@ def test_init():
 
 def test_assignment():
     class RootModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: str
 
     v = SchemaValidator(core_schema.model_schema(RootModel, core_schema.str_schema(), root_model=True))
@@ -128,7 +128,7 @@ def test_field_function():
     call_infos = []
 
     class RootModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: str
 
     def f(input_value: str, info):
@@ -158,7 +158,7 @@ def test_field_function():
 
 def test_extra():
     class RootModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: int
 
     v = SchemaValidator(core_schema.model_schema(RootModel, core_schema.int_schema(), root_model=True))
@@ -173,7 +173,7 @@ def test_fields_set():
     assert core_schema.PydanticUndefined is PydanticUndefined
 
     class RootModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: int = 42
 
     v = SchemaValidator(
@@ -194,11 +194,11 @@ def test_fields_set():
 
 def test_construct_from_validate_default():
     class RootModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: int
 
     class Model:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         value: RootModel = 42
 
     v = SchemaValidator(
