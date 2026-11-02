@@ -1240,10 +1240,11 @@ def test_warn_on_missing_field() -> None:
         )
     )
 
+    value = BasicModel(root=AModel(type='a'))
+
     with pytest.warns(
         UserWarning, match='Expected 2 fields but got 1: Expected `AModel` - serialized value may not be as expected .+'
     ):
-        value = BasicModel(root=AModel(type='a'))
         s.to_python(value)
 
 
