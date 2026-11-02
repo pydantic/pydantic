@@ -303,3 +303,22 @@ def test_bare_mutable_sequence() -> None:
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': 'abc'}
     ]
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+def test_list_serialization_include_exclude_indices(mode) -> None:
+    class Item(BaseModel):
+        a: int
+        b: int
+
+    ta = TypeAdapter(list[Item])
+    items = [Item(a=i, b=i) for i in range(4)]
+
+    assert ta.dump_python(items, mode=mode, exclude={0: {'b'}, -1: {'a'}}) == [
+        {'a': 0},
+        {'a': 1, 'b': 1},
+        {'a': 2, 'b': 2},
+        {'b': 3},
+    ]
+    assert ta.dump_python(items, mode=mode, exclude={1, -1}) == [{'a': 0, 'b': 0}, {'a': 2, 'b': 2}]
+    assert ta.dump_python(items, mode=mode, include={-2: {'a'}, 0: ...}) == [{'a': 0, 'b': 0}, {'a': 2}]

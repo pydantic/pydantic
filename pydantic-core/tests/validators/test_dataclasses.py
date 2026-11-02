@@ -19,7 +19,6 @@ from ..conftest import Err, PyAndJson, assert_gc
         (ArgsKwargs(('hello', True)), ({'a': 'hello', 'b': True}, None)),
         ({'a': 'hello', 'b': True}, ({'a': 'hello', 'b': True}, None)),
         ({'a': 'hello', 'b': 'true'}, ({'a': 'hello', 'b': True}, None)),
-        (ArgsKwargs(('hello', True)), ({'a': 'hello', 'b': True}, None)),
         (ArgsKwargs((), {'a': 'hello', 'b': True}), ({'a': 'hello', 'b': True}, None)),
         (
             ArgsKwargs(('hello',), {'a': 'hello', 'b': True}),
@@ -69,7 +68,6 @@ def test_dataclass_args(py_and_json: PyAndJson, input_value, expected):
     [
         (ArgsKwargs(('hello', True)), ({'a': 'hello'}, (True,))),
         (ArgsKwargs(('hello', 'true')), ({'a': 'hello'}, (True,))),
-        (ArgsKwargs(('hello', True)), ({'a': 'hello'}, (True,))),
         (ArgsKwargs((), {'a': 'hello', 'b': True}), ({'a': 'hello'}, (True,))),
         (
             ArgsKwargs(('hello',), {'a': 'hello', 'b': True}),
@@ -354,7 +352,7 @@ def test_dataclass_subclass_subclass_revalidate():
     sub_foo2 = v.validate_python(sub_foo)
     assert sub_foo2 is not sub_foo
     assert type(sub_foo2) is FooDataclass
-    assert dataclasses.asdict(sub_foo2) == dict(a='hello', b=True)
+    assert dataclasses.asdict(sub_foo2) == {'a': 'hello', 'b': True}
 
 
 def test_dataclass_post_init():
@@ -1102,13 +1100,13 @@ def test_extra_behavior_allow(
 
     m: MyModel = v.validate_python({'f': 'x', 'extra_field': '123'}, extra=validate_fn_extra_kw)
     assert m.f == 'x'
-    assert getattr(m, 'extra_field') == '123'
+    assert m.extra_field == '123'
 
     v.validate_assignment(m, 'f', 'y', extra=validate_fn_extra_kw)
     assert m.f == 'y'
 
     v.validate_assignment(m, 'not_f', '123', extra=validate_fn_extra_kw)
-    assert getattr(m, 'not_f') == '123'
+    assert m.not_f == '123'
 
 
 def test_function_validator_wrapping_args_schema_after() -> None:

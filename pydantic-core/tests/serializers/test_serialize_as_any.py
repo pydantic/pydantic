@@ -394,7 +394,7 @@ def container_schema_builder(
                 'Test',
                 fields=[core_schema.dataclass_field(name=k, schema=v) for k, v in fields.items()],
             ),
-            fields=[k for k in fields.keys()],
+            fields=[k for k in fields],
         )
     else:
         raise ValueError(f'Unknown container type {request.param}')

@@ -32,16 +32,13 @@ from typing import (
     TypeAlias,
     TypeVar,
     cast,
-    overload,
 )
 
 import pydantic_core
 from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import assert_never, deprecated, final
+from typing_extensions import assert_never
 from typing_inspection.introspection import get_literal_values
-
-from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
 
 from ._internal import (
     _config,
@@ -1074,28 +1071,6 @@ class GenerateJsonSchema:
         json_schema = {'type': 'array', 'items': items_schema}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
-
-    @deprecated('`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.', category=None)
-    @final
-    def tuple_positional_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Replaced by `tuple_schema`."""
-        warnings.warn(
-            '`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.',
-            PydanticDeprecatedSince26,
-            stacklevel=2,
-        )
-        return self.tuple_schema(schema)
-
-    @deprecated('`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.', category=None)
-    @final
-    def tuple_variable_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Replaced by `tuple_schema`."""
-        warnings.warn(
-            '`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.',
-            PydanticDeprecatedSince26,
-            stacklevel=2,
-        )
-        return self.tuple_schema(schema)
 
     def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a tuple schema e.g. `tuple[int,
@@ -3085,24 +3060,7 @@ class Examples:
     allowing you to add different examples for validation and serialization.
     """
 
-    @overload
-    @deprecated('Using a dict for `examples` is deprecated since v2.9 and will be removed in v3.0. Use a list instead.')
-    def __init__(
-        self, examples: dict[str, Any], mode: Literal['validation', 'serialization'] | None = None
-    ) -> None: ...
-
-    @overload
-    def __init__(self, examples: list[Any], mode: Literal['validation', 'serialization'] | None = None) -> None: ...
-
-    def __init__(
-        self, examples: dict[str, Any] | list[Any], mode: Literal['validation', 'serialization'] | None = None
-    ) -> None:
-        if isinstance(examples, dict):
-            warnings.warn(
-                'Using a dict for `examples` is deprecated, use a list instead.',
-                PydanticDeprecatedSince29,
-                stacklevel=2,
-            )
+    def __init__(self, examples: list[Any], mode: Literal['validation', 'serialization'] | None = None) -> None:
         self.examples = examples
         self.mode = mode
 
@@ -3116,32 +3074,8 @@ class Examples:
         examples = json_schema.get('examples')
         if examples is None:
             json_schema['examples'] = to_jsonable_python(self.examples)
-        if isinstance(examples, dict):
-            if isinstance(self.examples, list):
-                warnings.warn(
-                    'Updating existing JSON Schema examples of type dict with examples of type list. '
-                    'Only the existing examples values will be retained. Note that dict support for '
-                    'examples is deprecated and will be removed in v3.0.',
-                    UserWarning,
-                )
-                json_schema['examples'] = to_jsonable_python(
-                    [ex for value in examples.values() for ex in value] + self.examples
-                )
-            else:
-                json_schema['examples'] = to_jsonable_python({**examples, **self.examples})
-        if isinstance(examples, list):
-            if isinstance(self.examples, list):
-                json_schema['examples'] = to_jsonable_python(examples + self.examples)
-            elif isinstance(self.examples, dict):
-                warnings.warn(
-                    'Updating existing JSON Schema examples of type list with examples of type dict. '
-                    'Only the examples values will be retained. Note that dict support for '
-                    'examples is deprecated and will be removed in v3.0.',
-                    UserWarning,
-                )
-                json_schema['examples'] = to_jsonable_python(
-                    examples + [ex for value in self.examples.values() for ex in value]
-                )
+        elif isinstance(examples, list):
+            json_schema['examples'] = to_jsonable_python(examples + self.examples)
 
         return json_schema
 
