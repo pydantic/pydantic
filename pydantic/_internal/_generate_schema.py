@@ -269,6 +269,15 @@ def _extract_json_schema_info_from_field_info(
 
 JsonEncoders = dict[type[Any], JsonEncoder]
 
+_FAST_SCALAR_SCHEMAS: dict[type[Any], Callable[[], core_schema.CoreSchema]] = {
+    str: core_schema.str_schema,
+    int: core_schema.int_schema,
+    float: core_schema.float_schema,
+    bool: core_schema.bool_schema,
+    bytes: core_schema.bytes_schema,
+}
+
+
 
 def _add_custom_serialization_from_json_encoders(
     json_encoders: JsonEncoders | None, tp: Any, schema: CoreSchema
@@ -1078,6 +1087,12 @@ class GenerateSchema:
         return args[0], args[1]
 
     def _generate_schema_inner(self, obj: Any, origin: Any | None = PydanticUndefined) -> core_schema.CoreSchema:
+        # Fast path: builtin scalar types (str, int, float, bool, bytes) have no origin,
+        # are not generic, and can construct schemas immediately without introspection.
+        fast_factory = _FAST_SCALAR_SCHEMAS.get(obj)
+        if fast_factory is not None and (origin is None or origin is PydanticUndefined):
+            return fast_factory()
+
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
             # The resolved type can be a parametrized generic (e.g. `GenericDataclass[int]`),
