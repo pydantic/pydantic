@@ -573,7 +573,7 @@ def test_model_class_instance_subclass_revalidate():
 
     class MySubModel(MyModel):
         field_b: str
-        __pydantic_fields_set__ = set()
+        __pydantic_fields_set__ = set()  # noqa: RUF012
         __pydantic_extra__ = None
 
         def __init__(self):

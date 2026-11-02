@@ -7,6 +7,7 @@ import pytest
 
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema, to_json
 
+DATA = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
 
 class TestBenchmarkSimpleModel:
     @pytest.fixture(scope='class')
@@ -42,17 +43,15 @@ class TestBenchmarkSimpleModel:
     def core_serializer(cls, core_schema):
         return SchemaSerializer(core_schema)
 
-    data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
-
     @pytest.mark.benchmark(group='serialize simple model - python')
     def test_core_dict(self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, benchmark):
-        m = core_validator.validate_python(self.data)
-        assert core_serializer.to_python(m) == self.data
+        m = core_validator.validate_python(DATA)
+        assert core_serializer.to_python(m) == DATA
         benchmark(core_serializer.to_python, m)
 
     @pytest.mark.benchmark(group='serialize simple model - python filter')
     def test_core_dict_filter(self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, benchmark):
-        m = core_validator.validate_python(self.data)
+        m = core_validator.validate_python(DATA)
         exclude = {'age': ..., 'fields': {41, 42}}
 
         @benchmark
@@ -61,8 +60,8 @@ class TestBenchmarkSimpleModel:
 
     @pytest.mark.benchmark(group='serialize simple model - JSON')
     def test_core_json(self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, benchmark):
-        m = core_validator.validate_python(self.data)
-        assert json.loads(core_serializer.to_json(m)) == self.data
+        m = core_validator.validate_python(DATA)
+        assert json.loads(core_serializer.to_json(m)) == DATA
         benchmark(core_serializer.to_json, m)
 
 

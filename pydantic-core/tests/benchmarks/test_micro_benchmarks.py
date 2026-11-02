@@ -64,7 +64,7 @@ class TestBenchmarkSimpleModel:
             )
         )
 
-    data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
+    data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}  # noqa: RUF012
 
     @pytest.mark.benchmark(group='simple model - python')
     def test_core_python_fs(self, core_validator_fs, benchmark):
@@ -97,7 +97,7 @@ class TestModelLarge:
             )
         )
 
-    data = {f'field_{99 - i}': i for i in range(100)}
+    data = {f'field_{99 - i}': i for i in range(100)}  # noqa: RUF012
     data['more'] = 'more data'
 
     @pytest.mark.benchmark(group='large model - python')

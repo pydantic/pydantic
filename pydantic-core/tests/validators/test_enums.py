@@ -254,8 +254,8 @@ def test_enum_exactness():
 
 def test_plain_enum_lists():
     class MyEnum(Enum):
-        a = [1]
-        b = [2]
+        a = [1]  # noqa: RUF012
+        b = [2]  # noqa: RUF012
 
     assert MyEnum([1]) is MyEnum.a
     v = SchemaValidator(core_schema.enum_schema(MyEnum, list(MyEnum.__members__.values())))
