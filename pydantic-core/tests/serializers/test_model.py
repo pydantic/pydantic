@@ -147,7 +147,7 @@ def test_model_recursive_in_extra():
     # See https://github.com/pydantic/pydantic/issues/6571
 
     class Model(BasicModel):
-        __slots__ = '__pydantic_extra__'
+        __slots__ = ('__pydantic_extra__',)
 
     s = SchemaSerializer(
         core_schema.model_schema(
