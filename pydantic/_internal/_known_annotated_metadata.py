@@ -106,10 +106,9 @@ def _is_grouped_metadata(annotation: Any) -> bool:
     """Check whether `annotation` is an instance of the `annotated_types.GroupedMetadata` protocol."""
     # `annotated_types.GroupedMetadata` is a `@runtime_checkable` protocol, and `isinstance()` checks
     # are quite slow. Instead, we check against the `__is_annotated_types_grouped_metadata__` property
-    # (see https://github.com/annotated-types/annotated-types/blob/96eef3cb/annotated_types/__init__.py#L169-L171)
-
-    annotation_type = type(annotation)
-    return hasattr(annotation_type, '__is_annotated_types_grouped_metadata__')
+    # (see https://github.com/annotated-types/annotated-types/blob/96eef3cb/annotated_types/__init__.py#L169-L171).
+    # The `is True` check excludes classes (for which the property object itself is returned):
+    return getattr(annotation, '__is_annotated_types_grouped_metadata__', False) is True
 
 
 def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
