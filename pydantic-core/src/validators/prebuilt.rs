@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -42,8 +44,8 @@ impl PrebuiltValidator {
 
 impl PrebuiltValidator {
     /// The validator this one delegates to, which is all this wrapper does.
-    pub(crate) fn stream_inner(&self) -> &CombinedValidator {
-        self.schema_validator.get().validator.as_ref()
+    pub(crate) fn stream_inner(&self) -> &Arc<CombinedValidator> {
+        &self.schema_validator.get().validator
     }
 }
 

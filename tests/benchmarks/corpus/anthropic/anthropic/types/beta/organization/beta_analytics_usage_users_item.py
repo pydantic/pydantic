@@ -1,0 +1,32 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing import Optional
+from datetime import datetime
+from typing_extensions import Literal
+from ...._models import BaseModel
+from ..beta_cache_creation import BetaCacheCreation
+from .beta_analytics_user_actor import BetaAnalyticsUserActor
+from .beta_analytics_context_window import BetaAnalyticsContextWindow
+from .beta_analytics_server_tool_use import BetaAnalyticsServerToolUse
+from .beta_analytics_claude_tag_category import BetaAnalyticsClaudeTagCategory
+
+class BetaAnalyticsUsageUsersItem(BaseModel):
+    actor: BetaAnalyticsUserActor
+    cache_creation: BetaCacheCreation
+    cache_read_input_tokens: int
+    claude_tag_category: Optional[BetaAnalyticsClaudeTagCategory] = None
+    claude_tag_user_id: Optional[str] = None
+    context_window: Optional[BetaAnalyticsContextWindow] = None
+    ending_at: Optional[datetime] = None
+    inference_geo: Optional[Literal['global', 'us']] = None
+    model: Optional[str] = None
+    output_tokens: int
+    product: Optional[str] = None
+    rbac_group_id: Optional[str] = None
+    requests: Optional[int] = None
+    server_tool_use: BetaAnalyticsServerToolUse
+    slack_channel_id: Optional[str] = None
+    speed: Optional[Literal['fast', 'standard']] = None
+    starting_at: Optional[datetime] = None
+    total_tokens: int
+    uncached_input_tokens: int
