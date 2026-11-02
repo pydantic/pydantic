@@ -128,8 +128,8 @@ def test_contains(fields_set: ModelFieldsSet) -> None:
     assert 1 not in fields_set
     assert None not in fields_set
     # Non-interned strings:
-    assert ''.join(['a']) in fields_set
-    assert ''.join(['b']) not in fields_set
+    assert 'a' in fields_set
+    assert 'b' not in fields_set
     assert '\udcff' not in fields_set
 
 
