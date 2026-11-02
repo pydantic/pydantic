@@ -29,9 +29,11 @@ def test_list_fallback():
 
     with pytest.warns(UserWarning) as warning_info:
         assert v.to_json('apple') == b'"apple"'
-    "Expected `list[any]` - serialized value may not be as expected [input_value='apple', input_type=str]" in warning_info.list[
-        0
-    ].message.args[0]
+
+    assert (
+        "Expected `list[any]` - serialized value may not be as expected [input_value='apple', input_type=str]"
+        in warning_info.list[0].message.args[0]
+    )
 
     with pytest.warns(
         UserWarning,
@@ -65,12 +67,12 @@ def test_list_str_fallback():
     ]
 
     all_warnings = ''.join([w.message.args[0] for w in warning_info.list])
-    assert all([x in all_warnings for x in expected_warnings])
+    assert all(x in all_warnings for x in expected_warnings)
 
     with pytest.raises(PydanticSerializationError) as warning_ex:
         v.to_json([1, 2, 3], warnings='error')
 
-    assert all([x in str(warning_ex.value) for x in expected_warnings])
+    assert all(x in str(warning_ex.value) for x in expected_warnings)
 
 
 def test_tuple_any():
@@ -259,23 +261,23 @@ def test_tuple_fallback():
 @pytest.mark.parametrize(
     'params',
     [
-        dict(include=None, exclude=None, expected=['0', '1', '2', '3']),
-        dict(include={0, 1}, exclude=None, expected=['0', '1']),
-        dict(include={0: ..., 1: ...}, exclude=None, expected=['0', '1']),
-        dict(include={0: True, 1: True}, exclude=None, expected=['0', '1']),
-        dict(include={0: {1}, 1: {1}}, exclude=None, expected=['0', '1']),
-        dict(include=None, exclude={0, 1}, expected=['2', '3']),
-        dict(include=None, exclude={0: ..., 1: ...}, expected=['2', '3']),
-        dict(include={0, 1}, exclude={1, 2}, expected=['0']),
-        dict(include=None, exclude={3: {1}}, expected=['0', '1', '2', '3']),
-        dict(include={0, 1}, exclude={3: {1}}, expected=['0', '1']),
-        dict(include={0, 1}, exclude={1: {1}}, expected=['0', '1']),
-        dict(include={0, 1}, exclude={1: ...}, expected=['0']),
-        dict(include={1}, exclude={1}, expected=[]),
-        dict(include={0}, exclude={1}, expected=['0']),
-        dict(include={'__all__'}, exclude={1}, expected=['0', '2', '3']),
-        dict(include=None, exclude={1}, expected=['0', '2', '3']),
-        dict(include=None, exclude={'__all__'}, expected=[]),
+        {'include': None, 'exclude': None, 'expected': ['0', '1', '2', '3']},
+        {'include': {0, 1}, 'exclude': None, 'expected': ['0', '1']},
+        {'include': {0: ..., 1: ...}, 'exclude': None, 'expected': ['0', '1']},
+        {'include': {0: True, 1: True}, 'exclude': None, 'expected': ['0', '1']},
+        {'include': {0: {1}, 1: {1}}, 'exclude': None, 'expected': ['0', '1']},
+        {'include': None, 'exclude': {0, 1}, 'expected': ['2', '3']},
+        {'include': None, 'exclude': {0: ..., 1: ...}, 'expected': ['2', '3']},
+        {'include': {0, 1}, 'exclude': {1, 2}, 'expected': ['0']},
+        {'include': None, 'exclude': {3: {1}}, 'expected': ['0', '1', '2', '3']},
+        {'include': {0, 1}, 'exclude': {3: {1}}, 'expected': ['0', '1']},
+        {'include': {0, 1}, 'exclude': {1: {1}}, 'expected': ['0', '1']},
+        {'include': {0, 1}, 'exclude': {1: ...}, 'expected': ['0']},
+        {'include': {1}, 'exclude': {1}, 'expected': []},
+        {'include': {0}, 'exclude': {1}, 'expected': ['0']},
+        {'include': {'__all__'}, 'exclude': {1}, 'expected': ['0', '2', '3']},
+        {'include': None, 'exclude': {1}, 'expected': ['0', '2', '3']},
+        {'include': None, 'exclude': {'__all__'}, 'expected': []},
     ],
 )
 def test_filter_args(params):
@@ -291,11 +293,11 @@ def test_filter_args(params):
 @pytest.mark.parametrize(
     'params',
     [
-        dict(include=None, exclude=None, expected=[[0], [0, 1], [0, 1, 2], [0, 1, 2, 3]]),
-        dict(include=None, exclude={1: {0}}, expected=[[0], [1], [0, 1, 2], [0, 1, 2, 3]]),
-        dict(include=None, exclude={1: {0}, 2: ...}, expected=[[0], [1], [0, 1, 2, 3]]),
-        dict(include=None, exclude={1: {0}, 2: True}, expected=[[0], [1], [0, 1, 2, 3]]),
-        dict(include={1: {0}}, exclude=None, expected=[[0]]),
+        {'include': None, 'exclude': None, 'expected': [[0], [0, 1], [0, 1, 2], [0, 1, 2, 3]]},
+        {'include': None, 'exclude': {1: {0}}, 'expected': [[0], [1], [0, 1, 2], [0, 1, 2, 3]]},
+        {'include': None, 'exclude': {1: {0}, 2: ...}, 'expected': [[0], [1], [0, 1, 2, 3]]},
+        {'include': None, 'exclude': {1: {0}, 2: True}, 'expected': [[0], [1], [0, 1, 2, 3]]},
+        {'include': {1: {0}}, 'exclude': None, 'expected': [[0]]},
     ],
 )
 def test_filter_args_nested(params):

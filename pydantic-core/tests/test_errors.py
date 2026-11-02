@@ -913,7 +913,9 @@ def test_error_json_unknown():
             'type': 'string_type',
             'loc': (),
             'msg': 'Input should be a valid string',
-            'input': HasRepr(IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.I)),
+            'input': HasRepr(
+                IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.IGNORECASE)
+            ),
         }
     ]
     # insert_assert(exc_info.value.json(include_url=False))
@@ -923,7 +925,7 @@ def test_error_json_unknown():
                 'type': 'string_type',
                 'loc': [],
                 'msg': 'Input should be a valid string',
-                'input': IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.I),
+                'input': IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.IGNORECASE),
             }
         ]
     )
@@ -1186,6 +1188,7 @@ def test_errors_include_url_envvar(env_var, env_var_value, expected_to_have_url)
         [sys.executable, '-W', 'default', '-c', code],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        check=False,
         encoding='utf-8',
         env=env,
     )

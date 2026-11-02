@@ -56,7 +56,6 @@ def test_function_call_arguments(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         [((1, 2, 3), {}), 6],
-        [((1, 2, 3), {}), 6],
         [{'a': 1, 'b': 1, 'c': 1}, 3],
         ['x', TypeError('Arguments validator should return a tuple')],
         # lists are not allowed, input must strictly be a tuple

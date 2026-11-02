@@ -22,7 +22,7 @@ def test_infer_serialize():
 
 def test_infer_json_key():
     class MyEnum(Enum):
-        complex_ = {complex(1, 2): 1}
+        complex_ = {complex(1, 2): 1}  # noqa: RUF012
 
     v = SchemaSerializer(core_schema.enum_schema(MyEnum, list(MyEnum.__members__.values())))
     assert v.to_json(MyEnum.complex_) == b'{"1+2j":1}'

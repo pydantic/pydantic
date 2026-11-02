@@ -217,7 +217,7 @@ def test_wrap_error():
         except ValidationError as e:
             assert e.title == 'ValidatorCallable'
             assert str(e).startswith('1 validation error for ValidatorCallable\n')
-            raise e
+            raise
 
     v = SchemaValidator(core_schema.with_info_wrap_validator_function(f, core_schema.int_schema()))
 
@@ -249,7 +249,7 @@ def test_function_wrap_error_hide_input(config, input_str):
         except ValidationError as e:
             assert e.title == 'ValidatorCallable'
             assert str(e).startswith('1 validation error for ValidatorCallable\n')
-            raise e
+            raise
 
     v = SchemaValidator(core_schema.with_info_wrap_validator_function(f, core_schema.int_schema()), config=config)
 
@@ -424,7 +424,7 @@ def test_validate_assignment():
         return input_value
 
     class Model:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         field_a: str
 
         def __init__(self):
@@ -775,7 +775,7 @@ def test_non_model_field_plain_validator_field_info() -> None:
 
 def test_non_model_field_wrap_validator_field_info() -> None:
     class Model:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         x: str
 
     def f(input_value: Any, val: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo) -> Any:
@@ -905,7 +905,7 @@ def test_model_root_function_assignment(mode: str, calls1: Any, calls2: Any):
     calls: list[Any] = []
 
     class Model:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         x: str
         y: int
 

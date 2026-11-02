@@ -20,7 +20,7 @@ def make_5():
 
 
 class MyModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
 
 @dataclasses.dataclass

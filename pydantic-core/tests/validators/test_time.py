@@ -35,7 +35,7 @@ def test_constraints_schema_validation_error(constraint: str) -> None:
         pytest.param(float('nan'), Err('valid time format, NaN values not permitted [type=time_parsing,'), id='nan'),
         pytest.param(float('inf'), Err('valid time format, numeric times may not exceed 86,399 seconds'), id='inf'),
         pytest.param(float('-inf'), Err('valid time format, time in seconds should be positive'), id='-inf'),
-        pytest.param(Decimal('123'), time(0, 2, 3, tzinfo=timezone.utc), id='decimal'),
+        pytest.param(Decimal(123), time(0, 2, 3, tzinfo=timezone.utc), id='decimal'),
         pytest.param(Decimal('123.123456'), time(0, 2, 3, 123456, tzinfo=timezone.utc), id='decimal-6dig'),
         pytest.param(Decimal('123.1234562'), time(0, 2, 3, 123456, tzinfo=timezone.utc), id='decimal-7dig-up'),
         pytest.param(Decimal('123.1234568'), time(0, 2, 3, 123457, tzinfo=timezone.utc), id='decimal-7dig-down'),
@@ -174,7 +174,7 @@ def test_time_kwargs(kwargs: dict[str, Any], input_value, expected):
         errors = exc_info.value.errors(include_url=False)
         assert len(errors) == 1
         if len(kwargs) == 1:
-            key = list(kwargs.keys())[0]
+            key = next(iter(kwargs.keys()))
             assert key in errors[0]['ctx']
     else:
         output = v.validate_python(input_value)
