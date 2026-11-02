@@ -531,8 +531,8 @@ class IntSubclass(int):
         (
             core_schema.decimal_schema(),
             core_schema.int_schema(),
-            Decimal('1'),
-            Decimal('1'),
+            Decimal(1),
+            Decimal(1),
         ),
         (core_schema.decimal_schema(), core_schema.int_schema(), 1, 1),
         (
@@ -544,8 +544,8 @@ class IntSubclass(int):
         (
             core_schema.decimal_schema(),
             core_schema.str_schema(),
-            Decimal('_1'),
-            Decimal('_1'),
+            Decimal(1),
+            Decimal(1),
         ),
         (
             core_schema.decimal_schema(),
@@ -590,7 +590,7 @@ def test_union_serializer_picks_exact_type_over_subclass(
         (
             core_schema.decimal_schema(),
             core_schema.int_schema(),
-            Decimal('1'),
+            Decimal(1),
             '1',
         ),
         (core_schema.decimal_schema(), core_schema.int_schema(), 1, 1),
@@ -603,7 +603,7 @@ def test_union_serializer_picks_exact_type_over_subclass(
         (
             core_schema.decimal_schema(),
             core_schema.str_schema(),
-            Decimal('_1'),
+            Decimal(1),
             '1',
         ),
         (
