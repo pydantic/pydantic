@@ -318,7 +318,12 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
 CASES['root_model_list_depth'] = (
     core_schema.list_schema(items_schema=ADDRESS),
     True,
-    ['[' + '[' * depth + '0' + ']' * depth + ']' for depth in (199, 200)],
+    [
+        '[' + '[' * depth + '0' + ']' * depth + ']'
+        # PyPy crashes converting the depth-199 model_type error input into Python lists,
+        # including on the ordinary path. Keep its over-limit JSON parser regression.
+        for depth in ((200,) if platform.python_implementation() == 'PyPy' else (199, 200))
+    ],
 )
 
 LIST_ROOT = {'scalars', 'nested', 'containers', 'optional', 'aliases'}
