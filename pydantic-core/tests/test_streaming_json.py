@@ -113,8 +113,10 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
         ),
         True,
         [
-            '{"tags": ["a"], "nums": [1], "grid": [[1.5, 2]], "map": {"k": "v"},'
-            ' "models": {"a": {"street": "s", "city": "c"}}}',
+            (
+                '{"tags": ["a"], "nums": [1], "grid": [[1.5, 2]], "map": {"k": "v"},'
+                ' "models": {"a": {"street": "s", "city": "c"}}}'
+            ),
             '{"tags": [], "nums": [], "grid": [], "map": {}, "models": {}}',
             # an array that goes wrong part way through is already half converted
             '{"tags": ["a", 1], "nums": [1], "grid": [[1.5]], "map": {"k": "v"}, "models": {}}',
@@ -232,8 +234,10 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
         [
             '[{"street": "s", "city": "c"}]',
             '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}]',
-            '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}, {"street": "s", "city": "c"},'
-            ' {"street": "s", "city": "c"}]',
+            (
+                '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}, {"street": "s", "city": "c"},'
+                ' {"street": "s", "city": "c"}]'
+            ),
             '[]',
             '[{"street": 1, "city": "c"}, {"street": "s", "city": "c"}]',
         ],
@@ -294,7 +298,7 @@ def _child(case: str, in_array: bool = False) -> None:
         except ValidationError as e:
             out['results'].append(['err', e.errors(include_url=False)])
         # any difference at all is a difference, so nothing is allowed to escape here
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             out['results'].append(['exc', type(e).__name__, str(e)[:200]])
     print(json.dumps(out, default=repr))
 
@@ -313,7 +317,9 @@ def _run(case: str, stream: bool, in_array: bool = False) -> dict:
         'spec.loader.exec_module(module)\n'
         f'module._child({case!r}, in_array={in_array!r})\n'
     )
-    proc = subprocess.run([sys.executable, '-c', script], capture_output=True, text=True, cwd=ROOT, env=env)
+    proc = subprocess.run(
+        [sys.executable, '-c', script], capture_output=True, text=True, cwd=ROOT, env=env, check=False
+    )
     assert proc.returncode == 0, f'{case} ({"stream" if stream else "tree"}) failed:\n{proc.stderr[-3000:]}'
     return json.loads(proc.stdout)
 
