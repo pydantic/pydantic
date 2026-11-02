@@ -257,6 +257,9 @@ def filter_field_decorator_info_by_field(
 def _extract_json_schema_info_from_field_info(
     info: FieldInfo | ComputedFieldInfo,
 ) -> tuple[JsonDict | None, JsonDict | JsonSchemaExtraCallable | None]:
+    if not (info.title or info.description or info.deprecated or info.examples):
+        return (None, info.json_schema_extra)
+
     json_schema_updates = {
         'title': info.title,
         'description': info.description,
