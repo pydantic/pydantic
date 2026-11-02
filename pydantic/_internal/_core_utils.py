@@ -32,7 +32,6 @@ CoreSchemaOrField: TypeAlias = core_schema.CoreSchema | CoreSchemaField
 
 _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
-_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'deque', 'set', 'frozenset'}
 
 
 def is_core_schema(
@@ -74,12 +73,6 @@ def as_ser_schema(schema: CoreSchema) -> core_schema.SerSchema:
             return core_schema.any_schema()
         return as_ser_schema(schema['schema'])
     return schema
-
-
-def is_list_like_schema_with_items_schema(
-    schema: CoreSchema,
-) -> TypeGuard[core_schema.ListSchema | core_schema.SetSchema | core_schema.FrozenSetSchema]:
-    return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
 def get_ref(s: core_schema.CoreSchema) -> None | str:

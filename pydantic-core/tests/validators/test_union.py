@@ -408,7 +408,7 @@ def test_strict_reference():
         core_schema.definitions_schema(
             core_schema.definition_reference_schema(schema_ref='tuple-ref'),
             [
-                core_schema.tuple_positional_schema(
+                core_schema.tuple_schema(
                     [
                         core_schema.float_schema(),
                         core_schema.union_schema(
