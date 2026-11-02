@@ -1186,6 +1186,7 @@ def test_errors_include_url_envvar(env_var, env_var_value, expected_to_have_url)
         [sys.executable, '-W', 'default', '-c', code],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        check=False,
         encoding='utf-8',
         env=env,
     )
