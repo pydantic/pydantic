@@ -13,7 +13,6 @@ import sys
 import typing
 import warnings
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
-from contextlib import contextmanager
 from copy import copy
 from decimal import Decimal
 from enum import Enum
@@ -80,6 +79,7 @@ from ..warnings import (
 )
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _type_refs, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
+from ._contextlib import contextmanager
 from ._core_metadata import CoreMetadata, update_core_metadata
 from ._core_utils import get_ref
 from ._decorators import (
