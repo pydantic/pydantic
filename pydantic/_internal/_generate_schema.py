@@ -2339,10 +2339,13 @@ class GenerateSchema:
                 schema = self._apply_single_annotation_json_schema(schema, field_metadata)
 
             pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(metadata)
-            core_metadata = schema.setdefault('metadata', {})
-            update_core_metadata(
-                core_metadata, pydantic_js_updates=pydantic_js_updates, pydantic_js_extra=pydantic_js_extra
-            )
+            if pydantic_js_updates or pydantic_js_extra:
+                schema = schema.copy()
+                core_metadata = schema.get('metadata')
+                schema['metadata'] = core_metadata.copy() if core_metadata is not None else {}
+                update_core_metadata(
+                    schema['metadata'], pydantic_js_updates=pydantic_js_updates, pydantic_js_extra=pydantic_js_extra
+                )
         return schema
 
     def _get_unsupported_field_info_attributes(self, field_info: FieldInfo) -> list[tuple[str, Any]]:

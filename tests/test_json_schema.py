@@ -7775,3 +7775,17 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_annotated_recursive_model_type_adapter_schema_mutation() -> None:
+    """https://github.com/pydantic/pydantic/issues/14187"""
+
+    class Node(BaseModel):
+        children: list['Node'] = []
+
+    ta = TypeAdapter(Annotated[Node, Field(description='TypeAdapter description')])
+    ta_schema = ta.json_schema()
+    node_schema = Node.model_json_schema()
+
+    assert ta_schema.get('description') == 'TypeAdapter description'
+    assert node_schema.get('description') is None
