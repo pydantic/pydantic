@@ -60,6 +60,29 @@ ADDRESS = _model('Address', {'street': STR, 'city': STR})
 
 # name -> (schema, should the plan take it, documents)
 CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
+    'coerced_ints': (
+        _model(
+            'CoercedInts',
+            {
+                'numbers': core_schema.list_schema(INT),
+                'lookup': core_schema.dict_schema(STR, INT),
+            },
+        ),
+        True,
+        [
+            '{"numbers":[1,2,"3"],"lookup":{"x":"4"}}',
+            '{"numbers":["-3","+4"," 5 "],"lookup":{"x":"0"}}',
+            '{"numbers":[1,"invalid"],"lookup":{"x":4}}',
+            '{"numbers":[1,"3"],"lookup":{"x":"invalid"}}',
+            '{"numbers":[1,"3"],"lookup":{"x":4}} trailing',
+            '{"numbers":[1,"invalid"],"numbers":[2,"3"],"lookup":{"x":4}}',
+        ],
+    ),
+    'strict_ints': (
+        _model('StrictInts', {'numbers': core_schema.list_schema(core_schema.int_schema(strict=True))}),
+        True,
+        ['{"numbers":[1,2]}', '{"numbers":[1,"2"]}'],
+    ),
     'scalars': (
         _model('Scalars', {'i': INT, 's': STR, 'b': BOOL, 'f': FLOAT}),
         True,
