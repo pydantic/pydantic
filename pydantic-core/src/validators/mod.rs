@@ -118,6 +118,8 @@ impl PySome {
 #[derive(Debug)]
 pub struct SchemaValidator {
     validator: Arc<CombinedValidator>,
+    /// Owned Rust instructions; `None` also caches unsupported schemas.
+    stream_plan: Option<Box<model_fields::ModelPlan>>,
     definitions: Definitions<Arc<CombinedValidator>>,
     // References to the Python schema and config objects are saved to enable
     // reconstructing the object for cloudpickle support (see `__reduce__`).
@@ -144,8 +146,9 @@ impl SchemaValidator {
     /// differential test tell "both paths agree" apart from "only one path ran".
     #[getter]
     fn _stream_plan_accepted(&self, py: Python<'_>) -> bool {
-        let root = model_fields::unwrap_prebuilt(&self.validator);
-        stream_array_of_models(py, root).is_some() || model_fields::root_plan(py, root).is_some()
+        self.stream_plan
+            .as_deref()
+            .is_some_and(|plan| model_fields::root_eligible(py, plan))
     }
 
     #[new]
@@ -162,6 +165,7 @@ impl SchemaValidator {
 
         let validator = build_validator(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
+        let stream_plan = model_fields::root_plan(&validator).map(Box::new);
         let py_schema = schema.clone().unbind();
         let py_config = match config {
             Some(c) if !c.is_empty() => Some(c.clone().into()),
@@ -182,6 +186,7 @@ impl SchemaValidator {
             .unwrap_or(StringCacheMode::All);
         Ok(Self {
             validator,
+            stream_plan,
             definitions,
             py_schema,
             py_config,
@@ -557,9 +562,8 @@ impl SchemaValidator {
     /// into a `JsonValue` tree. `None` means the schema or the document is not one this handles
     /// and the caller should take the tree path.
     ///
-    /// Handles a model at the top level and an array of them. Any element the fast path cannot
-    /// finish is re-read from its own bytes and validated the ordinary way, so errors and their
-    /// locations come out exactly as they always did.
+    /// Handles supported models and containers. Documents or array elements it cannot
+    /// finish use ordinary validation, preserving errors and their locations.
     #[allow(clippy::too_many_arguments)]
     fn _validate_json_streaming(
         &self,
@@ -582,15 +586,12 @@ impl SchemaValidator {
             return None;
         }
 
+        let plan = self.stream_plan.as_deref()?;
+        if !model_fields::root_eligible(py, plan) {
+            return None;
+        }
         let root = model_fields::unwrap_prebuilt(&self.validator);
-
-        let models = stream_array_of_models(py, root);
-
-        // anything else the plan understands, taken as a single value
-        let value_plan = match models {
-            Some(_) => None,
-            None => Some(model_fields::root_plan(py, root)?),
-        };
+        let models = stream_array_of_models(py, root, plan);
 
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
@@ -616,14 +617,13 @@ impl SchemaValidator {
                 class: class.bind(py),
                 item,
                 mf,
-                plan: &plan,
+                plan,
             }
             .array(&mut state);
         }
 
-        let plan = value_plan?;
         let mut jiter = jiter::Jiter::new(json_data);
-        match model_fields::take_root(py, &mut jiter, &plan, &mut state) {
+        match model_fields::take_root(py, &mut jiter, plan, &mut state) {
             // trailing content is an error the ordinary path reports
             Ok(Some(value)) if jiter.finish().is_ok() => Some(Ok(value.unbind())),
             Err(model_fields::StreamStop::Py(err)) => Some(Err(err.into())),
@@ -651,10 +651,14 @@ type StreamArrayOfModels<'a> = (
     &'a Py<PyType>,
     &'a CombinedValidator,
     &'a model_fields::ModelFieldsValidator,
-    model_fields::ModelPlan<'a>,
+    &'a model_fields::ModelPlan,
 );
 
-fn stream_array_of_models<'v>(py: Python<'_>, root: &'v CombinedValidator) -> Option<StreamArrayOfModels<'v>> {
+fn stream_array_of_models<'v>(
+    py: Python<'_>,
+    root: &'v CombinedValidator,
+    plan: &'v model_fields::ModelPlan,
+) -> Option<StreamArrayOfModels<'v>> {
     let CombinedValidator::List(list) = root else {
         return None;
     };
@@ -668,11 +672,8 @@ fn stream_array_of_models<'v>(py: Python<'_>, root: &'v CombinedValidator) -> Op
     let CombinedValidator::Model(model_v) = item else {
         return None;
     };
-    let (class, inner) = model_v.stream_parts(py)?;
-    let CombinedValidator::ModelFields(mf) = &**inner else {
-        return None;
-    };
-    Some((class, item, mf, mf.stream_plan(py)?))
+    let (class, mf) = model_v.stream_parts(py)?;
+    Some((class, item, mf, model_fields::array_model_plan(plan)?))
 }
 
 pub trait BuildValidator: Sized {
@@ -1112,7 +1113,7 @@ struct Streamer<'a, 'py> {
     class: &'a Bound<'py, PyType>,
     item: &'a CombinedValidator,
     mf: &'a model_fields::ModelFieldsValidator,
-    plan: &'a model_fields::ModelPlan<'a>,
+    plan: &'a model_fields::ModelPlan,
 }
 
 impl<'py> Streamer<'_, 'py> {

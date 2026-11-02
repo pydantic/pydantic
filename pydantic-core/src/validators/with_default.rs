@@ -151,7 +151,7 @@ impl WithDefaultValidator {
     /// The validator a present value goes through. A value taken without running the validator
     /// cannot error, so `on_error` never comes into it. Missing values use `stream_default`
     /// only when no validation, factory, or copying is needed.
-    pub(crate) fn stream_inner(&self) -> &CombinedValidator {
+    pub(crate) fn stream_inner(&self) -> &Arc<CombinedValidator> {
         &self.validator
     }
 

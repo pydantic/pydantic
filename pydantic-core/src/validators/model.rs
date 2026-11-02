@@ -66,15 +66,26 @@ pub struct ModelValidator {
 }
 
 impl ModelValidator {
-    /// Prototype support for the streaming json path: the shapes it can handle, and the pieces it
-    /// needs to build an instance itself.
-    pub(crate) fn stream_parts(&self, py: Python<'_>) -> Option<(&Py<PyType>, &Arc<CombinedValidator>)> {
+    /// The fixed schema requirements for streaming, independent of mutable class hooks.
+    pub(crate) fn stream_fields(&self) -> Option<&super::model_fields::ModelFieldsValidator> {
         if self.custom_init || self.root_model || self.post_init.is_some() || self.frozen {
             return None;
         }
         if !matches!(self.revalidate, Revalidate::Never) {
             return None;
         }
+        let CombinedValidator::ModelFields(fields) = self.validator.as_ref() else {
+            return None;
+        };
+        Some(fields)
+    }
+
+    /// Check current class hooks before constructing a streamed instance.
+    pub(crate) fn stream_parts(
+        &self,
+        py: Python<'_>,
+    ) -> Option<(&Py<PyType>, &super::model_fields::ModelFieldsValidator)> {
+        let fields = self.stream_fields()?;
         let class = self.class.bind(py);
         #[cfg(not(any(PyPy, GraalPy)))]
         {
@@ -127,7 +138,7 @@ impl ModelValidator {
                 }
             }
         }
-        Some((&self.class, &self.validator))
+        Some((&self.class, fields))
     }
 }
 

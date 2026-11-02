@@ -36,7 +36,7 @@ impl_py_gc_traverse!(NullableValidator { validator });
 
 impl NullableValidator {
     /// The validator a non-null value goes through.
-    pub(crate) fn stream_inner(&self) -> &CombinedValidator {
+    pub(crate) fn stream_inner(&self) -> &Arc<CombinedValidator> {
         &self.validator
     }
 }
