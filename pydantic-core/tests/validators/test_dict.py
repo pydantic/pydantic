@@ -143,7 +143,7 @@ def test_key_error():
 def test_mapping_error():
     class BadMapping(Mapping):
         def __getitem__(self, key):
-            raise None
+            raise None  # noqa: B016
 
         def __iter__(self):
             raise RuntimeError('intentional error')
