@@ -76,7 +76,7 @@ impl ModelValidator {
             return None;
         }
         let class = self.class.bind(py);
-        #[cfg(not(PyPy))]
+        #[cfg(not(any(PyPy, GraalPy)))]
         {
             // Speculative instances may be discarded before JSON parsing finishes. Inspect
             // current slots without invoking attribute hooks, including inherited hooks.
@@ -90,11 +90,11 @@ impl ModelValidator {
                 return None;
             }
         }
-        #[cfg(PyPy)]
+        #[cfg(any(PyPy, GraalPy))]
         {
-            // PyPy shares tp_new wrappers across Python classes, so compare the first
-            // __new__ definition in the MRO instead. Read type dictionaries directly to
-            // avoid executing custom metaclass attribute hooks.
+            // PyPy shares tp_new wrappers across Python classes, and GraalPy does not
+            // expose Python finalizers through tp_finalize. Inspect the MRO instead.
+            // Read type dictionaries directly to avoid executing custom metaclass attribute hooks.
             // SAFETY: ready Python types have tuple tp_mro and dict tp_dict entries.
             let (mro, object_dict) = unsafe {
                 (

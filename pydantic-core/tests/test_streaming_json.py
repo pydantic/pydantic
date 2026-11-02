@@ -597,7 +597,9 @@ def test_streaming_excludes_models_with_finalizers(finalizer_kind: str, shape: s
     value = validator.validate_json(document)
     assert finalized == []
     del value
-    assert_gc(lambda: finalized == ['finalized'])
+    # GraalPy cannot reliably trigger finalizers with gc.collect().
+    if platform.python_implementation() != 'GraalVM':
+        assert_gc(lambda: finalized == ['finalized'])
 
 
 @pytest.mark.parametrize('new_kind', ['direct', 'inherited', 'added_later'])
