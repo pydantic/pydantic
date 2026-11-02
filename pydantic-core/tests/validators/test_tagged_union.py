@@ -513,14 +513,15 @@ def test_downcast_error():
     )
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('x')
-        assert exc_info.value.errors(include_url=False) == [
-            {
-                'type': 'union_tag_invalid',
-                'loc': (),
-                'msg': "Input tag '123' found using <lambda>() does not match any of the expected tags: 'str'",
-                'input': 'x',
-            }
-        ]
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'union_tag_invalid',
+            'loc': (),
+            'msg': "Input tag '123' found using <lambda>() does not match any of the expected tags: 'str'",
+            'input': 'x',
+            'ctx': {'discriminator': '<lambda>()', 'tag': '123', 'expected_tags': "'str'"},
+        }
+    ]
 
 
 def test_custom_error():
