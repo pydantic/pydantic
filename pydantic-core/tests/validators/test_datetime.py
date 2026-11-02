@@ -41,7 +41,7 @@ def test_constraints_schema_validation() -> None:
         (b'2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
         ((1,), Err('Input should be a valid datetime [type=datetime_type')),
         (time(1, 2, 3), Err('Input should be a valid datetime [type=datetime_type')),
-        (Decimal('1654646400'), datetime(2022, 6, 8, tzinfo=timezone.utc)),
+        (Decimal(1654646400), datetime(2022, 6, 8, tzinfo=timezone.utc)),
         ('1654646400', datetime(2022, 6, 8, tzinfo=timezone.utc)),
         (Decimal('1654646400.123456'), datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
         (Decimal('1654646400.1234564'), datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
@@ -97,7 +97,7 @@ def test_datetime(input_value, expected):
         (b'2022-06-08T12:13:14', Err('Input should be a valid datetime [type=datetime_type')),
         (time(1, 2, 3), Err('Input should be a valid datetime [type=datetime_type')),
         (1654646400, Err('Input should be a valid datetime [type=datetime_type')),
-        (Decimal('1654646400'), Err('Input should be a valid datetime [type=datetime_type')),
+        (Decimal(1654646400), Err('Input should be a valid datetime [type=datetime_type')),
     ],
 )
 def test_datetime_strict(input_value, expected):

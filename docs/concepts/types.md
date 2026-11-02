@@ -482,7 +482,6 @@ handler at all.
 #### As a method on a custom type
 
 The following is an example of a type that uses `__get_pydantic_core_schema__` to customize how it gets validated.
-This is equivalent to implementing `__get_validators__` in Pydantic V1.
 
 ```python
 from typing import Any

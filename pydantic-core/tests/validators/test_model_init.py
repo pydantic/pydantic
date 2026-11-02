@@ -11,7 +11,7 @@ from ..conftest import assert_gc
 
 class MyModel:
     # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
     field_a: str
     field_b: int
 
@@ -45,7 +45,7 @@ def test_model_init():
 def test_model_init_nested():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     v = SchemaValidator(
         core_schema.model_schema(
@@ -252,7 +252,7 @@ def test_model_custom_init_nested():
     calls = []
 
     class ModelInner:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         a: int
         b: int
 
@@ -308,7 +308,7 @@ def test_model_custom_init_extra():
     calls = []
 
     class ModelInner:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         a: int
         b: int
 
@@ -333,7 +333,7 @@ def test_model_custom_init_extra():
     ModelInner.__pydantic_validator__ = SchemaValidator(inner_schema)
 
     class ModelOuter:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         a: int
         b: ModelInner
 
@@ -378,7 +378,7 @@ def test_model_custom_init_revalidate():
     calls = []
 
     class Model:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         def __init__(self, **kwargs):
             calls.append(repr(kwargs))
@@ -391,7 +391,7 @@ def test_model_custom_init_revalidate():
             Model,
             core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
             custom_init=True,
-            config=dict(revalidate_instances='always'),
+            config={'revalidate_instances': 'always'},
         )
     )
 

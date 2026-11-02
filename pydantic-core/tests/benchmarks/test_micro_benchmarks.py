@@ -42,7 +42,7 @@ class TestBenchmarkSimpleModel:
     @classmethod
     def core_validator_fs(cls):
         class CoreModel:
-            __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+            __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         return SchemaValidator(
             schema=core_schema.model_schema(
@@ -64,7 +64,7 @@ class TestBenchmarkSimpleModel:
             )
         )
 
-    data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
+    data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}  # noqa: RUF012
 
     @pytest.mark.benchmark(group='simple model - python')
     def test_core_python_fs(self, core_validator_fs, benchmark):
@@ -85,7 +85,7 @@ class TestModelLarge:
     @classmethod
     def core_model_validator(cls):
         class CoreModel:
-            __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+            __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         return SchemaValidator(
             schema=core_schema.model_schema(
@@ -97,7 +97,7 @@ class TestModelLarge:
             )
         )
 
-    data = {f'field_{99 - i}': i for i in range(100)}
+    data = {f'field_{99 - i}': i for i in range(100)}  # noqa: RUF012
     data['more'] = 'more data'
 
     @pytest.mark.benchmark(group='large model - python')
@@ -153,7 +153,7 @@ def test_small_class_core_dict(benchmark):
 def test_small_class_core_model(benchmark):
     class MyCoreModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         # these are here just as decoration
         name: str
         age: int
@@ -292,7 +292,7 @@ def definition_model_data():
 def test_definition_model_core(definition_model_data, benchmark):
     class CoreBranch:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     v = SchemaValidator(
         core_schema.definitions_schema(
@@ -530,7 +530,7 @@ def test_many_models_core_dict(benchmark):
 @pytest.mark.benchmark(group='list[SimpleMode]')
 def test_many_models_core_model(benchmark):
     class MyCoreModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     v = SchemaValidator(
         core_schema.list_schema(
@@ -572,7 +572,7 @@ class TestBenchmarkDateTime:
     @classmethod
     def core_validator(cls):
         class CoreModel:
-            __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+            __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         return SchemaValidator(
             schema=core_schema.model_schema(
@@ -723,7 +723,7 @@ class TestBenchmarkUUID:
     @classmethod
     def core_validator(cls):
         class CoreModel:
-            __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+            __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         return SchemaValidator(
             schema=core_schema.model_schema(
@@ -1133,7 +1133,7 @@ def test_definition_out_of_tree(benchmark):
 @pytest.mark.benchmark(group='model_instance')
 def test_model_instance(benchmark):
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         def __init__(self, **d):
             self.__dict__ = d
@@ -1170,7 +1170,7 @@ def test_model_instance_abc(benchmark):
             return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
 
     class BaseModel(metaclass=MyMeta):
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         __pydantic_validator__ = True
 
         def __init__(self, **d):
@@ -1259,7 +1259,7 @@ def test_validate_literal(
 @pytest.mark.benchmark(group='root_model')
 def test_core_root_model(benchmark):
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         root: list[int]
 
     v = SchemaValidator(

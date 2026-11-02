@@ -7,10 +7,10 @@ use pyo3::types::PyString;
 use pyo3::types::{PyDict, PyList};
 
 use crate::definitions::DefinitionRef;
-use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 
-use crate::recursion_guard::RecursionGuard;
+use crate::recursion_guard::{RecursionError, RecursionGuard};
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
@@ -71,6 +71,13 @@ impl BuildValidator for DefinitionRefValidator {
 
 impl_py_gc_traverse!(DefinitionRefValidator {});
 
+fn recursion_error_type(error: RecursionError) -> ErrorType {
+    match error {
+        RecursionError::Cyclic => ErrorTypeDefaults::RecursionLoop,
+        RecursionError::Depth => ErrorTypeDefaults::RecursionDepthExceeded,
+    }
+}
+
 impl Validator for DefinitionRefValidator {
     fn validate<'py>(
         &self,
@@ -85,9 +92,8 @@ impl Validator for DefinitionRefValidator {
             let validator = validator.unwrap();
             if let Some(id) = input.identity() {
                 // Python objects can be cyclic, so need recursion guard
-                let Ok(mut guard) = RecursionGuard::new(state, id, self.definition.id()) else {
-                    return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));
-                };
+                let mut guard = RecursionGuard::new(state, id, self.definition.id())
+                    .map_err(|e| ValError::new(recursion_error_type(e), input))?;
                 validator.validate(py, input, guard.state())
             } else {
                 validator.validate(py, input, state)
@@ -117,9 +123,8 @@ impl Validator for DefinitionRefValidator {
     ) -> ValResult<Py<PyAny>> {
         self.definition.read(|validator| {
             let validator = validator.unwrap();
-            let Ok(mut guard) = RecursionGuard::new(state, py_identity(obj), self.definition.id()) else {
-                return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj));
-            };
+            let mut guard = RecursionGuard::new(state, py_identity(obj), self.definition.id())
+                .map_err(|e| ValError::new(recursion_error_type(e), obj))?;
             validator.validate_assignment(py, obj, field_name, field_value, guard.state())
         })
     }

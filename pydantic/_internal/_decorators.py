@@ -28,30 +28,6 @@ if TYPE_CHECKING:
 
 
 @dataclass(slots=True)
-class ValidatorDecoratorInfo:
-    """A container for data from `@validator` so that we can access it
-    while building the pydantic-core schema.
-
-    Attributes:
-        decorator_repr: A class variable representing the decorator string, '@validator'.
-        fields: A tuple of field names the validator should be called on.
-        mode: The proposed validator mode.
-        each_item: For complex objects (sets, lists etc.) whether to validate individual
-            elements rather than the whole object.
-        always: Whether this method and other validators should be called even if the value is missing.
-        check_fields: Whether to check that the fields actually exist on the model.
-    """
-
-    decorator_repr: ClassVar[str] = '@validator'
-
-    fields: tuple[str, ...]
-    mode: Literal['before', 'after']
-    each_item: bool
-    always: bool
-    check_fields: bool | None
-
-
-@dataclass(slots=True)
 class FieldValidatorDecoratorInfo:
     """A container for data from `@field_validator` so that we can access it
     while building the pydantic-core schema.
@@ -72,20 +48,6 @@ class FieldValidatorDecoratorInfo:
     mode: FieldValidatorModes
     check_fields: bool | None
     json_schema_input_type: Any
-
-
-@dataclass(slots=True)
-class RootValidatorDecoratorInfo:
-    """A container for data from `@root_validator` so that we can access it
-    while building the pydantic-core schema.
-
-    Attributes:
-        decorator_repr: A class variable representing the decorator string, '@root_validator'.
-        mode: The proposed validator mode.
-    """
-
-    decorator_repr: ClassVar[str] = '@root_validator'
-    mode: Literal['before', 'after']
 
 
 @dataclass(slots=True)
@@ -144,7 +106,7 @@ class ModelValidatorDecoratorInfo:
     mode: Literal['wrap', 'before', 'after']
 
 
-DecoratorInfo: TypeAlias = 'ValidatorDecoratorInfo | FieldValidatorDecoratorInfo | RootValidatorDecoratorInfo | FieldSerializerDecoratorInfo | ModelSerializerDecoratorInfo | ModelValidatorDecoratorInfo | ComputedFieldInfo'
+DecoratorInfo: TypeAlias = 'FieldValidatorDecoratorInfo | FieldSerializerDecoratorInfo | ModelSerializerDecoratorInfo | ModelValidatorDecoratorInfo | ComputedFieldInfo'
 
 ReturnType = TypeVar('ReturnType')
 DecoratedType: TypeAlias = (
@@ -164,12 +126,10 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
     Attributes:
         wrapped: The decorator that has to be wrapped.
         decorator_info: The decorator info.
-        shim: A wrapper function to wrap V1 style function.
     """
 
     wrapped: DecoratedType[ReturnType]
     decorator_info: DecoratorInfo
-    shim: Callable[[Callable[..., Any]], Callable[..., Any]] | None = None
 
     def __post_init__(self):
         for attr in 'setter', 'deleter':
@@ -217,14 +177,12 @@ class Decorator(Generic[DecoratorInfoType]):
         cls_ref: The class ref.
         cls_var_name: The decorated function name.
         func: The decorated function.
-        shim: A wrapper function to wrap V1 style function.
         info: The decorator info.
     """
 
     cls_ref: str
     cls_var_name: str
     func: Callable[..., Any]
-    shim: Callable[[Any], Any] | None
     info: DecoratorInfoType
 
     @staticmethod
@@ -232,8 +190,7 @@ class Decorator(Generic[DecoratorInfoType]):
         cls_: Any,
         *,
         cls_var_name: str,
-        cls_ref: str | None = None,
-        shim: Callable[[Any], Any] | None,
+        cls_ref: str,
         info: DecoratorInfoType,
     ) -> Decorator[DecoratorInfoType]:
         """Build a new decorator.
@@ -242,18 +199,12 @@ class Decorator(Generic[DecoratorInfoType]):
             cls_: The class.
             cls_ref: The type ref of the class.
             cls_var_name: The decorated function name.
-            shim: A wrapper function to wrap V1 style function.
             info: The decorator info.
 
         Returns:
             The new decorator instance.
         """
-        # For backwards compatibility for users using this (private!) method. TODO v3: make `cls_ref` required:
-        cls_ref = cls_ref if cls_ref is not None else _type_refs.any_class_type_ref(cls_)
-
         func = get_attribute_from_bases(cls_, cls_var_name)
-        if shim is not None:
-            func = shim(func)
         func = unwrap_wrapped_function(func, unwrap_partial=False)
         if not callable(func):
             # TODO most likely this branch can be removed when we drop support for Python 3.12:
@@ -265,7 +216,6 @@ class Decorator(Generic[DecoratorInfoType]):
             cls_ref=cls_ref,
             cls_var_name=cls_var_name,
             func=func,
-            shim=shim,
             info=info,
         )
 
@@ -283,7 +233,6 @@ class Decorator(Generic[DecoratorInfoType]):
             cls,
             cls_ref=cls_ref,
             cls_var_name=self.cls_var_name,
-            shim=self.shim,
             info=copy(self.info),
         )
 
@@ -418,9 +367,7 @@ class DecoratorInfos:
     not the field name!
     """
 
-    validators: dict[str, Decorator[ValidatorDecoratorInfo]] = field(default_factory=dict)
     field_validators: dict[str, Decorator[FieldValidatorDecoratorInfo]] = field(default_factory=dict)
-    root_validators: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
     field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
     model_serializers: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
     model_validators: dict[str, Decorator[ModelValidatorDecoratorInfo]] = field(default_factory=dict)
@@ -475,11 +422,9 @@ class DecoratorInfos:
                     cls_ref=lambda: '',
                     collect_to_replace=False,
                 )
-            res.validators.update({k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.validators.items()})
             res.field_validators.update(
                 {k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.field_validators.items()}
             )
-            res.root_validators.update({k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.root_validators.items()})
             res.field_serializers.update(
                 {k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.field_serializers.items()}
             )
@@ -493,9 +438,7 @@ class DecoratorInfos:
 
         decorator_infos, to_replace = _decorator_infos_for_class(typ, cls_ref=cls_ref, collect_to_replace=True)
 
-        res.validators.update(decorator_infos.validators)
         res.field_validators.update(decorator_infos.field_validators)
-        res.root_validators.update(decorator_infos.root_validators)
         res.field_serializers.update(decorator_infos.field_serializers)
         res.model_serializers.update(decorator_infos.model_serializers)
         res.model_validators.update(decorator_infos.model_validators)
@@ -543,36 +486,28 @@ def _decorator_infos_for_class(
     for var_name, var_value in vars(typ).copy().items():
         if isinstance(var_value, PydanticDescriptorProxy):
             info = var_value.decorator_info
-            if isinstance(info, ValidatorDecoratorInfo):
-                res.validators[var_name] = Decorator.build(
-                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
-                )
-            elif isinstance(info, FieldValidatorDecoratorInfo):
+            if isinstance(info, FieldValidatorDecoratorInfo):
                 res.field_validators[var_name] = Decorator.build(
-                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
-                )
-            elif isinstance(info, RootValidatorDecoratorInfo):
-                res.root_validators[var_name] = Decorator.build(
-                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, info=info
                 )
             elif isinstance(info, FieldSerializerDecoratorInfo):
                 res.field_serializers[var_name] = Decorator.build(
-                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, info=info
                 )
             elif isinstance(info, ModelValidatorDecoratorInfo):
                 res.model_validators[var_name] = Decorator.build(
-                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, info=info
                 )
             elif isinstance(info, ModelSerializerDecoratorInfo):
                 res.model_serializers[var_name] = Decorator.build(
-                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, info=info
                 )
             else:
                 from ..fields import ComputedFieldInfo
 
                 assert isinstance(info, ComputedFieldInfo)
                 res.computed_fields[var_name] = Decorator.build(
-                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=None, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, info=info
                 )
             if collect_to_replace:
                 to_replace.append((var_name, var_value.wrapped))

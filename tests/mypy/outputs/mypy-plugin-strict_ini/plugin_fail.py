@@ -1,11 +1,11 @@
 from typing import Generic, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.dataclasses import dataclass
 
 
 class Model(BaseModel):
-    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
+    model_config = ConfigDict(alias_generator=None, frozen=True, extra='forbid')
     x: int
     y: str
 
@@ -19,11 +19,9 @@ model = Model(x=1)
 # MYPY: error: Missing named argument "y" for "Model"  [call-arg]
 model.y = 'a'
 # MYPY: error: Property "y" defined in "Model" is read-only  [misc]
-Model.from_orm({})
-# MYPY: error: "Model" does not have from_attributes=True  [pydantic-orm]
 
 
-class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
+class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra='forbid'):
     x: int
     y: str
 
@@ -37,12 +35,10 @@ kwargs_model = KwargsModel(x=1)
 # MYPY: error: Missing named argument "y" for "KwargsModel"  [call-arg]
 kwargs_model.y = 'a'
 # MYPY: error: Property "y" defined in "KwargsModel" is read-only  [misc]
-KwargsModel.from_orm({})
-# MYPY: error: "KwargsModel" does not have from_attributes=True  [pydantic-orm]
 
 
 class ForbidExtraModel(BaseModel):
-    model_config = ConfigDict(extra=Extra.forbid)
+    model_config = ConfigDict(extra='forbid')
 
 
 ForbidExtraModel(x=1)
@@ -67,24 +63,24 @@ class KwargsBadExtraModel(BaseModel, extra=1):
 
 
 class BadConfig1(BaseModel):
-    model_config = ConfigDict(from_attributes={})  # type: ignore[typeddict-item]
-# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+    model_config = ConfigDict(frozen={})  # type: ignore[typeddict-item]
+# MYPY: error: Invalid value for "Config.frozen"  [pydantic-config]
 # MYPY: note: Error code "pydantic-config" not covered by "type: ignore[typeddict-item]" comment
 
 
-class KwargsBadConfig1(BaseModel, from_attributes={}):
-# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+class KwargsBadConfig1(BaseModel, frozen={}):
+# MYPY: error: Invalid value for "Config.frozen"  [pydantic-config]
     pass
 
 
 class BadConfig2(BaseModel):
-    model_config = ConfigDict(from_attributes=list)  # type: ignore[typeddict-item]
-# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+    model_config = ConfigDict(frozen=list)  # type: ignore[typeddict-item]
+# MYPY: error: Invalid value for "Config.frozen"  [pydantic-config]
 # MYPY: note: Error code "pydantic-config" not covered by "type: ignore[typeddict-item]" comment
 
 
-class KwargsBadConfig2(BaseModel, from_attributes=list):
-# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+class KwargsBadConfig2(BaseModel, frozen=list):
+# MYPY: error: Invalid value for "Config.frozen"  [pydantic-config]
     pass
 
 
@@ -263,15 +259,6 @@ KwargsAliasGeneratorModel2(y=1, z=1)
 # MYPY: error: Unexpected keyword argument "z" for "KwargsAliasGeneratorModel2"  [call-arg]
 
 
-class CoverageTester(Missing):  # noqa F821
-# MYPY: error: Name "Missing" is not defined  [name-defined]
-    def from_orm(self) -> None:
-        pass
-
-
-CoverageTester().from_orm()
-
-
 @dataclass(config={})
 class AddProject:
     name: str
@@ -287,7 +274,7 @@ class FrozenModel(BaseModel):
     x: int
     y: str
 
-    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
+    model_config = ConfigDict(alias_generator=None, frozen=True, extra='forbid')
 
 
 frozenmodel = FrozenModel(x=1, y='b')
