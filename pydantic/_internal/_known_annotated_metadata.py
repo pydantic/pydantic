@@ -386,6 +386,45 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
     return res, remaining
 
 
+def expand_annotations(annotations: list[Any]) -> tuple[list[Any], bool]:
+    """Expand the grouped metadata in `annotations` (see `expand_grouped_metadata()`), dropping `None` values.
+
+    Returns:
+        A tuple of the expanded annotations, and whether at least one of them is a known constraint
+        (e.g. `Gt`, `Strict`).
+    """
+    import annotated_types as at
+
+    FieldInfo = import_cached_field_info()
+    at_to_constraint_map = _get_at_to_constraint_map()
+
+    expanded: list[Any] = []
+    has_constraints = False
+    for annotation in annotations:
+        if annotation is None:
+            continue
+        if isinstance(annotation, at.GroupedMetadata):
+            expanded.extend(annotation)
+            has_constraints = True
+        elif isinstance(annotation, FieldInfo):
+            if annotation.metadata:
+                expanded.extend(annotation.metadata)
+                has_constraints = True
+            # See the comment in `expand_grouped_metadata()`:
+            annotation = copy(annotation)
+            annotation.metadata = []
+            expanded.append(annotation)
+        else:
+            expanded.append(annotation)
+            if not has_constraints and (
+                type(annotation) in at_to_constraint_map
+                or isinstance(annotation, PydanticMetadata)
+                or (isinstance(annotation, type) and issubclass(annotation, PydanticMetadata))
+            ):
+                has_constraints = True
+    return expanded, has_constraints
+
+
 def check_metadata(metadata: dict[str, Any], allowed: Iterable[str], source_type: Any) -> None:
     """A small utility function to validate that the given metadata can be applied to the target.
     More than saving lines of code, this gives us a consistent error message for all of our internal implementations.

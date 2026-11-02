@@ -35,7 +35,7 @@ from typing_inspection.introspection import (
 )
 
 from . import types
-from ._internal import _decorators, _fields, _generics, _repr, _typing_extra, _utils
+from ._internal import _constraints, _decorators, _fields, _generics, _repr, _typing_extra, _utils
 from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
 from .aliases import AliasChoices, AliasGenerator, AliasPath
 from .config import JsonDict
@@ -219,12 +219,12 @@ class FieldInfo(_repr.Representation):
         'multiple_of': annotated_types.MultipleOf,
         'min_length': annotated_types.MinLen,
         'max_length': annotated_types.MaxLen,
-        'pattern': None,
+        'pattern': _constraints.Pattern,
         'allow_inf_nan': types.AllowInfNan,
-        'max_digits': None,
-        'decimal_places': None,
-        'union_mode': None,
-        'coerce_numbers_to_str': None,
+        'max_digits': _constraints.MaxDigits,
+        'decimal_places': _constraints.DecimalPlaces,
+        'union_mode': _constraints.UnionMode,
+        'coerce_numbers_to_str': _constraints.CoerceNumbersToStr,
         'fail_fast': types.FailFast,
     }
 
@@ -614,10 +614,8 @@ class FieldInfo(_repr.Representation):
             type_expr = Any
         metadata = inspected_ann.metadata
 
-        # HACK 1: the order in which the metadata is merged is inconsistent; we need to prepend
-        # metadata from the assignment at the beginning of the metadata. Changing this is only
-        # possible in v3 (at least). See https://github.com/pydantic/pydantic/issues/10507
-        prepend_metadata: list[Any] | None = None
+        # The assigned `Field()` is merged last, so that its constraints take priority
+        # over the ones from the `Annotated` metadata (see https://github.com/pydantic/pydantic/issues/10507).
         attr_overrides = {'annotation': type_expr}
         if final:
             attr_overrides['frozen'] = True
@@ -633,19 +631,13 @@ class FieldInfo(_repr.Representation):
             return field_info
 
         if isinstance(default, FieldInfo):
-            default_copy = default._copy()  # Copy unnecessary when we remove HACK 1.
-            prepend_metadata = default_copy.metadata
-            default_copy.metadata = []
-            metadata = metadata + [default_copy]
+            metadata = metadata + [default]
             if 'init_var' in inspected_ann.qualifiers:
                 # Only relevant for dataclasses, when `f: InitVar[<type>] = Field(...)`
                 # is used:
                 attr_overrides['init_var'] = True
         elif isinstance(default, dataclasses.Field):
-            from_field = FieldInfo._from_dataclass_field(default)
-            prepend_metadata = from_field.metadata  # Unnecessary when we remove HACK 1.
-            from_field.metadata = []
-            metadata = metadata + [from_field]
+            metadata = metadata + [FieldInfo._from_dataclass_field(default)]
             if 'init_var' in inspected_ann.qualifiers:
                 attr_overrides['init_var'] = True
             if (init := getattr(default, 'init', None)) is not None:
@@ -656,9 +648,7 @@ class FieldInfo(_repr.Representation):
             # `default` is the actual default value
             attr_overrides['default'] = default
 
-        field_info = FieldInfo._construct(
-            prepend_metadata + metadata if prepend_metadata is not None else metadata, **attr_overrides
-        )
+        field_info = FieldInfo._construct(metadata, **attr_overrides)
         field_info._qualifiers = inspected_ann.qualifiers
         field_info._final = True
         return field_info

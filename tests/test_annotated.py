@@ -1,4 +1,5 @@
 import datetime as dt
+import math
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from decimal import Decimal
@@ -15,9 +16,11 @@ from pydantic import (
     BeforeValidator,
     Field,
     GetCoreSchemaHandler,
+    PlainValidator,
     PydanticUserError,
     TypeAdapter,
     ValidationError,
+    WrapValidator,
 )
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import PrivateAttr
@@ -56,7 +59,7 @@ NO_DEFAULT = Sentinel('NO_DEFAULT')
         pytest.param(
             Annotated[int, Lt(2)],
             Field(5, gt=0),
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Lt(lt=2), Gt(gt=0)])',
             id='Annotated[int, Lt(2)]-Field(5, gt=0)',
         ),
         pytest.param(
@@ -345,14 +348,9 @@ def test_merge_field_infos_ordering() -> None:
     class Model(BaseModel):
         x: TheType
 
+    # Constraints are applied first (on the input value), whatever their position. The validators are then applied in order:
     assert Model(x=1).x == 2
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(x=2)
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'less_than', 'loc': ('x',), 'msg': 'Input should be less than 4', 'input': 2, 'ctx': {'lt': 4}}
-    ]
+    assert Model(x=2).x == 4
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x=3)
@@ -372,15 +370,16 @@ def test_validate_float_inf_nan_python() -> None:
     ta = TypeAdapter(Annotated[float, AfterValidator(lambda x: x * 3), Field(allow_inf_nan=False)])
     assert ta.validate_python(2.0) == 6.0
 
+    # The constraint applies to the input value, before the after validator is called:
     ta = TypeAdapter(Annotated[float, AfterValidator(lambda _: float('nan')), Field(allow_inf_nan=False)])
+    assert math.isnan(ta.validate_python(1.0))
 
     with pytest.raises(ValidationError) as exc_info:
-        ta.validate_python(1.0)
+        ta.validate_python(float('inf'))
 
     # insert_assert(exc_info.value.errors(include_url=False))
-    # TODO: input should be float('nan'), this seems like a subtle bug in pydantic-core
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': 1.0}
+        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': float('inf')}
     ]
 
 
@@ -662,3 +661,80 @@ def test_decimal_constraints_after_annotation(
         with pytest.raises(ValidationError) as exc_info:
             ta.validate_python(Decimal(input_value))
         assert exc_info.value.errors()[0]['type'] == error_type
+
+
+def test_constraints_applied_before_validators() -> None:
+    """Known constraints are applied to the type's schema, whatever their position relative to validators."""
+    ta = TypeAdapter(Annotated[int, AfterValidator(lambda v: v + 1), Field(ge=1)])
+
+    assert ta.core_schema['schema'] == {'type': 'int', 'ge': 1}
+    assert ta.validate_python(1) == 2
+    with pytest.raises(ValidationError, check=lambda err: err.errors()[0]['type'] == 'greater_than_equal'):
+        ta.validate_python(0)
+
+
+def test_plain_validator_discards_constraints() -> None:
+    ta = TypeAdapter(Annotated[int, PlainValidator(lambda v: v + 1), Gt(0)])
+
+    assert ta.validate_python(-5) == -4
+
+
+def test_constraints_last_one_wins(container_class: type[Any]) -> None:
+    """https://github.com/pydantic/pydantic/issues/11361"""
+    String = Annotated[str, Field(min_length=5, max_length=10), AfterValidator(lambda v: v)]
+
+    class Model(container_class):
+        title: Annotated[String, Field(max_length=20)]
+
+    ta = TypeAdapter(Model)
+    assert ta.validate_python({'title': 'a' * 20})
+    with pytest.raises(ValidationError, check=lambda err: err.errors()[0]['type'] == 'string_too_long'):
+        ta.validate_python({'title': 'a' * 21})
+    with pytest.raises(ValidationError, check=lambda err: err.errors()[0]['type'] == 'string_too_short'):
+        ta.validate_python({'title': 'a' * 4})
+
+
+def test_assigned_field_constraints_priority() -> None:
+    """https://github.com/pydantic/pydantic/issues/10507"""
+
+    class Model(BaseModel):
+        a: Annotated[int, Gt(0)] = Field(gt=1)
+        b: Annotated[int, Gt(1)] = Field(gt=0)
+
+    with pytest.raises(ValidationError, check=lambda err: err.errors()[0]['ctx'] == {'gt': 1}):
+        Model(a=1, b=1)
+    assert Model(a=2, b=1).b == 1
+
+
+def test_wrap_validator_handler_applies_field_constraints() -> None:
+    """https://github.com/pydantic/pydantic/issues/13556"""
+
+    def round_decimal(value: Any, handler: Callable[[Any], Decimal]) -> Decimal:
+        try:
+            return handler(value)
+        except ValidationError as err:
+            if err.errors()[0]['type'] == 'decimal_max_places':
+                return round(Decimal(value), 2)
+            raise
+
+    RoundedDecimal = Annotated[Decimal, WrapValidator(round_decimal)]
+    ta = TypeAdapter(Annotated[RoundedDecimal, Field(decimal_places=2, max_digits=4)])
+
+    assert ta.validate_python('1.234') == Decimal('1.23')
+
+
+def test_constraints_on_optional_type() -> None:
+    ta = TypeAdapter(Annotated[int | None, AfterValidator(lambda v: v), Field(gt=0)])
+
+    assert ta.core_schema['schema'] == {'type': 'nullable', 'schema': {'type': 'int', 'gt': 0}}
+    assert ta.validate_python(None) is None
+    with pytest.raises(ValidationError, check=lambda err: err.errors()[0]['type'] == 'greater_than'):
+        ta.validate_python(0)
+
+
+def test_partially_known_general_metadata() -> None:
+    """Constraints unknown to the type (here, `max_digits` for `str`) still go through the generic fallback."""
+    ta = TypeAdapter(Annotated[str, Field(pattern='^a', max_digits=2)])
+
+    assert ta.core_schema['type'] == 'function-after'
+    assert ta.core_schema['schema'] == {'type': 'str', 'pattern': '^a'}

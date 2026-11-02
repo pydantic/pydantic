@@ -40,6 +40,7 @@ from pydantic_core import (
 from pydantic import (
     AfterValidator,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     GetCoreSchemaHandler,
@@ -3964,23 +3965,32 @@ def test_cannot_use_leading_underscore_field_names():
 
 def test_customize_type_constraints_order() -> None:
     class Model(BaseModel):
-        # whitespace will be stripped first, then max length will be checked, should pass on ' 1 '
+        # Constraints are applied to the `str` schema, before any validator, whatever their position.
+        # In both cases, max length is checked first, then whitespace is stripped, should fail on ' 1 ':
         x: Annotated[str, AfterValidator(lambda x: x.strip()), StringConstraints(max_length=1)]
-        # max length will be checked first, then whitespace will be stripped, should fail on ' 1 '
         y: Annotated[str, StringConstraints(max_length=1), AfterValidator(lambda x: x.strip())]
+        # To validate the stripped value, the constraint must be applied by a validator:
+        z: Annotated[str, BeforeValidator(lambda x: x.strip()), StringConstraints(max_length=1)]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(x=' 1 ', y=' 1 ')
+        Model(x=' 1 ', y=' 1 ', z=' 1 ')
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'string_too_long',
+            'loc': ('x',),
+            'msg': 'String should have at most 1 character',
+            'input': ' 1 ',
+            'ctx': {'max_length': 1},
+        },
         {
             'type': 'string_too_long',
             'loc': ('y',),
             'msg': 'String should have at most 1 character',
             'input': ' 1 ',
             'ctx': {'max_length': 1},
-        }
+        },
     ]
 
 
