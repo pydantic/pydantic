@@ -174,7 +174,7 @@ def test_time_kwargs(kwargs: dict[str, Any], input_value, expected):
         errors = exc_info.value.errors(include_url=False)
         assert len(errors) == 1
         if len(kwargs) == 1:
-            key = list(kwargs.keys())[0]
+            key = next(iter(kwargs.keys()))
             assert key in errors[0]['ctx']
     else:
         output = v.validate_python(input_value)
