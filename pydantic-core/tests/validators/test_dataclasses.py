@@ -1100,13 +1100,13 @@ def test_extra_behavior_allow(
 
     m: MyModel = v.validate_python({'f': 'x', 'extra_field': '123'}, extra=validate_fn_extra_kw)
     assert m.f == 'x'
-    assert getattr(m, 'extra_field') == '123'
+    assert m.extra_field == '123'
 
     v.validate_assignment(m, 'f', 'y', extra=validate_fn_extra_kw)
     assert m.f == 'y'
 
     v.validate_assignment(m, 'not_f', '123', extra=validate_fn_extra_kw)
-    assert getattr(m, 'not_f') == '123'
+    assert m.not_f == '123'
 
 
 def test_function_validator_wrapping_args_schema_after() -> None:
