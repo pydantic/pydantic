@@ -217,7 +217,7 @@ def test_wrap_error():
         except ValidationError as e:
             assert e.title == 'ValidatorCallable'
             assert str(e).startswith('1 validation error for ValidatorCallable\n')
-            raise e
+            raise
 
     v = SchemaValidator(core_schema.with_info_wrap_validator_function(f, core_schema.int_schema()))
 
@@ -249,7 +249,7 @@ def test_function_wrap_error_hide_input(config, input_str):
         except ValidationError as e:
             assert e.title == 'ValidatorCallable'
             assert str(e).startswith('1 validation error for ValidatorCallable\n')
-            raise e
+            raise
 
     v = SchemaValidator(core_schema.with_info_wrap_validator_function(f, core_schema.int_schema()), config=config)
 
