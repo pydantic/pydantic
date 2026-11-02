@@ -1,0 +1,19 @@
+.github/workflows/ci.yml
+  s_77c63594c5c909::t_e92049d17ca265 611-615,641-642,646-647
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "424b7ff0ca03860661a3f84bfb73c816d2c4b3fd",
+  "prompts": {},
+  "sessions": {
+    "s_77c63594c5c909": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19b8d-15ac-73c0-8968-80f96e2ec7d4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
