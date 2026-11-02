@@ -2152,6 +2152,35 @@ def test_discriminated_union_model_dump_with_nested_class() -> None:
     assert str(yard_dict['pet']['type']) == 'dog'
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+def test_discriminated_union_type_alias_type_json_encoder_applied_after_discriminator() -> None:
+    """The JSON encoder must be applied after the discriminated-union transformation.
+
+    The fast path in `GenerateSchema._apply_annotations` for fields without annotations must
+    apply the JSON serializers after the inner schema transformation (e.g. when applying a
+    discriminator to a union), otherwise the transformation that replaces the union schema drops
+    the attached serializer.
+
+    See the feedback on https://github.com/pydantic/pydantic/pull/14185.
+    """
+
+    class Foo(BaseModel):
+        kind: Literal['foo']
+        secret: str
+
+    class Bar(BaseModel):
+        kind: Literal['bar']
+        secret: str
+
+    FooBar = TypeAliasType('FooBar', Foo | Bar)
+
+    class Main(BaseModel):
+        model_config = ConfigDict(json_encoders={FooBar: lambda v: 'REDACTED'})
+        item: FooBar = Field(discriminator='kind')
+
+    assert Main(item={'kind': 'foo', 'secret': 'abc'}).model_dump_json() == '{"item":"REDACTED"}'
+
+
 @pytest.mark.thread_unsafe(reason='Passes on multithreaded. This needs to be investigated further.')
 @pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
 def test_discriminated_union_serializer() -> None:

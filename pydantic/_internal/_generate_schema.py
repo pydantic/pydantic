@@ -2315,7 +2315,13 @@ class GenerateSchema:
 
         if not annotations:
             # Fast path: nothing to apply, generate the core schema for the source type directly.
-            return transform_inner_schema(self.generate_schema(source_type))
+            schema = self.generate_schema(source_type)
+            # Apply the transformation before attaching the JSON serializers, mirroring the
+            # annotated path below, so transformations that replace the schema (e.g. when applying
+            # a discriminator to a union) don't drop the attached serializers.
+            return _add_custom_serialization_from_json_encoders(
+                self._config_wrapper.json_encoders, source_type, transform_inner_schema(schema)
+            )
 
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
