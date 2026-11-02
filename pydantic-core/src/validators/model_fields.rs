@@ -12,7 +12,7 @@ use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PyList, PySet, PyString, PyType};
+use pyo3::types::{PyDict, PyList, PySet, PyString, PyTuple, PyType};
 use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
@@ -306,6 +306,14 @@ pub(crate) enum Fast {
     List(Box<ContainerPlan>),
     /// an object with string keys whose values all come off the cursor the same way
     Dict(Box<ContainerPlan>),
+    Model(Box<NestedModelPlan>),
+}
+
+/// Owned instructions for a nested model, kept behind one pointer so field plans stay small.
+#[derive(Debug)]
+pub(crate) struct NestedModelPlan {
+    validator: Arc<CombinedValidator>,
+    plan: ModelPlan,
 }
 
 /// One field's plan: how to take its value, and whether null is also an answer for it.
@@ -370,17 +378,26 @@ pub(crate) fn root_plan(validator: &CombinedValidator) -> Option<ModelPlan> {
     let CombinedValidator::Model(model) = unwrap_prebuilt(validator) else {
         return None;
     };
-    model.stream_fields()?.stream_plan()
+    model.stream_fields()?.stream_plan(0)
 }
 
 /// Class hooks can change after schema construction, so check them for each call.
 pub(crate) fn root_parts<'v>(
     py: Python<'_>,
     validator: &'v CombinedValidator,
+    plan: &ModelPlan,
 ) -> Option<(&'v Py<PyType>, &'v ModelFieldsValidator)> {
     let CombinedValidator::Model(model) = unwrap_prebuilt(validator) else {
         return None;
     };
+    for node in &plan.nodes {
+        if let Fast::Model(nested) = &node.fast {
+            let CombinedValidator::Model(nested) = unwrap_prebuilt(&nested.validator) else {
+                unreachable!("a model plan holds a model validator");
+            };
+            nested.stream_parts(py)?;
+        }
+    }
     model.stream_parts(py)
 }
 
@@ -409,11 +426,76 @@ pub(crate) fn take_root<'py>(
         return Ok(None);
     };
     jiter.finish()?;
+    for (field, &index) in std::iter::zip(&fields.fields, &plan.fields) {
+        if !contains_nested_model(plan, index) {
+            continue;
+        }
+        let value = model_dict.get_item(&field.name)?.expect("streamed field is present");
+        if let Some(value) = materialize_nested(py, value, plan, index)? {
+            model_dict.set_item(&field.name, value)?;
+        }
+    }
     let instance = create_class(class.bind(py))?;
     let none = py.None();
     let fields_set = Bound::new(py, fields_set)?;
     set_model_attrs(&instance, &model_dict, none.bind(py), &fields_set)?;
     Ok(Some(instance))
+}
+
+fn contains_nested_model(plan: &ModelPlan, mut index: usize) -> bool {
+    loop {
+        match &plan.nodes[index].fast {
+            Fast::Model(_) => return true,
+            Fast::List(container) | Fast::Dict(container) => index = container.element,
+            _ => return false,
+        }
+    }
+}
+
+/// Replace the temporary fields of a nested model with its instance after JSON parsing succeeds.
+fn materialize_nested<'py>(
+    py: Python<'py>,
+    value: Bound<'py, PyAny>,
+    model_plan: &ModelPlan,
+    index: usize,
+) -> PyResult<Option<Bound<'py, PyAny>>> {
+    let field = &model_plan.nodes[index];
+    if field.nullable && pyo3::types::PyAnyMethods::is_none(&value) {
+        return Ok(None);
+    }
+    match &field.fast {
+        Fast::Model(nested) => {
+            let CombinedValidator::Model(nested) = unwrap_prebuilt(&nested.validator) else {
+                unreachable!("a model plan holds a model validator");
+            };
+            let class = nested.stream_class();
+            let pending = value.cast::<PyTuple>()?;
+            let model_dict = pending.get_item(0)?;
+            let fields_set = pending.get_item(1)?;
+            let instance = create_class(class.bind(py))?;
+            set_model_attrs(&instance, &model_dict, py.None().bind(py), &fields_set)?;
+            Ok(Some(instance))
+        }
+        Fast::List(plan) => {
+            let list = value.cast::<PyList>().map_err(PyErr::from)?;
+            for index in 0..list.len() {
+                if let Some(item) = materialize_nested(py, list.get_item(index)?, model_plan, plan.element)? {
+                    list.set_item(index, item)?;
+                }
+            }
+            Ok(None)
+        }
+        Fast::Dict(plan) => {
+            let dict = value.cast::<PyDict>()?;
+            for (key, item) in dict.iter() {
+                if let Some(item) = materialize_nested(py, item, model_plan, plan.element)? {
+                    dict.set_item(key, item)?;
+                }
+            }
+            Ok(None)
+        }
+        _ => Ok(None),
+    }
 }
 
 /// An array, every element taken the same way. If any element is not something the cursor can
@@ -641,6 +723,20 @@ fn take_peeked<'py>(
             if !matches!(peek, Peek::Array | Peek::Object) =>
         {
             coerce_scalar(py, jiter, validator, peek, state)?
+        }
+        (Fast::Model(nested), Peek::Object) => {
+            let CombinedValidator::Model(model) = unwrap_prebuilt(&nested.validator) else {
+                unreachable!("a model plan holds a model validator");
+            };
+            let fields = model.stream_fields().expect("model schema checked when building plan");
+            state.floor_exactness(Exactness::Strict);
+            match fields.validate_json_streaming(py, jiter, &nested.plan, state, depth)? {
+                Some((dict, _, fields_set)) => {
+                    let fields_set = Bound::new(py, fields_set)?;
+                    Taken::Ready(PyTuple::new(py, [dict.into_any(), fields_set.into_any()])?.into_any())
+                }
+                None => Taken::Raw,
+            }
         }
         (Fast::List(plan), Peek::Array) => take_list(py, jiter, model_plan, plan, state, depth)?,
         (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, model_plan, plan, state, depth)?,
@@ -893,7 +989,7 @@ impl ModelFieldsValidator {
     }
 
     /// Build owned instructions without recursing through nested container schemas.
-    fn stream_plan(&self) -> Option<ModelPlan> {
+    fn stream_plan(&self, model_depth: u8) -> Option<ModelPlan> {
         if !matches!(self.extra_behavior, ExtraBehavior::Ignore) || self.extras_validator.is_some() {
             return None;
         }
@@ -939,6 +1035,16 @@ impl ModelFieldsValidator {
                             max_length,
                         };
                         (Fast::Dict(Box::new(container)), Some(values))
+                    }
+                    CombinedValidator::Model(model) if model_depth == 0 => {
+                        let plan = model.stream_fields()?.stream_plan(model_depth + 1)?;
+                        (
+                            Fast::Model(Box::new(NestedModelPlan {
+                                validator: Arc::clone(validator),
+                                plan,
+                            })),
+                            None,
+                        )
                     }
                     _ => return None,
                 };

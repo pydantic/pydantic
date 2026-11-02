@@ -146,7 +146,9 @@ impl SchemaValidator {
     /// differential test tell "both paths agree" apart from "only one path ran".
     #[getter]
     fn _stream_plan_accepted(&self, py: Python<'_>) -> bool {
-        self.stream_plan.is_some() && model_fields::root_parts(py, &self.validator).is_some()
+        self.stream_plan
+            .as_deref()
+            .is_some_and(|plan| model_fields::root_parts(py, &self.validator, plan).is_some())
     }
 
     #[new]
@@ -585,7 +587,7 @@ impl SchemaValidator {
         }
 
         let plan = self.stream_plan.as_deref()?;
-        let (class, fields) = model_fields::root_parts(py, &self.validator)?;
+        let (class, fields) = model_fields::root_parts(py, &self.validator, plan)?;
 
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(

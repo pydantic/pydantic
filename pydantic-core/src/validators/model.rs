@@ -66,6 +66,11 @@ pub struct ModelValidator {
 }
 
 impl ModelValidator {
+    /// Class already checked before parsing a streamed document.
+    pub(crate) fn stream_class(&self) -> &Py<PyType> {
+        &self.class
+    }
+
     /// The fixed schema requirements for streaming, independent of mutable class hooks.
     pub(crate) fn stream_fields(&self) -> Option<&super::model_fields::ModelFieldsValidator> {
         if self.custom_init || self.root_model || self.post_init.is_some() || self.frozen {
