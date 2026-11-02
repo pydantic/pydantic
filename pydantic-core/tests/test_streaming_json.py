@@ -528,6 +528,7 @@ def test_streamed_model_uses_model_fields_set(width: int) -> None:
 @pytest.mark.parametrize(
     'value',
     ['3', '1.0', 'true', 'off', 'invalid', 0, 1, 1.0, 1.5, True, False, None, 2**100, float('inf'), float('nan')],
+    ids=lambda value: f'{type(value).__name__}-{value!r}',
 )
 def test_streamed_scalar_validation_matches_ordinary(
     kind: str, schema_strict: bool, strict: bool | None, coerce_numbers: bool, allow_inf_nan: bool, value: object
