@@ -1,0 +1,341 @@
+pydantic/_internal/_generate_schema.py
+  s_97b29c5285402e::t_b87f989aa625bd 84,153,155,934,1001,1322,1464,1473,2133,2823-2824
+.github/actions/core-build-pgo-wheel/action.yml
+  s_97b29c5285402e::t_0938d380219d06 40
+.github/workflows/ci.yml
+  s_97b29c5285402e::t_a7065ee74c2ca4 68,76,122,126,151,154,220,237,303,366,380,565-611,810,915,969,1034,1041,1066,1071,1109,1263
+.github/workflows/coverage.yml
+  s_97b29c5285402e::t_3fdb5cf1133417 22
+.github/workflows/third-party.yml
+  s_97b29c5285402e::t_0621c9c1c398cd 376
+.github/workflows/upload-previews.yml
+  s_97b29c5285402e::t_816bd21026bf6e 25
+docs/concepts/fields.md
+  s_97b29c5285402e::t_54bf5ecab4cf42 126,656-658
+docs/concepts/json_schema.md
+  s_97b29c5285402e::t_17d53376bcd699 162
+docs/concepts/models.md
+  s_97b29c5285402e::t_fc68bf9f2f8f72 465,1486-1490
+docs/concepts/serialization.md
+  s_97b29c5285402e::t_7a1ca1bd5563b9 604-608,787-788
+docs/concepts/type_adapter.md
+  s_97b29c5285402e::t_ba627893bc070b 49
+docs/errors/usage_errors.md
+  s_97b29c5285402e::t_f1520590dc724e 667-688
+docs/errors/validation_errors.md
+  s_97b29c5285402e::t_1ee65577a6be7a 1787-1811
+docs/integrations/visual_studio_code.md
+  s_97b29c5285402e::t_ffae053aa3f39c 224
+docs/internals/architecture.md
+  s_97b29c5285402e::t_d18671d34d3e8a 198-199
+docs/migration.md
+  s_97b29c5285402e::t_e3e3d1dce397ba 2,5-8,55-57
+docs/plugins/griffe_model_metaclass.py
+  s_97b29c5285402e::t_2fca9ae3e27fa0 1,3-6,8,10-28,30-31
+docs/plugins/main.py
+  s_97b29c5285402e::t_be00ade981010a 22,45-57
+docs/plugins/people.yml
+  s_97b29c5285402e::t_4d5f457875d975 12-16,19,27-41,48,87-90,110,122,142,157-160,207,211,213-216,229-232,298-301,303,315,323,342-345,350-353,358-361,372,374-377,386-389,426-433
+mkdocs.yml
+  s_97b29c5285402e::t_ea7ad90db473f3 97
+pydantic-core/pyproject.toml
+  s_97b29c5285402e::t_f878d360d09183 2,50
+pydantic-core/python/pydantic_core/__init__.py
+  s_97b29c5285402e::t_aa7ed2f6f23751 47,53-54,60-66,68-70,72
+pydantic-core/python/pydantic_core/_pydantic_core/__init__.pyi
+  s_97b29c5285402e::t_edf5a50c953081 24-27,30-33,35-40,47,49,52,63,786
+pydantic-core/python/pydantic_core/core_schema.py
+  s_97b29c5285402e::t_04e3591a7664d3 14,16,132,461,2425,2520,2654,2744,3493,4128,4241,4619
+pydantic-core/src/errors/types.rs
+  s_97b29c5285402e::t_fba850b5455de9 176,508
+pydantic-core/src/errors/validation_exception.rs
+  s_97b29c5285402e::t_c8884e6d3d750b 8,209-211
+pydantic-core/src/input/shared.rs
+  s_97b29c5285402e::t_6d17b0fd7071c2 173-174,182-183
+pydantic-core/src/recursion_guard.rs
+  s_97b29c5285402e::t_3e76647fea4c34 134-138
+pydantic-core/src/serializers/extra.rs
+  s_97b29c5285402e::t_8db7534a3231f6 33,86-89,97,102-111
+pydantic-core/src/serializers/fields.rs
+  s_97b29c5285402e::t_9bc4cdf6f0d963 108-136,140,157,162,228-230,233-246,248,260,264
+pydantic-core/src/serializers/filter.rs
+  s_97b29c5285402e::t_ad417623169a40 3,65-122,155-156,160-161,196-199,205,333-336,341-342,346-347
+pydantic-core/src/serializers/infer.rs
+  s_97b29c5285402e::t_249961636d3ab9 47-52,65-73,107-108,112,137-138,228-229,233,364-378,381,383-384,386-391,423-424,428,537-538,541
+pydantic-core/src/serializers/shared.rs
+  s_97b29c5285402e::t_ed388681deac2b 431-435
+pydantic-core/src/serializers/type_serializers/dataclass.rs
+  s_97b29c5285402e::t_172c0809391d49 19,35
+pydantic-core/src/serializers/type_serializers/deque.rs
+  s_97b29c5285402e::t_c6a5398ea2f7d5 73,76,114,117
+pydantic-core/src/serializers/type_serializers/function.rs
+  s_97b29c5285402e::t_5b446c06f958d9 478
+pydantic-core/src/serializers/type_serializers/generator.rs
+  s_97b29c5285402e::t_3a0daacbecf32c 16-17,68,71,112,115,144-147,153-158,173-175,190-191,201-211,215-221,223
+pydantic-core/src/serializers/type_serializers/list.rs
+  s_97b29c5285402e::t_6c1019b6df65e4 63,65,99,101
+pydantic-core/src/serializers/type_serializers/mod.rs
+  s_97b29c5285402e::t_5229aed73dcac9 44
+pydantic-core/src/serializers/type_serializers/model.rs
+  s_97b29c5285402e::t_b5f27681c9e46a 4,14,49,173-185,187,189,230-235,237
+pydantic-core/src/serializers/type_serializers/named_tuple.rs
+  s_97b29c5285402e::t_dc75037ba7500e 203,214
+pydantic-core/src/serializers/type_serializers/nullable.rs
+  s_97b29c5285402e::t_51527d205e1bba 12,39-42,51-54,64-67
+pydantic-core/src/serializers/type_serializers/simple.rs
+  s_97b29c5285402e::t_3d7be5544f75d9 45-49,58-62,72-76
+pydantic-core/src/serializers/type_serializers/string.rs
+  s_97b29c5285402e::t_ba5861493447b9 64
+pydantic-core/src/serializers/type_serializers/tuple.rs
+  s_97b29c5285402e::t_21c674936d161d 176,184,233
+pydantic-core/src/serializers/type_serializers/typed_dict.rs
+  s_97b29c5285402e::t_40a0e2f9220961 16-18,48
+pydantic-core/src/validators/arguments.rs
+  s_97b29c5285402e::t_c29fa3ab9d5a00 263
+pydantic-core/src/validators/arguments_v3.rs
+  s_97b29c5285402e::t_c182ffd88d8cc7 398,593
+pydantic-core/src/validators/dataclass.rs
+  s_97b29c5285402e::t_58902603b563da 185,261
+pydantic-core/src/validators/definitions.rs
+  s_97b29c5285402e::t_9f984c2410cb3f 10,13,74-80,95-96,126-127
+pydantic-core/src/validators/function.rs
+  s_97b29c5285402e::t_61edb1b3f6b1f9 38,97,166,254,317
+pydantic-core/src/validators/model_fields.rs
+  s_97b29c5285402e::t_bd5ba6b9ea8bc1 667
+pydantic-core/src/validators/named_tuple.rs
+  s_97b29c5285402e::t_82f3762052b1c5 218
+pydantic-core/src/validators/typed_dict.rs
+  s_97b29c5285402e::t_4ce58573453187 250
+pydantic-core/tests/benchmarks/complete_schema.py
+  s_97b29c5285402e::t_ec238d04c40657 13,255,258,337,354
+pydantic-core/tests/benchmarks/nested_schema.py
+  s_97b29c5285402e::t_7110bb34f24b8e 13
+pydantic-core/tests/benchmarks/test_complete_benchmark.py
+  s_97b29c5285402e::t_944ad288d71ea4 46,49
+pydantic-core/tests/benchmarks/test_micro_benchmarks.py
+  s_97b29c5285402e::t_f2f9a865a8bfaf 45,67,88,100,156,295,533,575,726,1136,1173,1262
+pydantic-core/tests/benchmarks/test_serialization_micro.py
+  s_97b29c5285402e::t_3986132c320815 10-11,18,49-50,55,64-65,275
+pydantic-core/tests/conftest.py
+  s_97b29c5285402e::t_5728551ee11131 22,301
+pydantic-core/tests/ruff.toml
+  s_97b29c5285402e::t_3a4b9c8f0b3146 1,3-4,6-7
+pydantic-core/tests/serializers/test_any.py
+  s_97b29c5285402e::t_72ca7c51cb28ff 279,379,388,434,436,448,450,674-675,681
+pydantic-core/tests/serializers/test_definitions.py
+  s_97b29c5285402e::t_216c854ae1ecae 29,46,87
+pydantic-core/tests/serializers/test_dict.py
+  s_97b29c5285402e::t_d4ec01074a8030 71-82,99-114
+pydantic-core/tests/serializers/test_infer.py
+  s_97b29c5285402e::t_7ad6352b063c0d 25
+pydantic-core/tests/serializers/test_list_tuple.py
+  s_97b29c5285402e::t_020ad7102d0c72 32-36,70,75,79,87-90,99,122,133,145,210,230,264-280,296-300,395,407-408
+pydantic-core/tests/serializers/test_model.py
+  s_97b29c5285402e::t_8d4d5e324193b8 132,135,139,150,159,165-176,320,443-446,457-460,469,474,1054,1111,1161,1244-1245
+pydantic-core/tests/serializers/test_model_root.py
+  s_97b29c5285402e::t_ad7def03d268dc 22,30
+pydantic-core/tests/serializers/test_serialize_as_any.py
+  s_97b29c5285402e::t_333e1f73ef75de 397
+pydantic-core/tests/serializers/test_simple.py
+  s_97b29c5285402e::t_ff71871e135e5b 99
+pydantic-core/tests/serializers/test_typed_dict.py
+  s_97b29c5285402e::t_63f7d585d7a54a 56-66
+pydantic-core/tests/serializers/test_union.py
+  s_97b29c5285402e::t_7a0bc1bee4e05f 166-168,171,174-176,179,185-186,193,195-196,201-202,208-210,212-214,225-228,231-232,235,241-246,248-249,251-252,263-266,269-271,274,280-285,408,461,534-535,547-548,593,606
+pydantic-core/tests/test_config.py
+  s_97b29c5285402e::t_b67643a20b2cb5 38
+pydantic-core/tests/test_docstrings.py
+  s_97b29c5285402e::t_6fae4fd93ab346 25-27
+pydantic-core/tests/test_errors.py
+  s_97b29c5285402e::t_93907571824d94 266,916-918,928,1093,1191
+pydantic-core/tests/test_fields_set.py
+  s_97b29c5285402e::t_8f742f6da4663f 7-8,17,107,132-133,148,170,172
+pydantic-core/tests/test_garbage_collection.py
+  s_97b29c5285402e::t_02bfb7b13bae61 203-205,210,240-242
+pydantic-core/tests/test_json.py
+  s_97b29c5285402e::t_72342a255d4e58 129,132
+pydantic-core/tests/test_misc.py
+  s_97b29c5285402e::t_69b461aaba98fc 120
+pydantic-core/tests/test_schema_functions.py
+  s_97b29c5285402e::t_99dba2635ae3a8 23
+pydantic-core/tests/test_tzinfo.py
+  s_97b29c5285402e::t_4a15f08cfb08ce 15,155,179,181,243
+pydantic-core/tests/validators/test_allow_partial.py
+  s_97b29c5285402e::t_2c78aba95eb68e 13,46,264
+pydantic-core/tests/validators/test_dataclasses.py
+  s_97b29c5285402e::t_4db4c036006d86 355,1103,1109
+pydantic-core/tests/validators/test_date.py
+  s_97b29c5285402e::t_acf91cff2e67f8 42
+pydantic-core/tests/validators/test_datetime.py
+  s_97b29c5285402e::t_aef8f44f0c8273 44,100
+pydantic-core/tests/validators/test_decimal.py
+  s_97b29c5285402e::t_e7f782e7738eec 102-103,106-107,109,113,125-127,139-140,185,373,395
+pydantic-core/tests/validators/test_definitions.py
+  s_97b29c5285402e::t_60db925e28dc76 65,82,119
+pydantic-core/tests/validators/test_definitions_recursive.py
+  s_97b29c5285402e::t_5ac02b50247ef7 201,392,715,717
+pydantic-core/tests/validators/test_dict.py
+  s_97b29c5285402e::t_8172766950d1d2 146,258
+pydantic-core/tests/validators/test_enums.py
+  s_97b29c5285402e::t_a1d9fe9f74f0ed 257-258,445
+pydantic-core/tests/validators/test_float.py
+  s_97b29c5285402e::t_33f50143453c9a 222
+pydantic-core/tests/validators/test_function.py
+  s_97b29c5285402e::t_5ca260cb0a420d 220,252,427,658,778,842,870,908
+pydantic-core/tests/validators/test_int.py
+  s_97b29c5285402e::t_dc83fb016bd630 126,184
+pydantic-core/tests/validators/test_json.py
+  s_97b29c5285402e::t_6717b7a6716693 136
+pydantic-core/tests/validators/test_json_or_python.py
+  s_97b29c5285402e::t_749729b5e363e2 10
+pydantic-core/tests/validators/test_list.py
+  s_97b29c5285402e::t_e6d9c593078022 456,473,540
+pydantic-core/tests/validators/test_model.py
+  s_97b29c5285402e::t_3315263aa1d005 19,62,100,149,329,350,365,453,491,520,565,576,661,704,758,805,845,880,924,959,980,1011,1056,1135,1191,1239,1325
+pydantic-core/tests/validators/test_model_fields.py
+  s_97b29c5285402e::t_0dfc02f8506da0 714,724,733,736-738,741,956,958-961,1753
+pydantic-core/tests/validators/test_model_init.py
+  s_97b29c5285402e::t_806ad4cb36c530 14,48,255,311,336,381,394
+pydantic-core/tests/validators/test_model_root.py
+  s_97b29c5285402e::t_0f63c1e9b2a401 8,36,59,85,100,131,161,169,176,197,201
+pydantic-core/tests/validators/test_string.py
+  s_97b29c5285402e::t_c7a6e147b46d68 54
+pydantic-core/tests/validators/test_time.py
+  s_97b29c5285402e::t_0f0ee55c6d388f 38,177
+pydantic-core/tests/validators/test_typed_dict.py
+  s_97b29c5285402e::t_8d7d4e9fd9cae3 586,596,605,608-612,615
+pydantic-core/tests/validators/test_union.py
+  s_97b29c5285402e::t_82ab76a57e43b9 411
+pydantic-core/tests/validators/test_url.py
+  s_97b29c5285402e::t_6c26adfe3780b0 366,370,388,397,740-741,1147-1149,1151-1153,1162-1165,1169,1179-1186,1202-1205,1207-1208,1212-1215,1217,1219-1220,1225-1228,1230-1233,1243,1483-1489
+pydantic-core/tests/validators/test_with_default.py
+  s_97b29c5285402e::t_7b634e856b6bbe 308,383,386,394
+pydantic-core/wasm-preview/run_tests.py
+  s_97b29c5285402e::t_a72ef1b675303b 52
+pydantic/__init__.py
+  s_97b29c5285402e::t_90adee39deb2aa 385,398
+pydantic/_internal/_config.py
+  s_97b29c5285402e::t_a3489f5b500df6 134,169,320-321,332-334,336
+pydantic/_internal/_decorators.py
+  s_97b29c5285402e::t_317cae6b1dbfa2 109,193,489,491,495,499,503,510
+pydantic/_internal/_model_construction.py
+  s_97b29c5285402e::t_be8bffac6c7557 24,44,323-324,327-331,417
+pydantic/_internal/_typing_extra.py
+  s_97b29c5285402e::t_f9e87dbf1f3ce2 16
+pydantic/_internal/_utils.py
+  s_97b29c5285402e::t_e6c3bd31d440a3 17-18,22
+pydantic/config.py
+  s_97b29c5285402e::t_75d27f4a97c516 9,449-450,1242
+pydantic/dataclasses.py
+  s_97b29c5285402e::t_f4c4e52d7caede 40,58,72,109
+pydantic/errors.py
+  s_97b29c5285402e::t_9e19033a122be0 50
+pydantic/fields.py
+  s_97b29c5285402e::t_8055082bb0ee99 19-26,28-35,608-614,993-1014
+pydantic/functional_validators.py
+  s_97b29c5285402e::t_9cf538e590472f 18,732-742
+pydantic/json_schema.py
+  s_97b29c5285402e::t_4a456b11c7d372 40,3063,3077-3078
+pydantic/main.py
+  s_97b29c5285402e::t_15188b038414de 10,19,27,29,169,186,196,211-212,214,217,226,232,278,453,579,1019,1177,1188,1406-1407,1410-1413,1435-1441
+pydantic/mypy.py
+  s_97b29c5285402e::t_fc4fed70c73ab2 536,540,580,583-585,587-589,591-594,596,1023
+pydantic/types.py
+  s_97b29c5285402e::t_6168d6181bdf97 2065-2066
+pyproject.toml
+  s_97b29c5285402e::t_0be94645e1a280 226,298,305
+tests/benchmarks/test_json_nested_models.py
+  s_97b29c5285402e::t_79de100499b3fd 8,20-29,32,41-43,46,60,69-71
+tests/benchmarks/test_model_json_streaming.py
+  s_97b29c5285402e::t_a1ab318be02638 27,36,38,40,44,64
+tests/benchmarks/test_model_serialization.py
+  s_97b29c5285402e::t_2e6ef3d6401599 41-50
+tests/mypy/modules/final_with_default.py
+  s_97b29c5285402e::t_dd00a506ca177b 11-12
+tests/mypy/modules/metaclass_args.py
+  s_97b29c5285402e::t_e34e87eb6294e5 1,4,7,10
+tests/mypy/modules/plugin_fail.py
+  s_97b29c5285402e::t_86289cd56dd765 3,8,21,35,57,60,65,68,229
+tests/mypy/modules/plugin_success.py
+  s_97b29c5285402e::t_43a4b80bbb5b9d 6,259
+tests/mypy/outputs/mypy-default_ini/metaclass_args.py
+  s_97b29c5285402e::t_f917f1e588beba 1,4,7,10-11
+tests/mypy/outputs/mypy-default_ini/plugin_success.py
+  s_97b29c5285402e::t_9d2fdf09919090 6,265
+tests/mypy/outputs/mypy-plugin-strict_ini/final_with_default.py
+  s_97b29c5285402e::t_0b228b4b08d1a3 1-13
+tests/mypy/outputs/mypy-plugin-strict_ini/plugin_fail.py
+  s_97b29c5285402e::t_3f9301af543f41 3,8,24,41,66-67,71-72,77-78,82-83,277
+tests/mypy/outputs/mypy-plugin-strict_ini/plugin_success.py
+  s_97b29c5285402e::t_ededc2ea2afa84 6,261
+tests/mypy/outputs/mypy-plugin-very-strict_ini/metaclass_args.py
+  s_97b29c5285402e::t_e4cdbe2bdd658b 1,4,7,10-11
+tests/mypy/outputs/mypy-plugin_ini/plugin_fail.py
+  s_97b29c5285402e::t_1a4e7427be57fe 3,8,24,41,66-67,71-72,77-78,82-83,261
+tests/mypy/outputs/pyproject-plugin-strict_toml/plugin_fail.py
+  s_97b29c5285402e::t_3a5a3188e32120 3,8,24,41,66-67,71-72,77-78,82-83,277
+tests/mypy/outputs/pyproject-plugin-strict_toml/plugin_success.py
+  s_97b29c5285402e::t_e5e38ae5b3b106 6,261
+tests/mypy/outputs/pyproject-plugin_toml/plugin_fail.py
+  s_97b29c5285402e::t_ae10a785dfa33c 3,8,24,41,66-67,71-72,77-78,82-83,261
+tests/mypy/test_mypy.py
+  s_97b29c5285402e::t_5afa7d7487043b 109
+tests/test_config.py
+  s_97b29c5285402e::t_994e274bd8fecc 36,764
+tests/test_construction.py
+  s_97b29c5285402e::t_4c5bf51d45cbc6 8,113,115,135,138,149,151,165,171,180,185-187,295,297,367,369,373,377,384,387,407,414
+tests/test_create_model.py
+  s_97b29c5285402e::t_a6821fe8016cbc 238-242,444-446
+tests/test_dataclasses.py
+  s_97b29c5285402e::t_4670eb1776d144 16,3407-3427
+tests/test_dunder_all.py
+  s_97b29c5285402e::t_389c01ad535ae5 7
+tests/test_edge_cases.py
+  s_97b29c5285402e::t_16dd073ee89f20 2265,2516
+tests/test_json.py
+  s_97b29c5285402e::t_730184feb29ede 33
+tests/test_main.py
+  s_97b29c5285402e::t_6c8b31a6eb851b 31-38,1125-1144,2233-2234,2236-2237,2239-2246,2248-2257,2261-2272,2274-2281,2284-2291,2294,2302-2304,3200-3203,3205,3213-3292
+tests/test_missing_sentinel.py
+  s_97b29c5285402e::t_c6bffec2e522a9 9
+tests/test_model_validator.py
+  s_97b29c5285402e::t_ace1aa2de7c0b2 9,147-161
+tests/test_parse.py
+  s_97b29c5285402e::t_3f6a5857b2dbe8 4,65,192
+tests/test_schema_cache_edges.py
+  s_97b29c5285402e::t_2942600f87e5e9 277,294-295,297
+tests/test_type_hints.py
+  s_97b29c5285402e::t_94399ad0dc05f2 62,85,94,96-97,100,106,110,120-121,130-131
+tests/test_validators.py
+  s_97b29c5285402e::t_94a74e73d788ea 630,633-635,637-640,642-645,647-650,662-665,667-671,1025,1029-1031,1033-1035,1038-1039,1042-1045,1047-1048
+tests/typechecking/base_model.py
+  s_97b29c5285402e::t_d4284bcf2814bc 37-38
+tests/types/test_bytesize.py
+  s_97b29c5285402e::t_5f6f5549309839 2-44,46,48,50-52,55,57,59,61-65,68-70,72-81,83-84,86-87,90-94,98-104,106-107
+tests/types/test_int.py
+  s_97b29c5285402e::t_6bc173fe6b6fa7 320-335
+tests/types/test_iterable.py
+  s_97b29c5285402e::t_c9dd3ec34ec13d 192-212
+tests/types/test_list.py
+  s_97b29c5285402e::t_52fbee24f79e41 306-324
+tests/types/unions/test_direct_schema.py
+  s_97b29c5285402e::t_9f30d48bf39a08 3-5,7,9,12,16-17,19-42,45-46,51-56,58-70
+uv.lock
+  s_97b29c5285402e::t_a22b43a3b1aca3 1057-1122,1293,1567,1572,1574-1586,2657,2660,2672,2687,2694,3223,3420,3428-3556,3631-3651
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a5b8de057e0ed6e0a5809cbd1e7fd2e1a170832c",
+  "prompts": {},
+  "sessions": {
+    "s_97b29c5285402e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bbe-c7cd-7ec2-bb8d-0357303cb98b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
