@@ -36,7 +36,6 @@ from pydantic import (
     ConfigDict,
     GetCoreSchemaHandler,
     PrivateAttr,
-    PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
     PydanticUndefinedAnnotation,
     PydanticUserError,
@@ -48,8 +47,6 @@ from pydantic import (
     errors,
     field_validator,
     model_validator,
-    root_validator,
-    validator,
 )
 from pydantic._internal._model_construction import ModelMetaclass
 from pydantic._internal._typing_extra import safe_get_annotations
@@ -2265,7 +2262,7 @@ def test_hashable_json_schema():
 
 
 def test_default_factory_called_once():
-    """It should never call `default_factory` more than once even when `validate_all` is set"""
+    """It should never call `default_factory` more than once even when `validate_default` is set"""
 
     v = 0
 
@@ -2327,17 +2324,6 @@ class User(BaseModel):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     assert module.User(id=12).model_dump() == {'id': 12, 'name': 'Jane Doe'}
-
-
-def test_iter_coverage():
-    class MyModel(BaseModel):
-        x: int = 1
-        y: str = 'a'
-
-    with pytest.warns(
-        PydanticDeprecatedSince20, match='The private method `_iter` will be removed and should no longer be used.'
-    ):
-        assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
 
 def test_frozen_config_and_field():
@@ -2500,22 +2486,6 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         def my_model_validator(cls, values, handler, info):
             raise NotImplementedError
 
-        with pytest.warns(PydanticDeprecatedSince20):
-
-            @root_validator(skip_on_failure=True)
-            @classmethod
-            @abstractmethod
-            def my_root_validator(cls, values):
-                raise NotImplementedError
-
-        with pytest.warns(PydanticDeprecatedSince20):
-
-            @validator('side')
-            @classmethod
-            @abstractmethod
-            def my_validator(cls, value, **kwargs):
-                raise NotImplementedError
-
         @model_serializer(mode='wrap')
         @abstractmethod
         def my_model_serializer(self, handler, info):
@@ -2543,9 +2513,7 @@ def test_abstractmethod_missing_for_all_decorators(bases):
             " 'my_field_validator',"
             " 'my_model_serializer',"
             " 'my_model_validator',"
-            " 'my_root_validator',"
-            " 'my_serializer',"
-            " 'my_validator'"
+            " 'my_serializer'"
         ),
     ):
         Square(side=1.0)
@@ -3130,20 +3098,6 @@ def test_validator_and_serializer_not_reused_during_rebuild() -> None:
 
     m = Model(a=1)
     assert m.model_dump() == {}
-
-
-@pytest.mark.filterwarnings('ignore:.*`__get_validators__`.*:DeprecationWarning')
-def test_get_schema_on_classes_with_both_v1_and_v2_apis() -> None:
-    class Model(BaseModel):
-        a: int
-
-        @model_validator(mode='after')
-        def my_model_validator(self):
-            return self
-
-        @classmethod
-        def __get_validators__(cls):
-            raise AssertionError('This should not be called')
 
 
 def test_model_fields_set_includes_extra_after_assignment():

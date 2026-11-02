@@ -72,5 +72,4 @@ Anyone can report a suspected vulnerability privately through Pydantic's [securi
 ## Continue reading
 
 * Review the [Pydantic version policy](version-policy.md).
-* Plan an upgrade with the [migration guide](migration.md).
 * Use the [community help channels](help_with_pydantic.md) for questions that do not require a commercial support relationship.
