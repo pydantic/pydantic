@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use ahash::AHashSet;
@@ -299,7 +300,7 @@ impl From<std::convert::Infallible> for StreamStop {
 pub(crate) enum Fast<'v> {
     Str,
     Bool,
-    Int,
+    Int(&'v CombinedValidator),
     Float,
     /// a nested model, whose own fields come off the same cursor
     Model(Box<NestedModel<'v>>),
@@ -394,7 +395,7 @@ fn classify_fast<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8
     match unwrap_prebuilt(validator) {
         CombinedValidator::Str(_) => Fast::Str,
         CombinedValidator::Bool(_) => Fast::Bool,
-        CombinedValidator::Int(_) => Fast::Int,
+        CombinedValidator::Int(_) => Fast::Int(unwrap_prebuilt(validator)),
         CombinedValidator::Float(_) => Fast::Float,
         // a container's element plan does not raise the depth: only a model can recurse, and
         // `list[list[list[float]]]` is a real shape that a depth cap would refuse for no reason
@@ -424,7 +425,7 @@ fn classify_fast<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8
 
 fn simple_fast(fast: &Fast<'_>) -> bool {
     match fast {
-        Fast::Str | Fast::Bool | Fast::Int | Fast::Float => true,
+        Fast::Str | Fast::Bool | Fast::Int(_) | Fast::Float => true,
         Fast::List(plan) | Fast::Dict(plan) => simple_fast(&plan.element.fast),
         Fast::Model(_) | Fast::No => false,
     }
@@ -712,6 +713,15 @@ fn take_peeked<'py>(
             let b = jiter.known_bool(peek)?;
             Taken::Ready(pyo3::types::PyBool::new(py, b).to_owned().into_any())
         }
+        (Fast::Int(validator), Peek::String) => {
+            let s = jiter.known_str()?;
+            let input = JsonValue::Str(Cow::Borrowed(s));
+            match validator.validate(py, &input, state) {
+                Ok(value) => Taken::Ready(value.into_bound(py)),
+                Err(ValError::InternalErr(err)) => return Err(StreamStop::Py(err)),
+                Err(_) => Taken::Raw,
+            }
+        }
         (Fast::Float, _) if scalar => {
             // Preserve the ordinary parser's integer conversion, including -0 becoming +0.
             let f = match jiter.known_number(peek)? {
@@ -726,10 +736,10 @@ fn take_peeked<'py>(
                 Taken::Raw
             }
         }
-        (Fast::Int, _) if scalar => {
+        (Fast::Int(_), _) if scalar => {
             let number = jiter.known_number(peek)?;
             match (fast, number) {
-                (Fast::Int, jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
+                (Fast::Int(_), jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
                     Taken::Ready(i.into_pyobject(py)?.into_any())
                 }
                 (Fast::Float, jiter::NumberAny::Float(f)) if f.is_finite() => {
