@@ -27,6 +27,7 @@ use crate::lookup_key::LookupType;
 use crate::lookup_key::{LookupPathCollection, ValidationAlias};
 use crate::tools::{SchemaDict, new_py_string};
 use crate::validators::shared::lookup_tree::LookupFieldInfo;
+use crate::validators::shared::lookup_tree::LookupFieldPriority;
 use crate::validators::shared::lookup_tree::LookupTree;
 use crate::validators::shared::lookup_tree::offer_field_input;
 
@@ -338,6 +339,8 @@ const SLOTS_ON_STACK: usize = 16;
 /// One model's plan.
 pub(crate) struct ModelPlan<'v> {
     fields: Vec<FieldPlan<'v>>,
+    names_only: bool,
+    forbid_extra: bool,
 }
 
 /// What it takes to build one nested model without leaving the cursor.
@@ -379,10 +382,7 @@ fn classify<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8) -> 
             ..classify(py, nullable.stream_inner(), depth)
         },
         // a field that is present is validated by the inner validator alone
-        CombinedValidator::WithDefault(_) => FieldPlan {
-            fast: Fast::No,
-            nullable: false,
-        },
+        CombinedValidator::WithDefault(with_default) => classify(py, with_default.stream_inner(), depth),
         _ => FieldPlan {
             fast: classify_fast(py, validator, depth),
             nullable: false,
@@ -419,14 +419,6 @@ fn classify_fast<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8
             None => Fast::No,
         },
         _ => Fast::No,
-    }
-}
-
-fn simple_fast(fast: &Fast<'_>) -> bool {
-    match fast {
-        Fast::Str(_) | Fast::Bool(_) | Fast::Int(_) | Fast::Float(_) => true,
-        Fast::List(plan) | Fast::Dict(plan) => simple_fast(&plan.element.fast),
-        Fast::Model(_) | Fast::No => false,
     }
 }
 
@@ -486,8 +478,11 @@ fn build_model<'py>(
     else {
         return Ok(None);
     };
-    // Only the root model is eligible: finish parsing before storage descriptors can run.
-    jiter.finish()?;
+    // Root construction waits for the complete document. Nested construction needs a
+    // separate deferred representation to provide the same guarantee.
+    if depth == 0 {
+        jiter.finish()?;
+    }
     let instance = create_class(nested.class.bind(py))?;
     let none = py.None();
     let fields_set = Bound::new(py, fields_set)?;
@@ -497,9 +492,6 @@ fn build_model<'py>(
 
 /// A plan for a whole document, for a root the model shapes do not cover.
 pub(crate) fn root_plan<'v>(py: Python<'_>, validator: &'v CombinedValidator) -> Option<FieldPlan<'v>> {
-    if !matches!(unwrap_prebuilt(validator), CombinedValidator::Model(_)) {
-        return None;
-    }
     let plan = classify(py, validator, 0);
     (!matches!(plan.fast, Fast::No)).then_some(plan)
 }
@@ -996,26 +988,32 @@ impl ModelFieldsValidator {
     /// Build one model's fields straight off a json cursor, with no `JsonValue` tree.
     ///
     /// `None` means this object is not one the fast path can finish: a value was not the exact type
+    pub(crate) fn stream_plan(&self, py: Python<'_>) -> Option<ModelPlan<'_>> {
+        self.stream_plan_at(py, 0)
+    }
+
     fn stream_plan_at(&self, py: Python<'_>, depth: u8) -> Option<ModelPlan<'_>> {
-        if !matches!(self.extra_behavior, ExtraBehavior::Ignore) || self.extras_validator.is_some() {
-            return None;
-        }
-        let mut fields = Vec::new();
-        for field in &self.fields {
-            if !field.lookup_path_collection.by_alias.is_empty() {
-                return None;
-            }
-            let plan = classify(py, &field.validator, depth);
-            if !simple_fast(&plan.fast) {
-                return None;
-            }
-            if fields.is_empty() {
-                // Allocate once, only after the first field qualifies for streaming.
-                fields.reserve_exact(self.fields.len());
-            }
-            fields.push(plan);
-        }
-        Some(ModelPlan { fields })
+        let streamable = matches!(self.extra_behavior, ExtraBehavior::Ignore | ExtraBehavior::Forbid)
+            && self.extras_validator.is_none()
+            && self.fields.iter().all(|field| {
+                field
+                    .lookup_path_collection
+                    .by_alias
+                    .iter()
+                    .all(LookupPath::is_single_key)
+            });
+        streamable.then(|| ModelPlan {
+            fields: self
+                .fields
+                .iter()
+                .map(|field| classify(py, &field.validator, depth))
+                .collect(),
+            names_only: self
+                .fields
+                .iter()
+                .all(|field| field.lookup_path_collection.by_alias.is_empty()),
+            forbid_extra: matches!(self.extra_behavior, ExtraBehavior::Forbid),
+        })
     }
 
     pub(crate) fn validate_json_streaming<'j, 'py>(
@@ -1036,20 +1034,26 @@ impl ModelFieldsValidator {
         // and it was half of everything the streaming path allocated
         let mut slots: SmallVec<[Option<Taken<'py>>; SLOTS_ON_STACK]> = (0..self.fields.len()).map(|_| None).collect();
 
-        let LookupTree::NoAliases(lookup) = &self.lookup else {
-            unreachable!("a streamable plan has no aliases");
-        };
-        let mut key = jiter.known_object()?;
-        if key.is_some() {
-            check_stream_depth(depth)?;
-        }
-        while let Some(k) = key {
-            let found = lookup.get(k).copied();
-            match found {
-                Some(index) => slots[index] = Some(take_fast(py, jiter, &plan.fields[index], state, depth + 1)?),
-                None => skip_unused(jiter, depth + 1)?,
+        if plan.names_only {
+            let LookupTree::NoAliases(lookup) = &self.lookup else {
+                unreachable!("a names-only plan has no aliases");
+            };
+            let mut key = jiter.known_object()?;
+            if key.is_some() {
+                check_stream_depth(depth)?;
             }
-            key = jiter.next_key()?;
+            while let Some(k) = key {
+                // the key borrows the cursor, so resolve the field before taking the value
+                let found = lookup.get(k).copied();
+                match found {
+                    Some(index) => slots[index] = Some(take_fast(py, jiter, &plan.fields[index], state, depth + 1)?),
+                    None if plan.forbid_extra => return Ok(None),
+                    None => skip_unused(jiter, depth + 1)?,
+                }
+                key = jiter.next_key()?;
+            }
+        } else if !self.scan_aliased(py, jiter, plan, &mut slots, state, depth)? {
+            return Ok(None);
         }
 
         let model_dict = PyDict::new(py);
@@ -1064,12 +1068,89 @@ impl ModelFieldsValidator {
                 }
                 // Field validation may run callbacks. Leave it to the ordinary path rather
                 // than running user code before this object and its document are committed.
-                Some(Taken::Raw) | None => return Ok(None),
+                Some(Taken::Raw) => return Ok(None),
+                None => {
+                    let CombinedValidator::WithDefault(default) = &*field.validator else {
+                        return Ok(None);
+                    };
+                    let Some(default) = default.stream_default(py) else {
+                        return Ok(None);
+                    };
+                    default
+                }
             };
             model_dict.set_item(&field.name, value)?;
         }
         state.add_fields_set(fields_set_count);
         Ok(Some((model_dict, None, fields_set)))
+    }
+
+    /// The same scan for a model that has aliases: a key can reach a field by more than one
+    /// route, so each slot remembers which one filled it. Kept out of line so that the common
+    /// scan above stays the size it was.
+    #[inline(never)]
+    fn scan_aliased<'py>(
+        &self,
+        py: Python<'py>,
+        jiter: &mut Jiter<'_>,
+        plan: &ModelPlan<'_>,
+        slots: &mut [Option<Taken<'py>>],
+        state: &mut ValidationState<'_, 'py>,
+        depth: usize,
+    ) -> Result<bool, StreamStop> {
+        let lookup_type = LookupType::from_bools(
+            state.validate_by_alias_or(self.validate_by_alias),
+            state.validate_by_name_or(self.validate_by_name),
+        )?;
+        // which lookup filled each slot, so that an alias can outrank a name that came later
+        let mut held: SmallVec<[Option<LookupFieldPriority>; SLOTS_ON_STACK]> =
+            smallvec::smallvec![None; self.fields.len()];
+        let LookupTree::Flat(lookup) = &self.lookup else {
+            unreachable!("an aliased streaming plan has only single-key aliases");
+        };
+        let mut key = jiter.known_object()?;
+        if key.is_some() {
+            check_stream_depth(depth)?;
+        }
+        while let Some(k) = key {
+            // a single key can only feed one field here: the value is read once and cannot be
+            // handed to a second, so a schema that does that goes the ordinary way
+            let mut found: Option<LookupFieldInfo> = None;
+            let mut ambiguous = false;
+            for info in lookup.get(k) {
+                if !info.matches_lookup(lookup_type) {
+                    continue;
+                }
+                if found.is_some() {
+                    ambiguous = true;
+                    break;
+                }
+                found = Some(*info);
+            }
+            if ambiguous {
+                return Ok(false);
+            }
+            match found {
+                Some(info) => {
+                    let index = info.field_index;
+                    // A different lookup leaves one key unused, which is an extra the ordinary
+                    // path must report when extras are forbidden.
+                    if plan.forbid_extra && held[index].is_some_and(|existing| existing != info.lookup_priority) {
+                        return Ok(false);
+                    }
+                    if info.lookup_priority.replaces(held[index]) {
+                        held[index] = Some(info.lookup_priority);
+                        slots[index] = Some(take_fast(py, jiter, &plan.fields[index], state, depth + 1)?);
+                    } else {
+                        skip_unused(jiter, depth + 1)?;
+                    }
+                }
+                None if plan.forbid_extra => return Ok(false),
+                None => skip_unused(jiter, depth + 1)?,
+            }
+            key = jiter.next_key()?;
+        }
+        Ok(true)
     }
 
     /// Validate a JSON object key by key, in a single pass over the object (using `self.lookup`

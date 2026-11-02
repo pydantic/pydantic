@@ -1,4 +1,4 @@
-"""The narrow model streaming path must match ordinary JSON validation.
+"""The model streaming path must match ordinary JSON validation.
 
 `validate_json` can read a document straight off the json cursor instead of building a
 `JsonValue` tree first. Nothing about that is supposed to be observable, so the test for it is
@@ -14,8 +14,10 @@ Two things make this a real test rather than a green light:
 
 from __future__ import annotations
 
+import gc
 import json
 import os
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -104,15 +106,14 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
             '{"i": 1, "b": true, "f": 1.5}',
             '{"i": 1, "s": "x", "b": true, "f": 1.5, "unknown": [1, 2]}',
             '{"i": 1, "s": "a", "s": "b", "b": true, "f": 1.5}',
-            # A later duplicate must not hide invalid UTF-8 in a mismatched value.
-            b'{"i": "\xff", "i": 1, "s": "x", "b": true, "f": 1.5}',
             'not json',
             '[]',
+            b'{"i": "\xff", "i": 1, "s": "x", "b": true, "f": 1.5}',
         ],
     ),
     'nested': (
         _model('Outer', {'name': STR, 'address': ADDRESS}),
-        False,
+        True,
         [
             '{"name": "n", "address": {"street": "s", "city": "c"}}',
             # the sub-object is consumed either way, and has to be re-read to report this
@@ -134,7 +135,7 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
                 'models': core_schema.dict_schema(keys_schema=STR, values_schema=ADDRESS),
             },
         ),
-        False,
+        True,
         [
             (
                 '{"tags": ["a"], "nums": [1], "grid": [[1.5, 2]], "map": {"k": "v"},'
@@ -178,7 +179,7 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
     ),
     'bounded_dict': (
         core_schema.dict_schema(keys_schema=STR, values_schema=ADDRESS, max_length=1),
-        False,
+        True,
         [
             '{}',
             '{"a": {"street": "s", "city": "c"}}',
@@ -197,7 +198,7 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
                 'on_error': core_schema.with_default_schema(STR, default='D', on_error='default'),
             },
         ),
-        False,
+        True,
         [
             '{"maybe": "x", "defaulted": "y", "both": 1, "on_error": "z"}',
             '{"maybe": null, "both": null}',
@@ -216,7 +217,7 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
                 'plain': STR,
             },
         ),
-        False,
+        True,
         [
             '{"ONE": "a", "c1": "b", "plain": "c"}',
             '{"ONE": "a", "c2": "b", "plain": "c"}',
@@ -230,12 +231,12 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
     ),
     'forbid': (
         _model('Forbid', {'a': STR}, extra_behavior='forbid'),
-        False,
+        True,
         ['{"a": "x"}', '{"a": "x", "b": 1}', '{"b": 1, "c": 2}', '{}'],
     ),
     'dict_root': (
         core_schema.dict_schema(keys_schema=STR, values_schema=ADDRESS),
-        False,
+        True,
         [
             '{"a": {"street": "s", "city": "c"}}',
             '{}',
@@ -243,8 +244,6 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
             '[]',
         ],
     ),
-    # the ordinary path decodes every string in the document, so it rejects invalid utf-8 even
-    # in a field the model ignores; the cursor skips those values without decoding them
     'bad_utf8_in_ignored_fields': (
         _model('Kept', {'kept': STR}),
         True,
@@ -258,11 +257,9 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
             b'{"kept": "ok", "ignored": "fine"}',
         ],
     ),
-    # the root list's own length bound: the fast path builds the list itself, so it has to be
-    # the one to check it
     'constrained_root_list': (
         core_schema.list_schema(items_schema=ADDRESS, min_length=2, max_length=3),
-        False,
+        True,
         [
             '[{"street": "s", "city": "c"}]',
             '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}]',
@@ -274,8 +271,6 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
             '[{"street": 1, "city": "c"}, {"street": "s", "city": "c"}]',
         ],
     ),
-    # a path alias has to look inside the value to know whether it matches, which is the one
-    # thing a cursor cannot do before reading it
     'path_alias_refused': (
         _model('Pathy', {'deep': core_schema.model_field(schema=STR, validation_alias=[['p', 'q']])}),
         False,
@@ -287,6 +282,9 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
         ['{"a": "x", "b": 1}', '{"a": "x"}'],
     ),
 }
+
+
+LIST_ROOT = {'scalars', 'nested', 'containers', 'optional', 'aliases'}
 
 
 def _build(case: str) -> tuple[SchemaValidator, list[str]]:
@@ -576,3 +574,313 @@ def test_streamed_scalar_validation_matches_ordinary(
         return json.dumps(result, default=repr)
 
     assert outcome(False) == outcome(True)
+
+
+@pytest.mark.parametrize('case', sorted(LIST_ROOT))
+def test_streaming_matches_the_tree_in_an_array(case: str) -> None:
+    """The same documents as elements of an array, which replays a failed element on its own."""
+    tree = _run(case, stream=False, in_array=True)
+    stream = _run(case, stream=True, in_array=True)
+
+    assert stream['accepted'] is True
+    assert tree['results'] == stream['results']
+
+
+@pytest.mark.parametrize('in_array', [False, True])
+def test_streaming_does_not_replay_default_factories(in_array: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4117313910"""
+    calls: list[str] = []
+
+    def factory() -> str:
+        calls.append('default')
+        return 'default'
+
+    schema = _model(
+        'Defaults',
+        {'defaulted': core_schema.with_default_schema(STR, default_factory=factory), 'required': INT},
+    )
+    if in_array:
+        schema = core_schema.list_schema(schema)
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError):
+        validator.validate_json('[{}]' if in_array else '{}')
+    assert calls == ['default']
+
+
+@pytest.mark.parametrize('in_array', [False, True])
+def test_streaming_validated_default_field_name(in_array: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412326289"""
+    names: list[str | None] = []
+
+    def record_name(value: str, info: core_schema.ValidationInfo) -> str:
+        names.append(info.field_name)
+        return value
+
+    schema = _model(
+        'Defaults',
+        {
+            'defaulted': core_schema.with_default_schema(
+                core_schema.with_info_after_validator_function(record_name, STR),
+                default='value',
+                validate_default=True,
+            )
+        },
+    )
+    if in_array:
+        schema = core_schema.list_schema(schema)
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    validator.validate_json('[{}]' if in_array else '{}')
+    assert names == ['defaulted']
+
+
+def test_streaming_nested_default_factories_follow_schema_order() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412326296"""
+    calls: list[str] = []
+
+    def first() -> int:
+        calls.append('first')
+        return 1
+
+    def second() -> int:
+        calls.append('second')
+        return 2
+
+    validator = SchemaValidator(
+        _model(
+            'Outer',
+            {
+                'first': _model('First', {'value': core_schema.with_default_schema(INT, default_factory=first)}),
+                'second': _model('Second', {'value': core_schema.with_default_schema(INT, default_factory=second)}),
+            },
+        )
+    )
+    assert validator._stream_plan_accepted
+    validator.validate_json('{"second": {}, "first": {}}')
+    assert calls == ['first', 'second']
+
+
+@pytest.mark.parametrize('in_array', [False, True])
+@pytest.mark.parametrize('reject_first', [False, True])
+def test_streaming_does_not_replay_field_validators(in_array: bool, reject_first: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4117319838"""
+    calls: list[str] = []
+
+    def record(value: str) -> str:
+        calls.append(value)
+        if reject_first and len(calls) == 1:
+            raise ValueError('first call rejects')
+        return value
+
+    fields = {'value': core_schema.no_info_after_validator_function(record, STR)}
+    if not reject_first:
+        fields['required'] = INT
+    schema = _model('Callbacks', fields)
+    if in_array:
+        schema = core_schema.list_schema(schema)
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError):
+        validator.validate_json('[{"value": "x"}]' if in_array else '{"value": "x"}')
+    assert calls == ['x']
+
+
+def test_streaming_nested_field_validators_follow_schema_order() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412326296"""
+    calls: list[str] = []
+
+    def record(value: str) -> str:
+        calls.append(value)
+        return value
+
+    child = _model('Child', {'value': core_schema.no_info_after_validator_function(record, STR)})
+    validator = SchemaValidator(_model('Outer', {'first': child, 'second': child}))
+    assert validator._stream_plan_accepted
+    validator.validate_json('{"second": {"value": "second"}, "first": {"value": "first"}}')
+    assert calls == ['first', 'second']
+
+
+@pytest.mark.parametrize('use_factory', [False, True])
+@pytest.mark.parametrize(
+    'document',
+    [
+        '{"value": "x"} trailing',
+        '[{"value": "x"}] trailing',
+        '[{"value": "x"}, {"value": "y"}] trailing',
+        '[{"value": "x"}, {"value": "y", "broken": }]',
+        '[{"value": "x"},',
+    ],
+)
+def test_streaming_rejects_invalid_json_before_callbacks(use_factory: bool, document: str) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4117313915"""
+    calls: list[str] = []
+
+    def record(value: str) -> str:
+        calls.append(value)
+        return value
+
+    def factory() -> str:
+        return record('default')
+
+    fields = {'value': STR}
+    if use_factory:
+        fields['defaulted'] = core_schema.with_default_schema(STR, default_factory=factory)
+    else:
+        fields['value'] = core_schema.no_info_after_validator_function(record, STR)
+    schema = _model('Callbacks', fields)
+    if document.startswith('['):
+        schema = core_schema.list_schema(schema)
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        validator.validate_json(document)
+    assert calls == []
+
+
+@pytest.mark.parametrize('container', ['list', 'dict'])
+@pytest.mark.parametrize('max_length', [0, 1])
+def test_streaming_container_limits_bound_default_factory_calls(container: str, max_length: int) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412369252"""
+    calls: list[int] = []
+
+    def factory() -> list[int]:
+        calls.append(1)
+        return [0] * 1000
+
+    item = _model(
+        'Item',
+        {
+            'payload': core_schema.with_default_schema(
+                core_schema.list_schema(INT),
+                default_factory=factory,
+            )
+        },
+    )
+    if container == 'list':
+        schema = core_schema.list_schema(item, max_length=max_length)
+        document = '[' + ','.join('{}' for _ in range(1000)) + ']'
+    else:
+        schema = core_schema.dict_schema(STR, item, max_length=max_length)
+        document = '{' + ','.join(f'"{i}":{{}}' for i in range(1000)) + '}'
+    validator = SchemaValidator(schema)
+    assert validator._stream_plan_accepted
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'too_long'):
+        validator.validate_json(document)
+    assert len(calls) <= max_length + 1
+
+
+def test_streaming_cyclic_default_factory() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412326390"""
+
+    def factory() -> list[object]:
+        value: list[object] = []
+        value.append(value)
+        return value
+
+    validator = SchemaValidator(
+        _model(
+            'Cyclic',
+            {
+                'value': core_schema.with_default_schema(core_schema.any_schema(), default_factory=factory),
+            },
+        )
+    )
+    assert validator._stream_plan_accepted
+    value = validator.validate_json('{}').value
+    assert value[0] is value
+
+
+@pytest.mark.parametrize('finalizer_kind', ['direct', 'inherited', 'added_later'])
+@pytest.mark.parametrize('shape', ['root', 'array', 'nested', 'mapping'])
+def test_streaming_excludes_models_with_finalizers(finalizer_kind: str, shape: str) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    from .conftest import assert_gc
+
+    finalized: list[str] = []
+
+    def finalize(self: object) -> None:
+        finalized.append('finalized')
+
+    if finalizer_kind == 'added_later':
+        if platform.python_implementation() == 'PyPy':
+            pytest.skip('PyPy does not support adding finalizers to existing types')
+        cls = _cls('Finalized')
+    else:
+        cls = type('Finalized', (_cls('Base'),), {'__slots__': (), '__del__': finalize})
+    if finalizer_kind == 'inherited':
+        cls = type('Child', (cls,), {})
+    schema = core_schema.model_schema(cls, core_schema.model_fields_schema({'a': core_schema.model_field(INT)}))
+    document = '{"a": 1}'
+    if shape == 'array':
+        schema = core_schema.list_schema(schema)
+        document = '[' + document + ']'
+    elif shape == 'nested':
+        schema = _model('Outer', {'item': schema})
+        document = '{"item": ' + document + '}'
+    elif shape == 'mapping':
+        schema = core_schema.dict_schema(STR, schema)
+        document = '{"item": ' + document + '}'
+    validator = SchemaValidator(schema)
+    if finalizer_kind == 'added_later':
+        assert validator._stream_plan_accepted
+        cls.__del__ = finalize
+    if shape != 'nested':
+        assert not validator._stream_plan_accepted
+
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        validator.validate_json(document + ' trailing')
+    gc.collect()
+    assert finalized == []
+
+    value = validator.validate_json(document)
+    assert finalized == []
+    del value
+    assert_gc(lambda: finalized == ['finalized'])
+
+
+@pytest.mark.parametrize('new_kind', ['direct', 'inherited', 'added_later'])
+@pytest.mark.parametrize('shape', ['root', 'array', 'nested', 'mapping'])
+def test_streaming_excludes_models_with_custom_new(new_kind: str, shape: str) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884#discussion_r4412793124"""
+    allocated: list[str] = []
+
+    def allocate(cls: type[object]) -> object:
+        allocated.append('allocated')
+        return object.__new__(cls)
+
+    cls = _cls('CustomNew')
+    if new_kind != 'added_later':
+        cls.__new__ = staticmethod(allocate)
+    if new_kind == 'inherited':
+        cls = type('Child', (cls,), {})
+    schema = core_schema.model_schema(cls, core_schema.model_fields_schema({'a': core_schema.model_field(INT)}))
+    document = '{"a": 1}'
+    if shape == 'array':
+        schema = core_schema.list_schema(schema)
+        document = '[' + document + ']'
+    elif shape == 'nested':
+        schema = _model('Outer', {'item': schema})
+        document = '{"item": ' + document + '}'
+    elif shape == 'mapping':
+        schema = core_schema.dict_schema(STR, schema)
+        document = '{"item": ' + document + '}'
+    validator = SchemaValidator(schema)
+    if new_kind == 'added_later':
+        assert validator._stream_plan_accepted
+        cls.__new__ = staticmethod(allocate)
+    if shape != 'nested':
+        assert not validator._stream_plan_accepted
+
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        validator.validate_json(document + ' trailing')
+    assert allocated == []
+    # PyPy's C-API type slots do not always reflect __new__ changes after the
+    # validator was built. Compare against the ordinary path on this interpreter.
+    validator.validate_python(json.loads(document))
+    expected = allocated.copy()
+    if new_kind != 'added_later' or platform.python_implementation() != 'PyPy':
+        assert expected == ['allocated']
+    allocated.clear()
+    validator.validate_json(document)
+    assert allocated == expected
