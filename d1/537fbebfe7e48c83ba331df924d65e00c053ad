@@ -1,0 +1,19 @@
+pydantic-core/tests/test_streaming_json.py
+  s_97b29c5285402e::t_cf564b3abd9d54 63-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d1537fbebfe7e48c83ba331df924d65e00c053ad",
+  "prompts": {},
+  "sessions": {
+    "s_97b29c5285402e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bbe-c7cd-7ec2-bb8d-0357303cb98b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
