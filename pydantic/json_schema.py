@@ -590,7 +590,16 @@ class GenerateJsonSchema:
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
 
-        json_schema = current_handler(schema)
+        json_schema: JsonSchemaValue = (
+            handler_func(schema)
+            if not (
+                metadata.get('pydantic_js_updates')
+                or metadata.get('pydantic_js_extra')
+                or metadata.get('pydantic_js_functions')
+                or metadata.get('pydantic_js_annotation_functions')
+            )
+            else current_handler(schema)
+        )
         if _core_utils.is_core_schema(schema):
             json_schema = populate_defs(schema, json_schema)
         return json_schema
