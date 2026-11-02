@@ -518,3 +518,44 @@ def test_streamed_model_uses_model_fields_set(width: int) -> None:
     assert streamed.__pydantic_fields_set__ == set(fields)
     assert streamed.__pydantic_fields_set__ == ordinary.__pydantic_fields_set__
     assert streamed.__dict__ == ordinary.__dict__
+
+
+@pytest.mark.parametrize('kind', ['str', 'bool', 'int', 'float'])
+@pytest.mark.parametrize('schema_strict', [False, True])
+@pytest.mark.parametrize('strict', [None, False, True])
+@pytest.mark.parametrize('coerce_numbers', [False, True])
+@pytest.mark.parametrize('allow_inf_nan', [False, True])
+@pytest.mark.parametrize(
+    'value',
+    ['3', '1.0', 'true', 'off', 'invalid', 0, 1, 1.0, 1.5, True, False, None, 2**100, float('inf'), float('nan')],
+)
+def test_streamed_scalar_validation_matches_ordinary(
+    kind: str, schema_strict: bool, strict: bool | None, coerce_numbers: bool, allow_inf_nan: bool, value: object
+) -> None:
+    scalar = getattr(core_schema, f'{kind}_schema')(strict=schema_strict)
+    validator = SchemaValidator(
+        _model(
+            'ScalarCoercions',
+            {
+                'scalar': scalar,
+                'items': core_schema.list_schema(scalar),
+                'map': core_schema.dict_schema(STR, scalar),
+            },
+        ),
+        config=core_schema.CoreConfig(coerce_numbers_to_str=coerce_numbers, allow_inf_nan=allow_inf_nan),
+    )
+    assert validator._stream_plan_accepted
+    document = json.dumps({'scalar': value, 'items': [value], 'map': {'x': value}})
+
+    def outcome(ordinary: bool) -> str:
+        try:
+            result = [
+                'ok',
+                _dump(validator.validate_json(document, strict=strict, **({'by_name': True} if ordinary else {}))),
+            ]
+        except ValidationError as error:
+            result = ['error', error.errors(include_url=False)]
+        # JSON gives NaN a stable representation while preserving types and float signs.
+        return json.dumps(result, default=repr)
+
+    assert outcome(False) == outcome(True)
