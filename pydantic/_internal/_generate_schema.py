@@ -1195,6 +1195,21 @@ class GenerateSchema:
             elif dataclasses.is_dataclass(obj):
                 return self._dataclass_schema(obj, None)  # pyright: ignore[reportArgumentType]
 
+        if origin is not None and origin in (list, set, frozenset, dict):
+            # Fast path: generic containers with simple arguments (e.g. `list[str]`, `dict[str, int]`).
+            # Avoid the generic handler indirection for the common, simple cases.
+            args = get_args(obj)
+            if args and all(isinstance(arg, type) or arg is NoneType for arg in args):
+                if origin is dict:
+                    if len(args) == 2:
+                        return self._dict_schema(args[0], args[1])
+                elif origin is list:
+                    return self._list_schema(args[0])
+                elif origin is set:
+                    return self._set_schema(args[0])
+                else:
+                    return self._frozenset_schema(args[0])
+
         if origin is not None:
             return self._match_generic_type(obj, origin)
 
