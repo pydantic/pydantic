@@ -278,7 +278,6 @@ _FAST_SCALAR_SCHEMAS: dict[type[Any], Callable[[], core_schema.CoreSchema]] = {
 }
 
 
-
 def _add_custom_serialization_from_json_encoders(
     json_encoders: JsonEncoders | None, tp: Any, schema: CoreSchema
 ) -> CoreSchema:
