@@ -620,3 +620,19 @@ def test_deep_json_streaming_plan_on_small_stack(
         assert results == [[], []]
 
     subprocess_run_code(code)
+
+
+def test_json_streaming_rechecks_finalizer_present_during_construction() -> None:
+    calls: list[str] = []
+
+    class Model(BaseModel):
+        x: int
+
+        def __del__(self) -> None:
+            calls.append('finalized')
+
+    assert Model.__pydantic_validator__._stream_plan_accepted is False
+    del Model.__del__
+    assert Model.__pydantic_validator__._stream_plan_accepted
+    assert Model.model_validate_json('{"x":1}').x == 1
+    assert calls == []
