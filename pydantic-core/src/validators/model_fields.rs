@@ -297,7 +297,10 @@ impl From<std::convert::Infallible> for StreamStop {
 
 /// A field whose value can be read and validated directly from the JSON cursor.
 pub(crate) enum Fast<'v> {
-    Scalar(&'v CombinedValidator),
+    Str(&'v CombinedValidator),
+    Bool(&'v CombinedValidator),
+    Int(&'v CombinedValidator),
+    Float(&'v CombinedValidator),
     /// a nested model, whose own fields come off the same cursor
     Model(Box<NestedModel<'v>>),
     /// an array whose elements all come off the cursor the same way, to any depth
@@ -389,10 +392,10 @@ fn classify<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8) -> 
 
 fn classify_fast<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8) -> Fast<'v> {
     match unwrap_prebuilt(validator) {
-        CombinedValidator::Str(_)
-        | CombinedValidator::Bool(_)
-        | CombinedValidator::Int(_)
-        | CombinedValidator::Float(_) => Fast::Scalar(unwrap_prebuilt(validator)),
+        CombinedValidator::Str(_) => Fast::Str(unwrap_prebuilt(validator)),
+        CombinedValidator::Bool(_) => Fast::Bool(unwrap_prebuilt(validator)),
+        CombinedValidator::Int(_) => Fast::Int(unwrap_prebuilt(validator)),
+        CombinedValidator::Float(_) => Fast::Float(unwrap_prebuilt(validator)),
         // a container's element plan does not raise the depth: only a model can recurse, and
         // `list[list[list[float]]]` is a real shape that a depth cap would refuse for no reason
         CombinedValidator::List(list) => match list.stream_list() {
@@ -421,7 +424,7 @@ fn classify_fast<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8
 
 fn simple_fast(fast: &Fast<'_>) -> bool {
     match fast {
-        Fast::Scalar(_) => true,
+        Fast::Str(_) | Fast::Bool(_) | Fast::Int(_) | Fast::Float(_) => true,
         Fast::List(plan) | Fast::Dict(plan) => simple_fast(&plan.element.fast),
         Fast::Model(_) | Fast::No => false,
     }
@@ -696,20 +699,43 @@ fn take_peeked<'py>(
     }
     let fast = &field.fast;
     let value = match (fast, peek) {
-        (Fast::Scalar(validator), peek) if !matches!(peek, Peek::Array | Peek::Object) => {
-            // Reuse ordinary JSON validation for every scalar, including coercions and
-            // strict/configured behavior. Borrow strings from the cursor where possible.
-            let input = if matches!(peek, Peek::String) {
-                JsonValue::Str(Cow::Borrowed(jiter.known_str()?))
-            } else {
-                jiter.known_value_owned(peek)?
-            };
-            match validator.validate(py, &input, state) {
-                Ok(value) => Taken::Ready(value.into_bound(py)),
-                Err(ValError::InternalErr(err)) => return Err(StreamStop::Py(err)),
-                // Ordinary validation owns error locations and JSON error precedence.
-                Err(_) => Taken::Raw,
+        (Fast::Str(_), Peek::String) => {
+            let s = jiter.known_str()?;
+            Taken::Ready(new_py_string(py, s, state.cache_str()).into_any())
+        }
+        (Fast::Bool(_), Peek::True | Peek::False) => Taken::Ready(
+            pyo3::types::PyBool::new(py, jiter.known_bool(peek)?)
+                .to_owned()
+                .into_any(),
+        ),
+        (Fast::Int(validator) | Fast::Float(validator), _)
+            if !matches!(
+                peek,
+                Peek::String | Peek::Array | Peek::Object | Peek::Null | Peek::True | Peek::False
+            ) =>
+        {
+            match (fast, jiter.known_number(peek)?) {
+                (Fast::Int(_), jiter::NumberAny::Int(integer)) => Taken::Ready(integer.into_pyobject(py)?.into_any()),
+                (Fast::Float(_), jiter::NumberAny::Float(f)) if f.is_finite() => {
+                    Taken::Ready(f.into_pyobject(py)?.into_any())
+                }
+                (Fast::Float(_), jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
+                    Taken::Ready((i as f64).into_pyobject(py)?.into_any())
+                }
+                (_, number) => {
+                    let input = match number {
+                        jiter::NumberAny::Int(jiter::NumberInt::Int(i)) => JsonValue::Int(i),
+                        jiter::NumberAny::Int(jiter::NumberInt::BigInt(i)) => JsonValue::BigInt(i),
+                        jiter::NumberAny::Float(f) => JsonValue::Float(f),
+                    };
+                    validate_scalar(py, validator, &input, state)?
+                }
             }
+        }
+        (Fast::Str(validator) | Fast::Bool(validator) | Fast::Int(validator) | Fast::Float(validator), _)
+            if !matches!(peek, Peek::Array | Peek::Object) =>
+        {
+            coerce_scalar(py, jiter, validator, peek, state)?
         }
         (Fast::List(plan), Peek::Array) => take_list(py, jiter, plan, state, depth)?,
         (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, plan, state, depth)?,
@@ -725,6 +751,41 @@ fn take_peeked<'py>(
         }
     };
     Ok(value)
+}
+
+/// Scalar mismatches are uncommon: keep their parsing and validation off the exact-type path.
+#[cold]
+#[inline(never)]
+fn coerce_scalar<'py>(
+    py: Python<'py>,
+    jiter: &mut Jiter<'_>,
+    validator: &CombinedValidator,
+    peek: Peek,
+    state: &mut ValidationState<'_, 'py>,
+) -> Result<Taken<'py>, StreamStop> {
+    let input = if matches!(peek, Peek::String) {
+        JsonValue::Str(Cow::Borrowed(jiter.known_str()?))
+    } else {
+        jiter.known_value_owned(peek)?
+    };
+    validate_scalar(py, validator, &input, state)
+}
+
+/// Reuse the existing validator for every coercion and configuration-dependent scalar case.
+#[cold]
+#[inline(never)]
+fn validate_scalar<'py>(
+    py: Python<'py>,
+    validator: &CombinedValidator,
+    input: &JsonValue<'_>,
+    state: &mut ValidationState<'_, 'py>,
+) -> Result<Taken<'py>, StreamStop> {
+    match validator.validate(py, input, state) {
+        Ok(value) => Ok(Taken::Ready(value.into_bound(py))),
+        Err(ValError::InternalErr(err)) => Err(StreamStop::Py(err)),
+        // Ordinary validation owns error locations and JSON error precedence.
+        Err(_) => Ok(Taken::Raw),
+    }
 }
 
 pub(crate) type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, ModelFieldsSet);
