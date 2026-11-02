@@ -136,8 +136,10 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
         ),
         False,
         [
-            '{"tags": ["a"], "nums": [1], "grid": [[1.5, 2]], "map": {"k": "v"},'
-            ' "models": {"a": {"street": "s", "city": "c"}}}',
+            (
+                '{"tags": ["a"], "nums": [1], "grid": [[1.5, 2]], "map": {"k": "v"},'
+                ' "models": {"a": {"street": "s", "city": "c"}}}'
+            ),
             '{"tags": [], "nums": [], "grid": [], "map": {}, "models": {}}',
             # an array that goes wrong part way through is already half converted
             '{"tags": ["a", 1], "nums": [1], "grid": [[1.5]], "map": {"k": "v"}, "models": {}}',
@@ -264,8 +266,10 @@ CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
         [
             '[{"street": "s", "city": "c"}]',
             '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}]',
-            '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}, {"street": "s", "city": "c"},'
-            ' {"street": "s", "city": "c"}]',
+            (
+                '[{"street": "s", "city": "c"}, {"street": "s", "city": "c"}, {"street": "s", "city": "c"},'
+                ' {"street": "s", "city": "c"}]'
+            ),
             '[]',
             '[{"street": 1, "city": "c"}, {"street": "s", "city": "c"}]',
         ],
@@ -317,14 +321,14 @@ def _child(case: str, in_array: bool = False) -> None:
         validator = SchemaValidator(core_schema.list_schema(items_schema=schema))
         docs = ['[' + ', '.join(d for d in docs if isinstance(d, str) and d.startswith('{')) + ']']
 
-    out = {'accepted': validator._stream_plan_accepted, 'results': []}
+    out = {'accepted': bool(validator._stream_plan_accepted), 'results': []}
     for doc in docs:
         try:
             out['results'].append(['ok', _dump(validator.validate_json(doc))])
         except ValidationError as e:
             out['results'].append(['err', e.errors(include_url=False)])
         # any difference at all is a difference, so nothing is allowed to escape here
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100
             out['results'].append(['exc', type(e).__name__, str(e)[:200]])
     print(json.dumps(out, default=repr))
 
@@ -343,7 +347,9 @@ def _run(case: str, stream: bool, in_array: bool = False) -> dict:
         'spec.loader.exec_module(module)\n'
         f'module._child({case!r}, in_array={in_array!r})\n'
     )
-    proc = subprocess.run([sys.executable, '-c', script], capture_output=True, text=True, cwd=ROOT, env=env)
+    proc = subprocess.run(
+        [sys.executable, '-c', script], check=False, capture_output=True, text=True, cwd=ROOT, env=env
+    )
     assert proc.returncode == 0, f'{case} ({"stream" if stream else "tree"}) failed:\n{proc.stderr[-3000:]}'
     return json.loads(proc.stdout)
 
@@ -378,7 +384,8 @@ def test_invalid_lookup_flags_preserve_json_error_precedence() -> None:
 
 
 @pytest.mark.parametrize('hook', ['__del__', '__new__'])
-def test_model_object_hooks_decline_streaming(hook: str) -> None:
+@pytest.mark.parametrize('placement', ['direct', 'inherited', 'added'])
+def test_model_object_hooks_decline_streaming(hook: str, placement: str) -> None:
     calls: list[str] = []
     base = _cls('Base')
 
@@ -396,12 +403,21 @@ def test_model_object_hooks_decline_streaming(hook: str) -> None:
 
         namespace = {'__new__': allocator}
 
-    cls = type('Hooked', (base,), namespace)
+    if placement == 'inherited':
+        base = type('HookedBase', (base,), namespace)
+    cls = type('Hooked', (base,), namespace if placement == 'direct' else {})
     schema = core_schema.model_schema(
         cls=cls,
         schema=core_schema.model_fields_schema(fields={'value': core_schema.model_field(INT)}),
     )
     validator = SchemaValidator(schema)
+    if placement == 'added':
+        assert validator._stream_plan_accepted
+        if hook == '__del__' and sys.implementation.name == 'pypy':
+            with pytest.warns(RuntimeWarning, match='a __del__ method added to an existing type will not be called'):
+                setattr(cls, hook, namespace[hook])
+        else:
+            setattr(cls, hook, namespace[hook])
     assert validator._stream_plan_accepted is False
     with pytest.raises(ValidationError):
         validator.validate_json(b'{"value": 1} trailing')
