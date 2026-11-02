@@ -144,7 +144,7 @@ def test_equality(fields_set: ModelFieldsSet) -> None:
     assert fields_set != {'a', 'c', 'x', 'y'}
     assert fields_set != 'acx'
     assert fields_set != ['a', 'c', 'x']
-    assert not (fields_set == ['a', 'c', 'x'])
+    assert fields_set != ['a', 'c', 'x']
 
 
 def test_comparisons(fields_set: ModelFieldsSet) -> None:

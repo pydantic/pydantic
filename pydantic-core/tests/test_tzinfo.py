@@ -177,7 +177,7 @@ def test_comparison():
             # tz data not available
             pass
         else:
-            assert not tz == europe_london
+            assert tz != europe_london
             with pytest.raises(TypeError):
                 tz > europe_london
 
