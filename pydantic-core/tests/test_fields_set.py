@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import copy
 import pickle
-from collections.abc import MutableSet, Set
+from collections.abc import MutableSet
+from collections.abc import Set as AbstractSet
 from typing import Any
 
 import pytest
@@ -103,7 +104,7 @@ def test_extra_keys_validator_transforming_key() -> None:
 
 def test_abc_registration(fields_set: ModelFieldsSet) -> None:
     assert isinstance(fields_set, MutableSet)
-    assert isinstance(fields_set, Set)
+    assert isinstance(fields_set, AbstractSet)
     assert not isinstance(fields_set, set)
     assert not issubclass(ModelFieldsSet, set)
 
