@@ -1784,6 +1784,31 @@ except ValidationError as exc:
     #> 'ordered_dict_type'
 ```
 
+## `recursion_depth_exceeded`
+
+This error is raised when the input is nested deeper than the maximum depth allowed by Pydantic:
+
+```python
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: 'Model | None' = None
+
+
+data = {}
+for _ in range(1_000):
+    data = {'x': data}
+
+try:
+    Model.model_validate(data)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'recursion_depth_exceeded'
+```
+
+The maximum allowed depth varies between platform, and may change between releases.
+
 ## `recursion_loop`
 
 This error is raised when a cyclic reference is detected:

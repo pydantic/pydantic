@@ -30,7 +30,7 @@ pub struct DictValidator {
 impl DictValidator {
     /// The value validator, only when the keys are plain strings and nothing else about the dict
     /// is checked. Json object keys are always strings, so such a dict needs no key validation.
-    pub(crate) fn stream_str_values(&self) -> Option<(&CombinedValidator, Option<usize>, Option<usize>)> {
+    pub(crate) fn stream_str_values(&self) -> Option<(&Arc<CombinedValidator>, Option<usize>, Option<usize>)> {
         match self.key_validator.as_ref() {
             CombinedValidator::Str(_) => Some((&self.value_validator, self.min_length, self.max_length)),
             _ => None,

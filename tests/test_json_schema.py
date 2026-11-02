@@ -46,8 +46,6 @@ from pydantic import (
     InstanceOf,
     PlainSerializer,
     PlainValidator,
-    PydanticDeprecatedSince20,
-    PydanticDeprecatedSince29,
     PydanticUserError,
     RootModel,
     ValidationError,
@@ -58,7 +56,6 @@ from pydantic import (
     field_validator,
     with_config,
 )
-from pydantic.color import Color
 from pydantic.config import ConfigDict, ExtraValues
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
@@ -2921,19 +2918,6 @@ def test_literal_types() -> None:
     }
 
 
-def test_color_type():
-    class Model(BaseModel):
-        color: Color
-
-    model_schema = Model.model_json_schema()
-    assert model_schema == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'color': {'title': 'Color', 'type': 'string', 'format': 'color'}},
-        'required': ['color'],
-    }
-
-
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         model_config = ConfigDict(extra='forbid')
@@ -3738,10 +3722,6 @@ def test_schema_for_generic_field():
             self.data = data
 
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
-
-        @classmethod
         def validate(cls, v: Any):
             return v
 
@@ -3869,10 +3849,6 @@ def test_advanced_generic_schema():  # noqa: C901
             self.data = data
 
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
-
-        @classmethod
         def validate(cls, v: Any):
             return v
 
@@ -3909,10 +3885,6 @@ def test_advanced_generic_schema():  # noqa: C901
         def __init__(self, x: str, y: Any):
             self.x = x
             self.y = y
-
-        @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
 
         @classmethod
         def validate(cls, v: Any):
@@ -5295,74 +5267,6 @@ def test_model_with_schema_extra_callable_no_model_class():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_config_class():
-    with pytest.warns(PydanticDeprecatedSince20, match='use ConfigDict instead'):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                @staticmethod
-                def json_schema_extra(schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-                    assert model_class is Model
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_no_model_class_config_class():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                @staticmethod
-                def json_schema_extra(schema):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_classmethod():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                type = 'foo'
-
-                @classmethod
-                def json_schema_extra(cls, schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = cls.type
-                    assert model_class is Model
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_instance_method():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                def json_schema_extra(schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-                    assert model_class is Model
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
 def test_serialization_validation_interaction():
     class Inner(BaseModel):
         x: Json[int]
@@ -6054,81 +5958,6 @@ def test_examples_annotation() -> None:
         'items': {'type': 'number'},
         'type': 'array',
     }
-
-
-@pytest.mark.skip_json_schema_validation(reason='Uses old examples format, planned for removal in v3.0.')
-def test_examples_annotation_dict() -> None:
-    with pytest.warns(PydanticDeprecatedSince29):
-        ListWithExamples = Annotated[
-            list[float],
-            Examples({'Fibonacci': [1, 1, 2, 3, 5]}),
-        ]
-
-    ta = TypeAdapter(ListWithExamples)
-
-    # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {
-        'examples': {'Fibonacci': [1, 1, 2, 3, 5]},
-        'items': {'type': 'number'},
-        'type': 'array',
-    }
-
-    with pytest.warns(PydanticDeprecatedSince29):
-        ListWithMoreExamples = Annotated[
-            ListWithExamples,
-            Examples(
-                {
-                    'Constants': [
-                        3.14,
-                        2.71,
-                    ]
-                }
-            ),
-        ]
-
-    ta = TypeAdapter(ListWithMoreExamples)
-
-    assert ta.json_schema() == {
-        'examples': {'Constants': [3.14, 2.71], 'Fibonacci': [1, 1, 2, 3, 5]},
-        'items': {'type': 'number'},
-        'type': 'array',
-    }
-
-
-def test_examples_mixed_types() -> None:
-    with pytest.warns(PydanticDeprecatedSince29):
-        ListThenDict = Annotated[
-            int,
-            Examples([1, 2]),
-            Examples({'some_example': [3, 4]}),
-        ]
-
-        DictThenList = Annotated[
-            int,
-            Examples({'some_example': [3, 4]}),
-            Examples([1, 2]),
-        ]
-
-    list_then_dict_ta = TypeAdapter(ListThenDict)
-    dict_then_list_ta = TypeAdapter(DictThenList)
-
-    with pytest.warns(
-        UserWarning,
-        match=re.escape('Updating existing JSON Schema examples of type list with examples of type dict.'),
-    ):
-        assert list_then_dict_ta.json_schema() == {
-            'examples': [1, 2, 3, 4],
-            'type': 'integer',
-        }
-
-    with pytest.warns(
-        UserWarning,
-        match=re.escape('Updating existing JSON Schema examples of type dict with examples of type list.'),
-    ):
-        assert dict_then_list_ta.json_schema() == {
-            'examples': [3, 4, 1, 2],
-            'type': 'integer',
-        }
 
 
 def test_skip_json_schema_annotation() -> None:

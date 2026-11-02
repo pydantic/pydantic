@@ -74,55 +74,6 @@ foo = Foo(a={'b': {'a': None}})
 
 In other cases, the error message should indicate how to rebuild the class with the appropriate type defined.
 
-## Custom JSON Schema {#custom-json-schema}
-
-The `__modify_schema__` method is no longer supported in V2. You should use the `__get_pydantic_json_schema__` method instead.
-
-The `__modify_schema__` used to receive a single argument representing the JSON schema. See the example below:
-
-```python {title="Old way"}
-from pydantic import BaseModel, PydanticUserError
-
-try:
-
-    class Model(BaseModel):
-        @classmethod
-        def __modify_schema__(cls, field_schema):
-            field_schema.update(examples=['example'])
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'custom-json-schema'
-```
-
-The new method `__get_pydantic_json_schema__` receives two arguments: the first is a dictionary denoted as `CoreSchema`,
-and the second a callable `handler` that receives a `CoreSchema` as parameter, and returns a JSON schema. See the example
-below:
-
-```python {title="New way"}
-from typing import Any
-
-from pydantic_core import CoreSchema
-
-from pydantic import BaseModel, GetJsonSchemaHandler
-
-
-class Model(BaseModel):
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-    ) -> dict[str, Any]:
-        json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
-        json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema.update(examples=['example'])
-        return json_schema
-
-
-print(Model.model_json_schema())
-"""
-{'examples': ['example'], 'properties': {}, 'title': 'Model', 'type': 'object'}
-"""
-```
-
 ## Invalid decorator fields {#decorator-invalid-fields}
 
 This error is raised when the field names provided to the [`@field_validator`][pydantic.field_validator]
@@ -557,45 +508,6 @@ class MyModel(BaseModel):
     _d: IgnoredType = IgnoredType()
 ```
 
-## `Config` and `model_config` both defined {#config-both}
-
-This error is raised when `class Config` and `model_config` are used together.
-
-```python
-from pydantic import BaseModel, ConfigDict, PydanticUserError
-
-try:
-
-    class Model(BaseModel):
-        model_config = ConfigDict(from_attributes=True)
-
-        a: str
-
-        class Config:
-            from_attributes = True
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'config-both'
-```
-
-## Keyword arguments removed {#removed-kwargs}
-
-This error is raised when the keyword arguments are not available in Pydantic V2.
-
-For example, `regex` is removed from Pydantic V2:
-
-```python
-from pydantic import BaseModel, Field, PydanticUserError
-
-try:
-
-    class Model(BaseModel):
-        x: str = Field(regex='test')
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'removed-kwargs'
-```
-
 ## Circular reference schema {#circular-reference-schema}
 
 This error is raised when a circular reference is found that would otherwise result in an infinite recursion.
@@ -687,13 +599,6 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'schema-for-unknown-type'
 ```
 
-## Import error {#import-error}
-
-This error is raised when you try to import an object that was available in Pydantic V1, but has been removed in
-Pydantic V2.
-
-See the [Migration Guide](../migration.md) for more information.
-
 ## `create_model` field definitions {#create-model-field-definitions}
 
 This error is raised when you provide invalid field definitions in [`create_model()`][pydantic.create_model].
@@ -759,6 +664,28 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-instance-method'
 ```
 
+## Model *after* validator on a class method {#model-after-validator-classmethod}
+
+This error is raised when you apply a [model *after* validator](../concepts/validators.md#model-after-validator)
+on a class method. Model *after* validators must be instance methods.
+
+```python
+from pydantic import BaseModel, PydanticUserError, model_validator
+
+try:
+
+    class Model(BaseModel):
+        a: int = 1
+
+        @model_validator(mode='after')
+        @classmethod
+        def check_model(cls, model):
+            return model
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'model-after-validator-classmethod'
+```
+
 ## `json_schema_input_type` used with the wrong mode {#validator-input-type}
 
 This error is raised when you explicitly specify a value for the `json_schema_input_type`
@@ -784,16 +711,6 @@ except PydanticUserError as exc_info:
 Documenting the JSON Schema input type is only possible for validators where the given
 value can be anything. That is why it isn't available for `after` validators, where
 the value is first validated against the type annotation.
-
-## Root validator, `pre`, `skip_on_failure` {#root-validator-pre-skip}
-
-If you use `@root_validator` with `pre=False` (the default) you MUST specify `skip_on_failure=True`.
-The `skip_on_failure=False` option is no longer available.
-
-If you were not trying to set `skip_on_failure=False`, you can safely set `skip_on_failure=True`.
-If you do, this root validator will no longer be called if validation fails for any of the fields.
-
-Please see the [Migration Guide](../migration.md) for more details.
 
 ## `model_serializer` instance methods {#model-serializer-instance-method}
 
@@ -834,40 +751,6 @@ try:
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'model-serializer-instance-method'
-```
-
-## `validator`, `field`, `config`, and `info` {#validator-field-config-info}
-
-The `field` and `config` parameters are not available in Pydantic V2.
-Please use the `info` parameter instead.
-
-You can access the configuration via `info.config`,
-but it is a dictionary instead of an object like it was in Pydantic V1.
-
-The `field` argument is no longer available.
-
-## Pydantic V1 validator signature {#validator-v1-signature}
-
-This error is raised when you use an unsupported signature for Pydantic V1-style validator.
-
-```python
-import warnings
-
-from pydantic import BaseModel, PydanticUserError, validator
-
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-
-try:
-
-    class Model(BaseModel):
-        a: int
-
-        @validator('a')
-        def check_a(cls, value, foo):
-            return value
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'validator-v1-signature'
 ```
 
 ## Unrecognized `field_validator` signature {#validator-signature}

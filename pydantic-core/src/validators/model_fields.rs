@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use ahash::AHashSet;
@@ -294,14 +295,13 @@ impl From<std::convert::Infallible> for StreamStop {
     }
 }
 
-/// A field whose value can be taken straight off the cursor when the json type matches it exactly.
-/// In that case strict and lax agree and no validator has to run.
+/// A field whose value can be read and validated directly from the JSON cursor.
 #[derive(Debug)]
 pub(crate) enum Fast {
-    Str,
-    Bool,
-    Int,
-    Float,
+    Str(Arc<CombinedValidator>),
+    Bool(Arc<CombinedValidator>),
+    Int(Arc<CombinedValidator>),
+    Float(Arc<CombinedValidator>),
     /// an array whose elements all come off the cursor the same way, to any depth
     List(Box<ContainerPlan>),
     /// an object with string keys whose values all come off the cursor the same way
@@ -386,9 +386,9 @@ pub(crate) fn root_parts<'v>(
 
 /// What came off the cursor for one field.
 pub(crate) enum Taken<'py> {
-    /// the json type matched the field exactly, so this is already the answer
+    /// the value has been validated, so this is already the answer
     Ready(Bound<'py, PyAny>),
-    /// not an exact match, so ordinary validation must see it after parsing the document
+    /// this path could not validate the value; ordinary validation must see it after parsing
     Raw,
 }
 
@@ -571,9 +571,8 @@ fn check_skipped_utf8(jiter: &Jiter<'_>, start: usize) -> Result<(), StreamStop>
     Ok(())
 }
 
-/// Take one value off the cursor, as a python object where the json type matches the field
-/// exactly and as json otherwise. The value is always consumed, so the caller carries on reading
-/// keys either way.
+/// Take one value off the cursor, as a validated Python object or a fallback marker.
+/// The value is always consumed, so the caller carries on reading keys either way.
 fn take_fast<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
@@ -602,51 +601,46 @@ fn take_peeked<'py>(
         return Ok(Taken::Ready(py.None().into_bound(py)));
     }
     let fast = &field.fast;
-    let scalar = !matches!(
-        peek,
-        Peek::String | Peek::Array | Peek::Object | Peek::Null | Peek::True | Peek::False
-    );
     let value = match (fast, peek) {
-        (Fast::Str, Peek::String) => {
+        (Fast::Str(_), Peek::String) => {
             let s = jiter.known_str()?;
             Taken::Ready(new_py_string(py, s, state.cache_str()).into_any())
         }
-        (Fast::Bool, Peek::True | Peek::False) => {
-            let b = jiter.known_bool(peek)?;
-            Taken::Ready(pyo3::types::PyBool::new(py, b).to_owned().into_any())
-        }
-        (Fast::Float, _) if scalar => {
-            // Preserve the ordinary parser's integer conversion, including -0 becoming +0.
-            let f = match jiter.known_number(peek)? {
-                jiter::NumberAny::Float(f) => f,
-                jiter::NumberAny::Int(jiter::NumberInt::Int(i)) => i as f64,
-                jiter::NumberAny::Int(_) => return Err(StreamStop::Cursor),
-            };
-            if f.is_finite() {
-                Taken::Ready(f.into_pyobject(py)?.into_any())
-            } else {
-                // the ordinary path reports what a non-finite float means for this field
-                Taken::Raw
-            }
-        }
-        (Fast::Int, _) if scalar => {
-            let number = jiter.known_number(peek)?;
-            match (fast, number) {
-                (Fast::Int, jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
+        (Fast::Bool(_), Peek::True | Peek::False) => Taken::Ready(
+            pyo3::types::PyBool::new(py, jiter.known_bool(peek)?)
+                .to_owned()
+                .into_any(),
+        ),
+        (Fast::Int(validator) | Fast::Float(validator), _)
+            if !matches!(
+                peek,
+                Peek::String | Peek::Array | Peek::Object | Peek::Null | Peek::True | Peek::False
+            ) =>
+        {
+            match (fast, jiter.known_number(peek)?) {
+                (Fast::Int(_), jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
                     Taken::Ready(i.into_pyobject(py)?.into_any())
                 }
-                (Fast::Float, jiter::NumberAny::Float(f)) if f.is_finite() => {
+                (Fast::Float(_), jiter::NumberAny::Float(f)) if f.is_finite() => {
                     Taken::Ready(f.into_pyobject(py)?.into_any())
                 }
-                // a json int is a valid float under both strict and lax, and the conversion is the
-                // one the float validator would do; without this a single `-128` among the decimals
-                // hands back the whole array it sits in
-                (Fast::Float, jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
+                (Fast::Float(_), jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
                     Taken::Ready((i as f64).into_pyobject(py)?.into_any())
                 }
-                // a float or bigint for an int field, or a non-finite float
-                _ => Taken::Raw,
+                (_, number) => {
+                    let input = match number {
+                        jiter::NumberAny::Int(jiter::NumberInt::Int(i)) => JsonValue::Int(i),
+                        jiter::NumberAny::Int(jiter::NumberInt::BigInt(i)) => JsonValue::BigInt(i),
+                        jiter::NumberAny::Float(f) => JsonValue::Float(f),
+                    };
+                    validate_scalar(py, validator, &input, state)?
+                }
             }
+        }
+        (Fast::Str(validator) | Fast::Bool(validator) | Fast::Int(validator) | Fast::Float(validator), _)
+            if !matches!(peek, Peek::Array | Peek::Object) =>
+        {
+            coerce_scalar(py, jiter, validator, peek, state)?
         }
         (Fast::List(plan), Peek::Array) => take_list(py, jiter, model_plan, plan, state, depth)?,
         (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, model_plan, plan, state, depth)?,
@@ -658,6 +652,41 @@ fn take_peeked<'py>(
         }
     };
     Ok(value)
+}
+
+/// Scalar mismatches are uncommon: keep their parsing and validation off the exact-type path.
+#[cold]
+#[inline(never)]
+fn coerce_scalar<'py>(
+    py: Python<'py>,
+    jiter: &mut Jiter<'_>,
+    validator: &CombinedValidator,
+    peek: Peek,
+    state: &mut ValidationState<'_, 'py>,
+) -> Result<Taken<'py>, StreamStop> {
+    let input = if matches!(peek, Peek::String) {
+        JsonValue::Str(Cow::Borrowed(jiter.known_str()?))
+    } else {
+        jiter.known_value_owned(peek)?
+    };
+    validate_scalar(py, validator, &input, state)
+}
+
+/// Reuse the existing validator for every coercion and configuration-dependent scalar case.
+#[cold]
+#[inline(never)]
+fn validate_scalar<'py>(
+    py: Python<'py>,
+    validator: &CombinedValidator,
+    input: &JsonValue<'_>,
+    state: &mut ValidationState<'_, 'py>,
+) -> Result<Taken<'py>, StreamStop> {
+    match validator.validate(py, input, state) {
+        Ok(value) => Ok(Taken::Ready(value.into_bound(py))),
+        Err(ValError::InternalErr(err)) => Err(StreamStop::Py(err)),
+        // Ordinary validation owns error locations and JSON error precedence.
+        Err(_) => Ok(Taken::Raw),
+    }
 }
 
 pub(crate) type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, ModelFieldsSet);
@@ -875,18 +904,24 @@ impl ModelFieldsValidator {
                 return None;
             }
             let root = nodes.len();
-            let mut validator = field.validator.as_ref();
+            let mut validator = &field.validator;
             loop {
                 let mut nullable = false;
-                while let CombinedValidator::Nullable(inner) = unwrap_prebuilt(validator) {
-                    nullable = true;
-                    validator = inner.stream_inner();
+                loop {
+                    match validator.as_ref() {
+                        CombinedValidator::Prebuilt(inner) => validator = inner.stream_inner(),
+                        CombinedValidator::Nullable(inner) => {
+                            nullable = true;
+                            validator = inner.stream_inner();
+                        }
+                        _ => break,
+                    }
                 }
                 let (fast, next) = match unwrap_prebuilt(validator) {
-                    CombinedValidator::Str(_) => (Fast::Str, None),
-                    CombinedValidator::Bool(_) => (Fast::Bool, None),
-                    CombinedValidator::Int(_) => (Fast::Int, None),
-                    CombinedValidator::Float(_) => (Fast::Float, None),
+                    CombinedValidator::Str(_) => (Fast::Str(Arc::clone(validator)), None),
+                    CombinedValidator::Bool(_) => (Fast::Bool(Arc::clone(validator)), None),
+                    CombinedValidator::Int(_) => (Fast::Int(Arc::clone(validator)), None),
+                    CombinedValidator::Float(_) => (Fast::Float(Arc::clone(validator)), None),
                     CombinedValidator::List(list) => {
                         let list = list.stream_list()?;
                         let container = ContainerPlan {
@@ -894,7 +929,7 @@ impl ModelFieldsValidator {
                             min_length: list.min_length,
                             max_length: list.max_length,
                         };
-                        (Fast::List(Box::new(container)), Some(list.items.as_ref()))
+                        (Fast::List(Box::new(container)), Some(list.items))
                     }
                     CombinedValidator::Dict(dict) => {
                         let (values, min_length, max_length) = dict.stream_str_values()?;
@@ -1179,7 +1214,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
         }
 
         // No value, or `UseDefault` raised, try default pathway
-        match field.validator.default_value(py, Some(field.name.clone()), state) {
+        match field.validator.default_value(py, Some(field.name.as_str()), state) {
             Ok(Some(value)) => {
                 // Default value exists, and passed validation if required
                 self.model_dict.set_item(&field.name, value)?;
