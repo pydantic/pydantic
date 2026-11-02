@@ -148,7 +148,7 @@ impl SchemaValidator {
     fn _stream_plan_accepted(&self, py: Python<'_>) -> bool {
         self.stream_plan
             .as_deref()
-            .is_some_and(|plan| model_fields::root_parts(py, &self.validator, plan).is_some())
+            .is_some_and(|plan| model_fields::root_eligible(py, plan))
     }
 
     #[new]
@@ -562,8 +562,8 @@ impl SchemaValidator {
     /// into a `JsonValue` tree. `None` means the schema or the document is not one this handles
     /// and the caller should take the tree path.
     ///
-    /// Only supported top-level models use this path. Any document it cannot finish is
-    /// validated the ordinary way, preserving errors and their locations.
+    /// Handles supported models and containers. Documents or array elements it cannot
+    /// finish use ordinary validation, preserving errors and their locations.
     #[allow(clippy::too_many_arguments)]
     fn _validate_json_streaming(
         &self,
@@ -587,7 +587,9 @@ impl SchemaValidator {
         }
 
         let plan = self.stream_plan.as_deref()?;
-        let (class, fields) = model_fields::root_parts(py, &self.validator, plan)?;
+        if !model_fields::root_eligible(py, plan) {
+            return None;
+        }
 
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
@@ -607,7 +609,7 @@ impl SchemaValidator {
             self_instance,
         );
         let mut jiter = jiter::Jiter::new(json_data);
-        match model_fields::take_root(py, &mut jiter, class, fields, plan, &mut state) {
+        match model_fields::take_root(py, &mut jiter, plan, &mut state) {
             // trailing content is an error the ordinary path reports
             Ok(Some(value)) if jiter.finish().is_ok() => Some(Ok(value.unbind())),
             Err(model_fields::StreamStop::Py(err)) => Some(Err(err.into())),
