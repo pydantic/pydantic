@@ -129,14 +129,14 @@ def test_model_allow_extra():
     )
     assert s.to_python(BasicModel(foo=1, bar=b'more', __pydantic_extra__={})) == IsStrictDict(foo=1, bar=b'more')
     assert s.to_python(BasicModel(bar=b'more', foo=1, __pydantic_extra__={})) == IsStrictDict(bar=b'more', foo=1)
-    assert s.to_python(BasicModel(foo=1, __pydantic_extra__=dict(c=3), bar=b'more')) == IsStrictDict(
+    assert s.to_python(BasicModel(foo=1, __pydantic_extra__={'c': 3}, bar=b'more')) == IsStrictDict(
         foo=1, bar=b'more', c=3
     )
-    assert s.to_python(BasicModel(bar=b'more', __pydantic_extra__=dict(c=3, foo=1)), mode='json') == IsStrictDict(
+    assert s.to_python(BasicModel(bar=b'more', __pydantic_extra__={'c': 3, 'foo': 1}), mode='json') == IsStrictDict(
         bar='more', c=3, foo=1
     )
 
-    j = s.to_json(BasicModel(bar=b'more', foo=1, __pydantic_extra__=dict(c=3)))
+    j = s.to_json(BasicModel(bar=b'more', foo=1, __pydantic_extra__={'c': 3}))
     if on_pypy:
         assert j == IsJson({'bar': 'more', 'foo': 1, 'c': 3})
     else:
@@ -147,7 +147,7 @@ def test_model_recursive_in_extra():
     # See https://github.com/pydantic/pydantic/issues/6571
 
     class Model(BasicModel):
-        __slots__ = '__pydantic_extra__'
+        __slots__ = ('__pydantic_extra__',)
 
     s = SchemaSerializer(
         core_schema.model_schema(
@@ -156,24 +156,24 @@ def test_model_recursive_in_extra():
     )
     Model.__pydantic_serializer__ = s
 
-    assert s.to_json(Model(__pydantic_extra__=dict(other=Model(__pydantic_extra__={})))) == b'{"other":{}}'
+    assert s.to_json(Model(__pydantic_extra__={'other': Model(__pydantic_extra__={})})) == b'{"other":{}}'
 
 
 @pytest.mark.parametrize(
     'params',
     [
-        dict(include=None, exclude=None, expected={'a': 0, 'b': 1, 'c': 2, 'd': 3}),
-        dict(include={'a', 'b'}, exclude=None, expected={'a': 0, 'b': 1}),
-        dict(include={'a': ..., 'b': ...}, exclude=None, expected={'a': 0, 'b': 1}),
-        dict(include={'a': {1}, 'b': {1}}, exclude=None, expected={'a': 0, 'b': 1}),
-        dict(include=None, exclude={'a', 'b'}, expected={'c': 2, 'd': 3}),
-        dict(include=None, exclude={'a': ..., 'b': ...}, expected={'c': 2, 'd': 3}),
-        dict(include={'a', 'b'}, exclude={'b', 'c'}, expected={'a': 0}),
-        dict(include=None, exclude={'d': {1}}, expected={'a': 0, 'b': 1, 'c': 2, 'd': 3}),
-        dict(include={'a', 'b'}, exclude={'d': {1}}, expected={'a': 0, 'b': 1}),
-        dict(include={'a', 'b'}, exclude={'b': {1}}, expected={'a': 0, 'b': 1}),
-        dict(include={'a', 'b'}, exclude={'b': ...}, expected={'a': 0}),
-        dict(include=None, exclude={'__all__'}, expected={}),
+        {'include': None, 'exclude': None, 'expected': {'a': 0, 'b': 1, 'c': 2, 'd': 3}},
+        {'include': {'a', 'b'}, 'exclude': None, 'expected': {'a': 0, 'b': 1}},
+        {'include': {'a': ..., 'b': ...}, 'exclude': None, 'expected': {'a': 0, 'b': 1}},
+        {'include': {'a': {1}, 'b': {1}}, 'exclude': None, 'expected': {'a': 0, 'b': 1}},
+        {'include': None, 'exclude': {'a', 'b'}, 'expected': {'c': 2, 'd': 3}},
+        {'include': None, 'exclude': {'a': ..., 'b': ...}, 'expected': {'c': 2, 'd': 3}},
+        {'include': {'a', 'b'}, 'exclude': {'b', 'c'}, 'expected': {'a': 0}},
+        {'include': None, 'exclude': {'d': {1}}, 'expected': {'a': 0, 'b': 1, 'c': 2, 'd': 3}},
+        {'include': {'a', 'b'}, 'exclude': {'d': {1}}, 'expected': {'a': 0, 'b': 1}},
+        {'include': {'a', 'b'}, 'exclude': {'b': {1}}, 'expected': {'a': 0, 'b': 1}},
+        {'include': {'a', 'b'}, 'exclude': {'b': ...}, 'expected': {'a': 0}},
+        {'include': None, 'exclude': {'__all__'}, 'expected': {}},
     ],
 )
 def test_include_exclude_args(params):
@@ -317,7 +317,7 @@ def test_exclude_none():
 
 
 class FieldsSetModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -440,9 +440,10 @@ def test_advanced_exclude_nested_lists(exclude, expected):
     sub_sub_model_schema = core_schema.model_schema(
         type('SubSubModel', (), {}),
         core_schema.model_fields_schema(
-            dict(
-                i=core_schema.model_field(core_schema.int_schema()), j=core_schema.model_field(core_schema.int_schema())
-            )
+            {
+                'i': core_schema.model_field(core_schema.int_schema()),
+                'j': core_schema.model_field(core_schema.int_schema()),
+            }
         ),
     )
 
@@ -453,10 +454,10 @@ def test_advanced_exclude_nested_lists(exclude, expected):
     sub_model_schema = core_schema.model_schema(
         type('SubModel', (), {}),
         core_schema.model_fields_schema(
-            dict(
-                k=core_schema.model_field(core_schema.int_schema()),
-                subsubs=core_schema.model_field(core_schema.list_schema(sub_sub_model_schema)),
-            )
+            {
+                'k': core_schema.model_field(core_schema.int_schema()),
+                'subsubs': core_schema.model_field(core_schema.list_schema(sub_sub_model_schema)),
+            }
         ),
     )
 
@@ -465,12 +466,12 @@ def test_advanced_exclude_nested_lists(exclude, expected):
 
     model_schema = core_schema.model_schema(
         BasicModel,
-        core_schema.model_fields_schema(dict(subs=core_schema.model_field(core_schema.list_schema(sub_model_schema)))),
+        core_schema.model_fields_schema({'subs': core_schema.model_field(core_schema.list_schema(sub_model_schema))}),
     )
     v = SchemaValidator(model_schema)
 
     data = v.validate_python(
-        dict(subs=[dict(k=1, subsubs=[dict(i=1, j=1), dict(i=2, j=2)]), dict(k=2, subsubs=[dict(i=3, j=3)])])
+        {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'k': 2, 'subsubs': [{'i': 3, 'j': 3}]}]}
     )
 
     s = SchemaSerializer(model_schema)
@@ -1050,7 +1051,7 @@ def test_property_setter():
 def test_extra():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -1107,7 +1108,7 @@ def test_extra():
 def test_extra_config():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -1157,7 +1158,7 @@ def test_extra_config_nested_model():
 
 def test_extra_custom_serializer():
     class Model:
-        __slots__ = ('__pydantic_extra__', '__dict__')
+        __slots__ = ('__dict__', '__pydantic_extra__')
         __pydantic_extra__: dict[str, Any]
 
     schema = core_schema.model_schema(
@@ -1240,10 +1241,11 @@ def test_warn_on_missing_field() -> None:
         )
     )
 
+    value = BasicModel(root=AModel(type='a'))
+
     with pytest.warns(
         UserWarning, match='Expected 2 fields but got 1: Expected `AModel` - serialized value may not be as expected .+'
     ):
-        value = BasicModel(root=AModel(type='a'))
         s.to_python(value)
 
 

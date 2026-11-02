@@ -112,7 +112,8 @@ jobs:
     name: Test Beanie (main branch) on Python ${{ matrix.python-version }}
     if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
-    runs-on: ubuntu-latest
+    # MongoDB 8 fails to start on ubuntu-24.04+ runners (https://github.com/supercharge/mongodb-github-action/issues/81):
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -372,7 +373,7 @@ jobs:
           package_json_file: server/emails/package.json
 
       - name: 📬 Setup Node.js environment for server/emails
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: 'pnpm'
@@ -505,7 +506,8 @@ jobs:
 
       - name: Run Semantic Kernel tests
         working-directory: ./python
-        run: uv run --frozen --no-sync pytest ./tests/unit --ignore=tests/unit/processes/dapr_runtime
+        # The `model_context_window_exceeded` stop reason isn't supported by the locked `anthropic` version:
+        run: uv run --frozen --no-sync pytest ./tests/unit --ignore=tests/unit/processes/dapr_runtime -k 'not model_context_window_exceeded'
 
   test-langchain:
     name: Test LangChain (main branch) on Python ${{ matrix.python-version }}
@@ -834,7 +836,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout MCP Python SDK
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

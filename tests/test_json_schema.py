@@ -29,7 +29,7 @@ from uuid import UUID
 import pytest
 from annotated_types import Interval
 from dirty_equals import HasRepr
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import TypeAliasType, TypedDict, deprecated
 
@@ -46,8 +46,6 @@ from pydantic import (
     InstanceOf,
     PlainSerializer,
     PlainValidator,
-    PydanticDeprecatedSince20,
-    PydanticDeprecatedSince29,
     PydanticUserError,
     RootModel,
     ValidationError,
@@ -58,7 +56,6 @@ from pydantic import (
     field_validator,
     with_config,
 )
-from pydantic.color import Color
 from pydantic.config import ConfigDict, ExtraValues
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
@@ -2921,19 +2918,6 @@ def test_literal_types() -> None:
     }
 
 
-def test_color_type():
-    class Model(BaseModel):
-        color: Color
-
-    model_schema = Model.model_json_schema()
-    assert model_schema == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'color': {'title': 'Color', 'type': 'string', 'format': 'color'}},
-        'required': ['color'],
-    }
-
-
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         model_config = ConfigDict(extra='forbid')
@@ -3738,10 +3722,6 @@ def test_schema_for_generic_field():
             self.data = data
 
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
-
-        @classmethod
         def validate(cls, v: Any):
             return v
 
@@ -3869,10 +3849,6 @@ def test_advanced_generic_schema():  # noqa: C901
             self.data = data
 
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
-
-        @classmethod
         def validate(cls, v: Any):
             return v
 
@@ -3909,10 +3885,6 @@ def test_advanced_generic_schema():  # noqa: C901
         def __init__(self, x: str, y: Any):
             self.x = x
             self.y = y
-
-        @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
 
         @classmethod
         def validate(cls, v: Any):
@@ -5295,74 +5267,6 @@ def test_model_with_schema_extra_callable_no_model_class():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_config_class():
-    with pytest.warns(PydanticDeprecatedSince20, match='use ConfigDict instead'):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                @staticmethod
-                def json_schema_extra(schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-                    assert model_class is Model
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_no_model_class_config_class():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                @staticmethod
-                def json_schema_extra(schema):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_classmethod():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                type = 'foo'
-
-                @classmethod
-                def json_schema_extra(cls, schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = cls.type
-                    assert model_class is Model
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_instance_method():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                def json_schema_extra(schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-                    assert model_class is Model
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
 def test_serialization_validation_interaction():
     class Inner(BaseModel):
         x: Json[int]
@@ -6054,81 +5958,6 @@ def test_examples_annotation() -> None:
         'items': {'type': 'number'},
         'type': 'array',
     }
-
-
-@pytest.mark.skip_json_schema_validation(reason='Uses old examples format, planned for removal in v3.0.')
-def test_examples_annotation_dict() -> None:
-    with pytest.warns(PydanticDeprecatedSince29):
-        ListWithExamples = Annotated[
-            list[float],
-            Examples({'Fibonacci': [1, 1, 2, 3, 5]}),
-        ]
-
-    ta = TypeAdapter(ListWithExamples)
-
-    # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {
-        'examples': {'Fibonacci': [1, 1, 2, 3, 5]},
-        'items': {'type': 'number'},
-        'type': 'array',
-    }
-
-    with pytest.warns(PydanticDeprecatedSince29):
-        ListWithMoreExamples = Annotated[
-            ListWithExamples,
-            Examples(
-                {
-                    'Constants': [
-                        3.14,
-                        2.71,
-                    ]
-                }
-            ),
-        ]
-
-    ta = TypeAdapter(ListWithMoreExamples)
-
-    assert ta.json_schema() == {
-        'examples': {'Constants': [3.14, 2.71], 'Fibonacci': [1, 1, 2, 3, 5]},
-        'items': {'type': 'number'},
-        'type': 'array',
-    }
-
-
-def test_examples_mixed_types() -> None:
-    with pytest.warns(PydanticDeprecatedSince29):
-        ListThenDict = Annotated[
-            int,
-            Examples([1, 2]),
-            Examples({'some_example': [3, 4]}),
-        ]
-
-        DictThenList = Annotated[
-            int,
-            Examples({'some_example': [3, 4]}),
-            Examples([1, 2]),
-        ]
-
-    list_then_dict_ta = TypeAdapter(ListThenDict)
-    dict_then_list_ta = TypeAdapter(DictThenList)
-
-    with pytest.warns(
-        UserWarning,
-        match=re.escape('Updating existing JSON Schema examples of type list with examples of type dict.'),
-    ):
-        assert list_then_dict_ta.json_schema() == {
-            'examples': [1, 2, 3, 4],
-            'type': 'integer',
-        }
-
-    with pytest.warns(
-        UserWarning,
-        match=re.escape('Updating existing JSON Schema examples of type dict with examples of type list.'),
-    ):
-        assert dict_then_list_ta.json_schema() == {
-            'examples': [3, 4, 1, 2],
-            'type': 'integer',
-        }
 
 
 def test_skip_json_schema_annotation() -> None:
@@ -7085,6 +6914,70 @@ def test_plain_serializer_does_not_apply_with_unless_none() -> None:
         },
         'title': 'Model',
         'type': 'object',
+    }
+
+
+def test_unless_none_serializer_on_wrapped_nullable_schema() -> None:
+    """Test that `null` is kept when a serializer with `when_used` set to `'unless-none'` or `'json-unless-none'`
+    is applied on a schema wrapping the `nullable` schema (e.g. a default or validator schema)."""
+
+    class Model(BaseModel):
+        with_default: Decimal | None = None
+        with_validator: Decimal | None
+        annotated_with_validator: Annotated[
+            Decimal | None,
+            AfterValidator(lambda v: v),
+            PlainSerializer(float, return_type=float, when_used='json-unless-none'),
+        ]
+
+        @field_validator('with_validator')
+        @classmethod
+        def validate_with_validator(cls, v: Decimal | None) -> Decimal | None:
+            return v
+
+        @field_serializer('with_default', 'with_validator', when_used='unless-none')
+        def serialize_decimal(self, v: Decimal) -> float:
+            return float(v)
+
+    properties = Model.model_json_schema(mode='serialization')['properties']
+
+    assert properties['with_default']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+    assert properties['with_validator']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+    assert properties['annotated_with_validator']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+
+    assert Model(with_validator=None, annotated_with_validator=None).model_dump(mode='json') == {
+        'with_default': None,
+        'with_validator': None,
+        'annotated_with_validator': None,
+    }
+
+
+@pytest.mark.parametrize(
+    'wrap',
+    [
+        pytest.param(
+            lambda s, ser: core_schema.chain_schema([core_schema.any_schema(), s], serialization=ser), id='chain'
+        ),
+        pytest.param(lambda s, ser: core_schema.lax_or_strict_schema(s, s, serialization=ser), id='lax-or-strict'),
+        pytest.param(lambda s, ser: core_schema.json_or_python_schema(s, s, serialization=ser), id='json-or-python'),
+    ],
+)
+@pytest.mark.parametrize('when_used', ['unless-none', 'json-unless-none'])
+def test_unless_none_serializer_on_nullable_schema_in_wrapper(wrap: Any, when_used: str) -> None:
+    """Test that `null` is kept when a serializer with `when_used` set to `'unless-none'` or `'json-unless-none'`
+    is applied on a schema wrapping the `nullable` schema in the branch used for serialization."""
+    ser = core_schema.plain_serializer_function_ser_schema(
+        str, return_schema=core_schema.str_schema(), when_used=when_used
+    )
+    schema = wrap(core_schema.nullable_schema(core_schema.int_schema()), ser)
+
+    assert SchemaValidator(schema).validate_python(None) is None
+    serializer = SchemaSerializer(schema)
+    assert serializer.to_python(None, mode='json') is None
+    assert serializer.to_python(1, mode='json') == '1'
+
+    assert GenerateJsonSchema().generate(schema, mode='serialization') == {
+        'anyOf': [{'type': 'null'}, {'type': 'string'}]
     }
 
 

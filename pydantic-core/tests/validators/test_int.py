@@ -123,7 +123,7 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        (Decimal('1'), 1),
+        (Decimal(1), 1),
         (Decimal('1' + '0' * 1_000), int('1' + '0' * 1_000)),  # a large decimal
         (Decimal('1.0'), 1),
         (1.0, 1),
@@ -181,7 +181,7 @@ def test_int(input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        pytest.param(Decimal('1'), 1),
+        pytest.param(Decimal(1), 1),
         pytest.param(Decimal('1.0'), 1),
         pytest.param(i64_max, i64_max, id='i64_max'),
         pytest.param(i64_max + 1, i64_max + 1, id='i64_max+1'),

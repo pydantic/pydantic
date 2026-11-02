@@ -28,12 +28,6 @@ Unless your change is trivial (typo, docs tweak etc.), please create an issue to
 creating a pull request. Any pull request fixing an existing issue without being assigned first will be
 automatically closed.
 
-!!! note "Pydantic V1 is in maintenance mode"
-    Pydantic v1 is in maintenance mode, meaning that only bug fixes and security fixes will be accepted.
-    New features should be targeted at Pydantic v2.
-
-    To submit a fix to Pydantic v1, use the [`1.10.X-fixes`](https://github.com/pydantic/pydantic/tree/1.10.X-fixes) as a target branch.
-
 To make contributing as easy and fast as possible, you'll want to run tests and linting locally. Luckily,
 Pydantic has few dependencies, doesn't require compiling and tests don't need access to databases, etc.
 Because of this, setting up and running the tests should be very simple.
@@ -96,11 +90,11 @@ git switch -c my-new-feature-branch
 ### Writing tests
 
 Pydantic currently has two separate test suites: the Pydantic test suite (located in `tests/`), and the `pydantic-core` test suite (located in `pydantic-core/tests`).
-`pydantic-core/tests` is symlinked under `tests/pydantic-core/`, so that a single `pytest` invocation can run all of them. For it to work, you may need to
+`pydantic-core/tests` is symlinked under `tests/pydantic_core/`, so that a single `pytest` invocation can run all of them. For it to work, you may need to
 enable the [`core.symlinks`](https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks) Git option.
 
 When adding new tests, prefer adding them in `tests`, using the Pydantic Python API. Most `pydantic-core` tests are using internal APIs (e.g. `SchemaValidator`).
-Make sure to look for the right place to add a test, read the existing test files first. Tests related to types must go in `test/test_types/`
+Make sure to look for the right place to add a test, read the existing test files first. Tests related to types must go in `tests/types/` (one file per type, e.g. `tests/types/test_uuid.py`)
 (create a file if it doesn't exist yet).
 
 When introcuding a test for a specific issue/feature request, mention the issue link as a docstring, e.g.:
@@ -260,7 +254,6 @@ Here's a quick guide on how to do that. This tutorial is done in VSCode, but you
 
 ## Badges
 
-[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json)](https://pydantic.dev)
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
 
 Pydantic has a badge that you can use to show that your project uses Pydantic. You can use this badge in your `README.md`:
@@ -268,18 +261,12 @@ Pydantic has a badge that you can use to show that your project uses Pydantic. Y
 ### With Markdown
 
 ```md
-[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json)](https://pydantic.dev)
-
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
 ```
 
 ### With reStructuredText
 
 ```rst
-.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json
-    :target: https://pydantic.dev
-    :alt: Pydantic
-
 .. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json
     :target: https://pydantic.dev
     :alt: Pydantic
@@ -288,8 +275,6 @@ Pydantic has a badge that you can use to show that your project uses Pydantic. Y
 ### With HTML
 
 ```html
-<a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json" alt="Pydantic Version 1" style="max-width:100%;"></a>
-
 <a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json" alt="Pydantic Version 2" style="max-width:100%;"></a>
 ```
 

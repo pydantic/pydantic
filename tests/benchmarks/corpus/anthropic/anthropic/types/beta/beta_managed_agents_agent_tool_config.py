@@ -1,0 +1,14 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing import Union
+from typing_extensions import Annotated, TypeAlias
+from ..._models import UnionDiscriminator
+from .beta_managed_agents_bash_tool_config import BetaManagedAgentsBashToolConfig
+from .beta_managed_agents_edit_tool_config import BetaManagedAgentsEditToolConfig
+from .beta_managed_agents_glob_tool_config import BetaManagedAgentsGlobToolConfig
+from .beta_managed_agents_grep_tool_config import BetaManagedAgentsGrepToolConfig
+from .beta_managed_agents_read_tool_config import BetaManagedAgentsReadToolConfig
+from .beta_managed_agents_write_tool_config import BetaManagedAgentsWriteToolConfig
+from .beta_managed_agents_web_fetch_tool_config import BetaManagedAgentsWebFetchToolConfig
+from .beta_managed_agents_web_search_tool_config import BetaManagedAgentsWebSearchToolConfig
+BetaManagedAgentsAgentToolConfig: TypeAlias = Annotated[Union[BetaManagedAgentsBashToolConfig, BetaManagedAgentsEditToolConfig, BetaManagedAgentsReadToolConfig, BetaManagedAgentsWriteToolConfig, BetaManagedAgentsGlobToolConfig, BetaManagedAgentsGrepToolConfig, BetaManagedAgentsWebFetchToolConfig, BetaManagedAgentsWebSearchToolConfig], UnionDiscriminator('type')]

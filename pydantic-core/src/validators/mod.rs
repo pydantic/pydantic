@@ -1128,7 +1128,13 @@ impl<'py> Streamer<'_, 'py> {
         let (model_dict, _extra, fields_set) = fields;
         let none = self.py.None();
         let built = model::create_class(self.class).and_then(|instance| {
-            model::set_model_attrs(&instance, &model_dict, none.bind(self.py), &fields_set).map(|()| instance)
+            model::set_model_attrs(
+                &instance,
+                &model_dict,
+                none.bind(self.py),
+                Bound::new(self.py, fields_set)?.as_any(),
+            )
+            .map(|()| instance)
         });
         Some(built.map_err(Into::into))
     }
