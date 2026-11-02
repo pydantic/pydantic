@@ -19,7 +19,6 @@ from ..conftest import Err, PyAndJson, assert_gc
         (ArgsKwargs(('hello', True)), ({'a': 'hello', 'b': True}, None)),
         ({'a': 'hello', 'b': True}, ({'a': 'hello', 'b': True}, None)),
         ({'a': 'hello', 'b': 'true'}, ({'a': 'hello', 'b': True}, None)),
-        (ArgsKwargs(('hello', True)), ({'a': 'hello', 'b': True}, None)),
         (ArgsKwargs((), {'a': 'hello', 'b': True}), ({'a': 'hello', 'b': True}, None)),
         (
             ArgsKwargs(('hello',), {'a': 'hello', 'b': True}),
@@ -69,7 +68,6 @@ def test_dataclass_args(py_and_json: PyAndJson, input_value, expected):
     [
         (ArgsKwargs(('hello', True)), ({'a': 'hello'}, (True,))),
         (ArgsKwargs(('hello', 'true')), ({'a': 'hello'}, (True,))),
-        (ArgsKwargs(('hello', True)), ({'a': 'hello'}, (True,))),
         (ArgsKwargs((), {'a': 'hello', 'b': True}), ({'a': 'hello'}, (True,))),
         (
             ArgsKwargs(('hello',), {'a': 'hello', 'b': True}),
