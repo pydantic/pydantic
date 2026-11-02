@@ -118,6 +118,8 @@ impl PySome {
 #[derive(Debug)]
 pub struct SchemaValidator {
     validator: Arc<CombinedValidator>,
+    /// Owned Rust instructions; `None` also caches unsupported schemas.
+    stream_plan: Option<Box<model_fields::ModelPlan>>,
     definitions: Definitions<Arc<CombinedValidator>>,
     // References to the Python schema and config objects are saved to enable
     // reconstructing the object for cloudpickle support (see `__reduce__`).
@@ -144,8 +146,7 @@ impl SchemaValidator {
     /// differential test tell "both paths agree" apart from "only one path ran".
     #[getter]
     fn _stream_plan_accepted(&self, py: Python<'_>) -> bool {
-        let root = model_fields::unwrap_prebuilt(&self.validator);
-        model_fields::root_plan(py, root).is_some()
+        self.stream_plan.is_some() && model_fields::root_parts(py, &self.validator).is_some()
     }
 
     #[new]
@@ -162,6 +163,7 @@ impl SchemaValidator {
 
         let validator = build_validator(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
+        let stream_plan = model_fields::root_plan(&validator).map(Box::new);
         let py_schema = schema.clone().unbind();
         let py_config = match config {
             Some(c) if !c.is_empty() => Some(c.clone().into()),
@@ -182,6 +184,7 @@ impl SchemaValidator {
             .unwrap_or(StringCacheMode::All);
         Ok(Self {
             validator,
+            stream_plan,
             definitions,
             py_schema,
             py_config,
@@ -557,9 +560,8 @@ impl SchemaValidator {
     /// into a `JsonValue` tree. `None` means the schema or the document is not one this handles
     /// and the caller should take the tree path.
     ///
-    /// Handles a model at the top level and an array of them. Any element the fast path cannot
-    /// finish is re-read from its own bytes and validated the ordinary way, so errors and their
-    /// locations come out exactly as they always did.
+    /// Only supported top-level models use this path. Any document it cannot finish is
+    /// validated the ordinary way, preserving errors and their locations.
     #[allow(clippy::too_many_arguments)]
     fn _validate_json_streaming(
         &self,
@@ -582,9 +584,8 @@ impl SchemaValidator {
             return None;
         }
 
-        let root = model_fields::unwrap_prebuilt(&self.validator);
-
-        let plan = model_fields::root_plan(py, root)?;
+        let plan = self.stream_plan.as_deref()?;
+        let (class, fields) = model_fields::root_parts(py, &self.validator)?;
 
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
@@ -604,7 +605,7 @@ impl SchemaValidator {
             self_instance,
         );
         let mut jiter = jiter::Jiter::new(json_data);
-        match model_fields::take_root(py, &mut jiter, &plan, &mut state) {
+        match model_fields::take_root(py, &mut jiter, class, fields, plan, &mut state) {
             // trailing content is an error the ordinary path reports
             Ok(Some(value)) if jiter.finish().is_ok() => Some(Ok(value.unbind())),
             Err(model_fields::StreamStop::Py(err)) => Some(Err(err.into())),

@@ -30,7 +30,7 @@ use crate::validators::shared::lookup_tree::LookupFieldInfo;
 use crate::validators::shared::lookup_tree::LookupTree;
 use crate::validators::shared::lookup_tree::offer_field_input;
 
-use super::model::{ModelValidator, create_class, set_model_attrs};
+use super::model::{create_class, set_model_attrs};
 use super::validation_state::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
@@ -296,34 +296,35 @@ impl From<std::convert::Infallible> for StreamStop {
 }
 
 /// A field whose value can be read and validated directly from the JSON cursor.
-pub(crate) enum Fast<'v> {
-    Str(&'v CombinedValidator),
-    Bool(&'v CombinedValidator),
-    Int(&'v CombinedValidator),
-    Float(&'v CombinedValidator),
-    /// a nested model, whose own fields come off the same cursor
-    Model(Box<NestedModel<'v>>),
+#[derive(Debug)]
+pub(crate) enum Fast {
+    Str(Arc<CombinedValidator>),
+    Bool(Arc<CombinedValidator>),
+    Int(Arc<CombinedValidator>),
+    Float(Arc<CombinedValidator>),
     /// an array whose elements all come off the cursor the same way, to any depth
-    List(Box<ContainerPlan<'v>>),
+    List(Box<ContainerPlan>),
     /// an object with string keys whose values all come off the cursor the same way
-    Dict(Box<ContainerPlan<'v>>),
-    No,
+    Dict(Box<ContainerPlan>),
 }
 
 /// One field's plan: how to take its value, and whether null is also an answer for it.
-pub(crate) struct FieldPlan<'v> {
-    fast: Fast<'v>,
+#[derive(Debug)]
+pub(crate) struct FieldPlan {
+    fast: Fast,
     nullable: bool,
 }
 
 /// A container's plan: how to take each element, and the length the result has to have.
-pub(crate) struct ContainerPlan<'v> {
-    element: FieldPlan<'v>,
+#[derive(Debug)]
+pub(crate) struct ContainerPlan {
+    /// Index of the child instructions in `ModelPlan::nodes`.
+    element: usize,
     min_length: Option<usize>,
     max_length: Option<usize>,
 }
 
-impl ContainerPlan<'_> {
+impl ContainerPlan {
     /// Whether a container of this length is one the caller can keep.
     fn length_ok(&self, len: usize) -> bool {
         self.min_length.is_none_or(|min| len >= min) && self.max_length.is_none_or(|max| len <= max)
@@ -336,20 +337,13 @@ impl ContainerPlan<'_> {
 const SLOTS_ON_STACK: usize = 16;
 
 /// One model's plan.
-pub(crate) struct ModelPlan<'v> {
-    fields: Vec<FieldPlan<'v>>,
+#[derive(Debug)]
+pub(crate) struct ModelPlan {
+    /// Indices of the field roots in schema order.
+    fields: Vec<usize>,
+    /// Flat storage makes both building and dropping a plan independent of schema depth.
+    nodes: Vec<FieldPlan>,
 }
-
-/// What it takes to build one nested model without leaving the cursor.
-pub(crate) struct NestedModel<'v> {
-    class: &'v Py<PyType>,
-    fields: &'v ModelFieldsValidator,
-    plan: ModelPlan<'v>,
-}
-
-/// How far down the plan follows nested models. A self-referential schema would otherwise plan
-/// forever, and each level down accounts for less of the document than the one above it.
-const MAX_PLAN_DEPTH: u8 = 4;
 
 // Match jiter's default JSON recursion limit. Only nonempty containers consume a level.
 const JSON_DEPTH_LIMIT: usize = 200;
@@ -371,93 +365,23 @@ pub(crate) fn unwrap_prebuilt(validator: &CombinedValidator) -> &CombinedValidat
     current
 }
 
-fn classify<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8) -> FieldPlan<'v> {
-    match unwrap_prebuilt(validator) {
-        // null is an answer for the field however the rest of it is validated
-        CombinedValidator::Nullable(nullable) => FieldPlan {
-            nullable: true,
-            ..classify(py, nullable.stream_inner(), depth)
-        },
-        // a field that is present is validated by the inner validator alone
-        CombinedValidator::WithDefault(_) => FieldPlan {
-            fast: Fast::No,
-            nullable: false,
-        },
-        _ => FieldPlan {
-            fast: classify_fast(py, validator, depth),
-            nullable: false,
-        },
-    }
-}
-
-fn classify_fast<'v>(py: Python<'_>, validator: &'v CombinedValidator, depth: u8) -> Fast<'v> {
-    match unwrap_prebuilt(validator) {
-        CombinedValidator::Str(_) => Fast::Str(unwrap_prebuilt(validator)),
-        CombinedValidator::Bool(_) => Fast::Bool(unwrap_prebuilt(validator)),
-        CombinedValidator::Int(_) => Fast::Int(unwrap_prebuilt(validator)),
-        CombinedValidator::Float(_) => Fast::Float(unwrap_prebuilt(validator)),
-        // a container's element plan does not raise the depth: only a model can recurse, and
-        // `list[list[list[float]]]` is a real shape that a depth cap would refuse for no reason
-        CombinedValidator::List(list) => match list.stream_list() {
-            // `fail_fast` only decides how errors are collected, and a streamed list that
-            // produces any error is handed back whole, so it makes no difference here
-            Some(list) => match container_plan(py, list.items, list.min_length, list.max_length, depth) {
-                Some(plan) => Fast::List(Box::new(plan)),
-                None => Fast::No,
-            },
-            None => Fast::No,
-        },
-        CombinedValidator::Dict(dict) => match dict.stream_str_values() {
-            Some((values, min, max)) => match container_plan(py, values, min, max, depth) {
-                Some(plan) => Fast::Dict(Box::new(plan)),
-                None => Fast::No,
-            },
-            None => Fast::No,
-        },
-        CombinedValidator::Model(model) if depth < MAX_PLAN_DEPTH => match nested_model(py, model, depth) {
-            Some(nested) => Fast::Model(Box::new(nested)),
-            None => Fast::No,
-        },
-        _ => Fast::No,
-    }
-}
-
-fn simple_fast(fast: &Fast<'_>) -> bool {
-    match fast {
-        Fast::Str(_) | Fast::Bool(_) | Fast::Int(_) | Fast::Float(_) => true,
-        Fast::List(plan) | Fast::Dict(plan) => simple_fast(&plan.element.fast),
-        Fast::Model(_) | Fast::No => false,
-    }
-}
-
-fn container_plan<'v>(
-    py: Python<'_>,
-    element: &'v CombinedValidator,
-    min_length: Option<usize>,
-    max_length: Option<usize>,
-    depth: u8,
-) -> Option<ContainerPlan<'v>> {
-    let element = classify(py, element, depth);
-    if matches!(element.fast, Fast::No) {
-        return None;
-    }
-    Some(ContainerPlan {
-        element,
-        min_length,
-        max_length,
-    })
-}
-
-fn nested_model<'v>(py: Python<'_>, model: &'v ModelValidator, depth: u8) -> Option<NestedModel<'v>> {
-    let (class, inner) = model.stream_parts(py)?;
-    let CombinedValidator::ModelFields(fields) = &**inner else {
+/// Build the fixed decoding instructions for a supported root model.
+pub(crate) fn root_plan(validator: &CombinedValidator) -> Option<ModelPlan> {
+    let CombinedValidator::Model(model) = unwrap_prebuilt(validator) else {
         return None;
     };
-    Some(NestedModel {
-        class,
-        fields,
-        plan: fields.stream_plan_at(py, depth + 1)?,
-    })
+    model.stream_fields()?.stream_plan()
+}
+
+/// Class hooks can change after schema construction, so check them for each call.
+pub(crate) fn root_parts<'v>(
+    py: Python<'_>,
+    validator: &'v CombinedValidator,
+) -> Option<(&'v Py<PyType>, &'v ModelFieldsValidator)> {
+    let CombinedValidator::Model(model) = unwrap_prebuilt(validator) else {
+        return None;
+    };
+    model.stream_parts(py)
 }
 
 /// What came off the cursor for one field.
@@ -468,53 +392,28 @@ pub(crate) enum Taken<'py> {
     Raw,
 }
 
-/// One model instance from the cursor, or `None` if its object could not be finished. Either way
-/// the object has been consumed.
-fn build_model<'py>(
+/// Read one root model, finishing JSON parsing before constructing the instance.
+pub(crate) fn take_root<'py>(
     py: Python<'py>,
-    nested: &NestedModel<'_>,
     jiter: &mut Jiter<'_>,
+    class: &Py<PyType>,
+    fields: &ModelFieldsValidator,
+    plan: &ModelPlan,
     state: &mut ValidationState<'_, 'py>,
-    depth: usize,
 ) -> Result<Option<Bound<'py, PyAny>>, StreamStop> {
-    // constructing a model is never an exact match, exactly as the ordinary path has it
+    if !matches!(jiter.peek()?, Peek::Object) {
+        return Ok(None);
+    }
     state.floor_exactness(Exactness::Strict);
-    let Some((model_dict, _extra, fields_set)) =
-        nested
-            .fields
-            .validate_json_streaming(py, jiter, &nested.plan, state, depth)?
-    else {
+    let Some((model_dict, _extra, fields_set)) = fields.validate_json_streaming(py, jiter, plan, state, 0)? else {
         return Ok(None);
     };
-    // Only the root model is eligible: finish parsing before storage descriptors can run.
     jiter.finish()?;
-    let instance = create_class(nested.class.bind(py))?;
+    let instance = create_class(class.bind(py))?;
     let none = py.None();
     let fields_set = Bound::new(py, fields_set)?;
     set_model_attrs(&instance, &model_dict, none.bind(py), &fields_set)?;
     Ok(Some(instance))
-}
-
-/// A plan for a whole document, for a root the model shapes do not cover.
-pub(crate) fn root_plan<'v>(py: Python<'_>, validator: &'v CombinedValidator) -> Option<FieldPlan<'v>> {
-    if !matches!(unwrap_prebuilt(validator), CombinedValidator::Model(_)) {
-        return None;
-    }
-    let plan = classify(py, validator, 0);
-    (!matches!(plan.fast, Fast::No)).then_some(plan)
-}
-
-/// One whole document off the cursor, or `None` if the cursor could not finish it.
-pub(crate) fn take_root<'py>(
-    py: Python<'py>,
-    jiter: &mut Jiter<'_>,
-    plan: &FieldPlan<'_>,
-    state: &mut ValidationState<'_, 'py>,
-) -> Result<Option<Bound<'py, PyAny>>, StreamStop> {
-    match take_fast(py, jiter, plan, state, 0)? {
-        Taken::Ready(value) => Ok(Some(value)),
-        Taken::Raw => Ok(None),
-    }
 }
 
 /// An array, every element taken the same way. If any element is not something the cursor can
@@ -524,11 +423,12 @@ pub(crate) fn take_root<'py>(
 fn take_list<'j, 'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'j>,
-    plan: &ContainerPlan<'_>,
+    model_plan: &ModelPlan,
+    plan: &ContainerPlan,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
-    let element = &plan.element;
+    let element = &model_plan.nodes[plan.element];
     // collected first so the list is allocated once at its final size: appending into an empty
     // list over-allocates and then reallocates, which is most of what a short list costs
     let mut items: SmallVec<[Bound<'py, PyAny>; 8]> = SmallVec::new();
@@ -539,7 +439,7 @@ fn take_list<'j, 'py>(
     }
     while let Some(peek) = next {
         if all_ready && plan.max_length.is_none_or(|max| items.len() < max) {
-            match take_peeked(py, jiter, element, peek, state, depth + 1)? {
+            match take_peeked(py, jiter, model_plan, element, peek, state, depth + 1)? {
                 Taken::Ready(value) => items.push(value),
                 Taken::Raw => all_ready = false,
             }
@@ -563,11 +463,12 @@ fn take_list<'j, 'py>(
 fn take_dict<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    plan: &ContainerPlan<'_>,
+    model_plan: &ModelPlan,
+    plan: &ContainerPlan,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
-    let value_plan = &plan.element;
+    let value_plan = &model_plan.nodes[plan.element];
     let dict = PyDict::new(py);
     let mut all_ready = true;
     let mut key = jiter.known_object()?;
@@ -585,7 +486,7 @@ fn take_dict<'py>(
                 all_ready = false;
                 skip_unused(jiter, depth + 1)?;
             } else {
-                match take_fast(py, jiter, value_plan, state, depth + 1)? {
+                match take_fast(py, jiter, model_plan, value_plan, state, depth + 1)? {
                     Taken::Ready(value) => dict.set_item(k, value)?,
                     Taken::Raw => all_ready = false,
                 }
@@ -675,12 +576,13 @@ fn check_skipped_utf8(jiter: &Jiter<'_>, start: usize) -> Result<(), StreamStop>
 fn take_fast<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    field: &FieldPlan<'_>,
+    model_plan: &ModelPlan,
+    field: &FieldPlan,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
     let peek = jiter.peek()?;
-    take_peeked(py, jiter, field, peek, state, depth)
+    take_peeked(py, jiter, model_plan, field, peek, state, depth)
 }
 
 /// The same, for a value whose peek the caller already has: an element of an array, or the value
@@ -688,7 +590,8 @@ fn take_fast<'py>(
 fn take_peeked<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    field: &FieldPlan<'_>,
+    model_plan: &ModelPlan,
+    field: &FieldPlan,
     peek: Peek,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
@@ -739,12 +642,8 @@ fn take_peeked<'py>(
         {
             coerce_scalar(py, jiter, validator, peek, state)?
         }
-        (Fast::List(plan), Peek::Array) => take_list(py, jiter, plan, state, depth)?,
-        (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, plan, state, depth)?,
-        (Fast::Model(nested), Peek::Object) => match build_model(py, nested, jiter, state, depth)? {
-            Some(instance) => Taken::Ready(instance),
-            None => Taken::Raw,
-        },
+        (Fast::List(plan), Peek::Array) => take_list(py, jiter, model_plan, plan, state, depth)?,
+        (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, model_plan, plan, state, depth)?,
         // a field this path does not specialise, or a json type that does not match it: hand the
         // value to the field's own validator rather than giving up on the whole object
         _ => {
@@ -993,36 +892,75 @@ impl ModelFieldsValidator {
         Ok(())
     }
 
-    /// Build one model's fields straight off a json cursor, with no `JsonValue` tree.
-    ///
-    /// `None` means this object is not one the fast path can finish: a value was not the exact type
-    fn stream_plan_at(&self, py: Python<'_>, depth: u8) -> Option<ModelPlan<'_>> {
+    /// Build owned instructions without recursing through nested container schemas.
+    fn stream_plan(&self) -> Option<ModelPlan> {
         if !matches!(self.extra_behavior, ExtraBehavior::Ignore) || self.extras_validator.is_some() {
             return None;
         }
         let mut fields = Vec::new();
+        let mut nodes = Vec::new();
         for field in &self.fields {
             if !field.lookup_path_collection.by_alias.is_empty() {
                 return None;
             }
-            let plan = classify(py, &field.validator, depth);
-            if !simple_fast(&plan.fast) {
-                return None;
+            let root = nodes.len();
+            let mut validator = &field.validator;
+            loop {
+                let mut nullable = false;
+                loop {
+                    match validator.as_ref() {
+                        CombinedValidator::Prebuilt(inner) => validator = inner.stream_inner(),
+                        CombinedValidator::Nullable(inner) => {
+                            nullable = true;
+                            validator = inner.stream_inner();
+                        }
+                        _ => break,
+                    }
+                }
+                let (fast, next) = match unwrap_prebuilt(validator) {
+                    CombinedValidator::Str(_) => (Fast::Str(Arc::clone(validator)), None),
+                    CombinedValidator::Bool(_) => (Fast::Bool(Arc::clone(validator)), None),
+                    CombinedValidator::Int(_) => (Fast::Int(Arc::clone(validator)), None),
+                    CombinedValidator::Float(_) => (Fast::Float(Arc::clone(validator)), None),
+                    CombinedValidator::List(list) => {
+                        let list = list.stream_list()?;
+                        let container = ContainerPlan {
+                            element: nodes.len() + 1,
+                            min_length: list.min_length,
+                            max_length: list.max_length,
+                        };
+                        (Fast::List(Box::new(container)), Some(list.items))
+                    }
+                    CombinedValidator::Dict(dict) => {
+                        let (values, min_length, max_length) = dict.stream_str_values()?;
+                        let container = ContainerPlan {
+                            element: nodes.len() + 1,
+                            min_length,
+                            max_length,
+                        };
+                        (Fast::Dict(Box::new(container)), Some(values))
+                    }
+                    _ => return None,
+                };
+                nodes.push(FieldPlan { fast, nullable });
+                match next {
+                    Some(next) => validator = next,
+                    None => break,
+                }
             }
             if fields.is_empty() {
-                // Allocate once, only after the first field qualifies for streaming.
                 fields.reserve_exact(self.fields.len());
             }
-            fields.push(plan);
+            fields.push(root);
         }
-        Some(ModelPlan { fields })
+        Some(ModelPlan { fields, nodes })
     }
 
     pub(crate) fn validate_json_streaming<'j, 'py>(
         &self,
         py: Python<'py>,
         jiter: &mut Jiter<'j>,
-        plan: &ModelPlan<'_>,
+        plan: &ModelPlan,
         state: &mut ValidationState<'_, 'py>,
         depth: usize,
     ) -> Result<Option<ValidatedModelFields<'py>>, StreamStop> {
@@ -1046,7 +984,16 @@ impl ModelFieldsValidator {
         while let Some(k) = key {
             let found = lookup.get(k).copied();
             match found {
-                Some(index) => slots[index] = Some(take_fast(py, jiter, &plan.fields[index], state, depth + 1)?),
+                Some(index) => {
+                    slots[index] = Some(take_fast(
+                        py,
+                        jiter,
+                        plan,
+                        &plan.nodes[plan.fields[index]],
+                        state,
+                        depth + 1,
+                    )?);
+                }
                 None => skip_unused(jiter, depth + 1)?,
             }
             key = jiter.next_key()?;
@@ -1401,12 +1348,9 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
 mod plan_tests {
     use super::*;
 
-    fn bounded(min: Option<usize>, max: Option<usize>) -> ContainerPlan<'static> {
+    fn bounded(min: Option<usize>, max: Option<usize>) -> ContainerPlan {
         ContainerPlan {
-            element: FieldPlan {
-                fast: Fast::No,
-                nullable: false,
-            },
+            element: 0,
             min_length: min,
             max_length: max,
         }
@@ -1435,14 +1379,13 @@ mod plan_tests {
         assert!(!exactly_two.length_ok(3));
     }
 
-    /// A field's plan sits in a `Vec` per model and is rebuilt per document, so a fat variant
-    /// costs every field of every model. Box a new variant rather than raising this.
+    /// A fat variant costs every node in a model's plan. Box a new variant rather than raising this.
     #[test]
     fn field_plan_stays_small() {
         assert!(
-            std::mem::size_of::<FieldPlan<'_>>() <= 24,
+            std::mem::size_of::<FieldPlan>() <= 24,
             "FieldPlan grew to {} bytes",
-            std::mem::size_of::<FieldPlan<'_>>()
+            std::mem::size_of::<FieldPlan>()
         );
     }
 }
