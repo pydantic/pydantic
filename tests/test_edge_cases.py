@@ -20,6 +20,11 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
 from pydantic_core import (
     CoreSchema,
     ErrorDetails,
@@ -2891,6 +2896,114 @@ def test_eq_with_cached_property():
     obj1.cached
     # Ensure the objects still compare equals after caching a property
     assert obj1 == obj2
+    # Also ensure equality holds when both objects have cached the property
+    obj2.cached
+    assert obj1 == obj2
+
+
+def test_eq_with_cached_property_non_bool_comparable():
+    """Test BaseModel.__eq__ compatibility when cached_property returns
+    a non-bool-comparable value (e.g. numpy array or custom class whose __bool__ raises).
+
+    See GH-14068: https://github.com/pydantic/pydantic/issues/14068
+    """
+
+    class NonBoolComparable:
+        def __init__(self, value: int):
+            self.value = value
+
+        def __eq__(self, other: object) -> Any:
+            if not isinstance(other, NonBoolComparable):
+                return NotImplemented
+            return NonBoolComparable(self.value == other.value)
+
+        def __bool__(self) -> bool:
+            raise ValueError(
+                'The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()'
+            )
+
+    class Model(BaseModel):
+        model_config = ConfigDict(frozen=True)
+        attr: int
+
+        @functools.cached_property
+        def cached(self) -> NonBoolComparable:
+            return NonBoolComparable(self.attr)
+
+    obj1 = Model(attr=1)
+    obj2 = Model(attr=1)
+    obj3 = Model(attr=2)
+
+    # 1. Before accessing cached_property
+    assert obj1 == obj2
+    assert obj1 != obj3
+
+    # 2. Only obj1 cached
+    _ = obj1.cached
+    assert obj1 == obj2
+    assert obj1 != obj3
+
+    # 3. Both obj1 and obj2 cached (fast-path __dict__ == __dict__ would raise ValueError)
+    _ = obj2.cached
+    _ = obj3.cached
+    assert obj1 == obj2
+    assert obj1 != obj3
+
+    # 4. Hash and dict lookup for frozen models
+    assert hash(obj1) == hash(obj2)
+    assert {obj1: 'ok'}[obj2] == 'ok'
+
+
+def test_eq_with_cached_property_type_error_on_eq():
+    """Test BaseModel.__eq__ when a cached property object raises TypeError on equality comparison."""
+
+    class TypeErrorOnEq:
+        def __eq__(self, other: object) -> bool:
+            raise TypeError('Cannot compare')
+
+    class Model(BaseModel):
+        attr: int
+
+        @functools.cached_property
+        def cached(self) -> TypeErrorOnEq:
+            return TypeErrorOnEq()
+
+    m1 = Model(attr=1)
+    m2 = Model(attr=1)
+    _ = m1.cached
+    _ = m2.cached
+    assert m1 == m2
+
+
+@pytest.mark.skipif(np is None, reason='numpy is not installed')
+def test_eq_with_cached_property_numpy_array():
+    """Test BaseModel.__eq__ compatibility when cached_property returns a real numpy array.
+
+    See GH-14068: https://github.com/pydantic/pydantic/issues/14068
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(frozen=True)
+        value: int
+
+        @functools.cached_property
+        def derived(self) -> Any:
+            assert np is not None
+            return np.array([self.value, self.value])
+
+    a = Model(value=1)
+    b = Model(value=1)
+    c = Model(value=2)
+
+    assert a == b
+    _ = a.derived
+    assert a == b
+    _ = b.derived
+    _ = c.derived
+    assert a == b
+    assert a != c
+    assert hash(a) == hash(b)
+    assert {a: 'numpy'}[b] == 'numpy'
 
 
 def test_model_metaclass_on_other_class() -> None:
