@@ -15,6 +15,17 @@ where
     formatter.end_string(writer)
 }
 
+const U32_LEN: usize = size_of::<u32>();
+const BLOCK_SIZE: usize = 4 * U32_LEN;
+
+/// Instead of iterating over bytes one by one, they are checked 16 at a time (as four `u32` words),
+/// and the remaining 0 to 15 bytes are checked one by one. When a block has bytes to escape,
+/// [`exact_escape_bits()`] is used to find all of them, so that the block is only checked once.
+/// Code is adapted from <https://github.com/serde-rs/json/pull/1363>.
+/// References:
+/// - <https://bits.stephan-brumme.com/null.html>
+/// - <https://en.wikipedia.org/wiki/SWAR>
+/// - <https://graphics.stanford.edu/~seander/bithacks.html#ZeroInWord>
 fn format_escaped_str_contents<W, F>(writer: &mut W, formatter: &mut F, value: &str) -> io::Result<()>
 where
     W: ?Sized + io::Write,
@@ -23,27 +34,34 @@ where
     let bytes = value.as_bytes();
 
     let mut start = 0;
-    let mut i = 0;
 
-    while i < bytes.len() {
-        let byte = bytes[i];
-        let escape = ESCAPE[byte as usize];
-        if escape == 0 {
-            // Only skip ahead after a byte that doesn't need escaping, so that
-            // consecutive escaped bytes don't pay for the block scan:
-            i = skip_to_escape(bytes, i + 1);
+    // The idea here is to process blocks of 16 bytes, but have the code iterate over the block
+    // sequentially in "sub-blocks" of 4 bytes (where the bitwise operations are performed).
+    // The compiler can then optimize the iteration in `block_needs_escaping()` into SIMD instructions.
+    let (blocks, _) = bytes.as_chunks::<BLOCK_SIZE>();
+    for (block_index, block) in blocks.iter().enumerate() {
+        if !block_needs_escaping(block) {
             continue;
         }
 
-        if start < i {
-            formatter.write_string_fragment(writer, &value[start..i])?;
+        for (word_index, word) in block.as_chunks::<U32_LEN>().0.iter().enumerate() {
+            let word_start = block_index * BLOCK_SIZE + word_index * U32_LEN;
+            let mut bits = exact_escape_bits(*word);
+            while bits != 0 {
+                let i = word_start + bits.trailing_zeros() as usize / 8;
+                write_escaped_byte(writer, formatter, value, start, i)?;
+                start = i + 1;
+                // Set the lowest `0x80` byte back to 0, to move on to the next byte to escape:
+                bits &= bits - 1;
+            }
         }
+    }
 
-        let char_escape = CharEscape::from_escape_table(escape, byte);
-        formatter.write_char_escape(writer, char_escape)?;
-
-        i += 1;
-        start = i;
+    for i in blocks.len() * BLOCK_SIZE..bytes.len() {
+        if ESCAPE[bytes[i] as usize] != 0 {
+            write_escaped_byte(writer, formatter, value, start, i)?;
+            start = i + 1;
+        }
     }
 
     if start == bytes.len() {
@@ -53,40 +71,20 @@ where
     formatter.write_string_fragment(writer, &value[start..])
 }
 
-const U32_LEN: usize = size_of::<u32>();
-const BLOCK_SIZE: usize = 4 * U32_LEN;
-
-/// Returns the index of the first byte at or after `i` that needs to be escaped
-/// (according to `ESCAPE`), or `bytes.len()` if there is none.
-///
-/// Instead of iterating over bytes one by one, they are checked 16 at a time (as four `u32` words),
-/// and the remaining 0 to 15 bytes are checked one by one.
-/// Code is adapted from https://github.com/serde-rs/json/pull/1363.
-/// References:
-/// - https://bits.stephan-brumme.com/null.html
-/// - https://en.wikipedia.org/wiki/SWAR
+/// Write the bytes from `start` to `i` (none of them need to be escaped), then the escaped byte at `i`.
 #[inline]
-fn skip_to_escape(bytes: &[u8], mut i: usize) -> usize {
-    // The idea here is to process blocks of 16 bytes, but have the code iterate over the block
-    // sequentially in "sub-blocks" of 4 bytes (where the bitwise operations are performed).
-    // The compiler can then optimize the iteration in `block_needs_escaping()` into SIMD instructions.
-    for block in bytes[i..].as_chunks::<BLOCK_SIZE>().0 {
-        if block_needs_escaping(block) {
-            for word in block.as_chunks::<U32_LEN>().0 {
-                let bits = escape_bits(*word);
-                if bits != 0 {
-                    return i + bits.trailing_zeros() as usize / 8;
-                }
-                i += U32_LEN;
-            }
-        }
-        i += BLOCK_SIZE;
+fn write_escaped_byte<W, F>(writer: &mut W, formatter: &mut F, value: &str, start: usize, i: usize) -> io::Result<()>
+where
+    W: ?Sized + io::Write,
+    F: ?Sized + Formatter,
+{
+    if start < i {
+        formatter.write_string_fragment(writer, &value[start..i])?;
     }
 
-    while i < bytes.len() && ESCAPE[bytes[i] as usize] == 0 {
-        i += 1;
-    }
-    i
+    let byte = value.as_bytes()[i];
+    let char_escape = CharEscape::from_escape_table(ESCAPE[byte as usize], byte);
+    formatter.write_char_escape(writer, char_escape)
 }
 
 #[inline]
@@ -106,7 +104,8 @@ fn block_needs_escaping(block: &[u8; BLOCK_SIZE]) -> bool {
 ///
 /// Each byte of the result is `0x80` (`1000 0000`) if the corresponding byte of the `word` input
 /// needs to be escaped, `0x00` otherwise. Bytes after the first `0x80` may be wrongly set to
-/// `0x80`: this is fine, as callers only use the first `0x80` byte.
+/// `0x80`: this is fine, as callers only check if the result is 0. To get every byte to escape,
+/// [`exact_escape_bits()`] is used instead.
 ///
 /// For example, `a"b\n` gives `0x80008000` (note the little-endian order): `"` and `\n` are flagged.
 #[inline]
@@ -137,9 +136,8 @@ fn escape_bits(word: [u8; U32_LEN]) -> u32 {
     // Note that because this is applied on the 4 bytes at once, the first subtraction operation can "leak"
     // to the next byte: a byte that wraps around borrows 1 from the next byte of the string (the more
     // significant one, as `word` is little-endian), which may then be wrongly marked as needing an escape.
-    // In practice this is fine because only a byte that needs escaping can wrap around, so every byte up
-    // to and including the first one to escape is correct, and callers only use that first marked byte
-    // (the bytes after it are checked again once it has been escaped).
+    // In practice this is fine because only a byte that needs escaping can wrap around, so the result
+    // is 0 exactly when no byte needs to be escaped, which is the only thing callers check.
 
     // This leaves `"` and `\`, which are special cased with `bytes_equal_to()`.
 
@@ -157,6 +155,46 @@ fn bytes_less_than(word: u32, n: u8) -> u32 {
 fn bytes_equal_to(word: u32, byte: u8) -> u32 {
     let word = word ^ splat(byte);
     word.wrapping_sub(splat(1)) & !word & splat(0x80)
+}
+
+/// Same as [`escape_bits()`], but every byte of the result is correct, not only the first `0x80` one.
+/// This is what allows iterating over every byte to escape in a block.
+///
+/// It is a bit more expensive, so it is only used on blocks where [`block_needs_escaping()`] found
+/// something.
+#[inline]
+fn exact_escape_bits(word: [u8; U32_LEN]) -> u32 {
+    let word = u32::from_le_bytes(word);
+
+    // The idea is the same as in `escape_bits()`, but the steps are different so that they never
+    // "leak" to the next byte (walking the example on a single byte again):
+    //
+    // - `b & 0x7F`: 0x7F is 0111 1111, so this sets the top bit to 0. The top bit is restored later.
+    //
+    // - `+ (0x80 - 0x20)`, i.e. `+ 0x60`: the top bit is set to 1 if `b & 0x7F` is at least 0x20
+    //   (0x20 + 0x60 = 0x80), and stays 0 if it is below 0x20. As `b & 0x7F` is at most 0x7F, the result
+    //   is at most 0xDF, so unlike the subtraction in `escape_bits()`, nothing leaks to the next byte.
+    //
+    // - `| b`: sets the top bit back to 1 for UTF-8 characters (bytes of 0x80 or more).
+    //   The top bit is now 0 only for bytes < 0x20.
+    //
+    // - `!`: flips the bits, so the top bit is now 1 only for bytes < 0x20, which is what we aim for.
+    //
+    // - `& 0x80`: same mask as in `escape_bits()`.
+
+    exact_bytes_less_than(word, 0x20) | exact_bytes_equal_to(word, b'"') | exact_bytes_equal_to(word, b'\\')
+}
+
+#[inline]
+fn exact_bytes_less_than(word: u32, n: u8) -> u32 {
+    debug_assert!(n <= 0x80);
+    // See the explanation in `exact_escape_bits()`:
+    !(((word & splat(0x7F)) + splat(0x80 - n)) | word) & splat(0x80)
+}
+
+#[inline]
+fn exact_bytes_equal_to(word: u32, byte: u8) -> u32 {
+    exact_bytes_less_than(word ^ splat(byte), 1)
 }
 
 /// A `u32` with each of its bytes set to `byte`.
