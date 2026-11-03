@@ -95,11 +95,13 @@ def test_oversized_literal_bypasses_schema_cache(
 
 @pytest.mark.thread_unsafe
 def test_literal_budget_is_shared_across_nested_annotations(monkeypatch: pytest.MonkeyPatch) -> None:
-    from pydantic._internal import _generate_schema
+    from pydantic._internal import _generate_schema, _schema_cache
 
+    # Keep individual values within the field cache's cap while exceeding the total budget.
+    monkeypatch.setattr(_schema_cache, 'PURE_ANNOTATION_MAX_LITERAL_BYTES', 4096)
     cache = {}
     monkeypatch.setattr(_generate_schema, '_pure_annotation_schema_cache', cache)
-    a, b, c, d, e, f = [chr(i) * 1500 for i in range(97, 103)]
+    a, b, c, d, e, f = [chr(i) * 1000 for i in range(97, 103)]
     annotation = tuple[Literal[a], list[Literal[b]], dict[str, Literal[c]], Literal[d], Literal[e], Literal[f]]
     model = create_model('Model', v=(annotation, ...))
     value = (a, [b], {'c': c}, d, e, f)
