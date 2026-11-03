@@ -410,26 +410,39 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if copied.__pydantic_private__ is not None:
                 # Same logic as `BaseModel.__deepcopy__()`:
                 copied.__pydantic_private__ = deepcopy(
-                    {k: v for k, v in copied.__pydantic_private__.items() if v is not PydanticUndefined},
+                    {
+                        k: v
+                        for k, v in copied.__pydantic_private__.items()
+                        if v is not PydanticUndefined and k not in update
+                    },
                     memo,
                 )
         else:
             copied = self.__deepcopy__() if deep else self.__copy__()
 
         if update:
-            if self.model_config.get('extra') == 'allow':
-                for k, v in update.items():
-                    if k in self.__pydantic_fields__:
-                        copied.__dict__[k] = v  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
-                    else:
-                        if copied.__pydantic_extra__ is None:
-                            copied.__pydantic_extra__ = {}
-                        copied.__pydantic_extra__[k] = v
-            else:
-                copied.__dict__.update(update)  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
+            fields = self.__pydantic_fields__
+            private_attributes = self.__private_attributes__
+            extra_allow = self.model_config.get('extra') == 'allow'
 
-            for name in update:
-                copied.__pydantic_fields_set__.add(name)
+            for k, v in update.items():
+                if k in fields:
+                    copied.__dict__[k] = v  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
+                    copied.__pydantic_fields_set__.add(k)
+                elif k in private_attributes:
+                    attribute = private_attributes[k]
+                    if hasattr(attribute, '__set__'):
+                        attribute.__set__(copied, v)
+                    else:
+                        _private_setattr_handler(copied, k, v)
+                elif extra_allow:
+                    if copied.__pydantic_extra__ is None:
+                        copied.__pydantic_extra__ = {}
+                    copied.__pydantic_extra__[k] = v
+                    copied.__pydantic_fields_set__.add(k)
+                else:
+                    copied.__dict__[k] = v  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
+                    copied.__pydantic_fields_set__.add(k)
 
         return copied
 

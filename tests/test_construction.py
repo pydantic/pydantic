@@ -257,6 +257,56 @@ def test_model_copy_deep_update_with_private_attributes() -> None:
     assert m2._private is not m._private
 
 
+def test_model_copy_update_private_attributes_extra_allow() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        not_private: str = Field(default='not_private default')
+        _private: str = PrivateAttr(default='private default')
+
+    m = Model()
+    copied = m.model_copy(update={'_private': 'private_copy'})
+
+    assert copied._private == 'private_copy'
+    assert copied.__pydantic_private__ == {'_private': 'private_copy'}
+    assert copied.__pydantic_extra__ == {}
+    assert copied.model_dump() == {'not_private': 'not_private default'}
+    assert '_private' not in copied.__pydantic_fields_set__
+
+
+def test_model_copy_update_private_attributes_extra_forbid() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        not_private: str = Field(default='not_private default')
+        _private: str = PrivateAttr(default='private default')
+
+    m = Model()
+    copied = m.model_copy(update={'_private': 'private_copy'})
+
+    assert copied._private == 'private_copy'
+    assert copied.__pydantic_private__ == {'_private': 'private_copy'}
+    assert '_private' not in copied.__dict__
+    assert copied.model_dump() == {'not_private': 'not_private default'}
+    assert '_private' not in copied.__pydantic_fields_set__
+
+
+def test_model_copy_deep_update_private_attributes() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        a: int = 1
+        _p1: list[int] = PrivateAttr(default_factory=lambda: [1])
+        _p2: list[int] = PrivateAttr(default_factory=lambda: [10])
+
+    m = Model()
+    updated_p1 = [2, 3]
+    copied = m.model_copy(deep=True, update={'_p1': updated_p1})
+
+    assert copied._p1 is updated_p1
+    assert copied._p2 == [10]
+    assert copied._p2 is not m._p2
+    assert copied.__pydantic_private__ == {'_p1': [2, 3], '_p2': [10]}
+    assert copied.__pydantic_extra__ == {}
+
+
 def test_deepcopy_self_referential_model() -> None:
     class Node(BaseModel, extra='allow'):
         child: 'Node | None' = None
