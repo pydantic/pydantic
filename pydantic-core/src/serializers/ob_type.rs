@@ -66,6 +66,42 @@ pub struct ObTypeLookup {
 
 static TYPE_LOOKUP: PyOnceLock<ObTypeLookup> = PyOnceLock::new();
 
+const FALLBACK_ORDER: &[ObType] = &[
+    ObType::IntSubclass,
+    ObType::StrSubclass,
+    ObType::Bytes,
+    ObType::List,
+    ObType::Tuple,
+    ObType::OrderedDict,
+    ObType::Counter,
+    ObType::Dict,
+    ObType::Frozendict,
+    ObType::Bool,
+    ObType::FloatSubclass,
+    ObType::Bytearray,
+    ObType::Set,
+    ObType::Frozenset,
+    ObType::Deque,
+    ObType::Datetime,
+    ObType::Date,
+    ObType::Time,
+    ObType::Timedelta,
+    ObType::Url,
+    ObType::MultiHostUrl,
+    ObType::Decimal,
+    ObType::Fraction,
+    ObType::Uuid,
+    ObType::Enum,
+    ObType::Generator,
+    ObType::Path,
+    ObType::Pattern,
+    ObType::Complex,
+    ObType::Ipv4Address,
+    ObType::Ipv6Address,
+    ObType::Ipv4Network,
+    ObType::Ipv6Network,
+];
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IsType {
     Exact,
@@ -125,11 +161,22 @@ impl ObTypeLookup {
     pub fn is_type(&self, value: &Bound<'_, PyAny>, expected_ob_type: ObType) -> IsType {
         match self.ob_type_is_expected(Some(value), &value.get_type(), &expected_ob_type) {
             IsType::False => {
-                if expected_ob_type == self.fallback_isinstance(value) {
-                    IsType::Subclass
-                } else {
-                    IsType::False
+                if !FALLBACK_ORDER.contains(&expected_ob_type) {
+                    return IsType::False;
                 }
+                for ob_type in FALLBACK_ORDER {
+                    if self.fallback_check(value, *ob_type) {
+                        return if expected_ob_type == *ob_type {
+                            IsType::Subclass
+                        } else {
+                            IsType::False
+                        };
+                    }
+                    if expected_ob_type == *ob_type {
+                        return IsType::False;
+                    }
+                }
+                IsType::False
             }
             is_type => is_type,
         }
@@ -336,77 +383,51 @@ impl ObTypeLookup {
     /// https://github.com/python/cpython/blob/v3.12.0rc1/Include/object.h#L546-L553
     /// Hence they come first
     fn fallback_isinstance(&self, value: &Bound<'_, PyAny>) -> ObType {
+        for ob_type in FALLBACK_ORDER {
+            if self.fallback_check(value, *ob_type) {
+                return *ob_type;
+            }
+        }
+        ObType::Unknown
+    }
+
+    fn fallback_check(&self, value: &Bound<'_, PyAny>, ob_type: ObType) -> bool {
         let py = value.py();
-        if value.is_instance_of::<PyInt>() {
-            ObType::IntSubclass
-        } else if value.is_instance_of::<PyString>() {
-            ObType::StrSubclass
-        } else if value.is_instance_of::<PyBytes>() {
-            ObType::Bytes
-        } else if value.is_instance_of::<PyList>() {
-            ObType::List
-        } else if value.is_instance_of::<PyTuple>() {
-            ObType::Tuple
-        } else if value.is_instance(self.ordered_dict_object.bind(py)).unwrap_or(false) {
-            // must come before the `dict` check, as `OrderedDict` is a `dict` subclass
-            ObType::OrderedDict
-        } else if value.is_instance(self.counter_object.bind(py)).unwrap_or(false) {
-            // must come before the `dict` check, as `Counter` is a `dict` subclass
-            ObType::Counter
-        } else if value.is_instance_of::<PyDict>() {
-            ObType::Dict
-        } else if as_frozendict(value).is_some() {
-            ObType::Frozendict
-        } else if value.is_instance_of::<PyBool>() {
-            ObType::Bool
-        } else if value.is_instance_of::<PyFloat>() {
-            ObType::FloatSubclass
-        } else if value.is_instance_of::<PyByteArray>() {
-            ObType::Bytearray
-        } else if value.is_instance_of::<PySet>() {
-            ObType::Set
-        } else if value.is_instance_of::<PyFrozenSet>() {
-            ObType::Frozenset
-        } else if value.is_instance(self.deque_object.bind(py)).unwrap_or(false) {
-            ObType::Deque
-        } else if value.is_instance_of::<PyDateTime>() {
-            ObType::Datetime
-        } else if value.is_instance_of::<PyDate>() {
-            ObType::Date
-        } else if value.is_instance_of::<PyTime>() {
-            ObType::Time
-        } else if value.is_instance_of::<PyDelta>() {
-            ObType::Timedelta
-        } else if value.is_instance_of::<PyUrl>() {
-            ObType::Url
-        } else if value.is_instance_of::<PyMultiHostUrl>() {
-            ObType::MultiHostUrl
-        } else if value.is_instance(self.decimal_object.bind(py)).unwrap_or(false) {
-            ObType::Decimal
-        } else if value.is_instance(self.fraction_object.bind(py)).unwrap_or(false) {
-            ObType::Fraction
-        } else if value.is_instance(self.uuid_object.bind(py)).unwrap_or(false) {
-            ObType::Uuid
-        } else if value.is_instance(self.enum_object.bind(py)).unwrap_or(false) {
-            ObType::Enum
-        } else if value.is_instance(self.generator_object.bind(py)).unwrap_or(false) {
-            ObType::Generator
-        } else if value.is_instance(self.path_object.bind(py)).unwrap_or(false) {
-            ObType::Path
-        } else if value.is_instance(self.pattern_object.bind(py)).unwrap_or(false) {
-            ObType::Pattern
-        } else if value.is_instance_of::<PyComplex>() {
-            ObType::Complex
-        } else if value.is_instance(self.ipv4_address.bind(py)).unwrap_or(false) {
-            ObType::Ipv4Address
-        } else if value.is_instance(self.ipv6_address.bind(py)).unwrap_or(false) {
-            ObType::Ipv6Address
-        } else if value.is_instance(self.ipv4_network.bind(py)).unwrap_or(false) {
-            ObType::Ipv4Network
-        } else if value.is_instance(self.ipv6_network.bind(py)).unwrap_or(false) {
-            ObType::Ipv6Network
-        } else {
-            ObType::Unknown
+        match ob_type {
+            ObType::IntSubclass => value.is_instance_of::<PyInt>(),
+            ObType::StrSubclass => value.is_instance_of::<PyString>(),
+            ObType::Bytes => value.is_instance_of::<PyBytes>(),
+            ObType::List => value.is_instance_of::<PyList>(),
+            ObType::Tuple => value.is_instance_of::<PyTuple>(),
+            ObType::OrderedDict => value.is_instance(self.ordered_dict_object.bind(py)).unwrap_or(false),
+            ObType::Counter => value.is_instance(self.counter_object.bind(py)).unwrap_or(false),
+            ObType::Dict => value.is_instance_of::<PyDict>(),
+            ObType::Frozendict => as_frozendict(value).is_some(),
+            ObType::Bool => value.is_instance_of::<PyBool>(),
+            ObType::FloatSubclass => value.is_instance_of::<PyFloat>(),
+            ObType::Bytearray => value.is_instance_of::<PyByteArray>(),
+            ObType::Set => value.is_instance_of::<PySet>(),
+            ObType::Frozenset => value.is_instance_of::<PyFrozenSet>(),
+            ObType::Deque => value.is_instance(self.deque_object.bind(py)).unwrap_or(false),
+            ObType::Datetime => value.is_instance_of::<PyDateTime>(),
+            ObType::Date => value.is_instance_of::<PyDate>(),
+            ObType::Time => value.is_instance_of::<PyTime>(),
+            ObType::Timedelta => value.is_instance_of::<PyDelta>(),
+            ObType::Url => value.is_instance_of::<PyUrl>(),
+            ObType::MultiHostUrl => value.is_instance_of::<PyMultiHostUrl>(),
+            ObType::Decimal => value.is_instance(self.decimal_object.bind(py)).unwrap_or(false),
+            ObType::Fraction => value.is_instance(self.fraction_object.bind(py)).unwrap_or(false),
+            ObType::Uuid => value.is_instance(self.uuid_object.bind(py)).unwrap_or(false),
+            ObType::Enum => value.is_instance(self.enum_object.bind(py)).unwrap_or(false),
+            ObType::Generator => value.is_instance(self.generator_object.bind(py)).unwrap_or(false),
+            ObType::Path => value.is_instance(self.path_object.bind(py)).unwrap_or(false),
+            ObType::Pattern => value.is_instance(self.pattern_object.bind(py)).unwrap_or(false),
+            ObType::Complex => value.is_instance_of::<PyComplex>(),
+            ObType::Ipv4Address => value.is_instance(self.ipv4_address.bind(py)).unwrap_or(false),
+            ObType::Ipv6Address => value.is_instance(self.ipv6_address.bind(py)).unwrap_or(false),
+            ObType::Ipv4Network => value.is_instance(self.ipv4_network.bind(py)).unwrap_or(false),
+            ObType::Ipv6Network => value.is_instance(self.ipv6_network.bind(py)).unwrap_or(false),
+            _ => false,
         }
     }
 }
