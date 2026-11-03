@@ -141,14 +141,10 @@ impl_py_gc_traverse!(SchemaValidator {
 
 #[pymethods]
 impl SchemaValidator {
-    /// Whether `validate_json` can read this schema straight off the json cursor, rather than
-    /// building a `JsonValue` tree first. Answers "is my model on the fast path", and lets a
-    /// differential test tell "both paths agree" apart from "only one path ran".
+    /// Whether this schema has a cached streaming plan. Individual inputs may still fall back.
     #[getter]
-    fn _stream_plan_accepted(&self, py: Python<'_>) -> bool {
-        self.stream_plan
-            .as_deref()
-            .is_some_and(|plan| model_fields::root_parts(py, &self.validator, plan).is_some())
+    fn _stream_plan_accepted(&self) -> bool {
+        self.stream_plan.is_some()
     }
 
     #[new]
@@ -512,10 +508,8 @@ impl SchemaValidator {
                 by_name,
             )
         {
-            // Under `stream-verify` the same document is validated the ordinary way too and the
-            // results compared, so a divergence fails loudly instead of being returned. Only a
-            // streamed success is checked, which is the whole risk surface: the fast path has no
-            // error-construction code, so it can only produce a value or decline.
+            // The debug verifier compares successful results and may run construction hooks
+            // again on the ordinary path.
             #[cfg(feature = "stream-verify")]
             if let Ok(streamed) = &result {
                 let tree = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
@@ -587,7 +581,7 @@ impl SchemaValidator {
         }
 
         let plan = self.stream_plan.as_deref()?;
-        let (class, fields) = model_fields::root_parts(py, &self.validator, plan)?;
+        let (class, fields) = model_fields::root_parts(&self.validator)?;
 
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(

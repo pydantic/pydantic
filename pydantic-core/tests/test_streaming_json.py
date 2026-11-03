@@ -418,19 +418,19 @@ def test_invalid_lookup_flags_preserve_json_error_precedence() -> None:
 @pytest.mark.parametrize('hook', ['__del__', '__new__'])
 @pytest.mark.parametrize('shape', ['root', 'nested', 'root_list'])
 @pytest.mark.parametrize('placement', ['direct', 'inherited', 'added'])
-def test_model_object_hooks_decline_streaming(hook: str, shape: str, placement: str) -> None:
+def test_model_object_hooks_wait_for_complete_json(hook: str, shape: str, placement: str) -> None:
     calls: list[str] = []
     base = _cls('Base')
 
     if hook == '__del__':
 
-        def finalizer(self) -> None:
+        def finalizer(self: object) -> None:
             calls.append('finalized')
 
         namespace = {'__del__': finalizer}
     else:
 
-        def allocator(cls):
+        def allocator(cls: type) -> object:
             calls.append('allocated')
             return object.__new__(cls)
 
@@ -455,16 +455,23 @@ def test_model_object_hooks_decline_streaming(hook: str, shape: str, placement: 
                 setattr(cls, hook, namespace[hook])
         else:
             setattr(cls, hook, namespace[hook])
-    assert validator._stream_plan_accepted is False
-    with pytest.raises(ValidationError):
-        validator.validate_json(
-            b'{"inner": {"value": 1}} trailing'
-            if shape == 'nested'
-            else b'[{"value": 1}] trailing'
-            if shape == 'root_list'
-            else b'{"value": 1} trailing'
-        )
+    assert validator._stream_plan_accepted
+    document = (
+        b'{"inner": {"value": 1}}'
+        if shape == 'nested'
+        else b'[{"value": 1}]'
+        if shape == 'root_list'
+        else b'{"value": 1}'
+    )
+    with pytest.raises(ValidationError, match='trailing characters'):
+        validator.validate_json(document + b' trailing')
     assert calls == []
+
+    result = validator.validate_json(document)
+    instance = result.inner if shape == 'nested' else result[0] if shape == 'root_list' else result
+    assert instance.value == 1
+    if hook == '__new__':
+        assert 'allocated' in calls
 
 
 @pytest.mark.parametrize('raises', [False, True])

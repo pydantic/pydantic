@@ -6,15 +6,9 @@
 //! but to turn every test that already exists — pydantic's own suite included — into a
 //! differential test of this change, covering schemas nobody would think to write down.
 //!
-//! Only successes are compared, and that is the whole risk surface by construction: the fast
-//! path contains no error-construction code at all, so it cannot invent, reword or relocate a
-//! validation error. It can only produce a value or decline, and declining is what sends the
-//! document down the ordinary path. So the two failure modes worth catching are "returned a
-//! different value" and "accepted something the ordinary path rejects", and both are exactly
-//! what comparing a streamed success against the ordinary result catches.
-//!
-//! Mixed arrays containing ordinary fallback elements use the ordinary path once in a
-//! verification build, so callbacks are not executed again just to compare their results.
+//! The comparison checks returned values and acceptance of streamed successes. Ordinary
+//! validation can invoke Python hooks again. Stateful hooks and intentionally different
+//! construction behaviour (such as overwritten dict values) can affect the comparison.
 
 use std::collections::HashSet;
 

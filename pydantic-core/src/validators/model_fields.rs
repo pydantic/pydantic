@@ -406,12 +406,8 @@ pub(crate) fn root_plan(validator: &CombinedValidator) -> Option<ModelPlan> {
     }
 }
 
-/// Class hooks can change after schema construction, so check them for each call.
-pub(crate) fn root_parts<'v>(
-    py: Python<'_>,
-    validator: &'v CombinedValidator,
-    plan: &ModelPlan,
-) -> Option<(&'v Py<PyType>, &'v ModelFieldsValidator)> {
+/// Find the root model (or the root list's item model) for an accepted plan.
+pub(crate) fn root_parts(validator: &CombinedValidator) -> Option<(&Py<PyType>, &ModelFieldsValidator)> {
     let validator = match unwrap_prebuilt(validator) {
         CombinedValidator::List(list) => unwrap_prebuilt(list.stream_list()?.items),
         validator => validator,
@@ -419,15 +415,7 @@ pub(crate) fn root_parts<'v>(
     let CombinedValidator::Model(model) = validator else {
         return None;
     };
-    for node in &plan.nodes {
-        if let Fast::Model(nested) = &node.fast {
-            let CombinedValidator::Model(nested) = unwrap_prebuilt(&nested.validator) else {
-                unreachable!("a model plan holds a model validator");
-            };
-            nested.stream_parts(py)?;
-        }
-    }
-    model.stream_parts(py)
+    Some((model.stream_class(), model.stream_fields()?))
 }
 
 /// What came off the cursor for one field.
@@ -501,6 +489,12 @@ fn contains_nested_model(plan: &ModelPlan, mut index: usize) -> bool {
 }
 
 /// Replace the temporary fields of a nested model with its instance after JSON parsing succeeds.
+///
+/// Streaming allows custom `__new__`, `__del__`, and storage descriptors. We build field
+/// dictionaries before constructing models, so construction hooks can run in a different
+/// order relative to other Python callbacks. For duplicate keys in a typed dict, only the
+/// surviving pending model is constructed. Ordinary validation constructs every value, so
+/// callbacks (and exceptions from them) for overwritten models can differ.
 fn materialize_nested<'py>(
     py: Python<'py>,
     value: Bound<'py, PyAny>,
