@@ -96,7 +96,8 @@ TypeAdapter(date).validate_json('"2000-01-01"', strict=True)  # (1)!
 
 Strict mode can be enabled on specific fields, by setting the `strict` parameter of the
 [`Field()`][pydantic.Field] function to `True`. Strict mode will be applied for such fields,
-even when the [validation methods](./models.md#validating-data) are called in lax mode.
+even when the model is configured to use lax mode. However, passing `strict=False` to the
+[validation methods](./models.md#validating-data) overrides the field setting.
 
 ```python
 from pydantic import BaseModel, Field, ValidationError
@@ -121,6 +122,9 @@ except ValidationError as e:
     age
       Input should be a valid integer [type=int_type, input_value='42', input_type=str]
     """
+
+print(User.model_validate({'name': 'John', 'age': '42'}, strict=False))
+#> name='John' age=42
 ```
 
 1. The strict constraint can also be applied using the [annotated pattern](./fields.md#the-annotated-pattern):
