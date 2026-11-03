@@ -10,7 +10,7 @@ from annotated_types import Gt
 from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
-from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, TypeAdapter, ValidationError
 from pydantic._internal._namespace_utils import LazyLocalNamespace
 
 
@@ -1046,6 +1046,19 @@ def test_invalid_forward_ref() -> None:
 
         class Model(BaseModel):
             foo: list['CustomType[int]']
+
+
+def test_model_config_annotation_not_evaluated() -> None:
+    class CustomType:
+        """A custom type that isn't subscriptable."""
+
+    class Model(BaseModel):
+        model_config: 'CustomType[int]' = ConfigDict(extra='allow')
+
+    class SubModel(Model):
+        a: int
+
+    assert SubModel(a=1, b=2).model_dump() == {'a': 1, 'b': 2}
 
 
 def test_pydantic_extra_forward_ref_separate_module(create_module: Any) -> None:

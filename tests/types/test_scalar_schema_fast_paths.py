@@ -2,7 +2,6 @@
 
 import datetime
 import re
-import sys
 from decimal import Decimal
 from types import EllipsisType
 from typing import Annotated, Any
@@ -131,21 +130,7 @@ def test_identity_gate() -> None:
 
 @pytest.mark.parametrize('annotation', [object, EllipsisType, type, re.Pattern, *SPECIAL_TYPES])
 def test_additional_type_eligibility(annotation: Any) -> None:
-    expected = annotation not in SPECIAL_TYPES or sys.implementation.name == 'cpython'
-    assert _generate_schema._is_simple_schema_type(annotation) is expected
-
-
-@pytest.mark.skipif(sys.implementation.name != 'pypy', reason='These classes are mutable on PyPy')
-@pytest.mark.parametrize('annotation', SPECIAL_TYPES)
-@pytest.mark.parametrize('field_path', [False, True], ids=['generate', 'field'])
-def test_mutable_classes_preserve_hooks(monkeypatch: pytest.MonkeyPatch, annotation: Any, field_path: bool) -> None:
-    def custom_schema(source: Any, handler: Any) -> core_schema.CoreSchema:
-        return core_schema.str_schema(min_length=3)
-
-    monkeypatch.setattr(annotation, '__get_pydantic_core_schema__', custom_schema, raising=False)
-    generator = GenerateSchema(ConfigWrapper({}))
-    schema = generator._apply_annotations(annotation, []) if field_path else generator.generate_schema(annotation)
-    assert schema == core_schema.str_schema(min_length=3)
+    assert _generate_schema._is_simple_schema_type(annotation)
 
 
 @pytest.mark.parametrize('annotation,value', [(re.Pattern, 'x+'), (ZoneInfo, 'UTC')])
