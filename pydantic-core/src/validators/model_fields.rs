@@ -1171,6 +1171,8 @@ impl ModelFieldsValidator {
                 // than running user code before this object and its document are committed.
                 Some(Taken::Raw) | None => return Ok(None),
             };
+            // Streaming does not account for custom hashing on str subclasses used as field
+            // names. Their __hash__ can run before the full document has passed JSON parsing.
             model_dict.set_item(&field.name, value)?;
         }
         state.add_fields_set(fields_set_count);
