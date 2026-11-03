@@ -102,6 +102,15 @@ def as_jsonable_value(v: Any) -> Any:
     return v
 
 
+def _is_grouped_metadata(annotation: Any) -> bool:
+    """Check whether `annotation` is an instance of the `annotated_types.GroupedMetadata` protocol."""
+    # `annotated_types.GroupedMetadata` is a `@runtime_checkable` protocol, and `isinstance()` checks
+    # are quite slow. Instead, we check against the `__is_annotated_types_grouped_metadata__` property
+    # (see https://github.com/annotated-types/annotated-types/blob/96eef3cb/annotated_types/__init__.py#L169-L171).
+    # The `is True` check excludes classes (for which the property object itself is returned):
+    return getattr(annotation, '__is_annotated_types_grouped_metadata__', False) is True
+
+
 def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
     """Expand the annotations.
 
@@ -121,12 +130,10 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
         #> [Ge(ge=4), MinLen(min_length=5)]
         ```
     """
-    import annotated_types as at
-
     FieldInfo = import_cached_field_info()
 
     for annotation in annotations:
-        if isinstance(annotation, at.GroupedMetadata):
+        if _is_grouped_metadata(annotation):
             yield from annotation
         elif isinstance(annotation, FieldInfo):
             yield from annotation.metadata

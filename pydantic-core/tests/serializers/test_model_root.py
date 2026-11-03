@@ -19,7 +19,7 @@ else:
 
 
 class BaseModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -27,7 +27,7 @@ class BaseModel:
 
 
 class RootModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
     root: str
 
     def __init__(self, data):
