@@ -1219,6 +1219,24 @@ class GenerateSchema:
         return self._unknown_type_schema(obj)
 
     def _match_generic_type(self, obj: Any, origin: Any) -> CoreSchema:  # noqa: C901
+        if (
+            origin is list
+            and type(obj) is GenericAlias
+            and sys.implementation.name == 'cpython'
+            and type(self) is GenerateSchema
+            and not self._config_wrapper.json_encoders
+        ):
+            key = id(obj)
+            cached = _container_schema_cache.get(key)
+            if cached is not None:
+                return _copy_container_schema(cached[1])
+            schema = self._list_schema(self._get_first_arg_or_any(obj))
+            if _is_cacheable_container_annotation(obj):
+                if len(_container_schema_cache) >= 256:
+                    _container_schema_cache.clear()
+                _container_schema_cache[key] = (obj, _copy_container_schema(schema))
+            return schema
+
         # Need to handle generic dataclasses before looking for the schema properties because attribute accesses
         # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
         # As a result, currently, there is no way to cache the schema for generic dataclasses. This may be possible
@@ -1242,27 +1260,10 @@ class GenerateSchema:
             pass
         else:
             if handler is not None:
-                if (
-                    origin is list
-                    and type(obj) is GenericAlias
-                    and sys.implementation.name == 'cpython'
-                    and type(self) is GenerateSchema
-                    and not self._config_wrapper.json_encoders
-                ):
-                    key = id(obj)
-                    cached = _container_schema_cache.get(key)
-                    if cached is not None:
-                        return _copy_container_schema(cached[1])
-                    schema = handler(self, obj)
-                    if _is_cacheable_container_annotation(obj):
-                        if len(_container_schema_cache) >= 256:
-                            _container_schema_cache.clear()
-                        _container_schema_cache[key] = (obj, _copy_container_schema(schema))
-                    return schema
                 return handler(self, obj)
 
         if typing_objects.is_typealiastype(origin):
-            return self._type_alias_type_schema(obj)
+            return self._type_alias_type_schema(cast(Any, obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
 
