@@ -165,6 +165,45 @@ def _is_simple_schema_type(obj: Any) -> bool:
     return obj is None or (type(obj) is type and obj in _SIMPLE_SCHEMA_TYPES)
 
 
+# Native aliases and these leaves are immutable on CPython. Retaining the alias
+# prevents ID reuse and preserves the order of any nested unions.
+_NATIVE_UNION_TYPE = type(int | str)
+_CACHEABLE_CONTAINER_LEAVES = frozenset({str, int, float, bool, bytes, complex, object, NoneType})
+_container_schema_cache: dict[int, tuple[GenericAlias, CoreSchema]] = {}
+
+
+def _is_cacheable_container_annotation(annotation: Any, depth: int = 0) -> bool:
+    """Check that a native annotation generates a small schema without hooks or context."""
+    annotation_type = type(annotation)
+    if annotation_type is type:
+        return annotation in _CACHEABLE_CONTAINER_LEAVES
+    if depth == 3:
+        return False
+    if annotation_type is GenericAlias:
+        origin = annotation.__origin__
+        args = annotation.__args__
+        if not ((origin is list and len(args) == 1) or (origin is dict and len(args) == 2)):
+            return False
+    elif annotation_type is _NATIVE_UNION_TYPE:
+        args = annotation.__args__
+        if len(args) > 4:
+            return False
+    else:
+        return False
+    return all(_is_cacheable_container_annotation(arg, depth + 1) for arg in args)
+
+
+def _copy_container_schema(value: Any) -> Any:
+    """Copy the dictionaries and union choice lists in a container template."""
+    if type(value) is dict:
+        if len(value) == 1:  # a scalar schema with only a type tag
+            return value.copy()
+        return {key: _copy_container_schema(item) for key, item in value.items()}
+    if type(value) is list:
+        return [_copy_container_schema(item) for item in value]
+    return value
+
+
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
     """Return fresh copies of a fixed schema made only of immutable values."""
 
@@ -1203,6 +1242,23 @@ class GenerateSchema:
             pass
         else:
             if handler is not None:
+                if (
+                    origin is list
+                    and type(obj) is GenericAlias
+                    and sys.implementation.name == 'cpython'
+                    and type(self) is GenerateSchema
+                    and not self._config_wrapper.json_encoders
+                ):
+                    key = id(obj)
+                    cached = _container_schema_cache.get(key)
+                    if cached is not None:
+                        return _copy_container_schema(cached[1])
+                    schema = handler(self, obj)
+                    if _is_cacheable_container_annotation(obj):
+                        if len(_container_schema_cache) >= 256:
+                            _container_schema_cache.clear()
+                        _container_schema_cache[key] = (obj, _copy_container_schema(schema))
+                    return schema
                 return handler(self, obj)
 
         if typing_objects.is_typealiastype(origin):
