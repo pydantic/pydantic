@@ -170,34 +170,27 @@ def _is_simple_schema_type(obj: Any) -> bool:
 _NATIVE_UNION_TYPE = type(int | str)
 _CACHEABLE_CONTAINER_LEAVES = frozenset({str, int, float, bool, bytes, complex, object, NoneType})
 _container_schema_cache: dict[int, tuple[GenericAlias, CoreSchema]] = {}
-_container_shape_cache: dict[tuple[Any, ...] | type[Any], CoreSchema] = {}
 
 
-def _container_annotation_key(annotation: Any, depth: int = 0) -> tuple[Any, ...] | type[Any] | None:
-    """Return an ordered key for a small native annotation without hooks or context."""
+def _is_cacheable_container_annotation(annotation: Any, depth: int = 0) -> bool:
+    """Check that a native annotation generates a small schema without hooks or context."""
     annotation_type = type(annotation)
     if annotation_type is type:
-        return annotation if annotation in _CACHEABLE_CONTAINER_LEAVES else None
+        return annotation in _CACHEABLE_CONTAINER_LEAVES
     if depth == 3:
-        return None
+        return False
     if annotation_type is GenericAlias:
         origin = annotation.__origin__
         args = annotation.__args__
         if not ((origin is list and len(args) == 1) or (origin is dict and len(args) == 2)):
-            return None
+            return False
     elif annotation_type is _NATIVE_UNION_TYPE:
         args = annotation.__args__
         if len(args) > 4:
-            return None
+            return False
     else:
-        return None
-    keys: list[Any] = [annotation.__origin__ if annotation_type is GenericAlias else _NATIVE_UNION_TYPE]
-    for arg in args:
-        key = _container_annotation_key(arg, depth + 1)
-        if key is None:
-            return None
-        keys.append(key)
-    return tuple(keys)
+        return False
+    return all(_is_cacheable_container_annotation(arg, depth + 1) for arg in args)
 
 
 def _copy_container_schema(value: Any) -> Any:
@@ -1237,20 +1230,11 @@ class GenerateSchema:
             cached = _container_schema_cache.get(key)
             if cached is not None:
                 return _copy_container_schema(cached[1])
-            shape = _container_annotation_key(obj)
-            if shape is None:
-                return self._list_schema(self._get_first_arg_or_any(obj))
-            if len(_container_schema_cache) >= 256:
-                _container_schema_cache.clear()
-                _container_shape_cache.clear()
-            template = _container_shape_cache.get(shape)
-            if template is not None:
-                _container_schema_cache[key] = (obj, template)
-                return _copy_container_schema(template)
             schema = self._list_schema(self._get_first_arg_or_any(obj))
-            template = _copy_container_schema(schema)
-            _container_shape_cache[shape] = template
-            _container_schema_cache[key] = (obj, template)
+            if _is_cacheable_container_annotation(obj):
+                if len(_container_schema_cache) >= 256:
+                    _container_schema_cache.clear()
+                _container_schema_cache[key] = (obj, _copy_container_schema(schema))
             return schema
 
         # Need to handle generic dataclasses before looking for the schema properties because attribute accesses

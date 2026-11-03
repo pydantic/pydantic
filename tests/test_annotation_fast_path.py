@@ -161,9 +161,7 @@ def test_cached_container_schemas_are_independent() -> None:
     first['strict'] = True
     union['choices'].reverse()
 
-    equivalent_annotation = list[dict[str, int | str]]
-    assert equivalent_annotation is not annotation
-    fresh = TypeAdapter(equivalent_annotation).core_schema
+    fresh = TypeAdapter(annotation).core_schema
     assert fresh == core_schema.list_schema(
         core_schema.dict_schema(
             core_schema.str_schema(), core_schema.union_schema([core_schema.int_schema(), core_schema.str_schema()])
