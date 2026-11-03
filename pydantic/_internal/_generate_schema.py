@@ -13,7 +13,6 @@ import sys
 import typing
 import warnings
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
-from contextlib import contextmanager
 from copy import copy
 from decimal import Decimal
 from enum import Enum
@@ -80,6 +79,7 @@ from ..warnings import (
 )
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _type_refs, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
+from ._contextlib import contextmanager
 from ._core_metadata import CoreMetadata, update_core_metadata
 from ._core_utils import get_ref
 from ._decorators import (
@@ -136,49 +136,32 @@ _NONE_SCHEMA = core_schema.none_schema()
 _CALLABLE_SCHEMA = core_schema.callable_schema()
 
 
-if sys.implementation.name == 'cpython':
+_SIMPLE_SCHEMA_TYPES: frozenset[type[Any]] = frozenset(
+    {
+        str,
+        int,
+        bool,
+        float,
+        bytes,
+        complex,
+        NoneType,
+        object,
+        type,
+        EllipsisType,
+        re.Pattern,
+        datetime.datetime,
+        datetime.date,
+        datetime.time,
+        datetime.timedelta,
+        Decimal,
+        ZoneInfo,
+    }
+)
+"""Exact types handled directly, without checking for `__get_pydantic_core_schema__()`/`__get_pydantic_json_schema__()` methods."""
 
-    def _is_simple_schema_type(obj: Any) -> bool:
-        """Recognize exact types that cannot define custom schema hooks."""
-        return (
-            obj is str
-            or obj is int
-            or obj is bool
-            or obj is float
-            or obj is bytes
-            or obj is NoneType
-            or obj is None
-            or obj is datetime.datetime
-            or obj is datetime.date
-            or obj is Decimal
-            or obj is object
-            or obj is datetime.timedelta
-            or obj is datetime.time
-            or obj is type
-            or obj is re.Pattern
-            or obj is ZoneInfo
-            or obj is complex
-            or obj is EllipsisType
-        )
 
-else:
-    # datetime, Decimal and ZoneInfo classes can define custom hooks on PyPy.
-    def _is_simple_schema_type(obj: Any) -> bool:
-        """Recognize exact types that cannot define custom schema hooks."""
-        return (
-            obj is str
-            or obj is int
-            or obj is bool
-            or obj is float
-            or obj is bytes
-            or obj is NoneType
-            or obj is None
-            or obj is object
-            or obj is type
-            or obj is re.Pattern
-            or obj is complex
-            or obj is EllipsisType
-        )
+def _is_simple_schema_type(obj: Any) -> bool:
+    return obj is None or (type(obj) is type and obj in _SIMPLE_SCHEMA_TYPES)
 
 
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
@@ -1525,37 +1508,20 @@ class GenerateSchema:
 
     def _direct_union_schema(self, obj: Any) -> CoreSchema:
         """Generate the optimized union schema without enlarging general dispatch frames."""
-        # These exact simple types cannot attach hooks or union tags. Field-level
-        # metadata and validators still process the fresh schema normally.
         if not self._config_wrapper.json_encoders:
             args = get_args(obj)
-            if len(args) >= 2:
-                nullable = False
-                for arg in args:
-                    if arg is NoneType:
-                        nullable = True
-                    elif _is_simple_schema_type(arg):
-                        continue
-                    else:
-                        break
+            # These exact simple types cannot attach hooks or union tags. Field-level
+            # metadata and validators still process the fresh schema normally.
+            if all(map(_is_simple_schema_type, args)):
+                choices = [self._handlers[arg](self, arg) for arg in args if arg is not NoneType]
+                if len(choices) == 1:
+                    schema = choices[0]
                 else:
-                    handlers = self._handlers
-                    schema: CoreSchema
-                    if nullable:
-                        if len(args) == 2:
-                            arg = args[0] if args[1] is NoneType else args[1]
-                            schema = handlers[arg](self, arg)
-                        else:
-                            schema = {
-                                'type': 'union',
-                                'choices': [handlers[arg](self, arg) for arg in args if arg is not NoneType],
-                            }
-                        return {'type': 'nullable', 'schema': schema}
-                    else:
-                        return {
-                            'type': 'union',
-                            'choices': [handlers[arg](self, arg) for arg in args],
-                        }
+                    schema = cast(core_schema.UnionSchema, {'type': 'union', 'choices': choices})
+                if len(choices) < len(args):  # one of the args is NoneType, so we need to make the schema nullable
+                    return {'type': 'nullable', 'schema': schema}
+                else:
+                    return schema
         return self._union_schema(obj)
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:

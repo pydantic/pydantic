@@ -1290,13 +1290,6 @@ def test_model_validator_many_values_change():
     assert r.area == 5
 
 
-def _get_source_line(filename: str, lineno: int) -> str:
-    with open(filename) as f:
-        for _ in range(lineno - 1):
-            f.readline()
-        return f.readline()
-
-
 def test_info_field_name_data_before():
     """
     Test accessing info.field_name and info.data
@@ -1404,28 +1397,6 @@ def partial_val_func2(
     return value
 
 
-def partial_values_val_func1(
-    value: int,
-    values: dict[str, Any],
-    *,
-    allowed: int,
-) -> int:
-    assert isinstance(values, dict)
-    assert value == allowed
-    return value
-
-
-def partial_values_val_func2(
-    value: int,
-    *,
-    values: dict[str, Any],
-    allowed: int,
-) -> int:
-    assert isinstance(values, dict)
-    assert value == allowed
-    return value
-
-
 def partial_info_val_func(
     value: int,
     info: ValidationInfo,
@@ -1456,34 +1427,6 @@ def partial_cls_val_func2(
     expected_cls: Any,
 ) -> int:
     assert cls.__name__ == expected_cls
-    assert value == allowed
-    return value
-
-
-def partial_cls_values_val_func1(
-    cls: Any,
-    value: int,
-    values: dict[str, Any],
-    *,
-    allowed: int,
-    expected_cls: Any,
-) -> int:
-    assert cls.__name__ == expected_cls
-    assert isinstance(values, dict)
-    assert value == allowed
-    return value
-
-
-def partial_cls_values_val_func2(
-    cls: Any,
-    value: int,
-    *,
-    values: dict[str, Any],
-    allowed: int,
-    expected_cls: Any,
-) -> int:
-    assert cls.__name__ == expected_cls
-    assert isinstance(values, dict)
     assert value == allowed
     return value
 

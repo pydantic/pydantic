@@ -81,8 +81,7 @@ def test_uuid(input_value, expected):
     v = SchemaValidator(core_schema.uuid_schema())
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            result = v.validate_python(input_value)
-            print(f'input_value={input_value} result={result}')
+            v.validate_python(input_value)
     else:
         output = v.validate_python(input_value)
         assert output == expected

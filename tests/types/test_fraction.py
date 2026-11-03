@@ -115,8 +115,8 @@ def test_fraction_validate_json_error(json_str, error):
     ],
 )
 def test_fraction_validation_error_strict(input_value):
+    ta = TypeAdapter(Fraction)
     with pytest.raises(ValidationError):
-        ta = TypeAdapter(Fraction)
         ta.validate_python(input_value, strict=True)
 
 
