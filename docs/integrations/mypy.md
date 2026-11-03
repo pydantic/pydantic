@@ -72,10 +72,6 @@ To enable the plugin, just add `pydantic.mypy` to the list of plugins in your
     plugins = ['pydantic.mypy']
     ```
 
-!!! note
-
-    If you're using `pydantic.v1` models, you'll need to add `pydantic.v1.mypy` to your list of plugins.
-
 See the [plugin configuration](#configuring-the-plugin) for more details.
 
 ## Mypy plugin capabilities

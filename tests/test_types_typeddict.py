@@ -937,12 +937,12 @@ def test_readonly_qualifier_warning() -> None:
         a: Required[ReadOnly[int]]
         b: ReadOnly[NotRequired[str]]
 
-    with pytest.raises(UserWarning, match="Items 'a', 'b' on TypedDict class 'TD' are using the `ReadOnly` qualifier"):
+    with pytest.warns(UserWarning, match="Items 'a', 'b' on TypedDict class 'TD' are using the `ReadOnly` qualifier"):
         ta = TypeAdapter(TD)
 
-        with pytest.raises(ValidationError):
-            # Ensure required is taken into account:
-            ta.validate_python({})
+    with pytest.raises(ValidationError):
+        # Ensure required is taken into account:
+        ta.validate_python({})
 
 
 def test_typeddict_field_exclude() -> None:

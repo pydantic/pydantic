@@ -22,7 +22,7 @@ def test_validate_json() -> None:
     v = SchemaValidator(cs.is_instance_schema(cls=Foo))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('"foo"')
-        assert exc_info.value.errors()[0]['type'] == 'needs_python_object'
+    assert exc_info.value.errors()[0]['type'] == 'needs_python_object'
 
 
 def test_is_instance():
@@ -179,7 +179,7 @@ def test_is_instance_json_type_before_validator():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('null')
-        assert exc_info.value.errors()[0]['type'] == 'needs_python_object'
+    assert exc_info.value.errors()[0]['type'] == 'needs_python_object'
 
     # now wrap in a before validator
     def set_type_to_int(input: None) -> type:

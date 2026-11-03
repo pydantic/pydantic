@@ -152,8 +152,7 @@ def test_config(config: CoreConfig, input_value, expected):
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            val = v.validate_python(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
+            v.validate_python(input_value)
     else:
         output_dict = v.validate_python(input_value)
         assert output_dict == expected
@@ -499,8 +498,7 @@ def test_aliases_path_multiple(py_and_json: PyAndJson, input_value, expected):
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
-            val = v.validate_test(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
+            v.validate_test(input_value)
     else:
         output = v.validate_test(input_value)
         assert output == expected
@@ -533,8 +531,7 @@ def test_aliases_path_negative(input_value, expected):
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
-            val = v.validate_python(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
+            v.validate_python(input_value)
     else:
         output = v.validate_python(input_value)
         assert output == expected
@@ -560,8 +557,7 @@ def test_aliases_path_negative_json(py_and_json: PyAndJson, input_value, expecte
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
-            val = v.validate_test(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
+            v.validate_test(input_value)
     else:
         output = v.validate_test(input_value)
         assert output == expected
@@ -583,7 +579,7 @@ def test_aliases_debug():
     assert 'rest: [\n' in repr(v)
 
 
-def get_int_key():
+def test_get_int_key():
     v = SchemaValidator(
         core_schema.typed_dict_schema(
             fields={
@@ -593,7 +589,7 @@ def get_int_key():
             }
         )
     )
-    assert v.validate_python({'foo': {3: 33}}) == ({'field_a': 33}, {'field_a'})
+    assert v.validate_python({'foo': {3: 33}}) == {'field_a': 33}
 
 
 class GetItemThing:
@@ -602,14 +598,17 @@ class GetItemThing:
         return 321
 
 
-def get_custom_getitem():
+def test_custom_getitem():
     v = SchemaValidator(
         core_schema.typed_dict_schema(
-            fields={'field_a': core_schema.typed_dict_field(validation_alias=['foo'], schema=core_schema.int_schema())}
+            fields={
+                'field_a': core_schema.typed_dict_field(
+                    validation_alias=['bar', 'foo'], schema=core_schema.int_schema()
+                )
+            }
         )
     )
-    assert v.validate_python(GetItemThing()) == ({'field_a': 321}, {'field_a'})
-    assert v.validate_python({'bar': GetItemThing()}) == ({'field_a': 321}, {'field_a'})
+    assert v.validate_python({'bar': GetItemThing()}) == {'field_a': 321}
 
 
 @pytest.mark.parametrize('input_value', [{'foo': {'bar': 42}}, {'foo': 42}, {'field_a': 42}], ids=repr)
