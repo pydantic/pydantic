@@ -674,9 +674,10 @@ def test_deferred_nested_model_finalized_cache_reuses_recursive_schema(monkeypat
 
 
 @pytest.mark.skipif(sys.implementation.name != 'cpython', reason='Nested schema caching is specific to CPython')
-def test_deferred_nested_model_cache_matches_eager_parent_hook_behavior() -> None:
+@pytest.mark.parametrize('defer_build', [False, True])
+def test_deferred_nested_model_cache_matches_eager_parent_hook_behavior(defer_build: bool) -> None:
     class Child(BaseModel):
-        model_config = ConfigDict(defer_build=True)
+        model_config = ConfigDict(defer_build=defer_build)
         x: int
 
     class First(BaseModel):
