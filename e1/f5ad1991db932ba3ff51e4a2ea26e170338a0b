@@ -1,0 +1,19 @@
+tests/test_types_typeddict.py
+  s_289989b7238ff2::t_3db2f291f1c11e 1289-1302
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e1f5ad1991db932ba3ff51e4a2ea26e170338a0b",
+  "prompts": {},
+  "sessions": {
+    "s_289989b7238ff2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1a628-764f-71e1-b6eb-0f82a000783d",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
