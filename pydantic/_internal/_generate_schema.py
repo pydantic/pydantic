@@ -175,7 +175,10 @@ _TYPED_DICT_SCHEMA_CACHE_LOCK = threading.Lock()
 def _typed_dict_schema_cache_key(cls: type, config: ConfigWrapper) -> tuple[Any, ...] | None:
     """Key context-independent leaf TypedDicts by their current shape and effective config."""
     namespace = vars(cls).copy()
-    if any(not name.startswith('__') or not name.endswith('__') for name in namespace):
+    if any(
+        not name.startswith('__') or not name.endswith('__') or isinstance(value, _decorators.PydanticDescriptorProxy)
+        for name, value in namespace.items()
+    ):
         return None
     if '__get_pydantic_core_schema__' in namespace or '__get_pydantic_json_schema__' in namespace:
         return None
