@@ -30,7 +30,7 @@ pub(crate) struct SerializationState<'py> {
     field_name: Option<Bound<'py, PyString>>,
     /// Inside unions, checks are applied to attempt to select a preferred branch
     pub check: SerCheck,
-    pub include_exclude: IncludeExclude<'py>,
+    include_exclude: IncludeExclude<'py>,
     /// Global settings for the serialization process
     pub extra: Extra<'py>,
 }

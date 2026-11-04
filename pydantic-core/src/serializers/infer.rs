@@ -89,11 +89,12 @@ pub(crate) fn infer_to_python_known<'py>(
         (@iter $len:expr, $iter:expr) => {{
             let len = $len;
             let mut items = Vec::with_capacity(len);
-            let filter = AnyFilter::new();
+            let any_filter = AnyFilter::new();
+            let filter = any_filter.for_sequence(state, Some(len));
 
             for (index, element) in $iter.enumerate() {
                 let element: Bound<'_, PyAny> = element?;
-                if let Some(next_include_exclude) = filter.index_filter(index, state, Some(len))? {
+                if let Some(next_include_exclude) = filter.index_filter(index)? {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     items.push(infer_to_python(&element, state)?);
                 }
@@ -207,11 +208,12 @@ pub(crate) fn infer_to_python_known<'py>(
             ObType::Generator => {
                 let py_seq = value.cast::<PyIterator>()?;
                 let mut items = Vec::new();
-                let filter = AnyFilter::new();
+                let any_filter = AnyFilter::new();
+                let filter = any_filter.for_sequence(state, None);
 
                 for (index, r) in py_seq.try_iter()?.enumerate() {
                     let element = r?;
-                    if let Some(next_include_exclude) = filter.index_filter(index, state, None)? {
+                    if let Some(next_include_exclude) = filter.index_filter(index)? {
                         let state = &mut state.scoped_include_exclude(next_include_exclude);
                         items.push(infer_to_python(&element, state)?);
                     }
@@ -385,14 +387,12 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         (@iter $len:expr, $iter:expr) => {{
             let len = $len;
             let mut seq = serializer.serialize_seq(Some(len))?;
-            let filter = AnyFilter::new();
+            let any_filter = AnyFilter::new();
+            let filter = any_filter.for_sequence(state, Some(len));
 
             for (index, element) in $iter.enumerate() {
                 let element: Bound<'_, PyAny> = element.map_err(py_err_se_err)?;
-                if let Some(next_include_exclude) = filter
-                    .index_filter(index, state, Some(len))
-                    .map_err(py_err_se_err)?
-                {
+                if let Some(next_include_exclude) = filter.index_filter(index).map_err(py_err_se_err)? {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     let item_serializer = SerializeInfer::new(&element, state);
                     seq.serialize_element(&item_serializer)?;
@@ -501,10 +501,11 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         ObType::Generator => {
             let py_seq = value.cast::<PyIterator>().map_err(py_err_se_err)?;
             let mut seq = serializer.serialize_seq(None)?;
-            let filter = AnyFilter::new();
+            let any_filter = AnyFilter::new();
+            let filter = any_filter.for_sequence(state, None);
             for (index, r) in py_seq.try_iter().map_err(py_err_se_err)?.enumerate() {
                 let element = r.map_err(py_err_se_err)?;
-                let op_next = filter.index_filter(index, state, None).map_err(py_err_se_err)?;
+                let op_next = filter.index_filter(index).map_err(py_err_se_err)?;
                 if let Some(next_include_exclude) = op_next {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     let item_serializer = SerializeInfer::new(&element, state);
