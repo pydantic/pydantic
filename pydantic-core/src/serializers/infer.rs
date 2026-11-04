@@ -19,7 +19,6 @@ use crate::common::ordered_dict::get_ordered_dict_type;
 use crate::input::{EitherTimedelta, Int};
 use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
-use crate::serializers::extra::IncludeExclude;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::SerializeMap;
 use crate::serializers::shared::serialize_to_json;
@@ -27,6 +26,7 @@ use crate::serializers::shared::serialize_to_python;
 use crate::serializers::type_serializers;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::format::serialize_via_str;
+use crate::serializers::type_serializers::set_frozenset::set_filter;
 use crate::tools::{py_err, safe_repr};
 
 use super::SchemaSerializer;
@@ -86,12 +86,16 @@ pub(crate) fn infer_to_python_known<'py>(
 
     macro_rules! serialize_seq {
         ($t:ty) => {{
-            let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
-            value
-                .cast::<$t>()?
-                .iter()
-                .map(|v| infer_to_python(&v, state))
-                .collect::<PyResult<Vec<Py<PyAny>>>>()?
+            if let Some(filters) = set_filter(state)? {
+                let state = &mut state.scoped_include_exclude(filters);
+                value
+                    .cast::<$t>()?
+                    .iter()
+                    .map(|v| infer_to_python(&v, state))
+                    .collect::<PyResult<Vec<Py<PyAny>>>>()?
+            } else {
+                Vec::new()
+            }
         }};
     }
 
@@ -400,12 +404,15 @@ fn infer_serialize_known_unguarded<'py, S: Serializer>(
 
     macro_rules! serialize_seq {
         ($t:ty) => {{
-            let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+            let filters = set_filter(state).map_err(py_err_se_err)?;
             let py_seq = value.cast::<$t>().map_err(py_err_se_err)?;
-            let mut seq = serializer.serialize_seq(Some(py_seq.len()))?;
-            for element in py_seq.iter() {
-                let item_serializer = SerializeInfer::new(&element, state);
-                seq.serialize_element(&item_serializer)?
+            let mut seq = serializer.serialize_seq(Some(if filters.is_some() { py_seq.len() } else { 0 }))?;
+            if let Some(filters) = filters {
+                let state = &mut state.scoped_include_exclude(filters);
+                for element in py_seq.iter() {
+                    let item_serializer = SerializeInfer::new(&element, state);
+                    seq.serialize_element(&item_serializer)?;
+                }
             }
             seq.end()
         }};
