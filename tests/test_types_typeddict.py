@@ -1260,3 +1260,21 @@ def test_typeddict_schema_reused_across_separate_builds() -> None:
     assert Leaf.__dict__['__pydantic_core_schema__'] is leaf_schema
     assert child1.validate_python({'leaf': {'value': '1'}}) == {'leaf': {'value': 1}}
     assert child2.validate_python({'leaf': {'value': '2'}}) == {'leaf': {'value': 2}}
+
+
+def test_typeddict_schema_reuse_preserves_inherited_config() -> None:
+    class Item(TypedDict):
+        name: str
+
+    class Permissive(BaseModel):
+        model_config = ConfigDict(extra='allow', str_max_length=5)
+        item: Item
+
+    class Restrictive(BaseModel):
+        model_config = ConfigDict(extra='forbid', str_max_length=2)
+        item: Item
+
+    assert Permissive(item={'name': 'abcd', 'extra': 1}).item == {'name': 'abcd', 'extra': 1}
+    with pytest.raises(ValidationError) as exc_info:
+        Restrictive(item={'name': 'abcd', 'extra': 1})
+    assert {error['type'] for error in exc_info.value.errors()} == {'string_too_long', 'extra_forbidden'}
