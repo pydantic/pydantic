@@ -1241,3 +1241,22 @@ def test_typeddict_validate_json_error_loc() -> None:
             'input': 'wrong',
         }
     ]
+
+
+def test_typeddict_schema_reused_across_separate_builds() -> None:
+    class Leaf(TypedDict):
+        value: int
+
+    class Child1(TypedDict):
+        leaf: Leaf
+
+    class Child2(TypedDict):
+        leaf: Leaf
+
+    child1 = TypeAdapter(Child1)
+    leaf_schema = Leaf.__dict__['__pydantic_core_schema__']
+    child2 = TypeAdapter(Child2)
+
+    assert Leaf.__dict__['__pydantic_core_schema__'] is leaf_schema
+    assert child1.validate_python({'leaf': {'value': '1'}}) == {'leaf': {'value': 1}}
+    assert child2.validate_python({'leaf': {'value': '2'}}) == {'leaf': {'value': 2}}
