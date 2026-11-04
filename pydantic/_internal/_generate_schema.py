@@ -1429,6 +1429,11 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
+            if origin is None and (schema := typed_dict_cls.__dict__.get('__pydantic_core_schema__')) is not None:
+                if schema['type'] == 'definitions':
+                    schema = self.defs.unpack_definitions(schema)
+                return self.defs.create_definition_reference_schema(schema)
+
             typevars_map = get_standard_typevars_map(typed_dict_cls)
             if origin is not None:
                 typed_dict_cls = origin
@@ -1549,6 +1554,10 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
+                if origin is None:
+                    definitions = list(self.defs._definitions.values())
+                    cached_schema = core_schema.definitions_schema(schema, definitions) if definitions else schema
+                    typed_dict_cls.__pydantic_core_schema__ = cached_schema
                 return self.defs.create_definition_reference_schema(schema)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
