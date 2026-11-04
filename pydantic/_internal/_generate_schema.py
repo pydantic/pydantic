@@ -10,6 +10,7 @@ import os
 import pathlib
 import re
 import sys
+import threading
 import typing
 import warnings
 from collections import OrderedDict
@@ -168,11 +169,12 @@ def _is_simple_schema_type(obj: Any) -> bool:
 
 _TYPED_DICT_SCHEMA_CACHE: OrderedDict[tuple[Any, ...], CoreSchema] = OrderedDict()
 _TYPED_DICT_SCHEMA_CACHE_SIZE = 256
+_TYPED_DICT_SCHEMA_CACHE_LOCK = threading.Lock()
 
 
 def _typed_dict_schema_cache_key(cls: type, config: ConfigWrapper) -> tuple[Any, ...] | None:
     """Key context-independent leaf TypedDicts by their current shape and effective config."""
-    namespace = vars(cls)
+    namespace = vars(cls).copy()
     if any(not name.startswith('__') or not name.endswith('__') for name in namespace):
         return None
     if '__get_pydantic_core_schema__' in namespace or '__get_pydantic_json_schema__' in namespace:
@@ -1490,8 +1492,13 @@ class GenerateSchema:
                 cache_key = (
                     _typed_dict_schema_cache_key(typed_dict_cls, self._config_wrapper) if origin is None else None
                 )
-                if cache_key is not None and (cached_schema := _TYPED_DICT_SCHEMA_CACHE.get(cache_key)) is not None:
-                    _TYPED_DICT_SCHEMA_CACHE.move_to_end(cache_key)
+                cached_schema = None
+                if cache_key is not None:
+                    with _TYPED_DICT_SCHEMA_CACHE_LOCK:
+                        cached_schema = _TYPED_DICT_SCHEMA_CACHE.get(cache_key)
+                        if cached_schema is not None:
+                            _TYPED_DICT_SCHEMA_CACHE.move_to_end(cache_key)
+                if cached_schema is not None:
                     return self.defs.create_definition_reference_schema(deepcopy(cached_schema))
 
                 core_config = self._config_wrapper.core_config(title=typed_dict_cls.__name__)
@@ -1597,9 +1604,11 @@ class GenerateSchema:
                 schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
                 if cache_key is not None:
-                    _TYPED_DICT_SCHEMA_CACHE[cache_key] = deepcopy(schema)
-                    if len(_TYPED_DICT_SCHEMA_CACHE) > _TYPED_DICT_SCHEMA_CACHE_SIZE:
-                        _TYPED_DICT_SCHEMA_CACHE.popitem(last=False)
+                    cached_schema = deepcopy(schema)
+                    with _TYPED_DICT_SCHEMA_CACHE_LOCK:
+                        _TYPED_DICT_SCHEMA_CACHE[cache_key] = cached_schema
+                        if len(_TYPED_DICT_SCHEMA_CACHE) > _TYPED_DICT_SCHEMA_CACHE_SIZE:
+                            _TYPED_DICT_SCHEMA_CACHE.popitem(last=False)
                 return self.defs.create_definition_reference_schema(schema)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
