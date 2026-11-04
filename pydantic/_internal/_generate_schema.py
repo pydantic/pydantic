@@ -172,10 +172,36 @@ _TYPED_DICT_SCHEMA_CACHE_SIZE = 256
 _TYPED_DICT_SCHEMA_CACHE_LOCK = threading.Lock()
 
 
-def _typed_dict_schema_cache_key(cls: type, config: ConfigWrapper) -> tuple[Any, ...] | None:
-    """Key context-independent leaf TypedDicts by their current shape and effective config."""
+@dataclasses.dataclass(frozen=True)
+class _TypedDictSchemaCacheEntry:
+    schema: CoreSchema
+    dependencies: tuple[tuple[str, _TypedDictSchemaCacheEntry], ...]
+
+
+_NESTED_TYPED_DICT_SCHEMA_CACHE: OrderedDict[tuple[Any, ...], _TypedDictSchemaCacheEntry] = OrderedDict()
+_NESTED_TYPED_DICT_SCHEMA_SEEN: OrderedDict[tuple[Any, ...], None] = OrderedDict()
+
+
+def _is_nested_typed_dict_annotation(annotation: Any) -> bool:
+    if _is_simple_schema_type(annotation) or is_typeddict(annotation):
+        return True
+    origin = get_origin(annotation)
+    return (origin in (list, dict) or is_union_origin(origin)) and all(
+        _is_nested_typed_dict_annotation(arg) for arg in get_args(annotation)
+    )
+
+
+def _typed_dict_schema_cache_key(cls: type, config: ConfigWrapper, *, nested: bool = False) -> tuple[Any, ...] | None:
+    """Key context-independent TypedDicts by their current shape and effective config."""
     annotations = cls.__annotations__
-    if not annotations or not all(_is_simple_schema_type(annotation) for annotation in annotations.values()):
+    if not annotations:
+        return None
+    if nested:
+        if all(_is_simple_schema_type(annotation) for annotation in annotations.values()) or not all(
+            _is_nested_typed_dict_annotation(annotation) for annotation in annotations.values()
+        ):
+            return None
+    elif not all(_is_simple_schema_type(annotation) for annotation in annotations.values()):
         return None
 
     namespace = vars(cls).copy()
@@ -208,6 +234,22 @@ def _typed_dict_schema_cache_key(cls: type, config: ConfigWrapper) -> tuple[Any,
         cls.__optional_keys__,
         tuple(sorted(effective_config.items())),
     )
+
+
+def _typed_dict_schema_refs(schema: Any) -> set[str]:
+    if isinstance(schema, dict):
+        if schema.get('type') == 'definition-ref':
+            return {schema['schema_ref']}
+        refs: set[str] = set()
+        for value in schema.values():
+            refs.update(_typed_dict_schema_refs(value))
+        return refs
+    if isinstance(schema, (list, tuple)):
+        refs = set()
+        for value in schema:
+            refs.update(_typed_dict_schema_refs(value))
+        return refs
+    return set()
 
 
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
@@ -1495,6 +1537,11 @@ class GenerateSchema:
                 cache_key = (
                     _typed_dict_schema_cache_key(typed_dict_cls, self._config_wrapper) if origin is None else None
                 )
+                nested_cache_key = (
+                    _typed_dict_schema_cache_key(typed_dict_cls, self._config_wrapper, nested=True)
+                    if origin is None and cache_key is None
+                    else None
+                )
                 cached_schema = None
                 if cache_key is not None:
                     with _TYPED_DICT_SCHEMA_CACHE_LOCK:
@@ -1503,6 +1550,14 @@ class GenerateSchema:
                             _TYPED_DICT_SCHEMA_CACHE.move_to_end(cache_key)
                 if cached_schema is not None:
                     return self.defs.create_definition_reference_schema(deepcopy(cached_schema))
+                if nested_cache_key is not None:
+                    with _TYPED_DICT_SCHEMA_CACHE_LOCK:
+                        cached_entry = _NESTED_TYPED_DICT_SCHEMA_CACHE.get(nested_cache_key)
+                        if cached_entry is not None:
+                            _NESTED_TYPED_DICT_SCHEMA_CACHE.move_to_end(nested_cache_key)
+                    if cached_entry is not None:
+                        self.defs.load_typed_dict_cache_entry(cached_entry)
+                        return core_schema.definition_reference_schema(typed_dict_ref)
 
                 core_config = self._config_wrapper.core_config(title=typed_dict_cls.__name__)
 
@@ -1612,7 +1667,23 @@ class GenerateSchema:
                         _TYPED_DICT_SCHEMA_CACHE[cache_key] = cached_schema
                         if len(_TYPED_DICT_SCHEMA_CACHE) > _TYPED_DICT_SCHEMA_CACHE_SIZE:
                             _TYPED_DICT_SCHEMA_CACHE.popitem(last=False)
-                return self.defs.create_definition_reference_schema(schema)
+                result = self.defs.create_definition_reference_schema(schema)
+                if nested_cache_key is not None:
+                    with _TYPED_DICT_SCHEMA_CACHE_LOCK:
+                        seen_before = nested_cache_key in _NESTED_TYPED_DICT_SCHEMA_SEEN
+                        _NESTED_TYPED_DICT_SCHEMA_SEEN[nested_cache_key] = None
+                        _NESTED_TYPED_DICT_SCHEMA_SEEN.move_to_end(nested_cache_key)
+                        if len(_NESTED_TYPED_DICT_SCHEMA_SEEN) > _TYPED_DICT_SCHEMA_CACHE_SIZE:
+                            _NESTED_TYPED_DICT_SCHEMA_SEEN.popitem(last=False)
+                    if seen_before:
+                        entry = self.defs.capture_typed_dict_cache_entry(typed_dict_ref)
+                        if entry is not None:
+                            with _TYPED_DICT_SCHEMA_CACHE_LOCK:
+                                if len(_NESTED_TYPED_DICT_SCHEMA_CACHE) >= _TYPED_DICT_SCHEMA_CACHE_SIZE:
+                                    _NESTED_TYPED_DICT_SCHEMA_CACHE.clear()
+                                    _NESTED_TYPED_DICT_SCHEMA_SEEN.clear()
+                                _NESTED_TYPED_DICT_SCHEMA_CACHE[nested_cache_key] = entry
+                return result
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a NamedTuple."""
@@ -2773,6 +2844,40 @@ class _Definitions:
     def __init__(self) -> None:
         self._recursively_seen = set()
         self._definitions = {}
+        self._typed_dict_cache_entries: dict[str, _TypedDictSchemaCacheEntry] = {}
+
+    def load_typed_dict_cache_entry(self, entry: _TypedDictSchemaCacheEntry) -> None:
+        ref = get_ref(entry.schema)
+        assert ref is not None
+        if ref in self._definitions:
+            return
+        self._definitions[ref] = deepcopy(entry.schema)
+        self._typed_dict_cache_entries[ref] = entry
+        for _, dependency in entry.dependencies:
+            self.load_typed_dict_cache_entry(dependency)
+
+    def capture_typed_dict_cache_entry(
+        self, ref: str, seen: frozenset[str] = frozenset()
+    ) -> _TypedDictSchemaCacheEntry | None:
+        if entry := self._typed_dict_cache_entries.get(ref):
+            return entry
+        if ref in seen:
+            return None
+        schema = self._definitions.get(ref)
+        if schema is None or schema['type'] != 'typed-dict':
+            return None
+        cls = schema.get('cls')
+        if cls is None or not all(_is_nested_typed_dict_annotation(a) for a in cls.__annotations__.values()):
+            return None
+        dependencies: list[tuple[str, _TypedDictSchemaCacheEntry]] = []
+        for dependency_ref in _typed_dict_schema_refs(schema):
+            dependency = self.capture_typed_dict_cache_entry(dependency_ref, seen | {ref})
+            if dependency is None:
+                return None
+            dependencies.append((dependency_ref, dependency))
+        entry = _TypedDictSchemaCacheEntry(deepcopy(schema), tuple(dependencies))
+        self._typed_dict_cache_entries[ref] = entry
+        return entry
 
     @contextmanager
     def get_definition_ref_schema(self, *, ref: str) -> Generator[core_schema.DefinitionReferenceSchema | None]:
