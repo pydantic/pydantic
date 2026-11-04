@@ -168,13 +168,14 @@ def _is_simple_schema_type(obj: Any) -> bool:
 def _typed_dict_has_forward_refs(annotation: Any, seen: set[int] | None = None) -> bool:
     if isinstance(annotation, (str, ForwardRef)):
         return True
+    root = seen is None
     if seen is None:
         seen = set()
     if id(annotation) in seen:
         return False
     seen.add(id(annotation))
     if is_typeddict(annotation):
-        if annotation.__dict__.get('__pydantic_core_schema_config__') is not None:
+        if not root and annotation.__dict__.get('__pydantic_core_schema_config__') is not None:
             return False
         children = chain(annotation.__annotations__.values(), (getattr(annotation, '__extra_items__', None),))
     elif isinstance(annotation, TypeAliasType):
@@ -1480,8 +1481,6 @@ class GenerateSchema:
                         schema = self.defs.unpack_definitions(schema)
                     return self.defs.create_definition_reference_schema(schema)
 
-                if origin is None:
-                    typed_dict_cls.__pydantic_core_schema_config__ = None
                 core_config = self._config_wrapper.core_config(title=typed_dict_cls.__name__)
 
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
@@ -1584,14 +1583,6 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
-                if origin is None:
-                    if _typed_dict_has_forward_refs(typed_dict_cls):
-                        typed_dict_cls.__pydantic_core_schema_config__ = None
-                    else:
-                        definitions = list(self.defs._definitions.values())
-                        cached_schema = core_schema.definitions_schema(schema, definitions) if definitions else schema
-                        typed_dict_cls.__pydantic_core_schema_config__ = self._config_wrapper.effective_config.copy()
-                        typed_dict_cls.__pydantic_core_schema__ = cached_schema
                 return self.defs.create_definition_reference_schema(schema)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:

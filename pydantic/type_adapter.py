@@ -295,6 +295,14 @@ class TypeAdapter(Generic[T]):
             )
             self.serializer = SchemaSerializer(self.core_schema, core_config)
 
+            if is_typeddict(self._type):
+                if _generate_schema._typed_dict_has_forward_refs(self._type):
+                    self._type.__pydantic_core_schema_config__ = None
+                else:
+                    effective_config = _config.ConfigWrapper(self._model_config).effective_config
+                    self._type.__pydantic_core_schema_config__ = effective_config.copy()
+                    self._type.__pydantic_core_schema__ = self.core_schema
+
         self.pydantic_complete = True
         return True
 
