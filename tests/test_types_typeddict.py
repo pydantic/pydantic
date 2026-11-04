@@ -1241,3 +1241,48 @@ def test_typeddict_validate_json_error_loc() -> None:
             'input': 'wrong',
         }
     ]
+
+
+def test_typeddict_schema_reused_across_builds() -> None:
+    class Leaf(TypedDict):
+        value: str
+        count: int
+
+    class Child1(TypedDict):
+        leaf: Leaf
+
+    class Child2(TypedDict):
+        leaf: Leaf
+
+    for child in (Child1, Child2):
+        adapter = TypeAdapter(child)
+        assert adapter.validate_python({'leaf': {'value': 'ABC', 'count': '3'}}) == {
+            'leaf': {'value': 'ABC', 'count': 3}
+        }
+        assert adapter.json_schema()['$defs']['Leaf']['properties']['value']['type'] == 'string'
+
+
+def test_typeddict_schema_cache_respects_parent_config() -> None:
+    class Leaf(TypedDict):
+        value: str
+
+    class Lower(BaseModel):
+        model_config = ConfigDict(str_to_lower=True)
+        leaf: Leaf
+
+    class Unchanged(BaseModel):
+        model_config = ConfigDict(str_to_lower=False)
+        leaf: Leaf
+
+    assert Lower.model_validate({'leaf': {'value': 'ABC'}}).leaf == {'value': 'abc'}
+    assert Unchanged.model_validate({'leaf': {'value': 'ABC'}}).leaf == {'value': 'ABC'}
+    assert Lower.model_validate({'leaf': {'value': 'XYZ'}}).leaf == {'value': 'xyz'}
+
+
+def test_typeddict_schema_cache_respects_changed_annotations() -> None:
+    class Leaf(TypedDict):
+        value: str
+
+    assert TypeAdapter(Leaf).validate_python({'value': 'ABC'}) == {'value': 'ABC'}
+    Leaf.__annotations__['value'] = int
+    assert TypeAdapter(Leaf).validate_python({'value': '3'}) == {'value': 3}
