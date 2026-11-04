@@ -842,7 +842,7 @@ class GenerateSchema:
             if all(state.matches(model) for model, state in cached.states.items()):
                 if not any(
                     dep in self.defs._definitions or dep in self.defs._recursively_seen
-                    for dep in cached.refs
+                    for dep in cached.definitions
                     if dep != ref
                 ):
                     return cached, None
@@ -851,6 +851,43 @@ class GenerateSchema:
         if _collect_nested_model_states(cls, states):
             return None, states
         return None, None
+
+    def _can_reuse_finalized_nested_schema(self, cls: type[BaseModel]) -> bool:
+        stack = self.model_type_stack._stack
+        if len(stack) != 2 or stack[-1] is not cls:
+            return False
+        parent = stack[0]
+        base_model = import_cached_base_model()
+        if (
+            type(parent) is not type(base_model)
+            or parent.__bases__ != (base_model,)
+            or parent.model_config
+            or not parent.__pydantic_fields_complete__
+            or parent.__pydantic_custom_init__
+            or parent.__pydantic_post_init__ is not None
+            or '__get_pydantic_core_schema__' in vars(parent)
+            or '__get_pydantic_json_schema__' in vars(parent)
+            or len(parent.__pydantic_fields__) != 1
+        ):
+            return False
+        decorators = parent.__pydantic_decorators__
+        if (
+            decorators.field_validators
+            or decorators.field_serializers
+            or decorators.model_validators
+            or decorators.model_serializers
+            or decorators.computed_fields
+        ):
+            return False
+        field = next(iter(parent.__pydantic_fields__.values()))
+        attributes, defaults = _plain_field_attributes()
+        return (
+            type(field) is import_cached_field_info()
+            and field.annotation is cls
+            and not field.metadata
+            and not field._qualifiers
+            and all(map(is_, attributes(field), defaults))
+        )
 
     def _model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
         """Generate schema for a Pydantic model."""
@@ -882,22 +919,24 @@ class GenerateSchema:
             ):
                 cached, states = self._get_nested_model_cache(cls, model_ref)
                 if cached is not None:
-                    if cached.schema is None:
-                        # Finalize only on reuse, so a model nested once pays no extra finalization cost.
-                        assert cached.definitions is not None
-                        cache_defs = _Definitions()
-                        cache_defs._definitions = _copy_nested_model_schema(cached.definitions)
-                        finalized = cache_defs.finalize_schema(core_schema.definition_reference_schema(model_ref))
-                        cached = _NestedModelSchema(cached.states, None, finalized, cached.refs)
-                        type.__setattr__(cls, '__pydantic_nested_schema_cache__', cached)
-                    cached_schema = cached.schema
-                    assert cached_schema is not None
-                    if cached_schema['type'] == 'definitions':
-                        cached_schema = self.defs.unpack_definitions(cached_schema)
-                    ref = get_ref(cached_schema)
-                    if ref:
-                        return self.defs.create_definition_reference_schema(cached_schema)
-                    return cached_schema
+                    if self._can_reuse_finalized_nested_schema(cls):
+                        if cached.schema is None:
+                            # Finalize only on reuse, so a model nested once pays no extra finalization cost.
+                            cache_defs = _Definitions()
+                            cache_defs._definitions = _copy_nested_model_schema(cached.definitions)
+                            finalized = cache_defs.finalize_schema(core_schema.definition_reference_schema(model_ref))
+                            cached = dataclasses.replace(cached, schema=finalized)
+                            type.__setattr__(cls, '__pydantic_nested_schema_cache__', cached)
+                        cached_schema = cached.schema
+                        assert cached_schema is not None
+                        if cached_schema['type'] == 'definitions':
+                            cached_schema = self.defs.unpack_definitions(cached_schema)
+                        ref = get_ref(cached_schema)
+                        if ref:
+                            return self.defs.create_definition_reference_schema(cached_schema)
+                        return cached_schema
+                    self.defs._definitions.update(_copy_nested_model_schema(cached.definitions))
+                    return core_schema.definition_reference_schema(model_ref)
                 if states is not None:
                     existing_refs = set(self.defs._definitions)
 
@@ -1034,9 +1073,7 @@ class GenerateSchema:
                             type.__setattr__(
                                 cls,
                                 '__pydantic_nested_schema_cache__',
-                                _NestedModelSchema(
-                                    states, _copy_nested_model_schema(definitions), None, frozenset(definitions)
-                                ),
+                                _NestedModelSchema(states, _copy_nested_model_schema(definitions), None),
                             )
                 return reference
 
@@ -2756,9 +2793,8 @@ def _inlining_behavior(
 @dataclasses.dataclass(frozen=True, slots=True)
 class _NestedModelSchema:
     states: dict[type[BaseModel], _NestedModelState]
-    definitions: dict[str, CoreSchema] | None
+    definitions: dict[str, CoreSchema]
     schema: CoreSchema | None
-    refs: frozenset[str]
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

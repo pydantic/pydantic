@@ -668,7 +668,6 @@ def test_deferred_nested_model_finalized_cache_reuses_recursive_schema(monkeypat
 
 
 @pytest.mark.skipif(sys.implementation.name != 'cpython', reason='Nested schema caching is specific to CPython')
-@pytest.mark.xfail(strict=True, reason='Finalized schema reuse can leak edits from a parent core-schema hook')
 def test_deferred_nested_model_cache_isolated_from_parent_hooks() -> None:
     class Child(BaseModel):
         model_config = ConfigDict(defer_build=True)
