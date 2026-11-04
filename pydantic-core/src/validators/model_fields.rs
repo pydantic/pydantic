@@ -12,6 +12,7 @@ use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
+use pyo3::types::iter::{BoundDictIterator, BoundListIterator};
 use pyo3::types::{PyDict, PyList, PySet, PyString, PyTuple, PyType};
 use smallvec::SmallVec;
 
@@ -501,43 +502,70 @@ fn materialize_nested<'py>(
     model_plan: &ModelPlan,
     index: usize,
 ) -> PyResult<Option<Bound<'py, PyAny>>> {
-    let field = &model_plan.nodes[index];
-    if field.nullable && pyo3::types::PyAnyMethods::is_none(&value) {
-        return Ok(None);
-    }
-    match &field.fast {
-        Fast::Model(nested) => {
-            let CombinedValidator::Model(nested) = unwrap_prebuilt(&nested.validator) else {
-                unreachable!("a model plan holds a model validator");
+    let mut stack = Vec::new();
+    let mut current = (value, index, None);
+    loop {
+        let (value, index, slot) = current;
+        let field = &model_plan.nodes[index];
+        if !(field.nullable && PyAnyMethods::is_none(&value)) {
+            match &field.fast {
+                Fast::Model(nested) => {
+                    let CombinedValidator::Model(nested) = unwrap_prebuilt(&nested.validator) else {
+                        unreachable!("a model plan holds a model validator");
+                    };
+                    let pending = value.cast::<PyTuple>()?;
+                    let model_dict = pending.get_item(0)?;
+                    let fields_set = pending.get_item(1)?;
+                    let instance = create_class(nested.stream_class().bind(py))?;
+                    set_model_attrs(&instance, &model_dict, py.None().bind(py), &fields_set)?;
+                    match slot {
+                        Some(MaterializeSlot::List(list, index)) => list.set_item(index, instance)?,
+                        Some(MaterializeSlot::Dict(dict, key)) => dict.set_item(key, instance)?,
+                        None => return Ok(Some(instance)),
+                    }
+                }
+                Fast::List(plan) => {
+                    let list = value.cast_into::<PyList>().map_err(PyErr::from)?;
+                    let items = MaterializeItems::List(list.clone(), list.iter().enumerate());
+                    stack.push((plan.element, items));
+                }
+                Fast::Dict(plan) => {
+                    let dict = value.cast_into::<PyDict>().map_err(PyErr::from)?;
+                    let items = MaterializeItems::Dict(dict.clone(), dict.iter());
+                    stack.push((plan.element, items));
+                }
+                _ => {}
+            }
+        }
+
+        current = loop {
+            let Some((element, items)) = stack.last_mut() else {
+                return Ok(None);
             };
-            let class = nested.stream_class();
-            let pending = value.cast::<PyTuple>()?;
-            let model_dict = pending.get_item(0)?;
-            let fields_set = pending.get_item(1)?;
-            let instance = create_class(class.bind(py))?;
-            set_model_attrs(&instance, &model_dict, py.None().bind(py), &fields_set)?;
-            Ok(Some(instance))
-        }
-        Fast::List(plan) => {
-            let list = value.cast::<PyList>().map_err(PyErr::from)?;
-            for index in 0..list.len() {
-                if let Some(item) = materialize_nested(py, list.get_item(index)?, model_plan, plan.element)? {
-                    list.set_item(index, item)?;
-                }
+            let next = match items {
+                MaterializeItems::List(list, iter) => iter
+                    .next()
+                    .map(|(index, value)| (value, MaterializeSlot::List(list.clone(), index))),
+                MaterializeItems::Dict(dict, iter) => iter
+                    .next()
+                    .map(|(key, value)| (value, MaterializeSlot::Dict(dict.clone(), key))),
+            };
+            if let Some((value, slot)) = next {
+                break (value, *element, Some(slot));
             }
-            Ok(None)
-        }
-        Fast::Dict(plan) => {
-            let dict = value.cast::<PyDict>()?;
-            for (key, item) in dict.iter() {
-                if let Some(item) = materialize_nested(py, item, model_plan, plan.element)? {
-                    dict.set_item(key, item)?;
-                }
-            }
-            Ok(None)
-        }
-        _ => Ok(None),
+            stack.pop();
+        };
     }
+}
+
+enum MaterializeItems<'py> {
+    List(Bound<'py, PyList>, std::iter::Enumerate<BoundListIterator<'py>>),
+    Dict(Bound<'py, PyDict>, BoundDictIterator<'py>),
+}
+
+enum MaterializeSlot<'py> {
+    List(Bound<'py, PyList>, usize),
+    Dict(Bound<'py, PyDict>, Bound<'py, PyAny>),
 }
 
 /// An array, every element taken the same way. If any element is not something the cursor can
