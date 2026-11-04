@@ -36,6 +36,7 @@ classifiers = [
     'Operating System :: POSIX :: Linux',
     'Operating System :: Microsoft :: Windows',
     'Operating System :: MacOS',
+    'Environment :: WebAssembly :: Emscripten',
     'Typing :: Typed',
 ]
 dependencies = ['typing-extensions>=4.16.0']
