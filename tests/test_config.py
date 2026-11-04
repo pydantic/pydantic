@@ -620,17 +620,20 @@ def test_deferred_nested_model_reuses_reachable_definitions(monkeypatch: pytest.
     assert Leaf not in calls
     assert not Inner.__pydantic_complete__
     assert not Leaf.__pydantic_complete__
+    assert isinstance(Inner.__dict__['__pydantic_nested_schema_cache__'].validator, SchemaValidator)
+    assert isinstance(Inner.__dict__['__pydantic_nested_schema_cache__'].serializer, SchemaSerializer)
+    assert 'Prebuilt' in repr(Second.__pydantic_validator__)
+    assert 'Prebuilt' in repr(Second.__pydantic_serializer__)
     assert First.model_validate({'item': {'leaf': {'value': '1'}}}).item.leaf.value == 1
     assert Second.model_validate({'item': {'leaf': {'value': '2'}}}).item.leaf.value == 2
 
-    # Changing a reachable model's configuration invalidates the cached graph.
+    # As with an eager model, mutating the class config does not change an already compiled schema.
     Leaf.model_config['strict'] = True
 
     class Third(BaseModel):
         item: Inner
 
-    with pytest.raises(ValidationError, match='int_type'):
-        Third.model_validate({'item': {'leaf': {'value': '3'}}})
+    assert Third.model_validate({'item': {'leaf': {'value': '3'}}}).item.leaf.value == 3
     assert Second.model_validate({'item': {'leaf': {'value': '4'}}}).item.leaf.value == 4
 
 
@@ -665,10 +668,13 @@ def test_deferred_nested_model_finalized_cache_reuses_recursive_schema(monkeypat
         item = model.model_validate({'item': {'value': 1, 'child': {'value': 2, 'child': None}}}).item
         assert item.child is not None
         assert item.child.value == 2
+    assert Node.model_rebuild() is True
+    assert Node.__pydantic_complete__
+    assert '__pydantic_nested_schema_cache__' not in Node.__dict__
 
 
 @pytest.mark.skipif(sys.implementation.name != 'cpython', reason='Nested schema caching is specific to CPython')
-def test_deferred_nested_model_cache_isolated_from_parent_hooks() -> None:
+def test_deferred_nested_model_cache_matches_eager_parent_hook_behavior() -> None:
     class Child(BaseModel):
         model_config = ConfigDict(defer_build=True)
         x: int
@@ -690,8 +696,7 @@ def test_deferred_nested_model_cache_isolated_from_parent_hooks() -> None:
         child: Child
 
     assert First.model_validate({'child': {'x': '1'}}).child.x == 1
-    with pytest.raises(ValidationError, match='int_type'):
-        Second.model_validate({'child': {'x': '1'}})
+    assert Second.model_validate({'child': {'x': '1'}}).child.x == 1
     assert Third.model_validate({'child': {'x': '1'}}).child.x == 1
 
 

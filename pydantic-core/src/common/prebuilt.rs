@@ -35,6 +35,22 @@ pub fn get_prebuilt<T>(
         .is_ok_and(|b| b.extract().unwrap_or(false));
 
     if !is_complete {
+        // A deferred model can have a privately compiled schema from a previous enclosing build.
+        // Its public validator and serializer remain mocks until the model is built on its own.
+        if type_ == "model"
+            && let Ok(cache) = class_dict.get_item(intern!(py, "__pydantic_nested_schema_cache__"))
+        {
+            let cache_attr = match prebuilt_attr_name {
+                "__pydantic_validator__" => "validator",
+                "__pydantic_serializer__" => "serializer",
+                _ => return Ok(None),
+            };
+            if let Ok(prebuilt) = cache.getattr(cache_attr)
+                && !prebuilt.is_none()
+            {
+                return extractor(prebuilt);
+            }
+        }
         return Ok(None);
     }
 
