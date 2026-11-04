@@ -1315,10 +1315,12 @@ def test_nested_typeddict_schema_reused_across_builds() -> None:
         optional: Leaf | None
 
     value = {'branches': {'one': {'leaves': [{'value': 'hello'}]}}, 'optional': None}
-    for _ in range(3):
+    for attempt in range(3):
         adapter = TypeAdapter(Root)
         assert adapter.validate_python(value) == value
         assert adapter.json_schema()['$defs']['Leaf']['properties']['value']['type'] == 'string'
+        if attempt < 2:
+            assert not any(key[0] is Root for key in _NESTED_TYPED_DICT_SCHEMA_CACHE)
 
     assert any(key[0] is Root for key in _NESTED_TYPED_DICT_SCHEMA_CACHE)
 
