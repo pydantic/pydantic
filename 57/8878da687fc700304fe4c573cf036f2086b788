@@ -1,0 +1,22 @@
+tests/test_types_typeddict.py
+  s_289989b7238ff2::t_5aab8154893338 1346-1348
+  s_289989b7238ff2::t_5076f0bd628104 26,1248,1256
+  s_289989b7238ff2::t_ba276d3d1c2b15 1252,1255,1257,1259-1260
+  s_289989b7238ff2::t_23ad752a1b23dd 1323-1345
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "578878da687fc700304fe4c573cf036f2086b788",
+  "prompts": {},
+  "sessions": {
+    "s_289989b7238ff2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1a628-764f-71e1-b6eb-0f82a000783d",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
