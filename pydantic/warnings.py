@@ -10,6 +10,7 @@ __all__ = (
     'ArbitraryTypeWarning',
     'UnsupportedFieldAttributeWarning',
     'TypedDictExtraConfigWarning',
+    'PydanticDroppedUnpackedKwargWarning',
 )
 
 
@@ -84,3 +85,7 @@ class UnsupportedFieldAttributeWarning(CoreSchemaGenerationWarning):
 
 class TypedDictExtraConfigWarning(CoreSchemaGenerationWarning):
     """A warning raised when the [`extra`][pydantic.ConfigDict.extra] configuration is incompatible with the `closed` or `extra_items` specification."""
+
+
+class PydanticDroppedUnpackedKwargWarning(UserWarning):
+    """A warning raised when unexpected keyword arguments are passed to a function with unpacked `TypedDict` and are dropped."""

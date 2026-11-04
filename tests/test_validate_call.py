@@ -3,6 +3,7 @@ import inspect
 import pickle
 import re
 import sys
+import warnings
 from collections import UserDict
 from datetime import datetime, timezone
 from functools import partial
@@ -26,6 +27,7 @@ from pydantic import (
     validate_call,
     with_config,
 )
+from pydantic.warnings import PydanticDroppedUnpackedKwargWarning
 
 
 def test_wrap() -> None:
@@ -418,6 +420,46 @@ def test_unpacked_typed_dict_extra_items() -> None:
 
     assert exc.value.errors()[0]['type'] == 'string_type'
     assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+def test_unpacked_typed_dict_kwargs_dropped_warning() -> None:
+    class Options(TypedDict):
+        timeout: int
+
+    @validate_call
+    def run(**kwargs: Unpack[Options]) -> dict:
+        return kwargs
+
+    # Single dropped argument
+    with pytest.warns(
+        PydanticDroppedUnpackedKwargWarning,
+        match=r"Dropped unexpected keyword argument: 'retries' which is not declared in unpacked TypedDict 'Options'",
+    ):
+        assert run(timeout=5, retries=3) == {'timeout': 5}
+
+    # Multiple dropped arguments
+    with pytest.warns(
+        PydanticDroppedUnpackedKwargWarning,
+        match=r"Dropped unexpected keyword arguments: 'extra', 'retries' which are not declared in unpacked TypedDict 'Options'",
+    ):
+        assert run(timeout=5, retries=3, extra=True) == {'timeout': 5}
+
+    # No warning when only declared fields are passed
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter('always')
+        assert run(timeout=5) == {'timeout': 5}
+    assert len(record) == 0
+
+    # Async function
+    @validate_call
+    async def async_run(**kwargs: Unpack[Options]) -> dict:
+        return kwargs
+
+    with pytest.warns(
+        PydanticDroppedUnpackedKwargWarning,
+        match=r"Dropped unexpected keyword argument: 'retries'",
+    ):
+        assert asyncio.run(async_run(timeout=5, retries=3)) == {'timeout': 5}
 
 
 def test_field_can_provide_factory() -> None:

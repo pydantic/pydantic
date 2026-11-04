@@ -74,6 +74,7 @@ from ..version import version_short
 from ..warnings import (
     ArbitraryTypeWarning,
     PydanticDeprecatedSince20,
+    PydanticDroppedUnpackedKwargWarning,
     TypedDictExtraConfigWarning,
     UnsupportedFieldAttributeWarning,
 )
@@ -346,6 +347,34 @@ def _get_typed_dict_extra_items(typed_dict_cls: type[Any]) -> tuple[bool, Any, b
 
 class InvalidSchemaError(Exception):
     """The core schema is invalid."""
+
+
+class _UnpackedTypedDictKwargsValidator:
+    def __init__(self, typed_dict_cls: type[Any]):
+        self.typed_dict_cls = typed_dict_cls
+        self.typed_dict_name = getattr(typed_dict_cls, '__name__', str(typed_dict_cls))
+
+    def __call__(
+        self,
+        values: Any,
+        handler: core_schema.ValidatorFunctionWrapHandler,
+        info: core_schema.ValidationInfo,
+    ) -> Any:
+        res = handler(values)
+        if isinstance(values, dict) and isinstance(res, dict):
+            dropped_keys = set(values.keys()) - set(res.keys())
+            if dropped_keys:
+                sorted_keys = sorted(dropped_keys)
+                plural = len(sorted_keys) > 1
+                keys_str = ', '.join(repr(k) for k in sorted_keys)
+                warnings.warn(
+                    f'Dropped unexpected keyword argument{"s" if plural else ""}: {keys_str} '
+                    f'which {"are" if plural else "is"} not declared in unpacked TypedDict {self.typed_dict_name!r}. '
+                    'In Pydantic V3, this will raise a ValidationError.',
+                    PydanticDroppedUnpackedKwargWarning,
+                    stacklevel=4,
+                )
+        return res
 
 
 class GenerateSchema:
@@ -2093,7 +2122,11 @@ class GenerateSchema:
                         )
 
                     var_kwargs_mode = 'unpacked-typed-dict'
-                    var_kwargs_schema = self._typed_dict_schema(unpack_type, get_origin(unpack_type))
+                    td_schema = self._typed_dict_schema(unpack_type, get_origin(unpack_type))
+                    var_kwargs_schema = core_schema.with_info_wrap_validator_function(
+                        _UnpackedTypedDictKwargsValidator(origin),
+                        td_schema,
+                    )
                 else:
                     var_kwargs_mode = 'uniform'
                     var_kwargs_schema = self.generate_schema(annotation)
