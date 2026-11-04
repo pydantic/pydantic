@@ -23,6 +23,7 @@ from pydantic import (
     ValidationError,
     with_config,
 )
+from pydantic._internal import _typing_extra
 from pydantic._internal._decorators import get_attribute_from_bases
 from pydantic.functional_serializers import field_serializer, model_serializer
 from pydantic.functional_validators import field_validator, model_validator
@@ -1244,23 +1245,19 @@ def test_typeddict_validate_json_error_loc() -> None:
     ]
 
 
-def test_typeddict_schema_reused_across_separate_builds() -> None:
+def test_typeddict_schema_reused_across_type_adapter_builds(monkeypatch: pytest.MonkeyPatch) -> None:
     class Leaf(TypedDict):
         value: int
 
-    class Child1(TypedDict):
+    class Child(TypedDict):
         leaf: Leaf
 
-    class Child2(TypedDict):
-        leaf: Leaf
+    first = TypeAdapter(Child)
+    monkeypatch.setattr(_typing_extra, 'get_cls_type_hints', lambda *args, **kwargs: pytest.fail('schema rebuilt'))
+    second = TypeAdapter(Child)
 
-    child1 = TypeAdapter(Child1)
-    leaf_schema = Leaf.__dict__['__pydantic_core_schema__']
-    child2 = TypeAdapter(Child2)
-
-    assert Leaf.__dict__['__pydantic_core_schema__'] is leaf_schema
-    assert child1.validate_python({'leaf': {'value': '1'}}) == {'leaf': {'value': 1}}
-    assert child2.validate_python({'leaf': {'value': '2'}}) == {'leaf': {'value': 2}}
+    assert first.validate_python({'leaf': {'value': '1'}}) == {'leaf': {'value': 1}}
+    assert second.validate_python({'leaf': {'value': '2'}}) == {'leaf': {'value': 2}}
 
 
 def test_typeddict_schema_reuse_preserves_inherited_config() -> None:
@@ -1323,3 +1320,29 @@ def test_typeddict_force_rebuild_drops_cache_after_forward_ref_change() -> None:
     Token = str  # noqa: F841 (used by the namespace resolver)
     next_adapter = TypeAdapter(Item)
     assert next_adapter.validate_python({'token': 'secret'}) == {'token': 'secret'}
+
+
+def test_typeddict_cache_does_not_import_unrelated_definitions() -> None:
+    class Data(TypedDict):
+        value: str
+
+    @with_config(ConfigDict())
+    class Marker(TypedDict):
+        flag: int
+
+    class Permissive(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        data: Data
+        marker: Marker
+
+    class Restrictive(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        data: Data
+        marker: Marker
+
+    assert Permissive(data={'value': 'x', 'extra': 1}, marker={'flag': 1}).data == {'value': 'x', 'extra': 1}
+    with pytest.raises(ValidationError) as exc_info:
+        Restrictive(data={'value': 'x', 'extra': 1}, marker={'flag': 1})
+    assert any(
+        error['loc'] == ('data', 'extra') and error['type'] == 'extra_forbidden' for error in exc_info.value.errors()
+    )
