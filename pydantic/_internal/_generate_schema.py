@@ -1429,11 +1429,6 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            if origin is None and (schema := typed_dict_cls.__dict__.get('__pydantic_core_schema__')) is not None:
-                if schema['type'] == 'definitions':
-                    schema = self.defs.unpack_definitions(schema)
-                return self.defs.create_definition_reference_schema(schema)
-
             typevars_map = get_standard_typevars_map(typed_dict_cls)
             if origin is not None:
                 typed_dict_cls = origin
@@ -1452,6 +1447,16 @@ class GenerateSchema:
                 config = None
 
             with self._config_wrapper_stack.push(config):
+                if (
+                    origin is None
+                    and (schema := typed_dict_cls.__dict__.get('__pydantic_core_schema__')) is not None
+                    and typed_dict_cls.__dict__.get('__pydantic_core_schema_config__')
+                    == self._config_wrapper.effective_config
+                ):
+                    if schema['type'] == 'definitions':
+                        schema = self.defs.unpack_definitions(schema)
+                    return self.defs.create_definition_reference_schema(schema)
+
                 core_config = self._config_wrapper.core_config(title=typed_dict_cls.__name__)
 
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
@@ -1557,6 +1562,7 @@ class GenerateSchema:
                 if origin is None:
                     definitions = list(self.defs._definitions.values())
                     cached_schema = core_schema.definitions_schema(schema, definitions) if definitions else schema
+                    typed_dict_cls.__pydantic_core_schema_config__ = self._config_wrapper.effective_config.copy()
                     typed_dict_cls.__pydantic_core_schema__ = cached_schema
                 return self.defs.create_definition_reference_schema(schema)
 
