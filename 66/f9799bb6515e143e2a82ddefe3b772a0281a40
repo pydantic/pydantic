@@ -1,0 +1,19 @@
+pydantic/_internal/_generate_schema.py
+  s_289989b7238ff2::t_1e3418ef50b3b2 1450-1459,1565
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "66f9799bb6515e143e2a82ddefe3b772a0281a40",
+  "prompts": {},
+  "sessions": {
+    "s_289989b7238ff2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1a628-764f-71e1-b6eb-0f82a000783d",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
