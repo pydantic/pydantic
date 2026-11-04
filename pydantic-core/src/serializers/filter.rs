@@ -193,6 +193,10 @@ impl SchemaFilter<isize> {
         key: &Bound<'py, PyAny>,
         state: &SerializationState<'py>,
     ) -> PyResult<NextFilters<'py>> {
+        if self.include.is_none() && self.exclude.is_none() && state.include().is_none() && state.exclude().is_none() {
+            // nothing to filter by, which is what `filter()` would conclude (without hashing the key)
+            return Ok(Some(IncludeExclude::empty()));
+        }
         let hash = key.hash()?;
         self.filter(key, hash, state.include(), state.exclude())
     }
@@ -326,6 +330,10 @@ impl AnyFilter {
         key: &Bound<'py, PyAny>,
         state: &SerializationState<'py>,
     ) -> PyResult<NextFilters<'py>> {
+        if state.include().is_none() && state.exclude().is_none() {
+            // nothing to filter by, which is what `filter()` would conclude
+            return Ok(Some(IncludeExclude::empty()));
+        }
         // just use 0 for the int_key, it's always ignored in the implementation here
         self.filter(key, 0, state.include(), state.exclude())
     }
