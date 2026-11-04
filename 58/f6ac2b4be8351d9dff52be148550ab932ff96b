@@ -1,0 +1,19 @@
+pydantic/type_adapter.py
+  s_289989b7238ff2::t_18d56a348306f5 299-301,304-305
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "58f6ac2b4be8351d9dff52be148550ab932ff96b",
+  "prompts": {},
+  "sessions": {
+    "s_289989b7238ff2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1a628-764f-71e1-b6eb-0f82a000783d",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
