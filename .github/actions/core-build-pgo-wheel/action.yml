@@ -36,6 +36,8 @@ runs:
       uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
       with:
         working-directory: ${{ inputs.working-directory }}
+        # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
+        maturin-version: v1.16.0
         manylinux: auto
         # `uv` is needed for the maturin `pgo-command` to use it
         before-script-linux: |

@@ -200,6 +200,9 @@ def test_gc_field_exclude_if() -> None:
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
+@pytest.mark.skipif(
+    platform.python_implementation() == 'GraalVM', reason='GC introspection is not supported on GraalPy'
+)
 def test_wrap_validator_handler_does_not_traverse_shared_validator_tree() -> None:
     """https://github.com/pydantic/pydantic/issues/13817"""
 
@@ -233,6 +236,9 @@ def test_wrap_validator_handler_does_not_traverse_shared_validator_tree() -> Non
 @pytest.mark.skipif(
     platform.python_implementation() == 'PyPy',
     reason='https://github.com/pypy/pypy/issues/3898 + gc.is_tracked() unavailable',
+)
+@pytest.mark.skipif(
+    platform.python_implementation() == 'GraalVM', reason='GC introspection is not supported on GraalPy'
 )
 def test_wrap_serializer_handler_does_not_traverse_shared_serializer_tree() -> None:
     """https://github.com/pydantic/pydantic/issues/13817"""
