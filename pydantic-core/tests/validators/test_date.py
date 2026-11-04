@@ -92,8 +92,7 @@ def test_date(input_value, expected):
     v = SchemaValidator(cs.date_schema())
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            result = v.validate_python(input_value)
-            print(f'input_value={input_value!r} result={result}')
+            v.validate_python(input_value)
         assert v.isinstance_python(input_value) is False
     else:
         output = v.validate_python(input_value)

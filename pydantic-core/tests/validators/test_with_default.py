@@ -786,7 +786,7 @@ def test_validate_default_raises(
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(input_value)
-        assert exc_info.value.errors(include_url=False, include_context=False) == expected
+    assert exc_info.value.errors(include_url=False, include_context=False) == expected
 
 
 @pytest.mark.parametrize('input_value,expected', validate_default_raises_examples)

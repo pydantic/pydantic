@@ -331,8 +331,7 @@ def test_decimal_validation(mode, type_args, value, result):
 
     if not isinstance(result, Decimal):
         with pytest.raises(ValidationError) as exc_info:
-            m = Model(foo=value)
-            print(f'unexpected result: {m!r}')
+            Model(foo=value)
         # debug(exc_info.value.errors(include_url=False))
         # dirty_equals.AnyThing() doesn't work with Decimal on PyPy, hence this hack
         errors = exc_info.value.errors(include_url=False)

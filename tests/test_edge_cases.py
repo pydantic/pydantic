@@ -1390,9 +1390,9 @@ def test_init_inspection():
         x: int
 
         def __init__(self, **data) -> None:
+            calls.append(data)
             with pytest.raises(AttributeError):
-                calls.append(data)
-                assert self.x
+                _ = self.x
             super().__init__(**data)
 
     Foobar(x=1)
