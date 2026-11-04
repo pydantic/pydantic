@@ -1286,3 +1286,17 @@ def test_typeddict_schema_cache_respects_changed_annotations() -> None:
     assert TypeAdapter(Leaf).validate_python({'value': 'ABC'}) == {'value': 'ABC'}
     Leaf.__annotations__['value'] = int
     assert TypeAdapter(Leaf).validate_python({'value': '3'}) == {'value': 3}
+
+
+def test_typeddict_schema_cache_respects_new_dunder_validator() -> None:
+    class Leaf(TypedDict):
+        value: str
+
+    assert TypeAdapter(Leaf).validate_python({'value': 'ABC'}) == {'value': 'ABC'}
+
+    def reject(cls: type[Leaf], value: str) -> str:
+        raise ValueError('new validator')
+
+    setattr(Leaf, '__check_value__', field_validator('value')(classmethod(reject)))
+    with pytest.raises(ValidationError, match='new validator'):
+        TypeAdapter(Leaf).validate_python({'value': 'ABC'})
