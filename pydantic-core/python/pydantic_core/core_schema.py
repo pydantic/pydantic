@@ -4900,6 +4900,7 @@ ErrorType: TypeAlias = Literal[
     'json_type',
     'needs_python_object',
     'recursion_loop',
+    'recursion_depth_exceeded',
     'missing',
     'frozen_field',
     'frozen_instance',

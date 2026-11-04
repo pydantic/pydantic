@@ -90,7 +90,7 @@ impl SerializationState<'_> {
         def_ref_id: usize,
     ) -> PyResult<RecursionGuard<'_, Self>> {
         RecursionGuard::new(self, value.as_ptr() as usize, def_ref_id).map_err(|e| match e {
-            RecursionError::Depth => PyValueError::new_err("Circular reference detected (depth exceeded)"),
+            RecursionError::Depth => PyValueError::new_err("Maximum serialization depth exceeded"),
             RecursionError::Cyclic => PyValueError::new_err("Circular reference detected (id repeated)"),
         })
     }

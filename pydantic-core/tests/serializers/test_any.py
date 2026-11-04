@@ -376,7 +376,7 @@ def test_fallback_cycle_change(any_serializer: SchemaSerializer):
     f = FoobarCount(0)
     assert any_serializer.to_python(f) == f
 
-    with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
         any_serializer.to_python(f, mode='json', fallback=fallback_func)
 
     f = FoobarCount(0)
@@ -385,7 +385,7 @@ def test_fallback_cycle_change(any_serializer: SchemaSerializer):
     expected_visits = pydantic_core._pydantic_core._recursion_limit
     assert any_serializer.to_python(f, fallback=fallback_func) == HasRepr(f'<FoobarCount {expected_visits} repr>')
 
-    with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
         any_serializer.to_json(f, fallback=fallback_func)
 
 

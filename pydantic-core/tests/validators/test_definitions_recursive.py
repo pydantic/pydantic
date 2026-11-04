@@ -712,9 +712,9 @@ def test_function_change_id(strict: bool):
 
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'recursion_loop',
+            'type': 'recursion_depth_exceeded',
             'loc': IsTuple(length=(1, 255)),
-            'msg': 'Recursion error - cyclic reference detected',
+            'msg': 'Recursion error - maximum validation depth exceeded',
             'input': IsStr(regex=r'f-\d+'),
         }
     ]
