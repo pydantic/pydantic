@@ -2,7 +2,6 @@ from __future__ import annotations as _annotations
 
 import warnings
 from collections.abc import Callable
-from contextlib import contextmanager
 from re import Pattern
 from typing import (
     TYPE_CHECKING,
@@ -18,6 +17,7 @@ from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
+from ._contextlib import contextmanager
 
 if TYPE_CHECKING:
     from .._internal._schema_generation_shared import GenerateSchema
