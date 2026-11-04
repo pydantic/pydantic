@@ -12,8 +12,9 @@ import re
 import sys
 import typing
 import warnings
+from collections import OrderedDict
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
-from copy import copy
+from copy import copy, deepcopy
 from decimal import Decimal
 from enum import Enum
 from fractions import Fraction
@@ -78,7 +79,7 @@ from ..warnings import (
     UnsupportedFieldAttributeWarning,
 )
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _type_refs, _typing_extra
-from ._config import ConfigWrapper, ConfigWrapperStack
+from ._config import ConfigWrapper, ConfigWrapperStack, _config_dict_to_core_config_key
 from ._contextlib import contextmanager
 from ._core_metadata import CoreMetadata, update_core_metadata
 from ._core_utils import get_ref
@@ -163,6 +164,45 @@ _SIMPLE_SCHEMA_TYPES: frozenset[type[Any]] = frozenset(
 
 def _is_simple_schema_type(obj: Any) -> bool:
     return obj is None or (type(obj) is type and obj in _SIMPLE_SCHEMA_TYPES)
+
+
+_TYPED_DICT_SCHEMA_CACHE: OrderedDict[tuple[Any, ...], CoreSchema] = OrderedDict()
+_TYPED_DICT_SCHEMA_CACHE_SIZE = 256
+
+
+def _typed_dict_schema_cache_key(cls: type, config: ConfigWrapper) -> tuple[Any, ...] | None:
+    """Key context-independent leaf TypedDicts by their current shape and effective config."""
+    namespace = vars(cls)
+    if any(not name.startswith('__') or not name.endswith('__') for name in namespace):
+        return None
+    if '__get_pydantic_core_schema__' in namespace or '__get_pydantic_json_schema__' in namespace:
+        return None
+    if len(namespace.get('__orig_bases__', ())) != 1 or namespace['__orig_bases__'][0] not in (
+        typing.TypedDict,
+        typing_extensions.TypedDict,
+    ):
+        return None
+    if namespace.get('__closed__') or not typing_objects.is_noextraitems(namespace.get('__extra_items__')):
+        return None
+
+    annotations = cls.__annotations__
+    if not annotations or not all(_is_simple_schema_type(annotation) for annotation in annotations.values()):
+        return None
+
+    effective_config = config.effective_config
+    if any(
+        key != 'title' and key not in _config_dict_to_core_config_key or type(value) not in (str, int, bool, NoneType)
+        for key, value in effective_config.items()
+    ):
+        return None
+
+    return (
+        cls,
+        tuple(annotations.items()),
+        cls.__required_keys__,
+        cls.__optional_keys__,
+        tuple(sorted(effective_config.items())),
+    )
 
 
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
@@ -1447,6 +1487,13 @@ class GenerateSchema:
                 config = None
 
             with self._config_wrapper_stack.push(config):
+                cache_key = (
+                    _typed_dict_schema_cache_key(typed_dict_cls, self._config_wrapper) if origin is None else None
+                )
+                if cache_key is not None and (cached_schema := _TYPED_DICT_SCHEMA_CACHE.get(cache_key)) is not None:
+                    _TYPED_DICT_SCHEMA_CACHE.move_to_end(cache_key)
+                    return self.defs.create_definition_reference_schema(deepcopy(cached_schema))
+
                 core_config = self._config_wrapper.core_config(title=typed_dict_cls.__name__)
 
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
@@ -1549,6 +1596,10 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
+                if cache_key is not None:
+                    _TYPED_DICT_SCHEMA_CACHE[cache_key] = deepcopy(schema)
+                    if len(_TYPED_DICT_SCHEMA_CACHE) > _TYPED_DICT_SCHEMA_CACHE_SIZE:
+                        _TYPED_DICT_SCHEMA_CACHE.popitem(last=False)
                 return self.defs.create_definition_reference_schema(schema)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
