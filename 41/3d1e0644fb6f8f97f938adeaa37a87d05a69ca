@@ -1,0 +1,21 @@
+tests/test_config.py
+  s_54e235a1333d43::t_e4a163af4d71f7 637-638,640,643,645-650,653,655-656,658-661
+pydantic/_internal/_generate_schema.py
+  s_54e235a1333d43::t_3bdde145eb346e 845,885-886,1023,2743
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "413d1e0644fb6f8f97f938adeaa37a87d05a69ca",
+  "prompts": {},
+  "sessions": {
+    "s_54e235a1333d43": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1a65c-3d2b-76f1-9d7b-249b43420101",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
