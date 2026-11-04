@@ -23,6 +23,7 @@ from pydantic import (
     with_config,
 )
 from pydantic._internal._decorators import get_attribute_from_bases
+from pydantic._internal._generate_schema import _NESTED_TYPED_DICT_SCHEMA_CACHE
 from pydantic.functional_serializers import field_serializer, model_serializer
 from pydantic.functional_validators import field_validator, model_validator
 from pydantic.json_schema import GenerateJsonSchema
@@ -1300,3 +1301,55 @@ def test_typeddict_schema_cache_respects_new_dunder_validator() -> None:
     setattr(Leaf, '__check_value__', field_validator('value')(classmethod(reject)))
     with pytest.raises(ValidationError, match='new validator'):
         TypeAdapter(Leaf).validate_python({'value': 'ABC'})
+
+
+def test_nested_typeddict_schema_reused_across_builds() -> None:
+    class Leaf(TypedDict):
+        value: str
+
+    class Branch(TypedDict):
+        leaves: list[Leaf]
+
+    class Root(TypedDict):
+        branches: dict[str, Branch]
+        optional: Leaf | None
+
+    value = {'branches': {'one': {'leaves': [{'value': 'hello'}]}}, 'optional': None}
+    for _ in range(3):
+        adapter = TypeAdapter(Root)
+        assert adapter.validate_python(value) == value
+        assert adapter.json_schema()['$defs']['Leaf']['properties']['value']['type'] == 'string'
+
+    assert any(key[0] is Root for key in _NESTED_TYPED_DICT_SCHEMA_CACHE)
+
+
+def test_nested_typeddict_schema_cache_respects_parent_config() -> None:
+    class Leaf(TypedDict):
+        value: str
+
+    class Branch(TypedDict):
+        leaf: Leaf
+
+    class Lower(TypedDict):
+        __pydantic_config__ = ConfigDict(str_to_lower=True)
+        branch: Branch
+
+    class Upper(TypedDict):
+        __pydantic_config__ = ConfigDict(str_to_upper=True)
+        branch: Branch
+
+    for cls, expected in ((Lower, 'mixed'), (Lower, 'mixed'), (Upper, 'MIXED'), (Upper, 'MIXED')):
+        assert TypeAdapter(cls).validate_python({'branch': {'leaf': {'value': 'MiXeD'}}}) == {
+            'branch': {'leaf': {'value': expected}}
+        }
+
+
+def test_nested_typeddict_with_model_definition() -> None:
+    class Model(BaseModel):
+        value: int
+
+    class Container(TypedDict):
+        model: Model
+
+    for _ in range(3):
+        assert TypeAdapter(Container).validate_python({'model': {'value': '1'}}) == {'model': Model(value=1)}
