@@ -174,6 +174,10 @@ _TYPED_DICT_SCHEMA_CACHE_LOCK = threading.Lock()
 
 def _typed_dict_schema_cache_key(cls: type, config: ConfigWrapper) -> tuple[Any, ...] | None:
     """Key context-independent leaf TypedDicts by their current shape and effective config."""
+    annotations = cls.__annotations__
+    if not annotations or not all(_is_simple_schema_type(annotation) for annotation in annotations.values()):
+        return None
+
     namespace = vars(cls).copy()
     if any(
         not name.startswith('__') or not name.endswith('__') or isinstance(value, _decorators.PydanticDescriptorProxy)
@@ -188,10 +192,6 @@ def _typed_dict_schema_cache_key(cls: type, config: ConfigWrapper) -> tuple[Any,
     ):
         return None
     if namespace.get('__closed__') or not typing_objects.is_noextraitems(namespace.get('__extra_items__')):
-        return None
-
-    annotations = cls.__annotations__
-    if not annotations or not all(_is_simple_schema_type(annotation) for annotation in annotations.values()):
         return None
 
     effective_config = config.effective_config
