@@ -49,7 +49,7 @@ async def main(repo_zip_path: str, pydantic_core_wheel_url: str) -> None:
 
 
 try:
-    await main(repo_zip_path, pydantic_core_wheel_url)  # noqa: F821,F704
+    await main(repo_zip_path, pydantic_core_wheel_url)  # noqa: F821,F704,PLE1142
 except Exception:
     traceback.print_exc()
     raise

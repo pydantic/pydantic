@@ -453,7 +453,7 @@ class MySequence(collections.abc.Sequence):
         return len(self._data)
 
     def __repr__(self) -> str:
-        return f'MySequence({repr(self._data)})'
+        return f'MySequence({self._data!r})'
 
 
 class MyMapping(collections.abc.Mapping):
@@ -470,7 +470,7 @@ class MyMapping(collections.abc.Mapping):
         return len(self._data)
 
     def __repr__(self) -> str:
-        return f'MyMapping({repr(self._data)})'
+        return f'MyMapping({self._data!r})'
 
 
 @dataclass

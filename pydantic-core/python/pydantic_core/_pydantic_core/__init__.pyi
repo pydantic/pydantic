@@ -11,44 +11,44 @@ from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType, ExtraBe
 from . import _schema_gather as _schema_gather
 
 __all__ = [
-    '__version__',
-    'build_profile',
-    'build_info',
-    '_recursion_limit',
     'ArgsKwargs',
-    'SchemaValidator',
-    'SchemaSerializer',
-    'Url',
     'MultiHostUrl',
-    'SchemaError',
-    'ValidationError',
     'PydanticCustomError',
     'PydanticKnownError',
     'PydanticOmit',
-    'PydanticUseDefault',
     'PydanticSerializationError',
     'PydanticSerializationUnexpectedValue',
     'PydanticUndefined',
     'PydanticUndefinedType',
+    'PydanticUseDefault',
+    'SchemaError',
+    'SchemaSerializer',
+    'SchemaValidator',
     'Some',
-    'to_json',
-    'from_json',
-    'to_jsonable_python',
-    'list_all_errors',
     'TzInfo',
+    'Url',
+    'ValidationError',
+    '__version__',
+    '_recursion_limit',
     '_schema_gather',
+    'build_info',
+    'build_profile',
+    'from_json',
+    'list_all_errors',
+    'to_json',
+    'to_jsonable_python',
 ]
 __version__: str
 build_profile: str
 build_info: str
 _recursion_limit: int
 
-_T = TypeVar('_T', default=Any, covariant=True)
+_T_co = TypeVar('_T_co', default=Any, covariant=True)
 
-_StringInput: TypeAlias = 'dict[str, _StringInput]'
+_StringInput: TypeAlias = dict[str, _StringInput]
 
 @final
-class Some(Generic[_T]):
+class Some(Generic[_T_co]):
     """
     Similar to Rust's [`Option::Some`](https://doc.rust-lang.org/std/option/enum.Option.html) type, this
     identifies a value as being present, and provides a way to access it.
@@ -59,7 +59,7 @@ class Some(Generic[_T]):
     __match_args__ = ('value',)
 
     @property
-    def value(self) -> _T:
+    def value(self) -> _T_co:
         """
         Returns the value wrapped by `Some`.
         """
@@ -628,8 +628,6 @@ class Url(SupportsAllComparisons):
     @property
     def fragment(self) -> str | None: ...
     def unicode_string(self) -> str: ...
-    def __repr__(self) -> str: ...
-    def __str__(self) -> str: ...
     def __deepcopy__(self, memo: dict) -> str: ...
     @classmethod
     def build(
@@ -666,8 +664,6 @@ class MultiHostUrl(SupportsAllComparisons):
     def fragment(self) -> str | None: ...
     def hosts(self) -> list[MultiHostHost]: ...
     def unicode_string(self) -> str: ...
-    def __repr__(self) -> str: ...
-    def __str__(self) -> str: ...
     def __deepcopy__(self, memo: dict) -> Self: ...
     @classmethod
     @overload
@@ -786,7 +782,7 @@ class ValidationError(ValueError):
             a JSON string.
         """
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # noqa: PYI029
         """
         A string representation of the validation error.
 

@@ -130,7 +130,7 @@ class CoreConfig(TypedDict, total=False):
 
 IncExCall: TypeAlias = 'set[int | str] | dict[int | str, IncExCall] | None'
 
-ContextT = TypeVar('ContextT', covariant=True, default='Any | None')
+ContextT = TypeVar('ContextT', covariant=True, default='Any | None')  # noqa: PLC0105
 
 
 class SerializationInfo(Protocol[ContextT]):
@@ -459,7 +459,7 @@ def to_string_ser_schema(*, when_used: WhenUsed = 'json-unless-none') -> ToStrin
     Args:
         when_used: Same meaning as for [general_function_plain_ser_schema], but with a different default
     """
-    s = dict(type='to-string')
+    s = {'type': 'to-string'}
     if when_used != 'json-unless-none':
         # just to avoid extra elements in schema, and to use the actual default defined in rust
         s['when_used'] = when_used
@@ -3773,8 +3773,8 @@ def model_schema(
     class MyModel:
         __slots__ = (
             '__dict__',
-            '__pydantic_fields_set__',
             '__pydantic_extra__',
+            '__pydantic_fields_set__',
             '__pydantic_private__',
         )
 
@@ -4409,7 +4409,7 @@ def call_schema(
         return_schema=core_schema.str_schema(),
     )
     v = SchemaValidator(schema)
-    assert v.validate_python((('hello', True))) == 'helloFalse'
+    assert v.validate_python(('hello', True)) == 'helloFalse'
     ```
 
     Args:
@@ -4521,8 +4521,8 @@ def json_schema(
     class MyModel:
         __slots__ = (
             '__dict__',
-            '__pydantic_fields_set__',
             '__pydantic_extra__',
+            '__pydantic_fields_set__',
             '__pydantic_private__',
         )
         field_a: str

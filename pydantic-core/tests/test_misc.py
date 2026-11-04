@@ -117,7 +117,7 @@ def test_custom_title():
 def test_validation_error_multiple(pydantic_version):
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -234,12 +234,12 @@ def test_unicode_error_input_repr() -> None:
 
 def test_core_schema_import_field_validation_info():
     with pytest.warns(DeprecationWarning, match='`FieldValidationInfo` is deprecated, use `ValidationInfo` instead.'):
-        core_schema.FieldValidationInfo
+        core_schema.FieldValidationInfo  # noqa: B018
 
 
 def test_core_schema_import_missing():
     with pytest.raises(AttributeError, match="module 'pydantic_core' has no attribute 'foobar'"):
-        core_schema.foobar
+        core_schema.foobar  # noqa: B018
 
 
 def test_internal_error():

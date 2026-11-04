@@ -19,7 +19,7 @@ import pytest
 from pydantic_core import ArgsKwargs, CoreSchema, SchemaSerializer, SchemaValidator, ValidationError
 from pydantic_core.core_schema import CoreConfig, ExtraBehavior
 
-__all__ = 'Err', 'PyAndJson', 'assert_gc', 'is_free_threaded', 'plain_repr', 'infinite_generator'
+__all__ = 'Err', 'PyAndJson', 'assert_gc', 'infinite_generator', 'is_free_threaded', 'plain_repr'
 
 hypothesis.settings.register_profile('fast', max_examples=2)
 hypothesis.settings.register_profile('slow', max_examples=1_000)
@@ -298,7 +298,7 @@ def import_execute(request, tmp_work_path: Path):
 @pytest.fixture
 def pydantic_version():
     try:
-        import pydantic
+        import pydantic  # noqa: TID251 (optional, guarded by `ImportError`)
 
         # include major and minor version only
         return '.'.join(pydantic.__version__.split('.')[:2])

@@ -95,7 +95,7 @@ def test_int_to_float_key():
     s = SchemaSerializer(core_schema.dict_schema(core_schema.float_schema(), core_schema.float_schema()))
     v_plain = s.to_python({1: 1})
     assert v_plain == {1: 1}
-    assert type(list(v_plain.keys())[0]) == int
+    assert type(next(iter(v_plain.keys()))) == int
     assert type(v_plain[1]) == int
 
     v_json = s.to_python({1: 1}, mode='json')
