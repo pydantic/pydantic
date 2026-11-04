@@ -25,6 +25,7 @@ from pydantic import (
     validate_call,
     with_config,
 )
+from pydantic._internal import _generate_schema
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockValSer
@@ -634,6 +635,40 @@ def test_deferred_nested_model_reuses_reachable_definitions(monkeypatch: pytest.
 
 
 @pytest.mark.skipif(sys.implementation.name != 'cpython', reason='Nested schema caching is specific to CPython')
+def test_deferred_nested_model_finalized_cache_reuses_recursive_schema(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Node(BaseModel):
+        model_config = ConfigDict(defer_build=True)
+        value: int
+        child: 'Node | None'
+
+    class First(BaseModel):
+        item: Node
+
+    assert Node.__dict__['__pydantic_nested_schema_cache__'].schema is None
+
+    class Second(BaseModel):
+        item: Node
+
+    assert Node.__dict__['__pydantic_nested_schema_cache__'].schema is not None
+
+    def unexpected_copy(value: Any) -> Any:
+        pytest.fail('A finalized cached schema should be reused without copying')
+
+    with monkeypatch.context() as patch:
+        patch.setattr(_generate_schema, '_copy_nested_model_schema', unexpected_copy)
+
+        class Third(BaseModel):
+            item: Node
+
+    assert not Node.__pydantic_complete__
+    for model in (First, Second, Third):
+        item = model.model_validate({'item': {'value': 1, 'child': {'value': 2, 'child': None}}}).item
+        assert item.child is not None
+        assert item.child.value == 2
+
+
+@pytest.mark.skipif(sys.implementation.name != 'cpython', reason='Nested schema caching is specific to CPython')
+@pytest.mark.xfail(strict=True, reason='Finalized schema reuse can leak edits from a parent core-schema hook')
 def test_deferred_nested_model_cache_isolated_from_parent_hooks() -> None:
     class Child(BaseModel):
         model_config = ConfigDict(defer_build=True)

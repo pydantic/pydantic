@@ -842,7 +842,7 @@ class GenerateSchema:
             if all(state.matches(model) for model, state in cached.states.items()):
                 if not any(
                     dep in self.defs._definitions or dep in self.defs._recursively_seen
-                    for dep in cached.definitions
+                    for dep in cached.refs
                     if dep != ref
                 ):
                     return cached, None
@@ -882,8 +882,22 @@ class GenerateSchema:
             ):
                 cached, states = self._get_nested_model_cache(cls, model_ref)
                 if cached is not None:
-                    self.defs._definitions.update(_copy_nested_model_schema(cached.definitions))
-                    return core_schema.definition_reference_schema(model_ref)
+                    if cached.schema is None:
+                        # Finalize only on reuse, so a model nested once pays no extra finalization cost.
+                        assert cached.definitions is not None
+                        cache_defs = _Definitions()
+                        cache_defs._definitions = _copy_nested_model_schema(cached.definitions)
+                        finalized = cache_defs.finalize_schema(core_schema.definition_reference_schema(model_ref))
+                        cached = _NestedModelSchema(cached.states, None, finalized, cached.refs)
+                        type.__setattr__(cls, '__pydantic_nested_schema_cache__', cached)
+                    cached_schema = cached.schema
+                    assert cached_schema is not None
+                    if cached_schema['type'] == 'definitions':
+                        cached_schema = self.defs.unpack_definitions(cached_schema)
+                    ref = get_ref(cached_schema)
+                    if ref:
+                        return self.defs.create_definition_reference_schema(cached_schema)
+                    return cached_schema
                 if states is not None:
                     existing_refs = set(self.defs._definitions)
 
@@ -1020,7 +1034,9 @@ class GenerateSchema:
                             type.__setattr__(
                                 cls,
                                 '__pydantic_nested_schema_cache__',
-                                _NestedModelSchema(states, _copy_nested_model_schema(definitions)),
+                                _NestedModelSchema(
+                                    states, _copy_nested_model_schema(definitions), None, frozenset(definitions)
+                                ),
                             )
                 return reference
 
@@ -2740,7 +2756,9 @@ def _inlining_behavior(
 @dataclasses.dataclass(frozen=True, slots=True)
 class _NestedModelSchema:
     states: dict[type[BaseModel], _NestedModelState]
-    definitions: dict[str, CoreSchema]
+    definitions: dict[str, CoreSchema] | None
+    schema: CoreSchema | None
+    refs: frozenset[str]
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
