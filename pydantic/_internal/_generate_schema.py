@@ -180,7 +180,7 @@ class _TypedDictSchemaCacheEntry:
 
 
 _NESTED_TYPED_DICT_SCHEMA_CACHE: OrderedDict[tuple[Any, ...], _TypedDictSchemaCacheEntry] = OrderedDict()
-_NESTED_TYPED_DICT_SCHEMA_SEEN: OrderedDict[tuple[Any, ...], None] = OrderedDict()
+_NESTED_TYPED_DICT_SCHEMA_SEEN: OrderedDict[tuple[Any, ...], int] = OrderedDict()
 
 
 def _is_nested_typed_dict_annotation(annotation: Any) -> bool:
@@ -1676,12 +1676,12 @@ class GenerateSchema:
                 result = self.defs.create_definition_reference_schema(schema)
                 if nested_cache_key is not None:
                     with _TYPED_DICT_SCHEMA_CACHE_LOCK:
-                        seen_before = nested_cache_key in _NESTED_TYPED_DICT_SCHEMA_SEEN
-                        _NESTED_TYPED_DICT_SCHEMA_SEEN[nested_cache_key] = None
+                        seen_count = _NESTED_TYPED_DICT_SCHEMA_SEEN.get(nested_cache_key, 0) + 1
+                        _NESTED_TYPED_DICT_SCHEMA_SEEN[nested_cache_key] = seen_count
                         _NESTED_TYPED_DICT_SCHEMA_SEEN.move_to_end(nested_cache_key)
                         if len(_NESTED_TYPED_DICT_SCHEMA_SEEN) > _TYPED_DICT_SCHEMA_CACHE_SIZE:
                             _NESTED_TYPED_DICT_SCHEMA_SEEN.popitem(last=False)
-                    if seen_before:
+                    if seen_count >= 3:
                         entry = self.defs.capture_typed_dict_cache_entry(typed_dict_ref)
                         if entry is not None:
                             with _TYPED_DICT_SCHEMA_CACHE_LOCK:
