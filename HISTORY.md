@@ -2,6 +2,48 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.14.3 (2026-11-04)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.3)
+
+### What's Changed
+
+#### Packaging
+
+* Build wheels for GraalPy 3.13 by @msimacek in [#14136](https://github.com/pydantic/pydantic/pull/14136).
+
+  The previous v2.14.2 release published GraalPy 3.11 wheels, which were not working due to a PyO3 version bump. A CI workflow issue
+  made it so that the wheel wasn't tested before publishing. This is now fixed: starting in v2.14.3, we no longer publish GraalPy 3.11
+  wheels, and GraalPy 3.13 wheels are now published together with the existing 3.12 one.
+
+#### Performance
+
+* Improve schema generation for fixed type handlers by @alexmojaki in [#14130](https://github.com/pydantic/pydantic/pull/14130)
+* Skip general schema dispatch for builtin scalars by @alexmojaki in [#14141](https://github.com/pydantic/pydantic/pull/14141)
+* Skip annotation handler setup when annotations are empty by @alexmojaki in [#14149](https://github.com/pydantic/pydantic/pull/14149)
+* Fix quadratic serialization time with per-index `include`/`exclude` on sequences by @Viicos in [#14160](https://github.com/pydantic/pydantic/pull/14160)
+* Avoid type lookups when checking for `None` during serialization by @Viicos in [#14167](https://github.com/pydantic/pydantic/pull/14167)
+* Improve performance of model serialization by @Viicos in [#14171](https://github.com/pydantic/pydantic/pull/14171)
+* Improve performance of dict serialization by @Viicos in [#14172](https://github.com/pydantic/pydantic/pull/14172)
+* Improve performance of type inference during serialization by @Viicos in [#14173](https://github.com/pydantic/pydantic/pull/14173)
+* Avoid cloning the field name when using the default value during validation by @Viicos in [#14175](https://github.com/pydantic/pydantic/pull/14175)
+* Do not evaluate `model_config` annotations by @Viicos in [#14195](https://github.com/pydantic/pydantic/pull/14195)
+* Avoid slow runtime `Protocol` check when expanding `GroupedMetadata` annotations by @Viicos in [#14196](https://github.com/pydantic/pydantic/pull/14196)
+* Use a lightweight `@contextmanager` implementation internally by @Viicos in [#14199](https://github.com/pydantic/pydantic/pull/14199)
+
+#### Fixes
+
+* Fix various issues about GC tracking in `pydantic-core` by @Viicos in [#13819](https://github.com/pydantic/pydantic/pull/13819)
+* Include `null` in serialization JSON Schema for `unless-none` field serializers by @Kropiunig in [#13848](https://github.com/pydantic/pydantic/pull/13848)
+* Fix `RecursionError` when copying or unpickling models with `defer_build` by @Viicos in [#14115](https://github.com/pydantic/pydantic/pull/14115)
+* Remove dead `default_factory` check in unsupported `Field()` attribute by @owtaylor in [#14129](https://github.com/pydantic/pydantic/pull/14129)
+* Disallow non string extra keys during validation by @Viicos in [#14135](https://github.com/pydantic/pydantic/pull/14135)
+* Fix deeply nested data being reported as a cyclic reference by @Viicos in [#14164](https://github.com/pydantic/pydantic/pull/14164)
+
+### New Contributors
+
+* @owtaylor made their first contribution in [#14129](https://github.com/pydantic/pydantic/pull/14129)
+
 ## v2.14.2 (2026-10-29)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.2)
