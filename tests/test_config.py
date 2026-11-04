@@ -1,7 +1,8 @@
+import copy
 import json
 import re
 import sys
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
@@ -881,6 +882,19 @@ def test_defer_build_json_schema():
         'properties': {'a': {'title': 'A', 'type': 'integer'}},
         'required': ['a'],
     }
+
+
+@pytest.mark.parametrize('copy_func', [copy.copy, copy.deepcopy])
+def test_copy_defer_build_mocks(copy_func: Callable[[Any], Any]) -> None:
+    """https://github.com/pydantic/pydantic/issues/14089"""
+
+    class M(BaseModel, defer_build=True):
+        a: int
+
+    validator, serializer = M.__pydantic_validator__, M.__pydantic_serializer__
+
+    assert isinstance(copy_func(validator), MockValSer)
+    assert isinstance(copy_func(serializer), MockValSer)
 
 
 def test_partial_creation_with_defer_build():
