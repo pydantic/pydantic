@@ -175,6 +175,7 @@ _TYPED_DICT_SCHEMA_CACHE_LOCK = threading.Lock()
 @dataclasses.dataclass(frozen=True)
 class _TypedDictSchemaCacheEntry:
     schema: CoreSchema
+    config: tuple[tuple[str, Any], ...]
     dependencies: tuple[tuple[str, _TypedDictSchemaCacheEntry], ...]
 
 
@@ -1542,6 +1543,11 @@ class GenerateSchema:
                     if origin is None and cache_key is None
                     else None
                 )
+                selected_cache_key = cache_key or nested_cache_key
+                if selected_cache_key is None:
+                    self.defs._typed_dict_ref_configs[typed_dict_ref] = None
+                elif selected_cache_key[-1]:
+                    self.defs._typed_dict_ref_configs[typed_dict_ref] = selected_cache_key[-1]
                 cached_schema = None
                 if cache_key is not None:
                     with _TYPED_DICT_SCHEMA_CACHE_LOCK:
@@ -2845,6 +2851,7 @@ class _Definitions:
         self._recursively_seen = set()
         self._definitions = {}
         self._typed_dict_cache_entries: dict[str, _TypedDictSchemaCacheEntry] = {}
+        self._typed_dict_ref_configs: dict[str, tuple[tuple[str, Any], ...] | None] = {}
 
     def load_typed_dict_cache_entry(self, entry: _TypedDictSchemaCacheEntry) -> None:
         ref = get_ref(entry.schema)
@@ -2853,6 +2860,8 @@ class _Definitions:
             return
         self._definitions[ref] = deepcopy(entry.schema)
         self._typed_dict_cache_entries[ref] = entry
+        if entry.config:
+            self._typed_dict_ref_configs[ref] = entry.config
         for _, dependency in entry.dependencies:
             self.load_typed_dict_cache_entry(dependency)
 
@@ -2866,16 +2875,19 @@ class _Definitions:
         schema = self._definitions.get(ref)
         if schema is None or schema['type'] != 'typed-dict':
             return None
+        config = self._typed_dict_ref_configs.get(ref, ())
+        if config is None:
+            return None
         cls = schema.get('cls')
         if cls is None or not all(_is_nested_typed_dict_annotation(a) for a in cls.__annotations__.values()):
             return None
         dependencies: list[tuple[str, _TypedDictSchemaCacheEntry]] = []
         for dependency_ref in _typed_dict_schema_refs(schema):
             dependency = self.capture_typed_dict_cache_entry(dependency_ref, seen | {ref})
-            if dependency is None:
+            if dependency is None or dependency.config != config:
                 return None
             dependencies.append((dependency_ref, dependency))
-        entry = _TypedDictSchemaCacheEntry(deepcopy(schema), tuple(dependencies))
+        entry = _TypedDictSchemaCacheEntry(deepcopy(schema), config, tuple(dependencies))
         self._typed_dict_cache_entries[ref] = entry
         return entry
 
