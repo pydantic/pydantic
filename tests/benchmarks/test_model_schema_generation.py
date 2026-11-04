@@ -11,7 +11,7 @@ from typing import (
 )
 
 import pytest
-from typing_extensions import Self, type_repr
+from typing_extensions import Self, TypedDict, type_repr
 
 from pydantic import (
     AfterValidator,
@@ -22,6 +22,7 @@ from pydantic import (
     PlainSerializer,
     PlainValidator,
     Tag,
+    TypeAdapter,
     WrapSerializer,
     WrapValidator,
     create_model,
@@ -377,3 +378,22 @@ if sys.version_info >= (3, 11):
             field: field_type
 
         benchmark(rebuild_model, PydanticTypeModel)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_typeddict_cross_build_schema_generation(benchmark) -> None:
+    class Leaf(TypedDict):
+        value: str
+        count: int
+
+    class Child1(TypedDict):
+        leaf: Leaf
+
+    class Child2(TypedDict):
+        leaf: Leaf
+
+    def build_children() -> None:
+        TypeAdapter(Child1)
+        TypeAdapter(Child2)
+
+    benchmark(build_children)
