@@ -83,6 +83,10 @@ impl<'py> SerializationState<'py> {
     }
 }
 
+fn depth_exceeded_error() -> PyErr {
+    PyValueError::new_err("Maximum serialization depth exceeded")
+}
+
 impl SerializationState<'_> {
     pub fn recursion_guard(
         &mut self,
@@ -90,9 +94,19 @@ impl SerializationState<'_> {
         def_ref_id: usize,
     ) -> PyResult<RecursionGuard<'_, Self>> {
         RecursionGuard::new(self, value.as_ptr() as usize, def_ref_id).map_err(|e| match e {
-            RecursionError::Depth => PyValueError::new_err("Maximum serialization depth exceeded"),
+            RecursionError::Depth => depth_exceeded_error(),
             RecursionError::Cyclic => PyValueError::new_err("Circular reference detected (id repeated)"),
         })
+    }
+
+    /// Same as `recursion_guard()`, for a value that can't be part of a reference cycle (e.g. an `int`):
+    /// only the depth limit is checked, and nothing needs to be recorded.
+    pub fn check_recursion_depth(&self) -> PyResult<()> {
+        if self.rec_guard.at_depth_limit() {
+            Err(depth_exceeded_error())
+        } else {
+            Ok(())
+        }
     }
 
     pub fn warn_fallback_py(&mut self, field_type: &str, value: &Bound<'_, PyAny>) -> PyResult<()> {
