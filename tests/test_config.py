@@ -26,6 +26,7 @@ from pydantic import (
     with_config,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
@@ -588,6 +589,70 @@ def test_config_model_defer_build(defer_build: bool, generate_schema_calls: Call
     assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
     assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
     assert generate_schema_calls.count == 1, 'Should not build duplicated core schemas'
+
+
+@pytest.mark.skipif(sys.implementation.name != 'cpython', reason='Nested schema caching is specific to CPython')
+def test_deferred_nested_model_reuses_reachable_definitions(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Leaf(BaseModel):
+        model_config = ConfigDict(defer_build=True)
+        value: int
+
+    class Inner(BaseModel):
+        model_config = ConfigDict(defer_build=True)
+        leaf: Leaf
+
+    class First(BaseModel):
+        item: Inner
+
+    calls = []
+    original = GenerateSchema._model_schema
+
+    def track(self: GenerateSchema, model: type[BaseModel]):
+        calls.append(model)
+        return original(self, model)
+
+    monkeypatch.setattr(GenerateSchema, '_model_schema', track)
+
+    class Second(BaseModel):
+        item: Inner
+
+    assert Leaf not in calls
+    assert not Inner.__pydantic_complete__
+    assert not Leaf.__pydantic_complete__
+    assert First.model_validate({'item': {'leaf': {'value': '1'}}}).item.leaf.value == 1
+    assert Second.model_validate({'item': {'leaf': {'value': '2'}}}).item.leaf.value == 2
+
+    # Changing a reachable model's configuration invalidates the cached graph.
+    Leaf.model_config['strict'] = True
+
+    class Third(BaseModel):
+        item: Inner
+
+    with pytest.raises(ValidationError, match='int_type'):
+        Third.model_validate({'item': {'leaf': {'value': '3'}}})
+    assert Second.model_validate({'item': {'leaf': {'value': '4'}}}).item.leaf.value == 4
+
+
+def test_deferred_nested_model_forward_reference_uses_enclosing_namespace() -> None:
+    class Inner(BaseModel):
+        model_config = ConfigDict(defer_build=True)
+        value: 'Outer'  # noqa: F821
+
+    def build_outer(annotation: type) -> type[BaseModel]:
+        return create_model('Outer', inner=(Inner | None, None), value=(annotation, ...))
+
+    first = build_outer(int)
+    second = build_outer(str)
+    assert (
+        first.model_validate({'value': 1, 'inner': {'value': {'value': 2}}}).model_dump()['inner']['value']['value']
+        == 2
+    )
+    assert (
+        second.model_validate({'value': 'a', 'inner': {'value': {'value': 'b'}}}).model_dump()['inner']['value'][
+            'value'
+        ]
+        == 'b'
+    )
 
 
 @pytest.mark.parametrize('defer_build', [True, False])

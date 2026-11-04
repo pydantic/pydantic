@@ -632,6 +632,8 @@ def complete_model_class(
     set_deprecated_descriptors(cls)
 
     cls.__pydantic_core_schema__ = schema
+    if '__pydantic_nested_schema_cache__' in cls.__dict__:
+        type.__delattr__(cls, '__pydantic_nested_schema_cache__')
 
     cls.__pydantic_validator__ = create_schema_validator(
         schema,

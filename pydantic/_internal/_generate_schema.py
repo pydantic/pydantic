@@ -17,11 +17,11 @@ from copy import copy
 from decimal import Decimal
 from enum import Enum
 from fractions import Fraction
-from functools import partial
+from functools import cache, partial
 from inspect import Parameter, _ParameterKind
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
-from operator import attrgetter
+from operator import attrgetter, is_
 from types import EllipsisType, FunctionType, GenericAlias, LambdaType, MethodType, NoneType
 from typing import (
     TYPE_CHECKING,
@@ -834,6 +834,24 @@ class GenerateSchema:
 
         return schema
 
+    def _get_nested_model_cache(
+        self, cls: type[BaseModel], ref: str
+    ) -> tuple[_NestedModelSchema | None, dict[type[BaseModel], _NestedModelState] | None]:
+        cached = cls.__dict__.get('__pydantic_nested_schema_cache__')
+        if cached is not None:
+            if all(state.matches(model) for model, state in cached.states.items()):
+                if not any(
+                    dep in self.defs._definitions or dep in self.defs._recursively_seen
+                    for dep in cached.definitions
+                    if dep != ref
+                ):
+                    return cached, None
+                return None, None
+        states: dict[type[BaseModel], _NestedModelState] = {}
+        if _collect_nested_model_states(cls, states):
+            return None, states
+        return None, None
+
     def _model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
         """Generate schema for a Pydantic model."""
         BaseModel_ = import_cached_base_model()
@@ -852,6 +870,22 @@ class GenerateSchema:
                     return self.defs.create_definition_reference_schema(schema)
                 else:
                     return schema
+
+            states = None
+            existing_refs: set[str] | None = None
+            if (
+                sys.implementation.name == 'cpython'
+                and type(self) is GenerateSchema
+                and isinstance(schema, MockCoreSchema)
+                and self.model_type_stack.get() is cls
+                and len(self.defs._recursively_seen) == 2
+            ):
+                cached, states = self._get_nested_model_cache(cls, model_ref)
+                if cached is not None:
+                    self.defs._definitions.update(_copy_nested_model_schema(cached.definitions))
+                    return core_schema.definition_reference_schema(model_ref)
+                if states is not None:
+                    existing_refs = set(self.defs._definitions)
 
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
 
@@ -971,7 +1005,24 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                return self.defs.create_definition_reference_schema(schema)
+                reference = self.defs.create_definition_reference_schema(schema)
+                if states is not None and existing_refs is not None:
+                    try:
+                        reachable = gather_schemas_for_cleaning(reference, self.defs._definitions)[
+                            'collected_references'
+                        ]
+                    except MissingDefinitionError:
+                        # An enclosing model in a recursive graph may still be under construction.
+                        pass
+                    else:
+                        if existing_refs.isdisjoint(reachable):
+                            definitions = {ref: self.defs._definitions[ref] for ref in reachable}
+                            type.__setattr__(
+                                cls,
+                                '__pydantic_nested_schema_cache__',
+                                _NestedModelSchema(states, _copy_nested_model_schema(definitions)),
+                            )
+                return reference
 
     def _resolve_self_type(self, obj: Any) -> Any:
         obj = self.model_type_stack.get()
@@ -2684,6 +2735,130 @@ def _inlining_behavior(
     if len(metadata) == 1 and 'pydantic_internal_union_discriminator' in metadata:
         return 'preserve_metadata'
     return 'keep'
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _NestedModelSchema:
+    states: dict[type[BaseModel], _NestedModelState]
+    definitions: dict[str, CoreSchema]
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _NestedModelState:
+    placeholder: MockCoreSchema
+    ref: str
+    name: str
+    fields: list[tuple[str, Any]]
+
+    def matches(self, model: type[BaseModel]) -> bool:
+        current = _nested_model_state(model)
+        return (
+            current is not None
+            and self.placeholder is current.placeholder
+            and self.ref == current.ref
+            and self.name == current.name
+            and len(self.fields) == len(current.fields)
+            and all(
+                before_name == after_name and before_annotation is after_annotation
+                for (before_name, before_annotation), (after_name, after_annotation) in zip(
+                    self.fields, current.fields, strict=True
+                )
+            )
+        )
+
+
+@cache
+def _plain_field_attributes() -> tuple[Callable[[FieldInfo], tuple[Any, ...]], tuple[Any, ...]]:
+    from ..fields import _Attrs
+
+    return attrgetter(*_Attrs), tuple(
+        PydanticUndefined if name == 'default' else value for name, value in _Attrs.items()
+    )
+
+
+def _nested_model_state(model: type[BaseModel]) -> _NestedModelState | None:
+    """Return the state of a plain deferred model eligible for nested schema caching."""
+    base_model = import_cached_base_model()
+    if (
+        type(model) is not type(base_model)
+        or model.__bases__ != (base_model,)
+        or not model.__pydantic_fields_complete__
+        or model.__pydantic_custom_init__
+        or model.__pydantic_post_init__ is not None
+        or '__get_pydantic_core_schema__' in vars(model)
+        or '__get_pydantic_json_schema__' in vars(model)
+        or len(model.model_config) != 1
+        or model.model_config.get('defer_build') is not True
+        or not isinstance(schema := model.__dict__.get('__pydantic_core_schema__'), MockCoreSchema)
+    ):
+        return None
+
+    decorators = model.__pydantic_decorators__
+    if (
+        decorators.field_validators
+        or decorators.field_serializers
+        or decorators.model_validators
+        or decorators.model_serializers
+        or decorators.computed_fields
+    ):
+        return None
+
+    field_info_type = import_cached_field_info()
+    attributes, defaults = _plain_field_attributes()
+    fields = []
+    for name, field in model.__pydantic_fields__.items():
+        if type(field) is not field_info_type or field.metadata or field._qualifiers:
+            return None
+        if not all(map(is_, attributes(field), defaults)):
+            return None
+        fields.append((name, field.annotation))
+    return _NestedModelState(schema, _type_refs.model_type_ref(model), model.__name__, fields)
+
+
+_NESTED_MODEL_LEAF_IDS = frozenset(map(id, (str, bytes, int, float, bool, NoneType, object)))
+_NATIVE_UNION_TYPE = type(int | str)
+
+
+def _collect_nested_model_states(
+    annotation: Any, states: dict[type[BaseModel], _NestedModelState], depth: int = 0
+) -> bool:
+    """Check the entire annotation graph for constructs that depend on the enclosing build."""
+    if id(annotation) in _NESTED_MODEL_LEAF_IDS:
+        return True
+    if depth == 32:
+        return False
+    if type(annotation) is GenericAlias:
+        origin = annotation.__origin__
+        if origin is not list and origin is not dict:
+            return False
+        return all(_collect_nested_model_states(arg, states, depth + 1) for arg in get_args(annotation))
+    if type(annotation) is _NATIVE_UNION_TYPE:
+        return all(_collect_nested_model_states(arg, states, depth + 1) for arg in get_args(annotation))
+    if type(annotation) is not type(import_cached_base_model()):
+        return False
+    if annotation in states:
+        return True
+    if len(states) == 16:
+        return False
+    state = _nested_model_state(annotation)
+    if state is None:
+        return False
+    states[annotation] = state
+    return all(
+        _collect_nested_model_states(field.annotation, states, depth + 1)
+        for field in annotation.__pydantic_fields__.values()
+    )
+
+
+def _copy_nested_model_schema(value: Any) -> Any:
+    """Copy schema containers while preserving classes and functions by identity."""
+    if type(value) is dict:
+        return {key: _copy_nested_model_schema(item) for key, item in value.items()}
+    if type(value) is list:
+        return [_copy_nested_model_schema(item) for item in value]
+    if type(value) is tuple:
+        return tuple(_copy_nested_model_schema(item) for item in value)
+    return value
 
 
 class _Definitions:
