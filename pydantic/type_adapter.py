@@ -264,7 +264,9 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             config_wrapper = _config.ConfigWrapper(self._config)
 
-            schema_generator = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
+            schema_generator = _generate_schema.GenerateSchema(
+                config_wrapper, ns_resolver=ns_resolver, reuse_typed_dict_schemas=not force
+            )
 
             try:
                 core_schema = schema_generator.generate_schema(self._type)

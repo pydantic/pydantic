@@ -165,6 +165,25 @@ def _is_simple_schema_type(obj: Any) -> bool:
     return obj is None or (type(obj) is type and obj in _SIMPLE_SCHEMA_TYPES)
 
 
+def _typed_dict_has_forward_refs(annotation: Any, seen: set[int] | None = None) -> bool:
+    if isinstance(annotation, (str, ForwardRef)):
+        return True
+    if seen is None:
+        seen = set()
+    if id(annotation) in seen:
+        return False
+    seen.add(id(annotation))
+    if is_typeddict(annotation):
+        if annotation.__dict__.get('__pydantic_core_schema_config__') is not None:
+            return False
+        children = chain(annotation.__annotations__.values(), (getattr(annotation, '__extra_items__', None),))
+    elif isinstance(annotation, TypeAliasType):
+        children = (annotation.__value__,)
+    else:
+        children = get_args(annotation)
+    return any(_typed_dict_has_forward_refs(child, seen) for child in children)
+
+
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
     """Return fresh copies of a fixed schema made only of immutable values."""
 
@@ -355,6 +374,7 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_ns_resolver',
         '_typevars_map',
+        '_reuse_typed_dict_schemas',
         'field_name_stack',
         'model_type_stack',
         'defs',
@@ -365,11 +385,13 @@ class GenerateSchema:
         config_wrapper: ConfigWrapper,
         ns_resolver: NsResolver | None = None,
         typevars_map: Mapping[TypeVar, Any] | None = None,
+        reuse_typed_dict_schemas: bool = True,
     ) -> None:
         # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._ns_resolver = ns_resolver or NsResolver()
         self._typevars_map = typevars_map
+        self._reuse_typed_dict_schemas = reuse_typed_dict_schemas
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
@@ -1448,7 +1470,8 @@ class GenerateSchema:
 
             with self._config_wrapper_stack.push(config):
                 if (
-                    origin is None
+                    self._reuse_typed_dict_schemas
+                    and origin is None
                     and (schema := typed_dict_cls.__dict__.get('__pydantic_core_schema__')) is not None
                     and typed_dict_cls.__dict__.get('__pydantic_core_schema_config__')
                     == self._config_wrapper.effective_config
@@ -1457,6 +1480,8 @@ class GenerateSchema:
                         schema = self.defs.unpack_definitions(schema)
                     return self.defs.create_definition_reference_schema(schema)
 
+                if origin is None:
+                    typed_dict_cls.__pydantic_core_schema_config__ = None
                 core_config = self._config_wrapper.core_config(title=typed_dict_cls.__name__)
 
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
@@ -1560,10 +1585,13 @@ class GenerateSchema:
                 schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
                 if origin is None:
-                    definitions = list(self.defs._definitions.values())
-                    cached_schema = core_schema.definitions_schema(schema, definitions) if definitions else schema
-                    typed_dict_cls.__pydantic_core_schema_config__ = self._config_wrapper.effective_config.copy()
-                    typed_dict_cls.__pydantic_core_schema__ = cached_schema
+                    if _typed_dict_has_forward_refs(typed_dict_cls):
+                        typed_dict_cls.__pydantic_core_schema_config__ = None
+                    else:
+                        definitions = list(self.defs._definitions.values())
+                        cached_schema = core_schema.definitions_schema(schema, definitions) if definitions else schema
+                        typed_dict_cls.__pydantic_core_schema_config__ = self._config_wrapper.effective_config.copy()
+                        typed_dict_cls.__pydantic_core_schema__ = cached_schema
                 return self.defs.create_definition_reference_schema(schema)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
