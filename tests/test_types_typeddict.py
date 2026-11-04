@@ -1353,3 +1353,18 @@ def test_nested_typeddict_with_model_definition() -> None:
 
     for _ in range(3):
         assert TypeAdapter(Container).validate_python({'model': {'value': '1'}}) == {'model': Model(value=1)}
+
+
+def test_nested_typeddict_cache_skips_definition_with_different_config() -> None:
+    class Leaf(TypedDict):
+        value: int
+
+    class Root(TypedDict):
+        __pydantic_config__ = ConfigDict(extra='forbid')
+        leaf: Leaf
+
+    for _ in range(2):
+        TypeAdapter(tuple[Leaf, Root], config=ConfigDict(extra='allow'))
+
+    with pytest.raises(ValidationError, match='Extra inputs are not permitted'):
+        TypeAdapter(Root).validate_python({'leaf': {'value': 1, 'extra': 2}})
