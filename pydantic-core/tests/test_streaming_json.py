@@ -587,6 +587,27 @@ def test_streamed_containers_share_json_depth_budget(kind: str, depth: int, empt
         assert streamed.value.errors(include_url=False) == ordinary.value.errors(include_url=False)
 
 
+@pytest.mark.skipif(
+    sys.implementation.name == 'pypy', reason='Deep schema construction exhausts the native stack on PyPy debug builds'
+)
+def test_streamed_model_under_deep_mixed_containers() -> None:
+    field: core_schema.CoreSchema = _model('Child', {'value': INT})
+    document = '{"value":1}'
+    for _ in range(80):
+        field = core_schema.dict_schema(STR, core_schema.list_schema(field))
+        document = '{"key":[' + document + ']}'
+
+    validator = SchemaValidator(_model('Parent', {'items': field}))
+    assert validator._stream_plan_accepted
+    document = '{"items":' + document + '}'
+    for result in (validator.validate_json(document), validator.validate_json(document, by_name=True)):
+        child = result.items
+        for _ in range(80):
+            child = child['key'][0]
+        assert child.value == 1
+        assert child.__pydantic_fields_set__ == {'value'}
+
+
 @pytest.mark.parametrize('width', [0, 1, 65])
 def test_streamed_model_uses_model_fields_set(width: int) -> None:
     fields = {f'x{i}': INT for i in range(width)}

@@ -12,6 +12,7 @@ use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
+use pyo3::types::iter::{BoundDictIterator, BoundListIterator};
 use pyo3::types::{PyDict, PyList, PySet, PyString, PyTuple, PyType};
 use smallvec::SmallVec;
 
@@ -439,7 +440,7 @@ pub(crate) fn take_root<'py>(
         if !matches!(jiter.peek()?, Peek::Array) {
             return Ok(None);
         }
-        return match take_list(py, jiter, plan, list_plan, state, 0)? {
+        return match take_container(py, jiter, plan, list_plan, Peek::Array, state, 0)? {
             Taken::Ready(value) => {
                 // Models stay as field bundles until the entire document is valid.
                 jiter.finish()?;
@@ -501,130 +502,230 @@ fn materialize_nested<'py>(
     model_plan: &ModelPlan,
     index: usize,
 ) -> PyResult<Option<Bound<'py, PyAny>>> {
-    let field = &model_plan.nodes[index];
-    if field.nullable && pyo3::types::PyAnyMethods::is_none(&value) {
-        return Ok(None);
-    }
-    match &field.fast {
-        Fast::Model(nested) => {
-            let CombinedValidator::Model(nested) = unwrap_prebuilt(&nested.validator) else {
-                unreachable!("a model plan holds a model validator");
+    let mut stack = Vec::new();
+    let mut current = (value, index, None);
+    loop {
+        let (value, index, slot) = current;
+        let field = &model_plan.nodes[index];
+        if !(field.nullable && PyAnyMethods::is_none(&value)) {
+            match &field.fast {
+                Fast::Model(nested) => {
+                    let CombinedValidator::Model(nested) = unwrap_prebuilt(&nested.validator) else {
+                        unreachable!("a model plan holds a model validator");
+                    };
+                    let pending = value.cast::<PyTuple>()?;
+                    let model_dict = pending.get_item(0)?;
+                    let fields_set = pending.get_item(1)?;
+                    let instance = create_class(nested.stream_class().bind(py))?;
+                    set_model_attrs(&instance, &model_dict, py.None().bind(py), &fields_set)?;
+                    match slot {
+                        Some(MaterializeSlot::List(list, index)) => list.set_item(index, instance)?,
+                        Some(MaterializeSlot::Dict(dict, key)) => dict.set_item(key, instance)?,
+                        None => return Ok(Some(instance)),
+                    }
+                }
+                Fast::List(plan) => {
+                    let list = value.cast_into::<PyList>().map_err(PyErr::from)?;
+                    let items = MaterializeItems::List(list.clone(), list.iter().enumerate());
+                    stack.push((plan.element, items));
+                }
+                Fast::Dict(plan) => {
+                    let dict = value.cast_into::<PyDict>().map_err(PyErr::from)?;
+                    let items = MaterializeItems::Dict(dict.clone(), dict.iter());
+                    stack.push((plan.element, items));
+                }
+                _ => {}
+            }
+        }
+
+        current = loop {
+            let Some((element, items)) = stack.last_mut() else {
+                return Ok(None);
             };
-            let class = nested.stream_class();
-            let pending = value.cast::<PyTuple>()?;
-            let model_dict = pending.get_item(0)?;
-            let fields_set = pending.get_item(1)?;
-            let instance = create_class(class.bind(py))?;
-            set_model_attrs(&instance, &model_dict, py.None().bind(py), &fields_set)?;
-            Ok(Some(instance))
-        }
-        Fast::List(plan) => {
-            let list = value.cast::<PyList>().map_err(PyErr::from)?;
-            for index in 0..list.len() {
-                if let Some(item) = materialize_nested(py, list.get_item(index)?, model_plan, plan.element)? {
-                    list.set_item(index, item)?;
-                }
+            let next = match items {
+                MaterializeItems::List(list, iter) => iter
+                    .next()
+                    .map(|(index, value)| (value, MaterializeSlot::List(list.clone(), index))),
+                MaterializeItems::Dict(dict, iter) => iter
+                    .next()
+                    .map(|(key, value)| (value, MaterializeSlot::Dict(dict.clone(), key))),
+            };
+            if let Some((value, slot)) = next {
+                break (value, *element, Some(slot));
             }
-            Ok(None)
-        }
-        Fast::Dict(plan) => {
-            let dict = value.cast::<PyDict>()?;
-            for (key, item) in dict.iter() {
-                if let Some(item) = materialize_nested(py, item, model_plan, plan.element)? {
-                    dict.set_item(key, item)?;
-                }
-            }
-            Ok(None)
-        }
-        _ => Ok(None),
+            stack.pop();
+        };
     }
 }
 
-/// An array, every element taken the same way. If any element is not something the cursor can
-/// finish, the array is handed back whole: by then part of it is already python objects, so it
-/// cannot be assembled from both halves.
-#[inline(never)]
-fn take_list<'j, 'py>(
-    py: Python<'py>,
-    jiter: &mut Jiter<'j>,
-    model_plan: &ModelPlan,
-    plan: &ContainerPlan,
-    state: &mut ValidationState<'_, 'py>,
-    depth: usize,
-) -> Result<Taken<'py>, StreamStop> {
-    let element = &model_plan.nodes[plan.element];
-    // collected first so the list is allocated once at its final size: appending into an empty
-    // list over-allocates and then reallocates, which is most of what a short list costs
-    let mut items: SmallVec<[Bound<'py, PyAny>; 8]> = SmallVec::new();
-    let mut all_ready = true;
-    let mut next = jiter.known_array()?;
-    if next.is_some() {
-        check_stream_depth(depth)?;
-    }
-    while let Some(peek) = next {
-        if all_ready && plan.max_length.is_none_or(|max| items.len() < max) {
-            match take_peeked(py, jiter, model_plan, element, peek, state, depth + 1)? {
-                Taken::Ready(value) => items.push(value),
-                Taken::Raw => all_ready = false,
-            }
-        } else {
-            // Once the bound is exceeded, stop constructing values and consume the rest.
-            all_ready = false;
-            skip_peeked(jiter, peek, depth + 1)?;
-        }
-        next = jiter.array_step()?;
-    }
-    if all_ready && plan.length_ok(items.len()) {
-        Ok(Taken::Ready(PyList::new(py, items)?.into_any()))
-    } else {
-        Ok(Taken::Raw)
-    }
+enum MaterializeItems<'py> {
+    List(Bound<'py, PyList>, std::iter::Enumerate<BoundListIterator<'py>>),
+    Dict(Bound<'py, PyDict>, BoundDictIterator<'py>),
 }
 
-/// An object with string keys, every value taken the same way. Json keys are always strings, so
-/// the key validator has nothing to check.
-#[inline(never)]
-fn take_dict<'py>(
+enum MaterializeSlot<'py> {
+    List(Bound<'py, PyList>, usize),
+    Dict(Bound<'py, PyDict>, Bound<'py, PyAny>),
+}
+
+/// Read container fields with one frame per level. A frame accumulates Python values
+/// and resumes at the next member after its child finishes.
+fn take_container<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
     model_plan: &ModelPlan,
     plan: &ContainerPlan,
+    peek: Peek,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
-    let value_plan = &model_plan.nodes[plan.element];
-    let dict = PyDict::new(py);
-    let mut all_ready = true;
-    let mut key = jiter.known_object()?;
-    if key.is_some() {
-        check_stream_depth(depth)?;
-    }
-    while let Some(k) = key {
-        if all_ready {
-            // the key borrows the cursor, so it has to become a python string before the value
-            // is read
-            let k = new_py_string(py, k, state.cache_str());
-            if plan.max_length.is_some_and(|max| dict.len() >= max) && !dict.contains(&k)? {
-                // Repeated keys do not increase length. A new key beyond the bound does,
-                // so avoid constructing its value or any remaining values.
-                all_ready = false;
-                skip_unused(jiter, depth + 1)?;
+    let mut parents: SmallVec<[ContainerFrame<'_, 'py>; 1]> = SmallVec::new();
+    let mut frame = ContainerFrame::new(py, plan, peek);
+    loop {
+        let frame_depth = depth + parents.len();
+        if let Some(peek) = frame.next(jiter, state, frame_depth)? {
+            let field = &model_plan.nodes[frame.plan.element];
+            if let Some(plan) = container_plan(field, peek) {
+                parents.push(frame);
+                frame = ContainerFrame::new(py, plan, peek);
             } else {
-                match take_fast(py, jiter, model_plan, value_plan, state, depth + 1)? {
-                    Taken::Ready(value) => dict.set_item(k, value)?,
-                    Taken::Raw => all_ready = false,
-                }
+                let value = take_leaf(py, jiter, field, peek, state, frame_depth + 1)?;
+                frame.accept(value)?;
             }
         } else {
-            skip_unused(jiter, depth + 1)?;
+            let value = frame.finish(py)?;
+            let Some(parent) = parents.pop() else {
+                return Ok(value);
+            };
+            frame = parent;
+            frame.accept(value)?;
         }
-        key = jiter.next_key()?;
     }
-    // a json object can repeat a key, so the dict may be shorter than the members read
-    if all_ready && plan.length_ok(dict.len()) {
-        Ok(Taken::Ready(dict.into_any()))
-    } else {
+}
+
+enum ContainerItems<'py> {
+    List(SmallVec<[Bound<'py, PyAny>; 8]>),
+    Dict {
+        values: Bound<'py, PyDict>,
+        pending_key: Option<Bound<'py, PyString>>,
+    },
+}
+
+struct ContainerFrame<'plan, 'py> {
+    plan: &'plan ContainerPlan,
+    items: ContainerItems<'py>,
+    first: bool,
+    all_ready: bool,
+}
+
+impl<'plan, 'py> ContainerFrame<'plan, 'py> {
+    fn new(py: Python<'py>, plan: &'plan ContainerPlan, peek: Peek) -> Self {
+        let items = if matches!(peek, Peek::Array) {
+            ContainerItems::List(SmallVec::new())
+        } else {
+            ContainerItems::Dict {
+                values: PyDict::new(py),
+                pending_key: None,
+            }
+        };
+        Self {
+            plan,
+            items,
+            first: true,
+            all_ready: true,
+        }
+    }
+
+    fn next(
+        &mut self,
+        jiter: &mut Jiter<'_>,
+        state: &ValidationState<'_, 'py>,
+        depth: usize,
+    ) -> Result<Option<Peek>, StreamStop> {
+        loop {
+            let first = std::mem::take(&mut self.first);
+            let peek = match &mut self.items {
+                ContainerItems::List(items) => {
+                    let next = if first {
+                        jiter.known_array()?
+                    } else {
+                        jiter.array_step()?
+                    };
+                    let Some(peek) = next else {
+                        return Ok(None);
+                    };
+                    if first {
+                        check_stream_depth(depth)?;
+                    }
+                    self.all_ready &= self.plan.max_length.is_none_or(|max| items.len() < max);
+                    peek
+                }
+                ContainerItems::Dict { values, pending_key } => {
+                    let key = if first {
+                        jiter.known_object()?
+                    } else {
+                        jiter.next_key()?
+                    };
+                    let Some(key) = key else {
+                        return Ok(None);
+                    };
+                    if first {
+                        check_stream_depth(depth)?;
+                    }
+                    if self.all_ready {
+                        let key = new_py_string(values.py(), key, state.cache_str());
+                        // Repeated keys do not increase the dictionary's length.
+                        if self.plan.max_length.is_some_and(|max| values.len() >= max) && !values.contains(&key)? {
+                            self.all_ready = false;
+                        } else {
+                            *pending_key = Some(key);
+                        }
+                    }
+                    jiter.peek()?
+                }
+            };
+            if self.all_ready {
+                return Ok(Some(peek));
+            }
+            // After a mismatch or a length overflow, consume the rest without
+            // constructing values. The caller can still handle a later duplicate field.
+            skip_peeked(jiter, peek, depth + 1)?;
+        }
+    }
+
+    fn accept(&mut self, value: Taken<'py>) -> Result<(), StreamStop> {
+        match value {
+            Taken::Raw => self.all_ready = false,
+            Taken::Ready(value) => match &mut self.items {
+                ContainerItems::List(items) => items.push(value),
+                ContainerItems::Dict { values, pending_key } => {
+                    values.set_item(pending_key.take().expect("key read before its value"), value)?;
+                }
+            },
+        }
+        Ok(())
+    }
+
+    fn finish(self, py: Python<'py>) -> Result<Taken<'py>, StreamStop> {
+        if self.all_ready {
+            match self.items {
+                ContainerItems::List(items) if self.plan.length_ok(items.len()) => {
+                    return Ok(Taken::Ready(PyList::new(py, items)?.into_any()));
+                }
+                ContainerItems::Dict { values, .. } if self.plan.length_ok(values.len()) => {
+                    return Ok(Taken::Ready(values.into_any()));
+                }
+                _ => {}
+            }
+        }
         Ok(Taken::Raw)
+    }
+}
+
+fn container_plan(field: &FieldPlan, peek: Peek) -> Option<&ContainerPlan> {
+    match (&field.fast, peek) {
+        (Fast::List(plan), Peek::Array) | (Fast::Dict(plan), Peek::Object) => Some(plan),
+        _ => None,
     }
 }
 
@@ -706,15 +807,18 @@ fn take_fast<'py>(
     depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
     let peek = jiter.peek()?;
-    take_peeked(py, jiter, model_plan, field, peek, state, depth)
+    if let Some(plan) = container_plan(field, peek) {
+        take_container(py, jiter, model_plan, plan, peek, state, depth)
+    } else {
+        take_leaf(py, jiter, field, peek, state, depth)
+    }
 }
 
-/// The same, for a value whose peek the caller already has: an element of an array, or the value
-/// of an object member.
-fn take_peeked<'py>(
+/// Read a scalar, a nested model, or a value that must be skipped. A model can
+/// start another container walk, but its plan cannot contain another model.
+fn take_leaf<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    model_plan: &ModelPlan,
     field: &FieldPlan,
     peek: Peek,
     state: &mut ValidationState<'_, 'py>,
@@ -780,8 +884,6 @@ fn take_peeked<'py>(
                 None => Taken::Raw,
             }
         }
-        (Fast::List(plan), Peek::Array) => take_list(py, jiter, model_plan, plan, state, depth)?,
-        (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, model_plan, plan, state, depth)?,
         // a field this path does not specialise, or a json type that does not match it: hand the
         // value to the field's own validator rather than giving up on the whole object
         _ => {
