@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- NOTE: to view this page go to: https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/blob/main/wasm-preview/index.html -->
+<!-- NOTE: to view this page go to: https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic/blob/main/pydantic-core/wasm-preview/index.html -->
 <html lang="en">
   <head>
-    <title>pydantic-core unit tests</title>
+    <title>pydantic unit tests</title>
     <style>
       html,
       body {
@@ -39,9 +39,9 @@
   </head>
   <body>
     <main>
-      <h1><a href="https://github.com/pydantic/pydantic-core/tree/main/wasm-preview">pydantic-core</a> unit tests</h1>
+      <h1><a href="https://github.com/pydantic/pydantic/tree/main/pydantic-core/wasm-preview">pydantic</a> unit tests</h1>
       <aside>
-        pydantic-core is compiled to webassembly and run in the browser using
+        pydantic-core is compiled to webassembly and the pydantic test suite is run in the browser using
         <a href="https://pyodide.org/en/stable/">pyodide</a>.
       </aside>
       <section>
@@ -54,13 +54,13 @@
       const output_el = document.getElementById('output');
       const decoder = new TextDecoder();
       const Convert = require('ansi-to-html');
-      const ansi_converter = new Convert();
+      const ansi_converter = new Convert({escapeXML: true});
       let terminal_output = '';
 
       output_el.innerText = 'Starting worker...';
       const query_args = new URLSearchParams(location.search);
       query_args.set('ts', Date.now());
-      const worker = new Worker(`./worker.js?${query_args.toString()}`);
+      const worker = new Worker(`./worker.js?${query_args.toString()}`, {type: 'module'});
       worker.onmessage = ({data}) => {
         if (typeof data == 'string') {
           terminal_output += data;
