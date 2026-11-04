@@ -6,11 +6,11 @@ use indexmap::IndexMap;
 use jiter::JsonObject;
 use jiter::JsonValue;
 use pyo3::IntoPyObjectExt;
-use pyo3::exceptions::PyKeyError;
+use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PySet, PyType};
+use pyo3::types::{PyDict, PySet, PyString, PyType};
 use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
@@ -724,6 +724,14 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
                 // key is invalid.
                 let validated_key = if let Some(validator) = keys_validator {
                     match validator.validate(py, key_input, state) {
+                        // Extra keys are stored in the fields set and accessible as attributes, so they must be strings:
+                        Ok(value) if !value.bind(py).is_instance_of::<PyString>() => {
+                            return Err(PyTypeError::new_err(format!(
+                                "Extra keys must be strings, got `{}`",
+                                value.bind(py).get_type().qualname()?
+                            ))
+                            .into());
+                        }
                         Ok(value) => Some(value),
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {
