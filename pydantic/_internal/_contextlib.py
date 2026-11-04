@@ -27,7 +27,7 @@ class _GeneratorContextManager(Generic[_T]):
         # Faster than `next(self.gen)` (see https://github.com/python/cpython/pull/141275):
         for value in self.gen:
             return value
-        raise RuntimeError("generator didn't yield")
+        raise RuntimeError("generator didn't yield")  # pragma: no cover
 
     def __exit__(
         self, typ: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None
@@ -35,21 +35,21 @@ class _GeneratorContextManager(Generic[_T]):
         if typ is None:
             # Faster than calling `next(self.gen)` and checking for `StopIteration`:
             for _ in self.gen:
-                try:
+                try:  # pragma: no cover
                     raise RuntimeError("generator didn't stop")
                 finally:
-                    self.gen.close()
+                    self.gen.close()  # pragma: no cover
             return False
 
         # Same logic as `contextlib._GeneratorContextManager.__exit__()`:
         if value is None:
             # Need to force instantiation so we can reliably tell if we get the same exception back:
-            value = typ()
+            value = typ()  # pragma: no cover
         try:
             self.gen.throw(value)
         except StopIteration as exc:
             # Suppress `StopIteration` *unless* it's the same exception that was passed to `throw()`:
-            return exc is not value
+            return exc is not value  # pragma: no cover
         except RuntimeError as exc:
             # Don't re-raise the passed in exception:
             if exc is value:
@@ -57,21 +57,21 @@ class _GeneratorContextManager(Generic[_T]):
                 return False
             # Avoid suppressing if a `StopIteration` exception was passed to `throw()` and later
             # wrapped into a `RuntimeError` (see PEP 479 for sync generators):
-            if isinstance(value, StopIteration) and exc.__cause__ is value:
+            if isinstance(value, StopIteration) and exc.__cause__ is value:  # pragma: no cover
                 value.__traceback__ = traceback
                 return False
-            raise
+            raise  # pragma: no cover
         except BaseException as exc:
             # Only re-raise if it's *not* the exception that was passed to `throw()`, because
             # `__exit__()` must not raise an exception unless `__exit__()` itself failed:
             if exc is not value:
-                raise
+                raise  # pragma: no cover
             exc.__traceback__ = traceback
             return False
-        try:
+        try:  # pragma: no cover
             raise RuntimeError("generator didn't stop after throw()")
         finally:
-            self.gen.close()
+            self.gen.close()  # pragma: no cover
 
 
 def contextmanager(func: Callable[_P, Iterator[_T]]) -> Callable[_P, _GeneratorContextManager[_T]]:
