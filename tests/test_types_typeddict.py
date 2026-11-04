@@ -19,6 +19,7 @@ from pydantic import (
     GetCoreSchemaHandler,
     PositiveInt,
     PydanticUserError,
+    SecretStr,
     ValidationError,
     with_config,
 )
@@ -1278,3 +1279,47 @@ def test_typeddict_schema_reuse_preserves_inherited_config() -> None:
     with pytest.raises(ValidationError) as exc_info:
         Restrictive(item={'name': 'abcd', 'extra': 1})
     assert {error['type'] for error in exc_info.value.errors()} == {'string_too_long', 'extra_forbidden'}
+
+
+def test_typeddict_schema_reuse_resolves_nested_forward_refs_again() -> None:
+    Token = str
+
+    class Item(TypedDict):
+        token: 'Token'
+
+    class Wrapper(TypedDict):
+        item: Item
+
+    first = TypeAdapter(Wrapper)
+    assert first.validate_python({'item': {'token': 'secret'}}) == {'item': {'token': 'secret'}}
+
+    Token = SecretStr
+    second = TypeAdapter(Wrapper)
+    assert isinstance(second.validate_python({'item': {'token': 'secret'}})['item']['token'], SecretStr)
+
+
+def test_typeddict_type_adapter_force_rebuild_regenerates_schema() -> None:
+    class Item(TypedDict):
+        value: str
+
+    adapter = TypeAdapter(Item)
+    Item.__annotations__['value'] = int
+
+    assert adapter.rebuild(force=True) is True
+    assert adapter.validate_python({'value': '1'}) == {'value': 1}
+
+
+def test_typeddict_force_rebuild_drops_cache_after_forward_ref_change() -> None:
+    class Item(TypedDict):
+        token: str
+
+    adapter = TypeAdapter(Item)
+    Item.__annotations__['token'] = 'Token'
+
+    Token = SecretStr
+    assert adapter.rebuild(force=True) is True
+    assert isinstance(adapter.validate_python({'token': 'secret'})['token'], SecretStr)
+
+    Token = str  # noqa: F841 (used by the namespace resolver)
+    next_adapter = TypeAdapter(Item)
+    assert next_adapter.validate_python({'token': 'secret'}) == {'token': 'secret'}
