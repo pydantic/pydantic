@@ -1220,7 +1220,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     if self.__dict__ == other.__dict__:
                         # If the check above passes, then pydantic fields are equal, we can return early
                         return True
-                except (ValueError, TypeError):
+                except (ValueError, TypeError, RuntimeError):
                     pass
 
                 # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
