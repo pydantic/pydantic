@@ -165,24 +165,32 @@ def _is_simple_schema_type(obj: Any) -> bool:
     return obj is None or (type(obj) is type and obj in _SIMPLE_SCHEMA_TYPES)
 
 
-def _typed_dict_has_forward_refs(annotation: Any, seen: set[int] | None = None) -> bool:
-    if isinstance(annotation, (str, ForwardRef)):
+def _is_cacheable_typed_dict_annotation(annotation: Any, seen: set[int] | None = None) -> bool:
+    if _is_simple_schema_type(annotation) or annotation is Any:
         return True
-    root = seen is None
-    if seen is None:
-        seen = set()
-    if id(annotation) in seen:
-        return False
-    seen.add(id(annotation))
     if is_typeddict(annotation):
-        if not root and annotation.__dict__.get('__pydantic_core_schema_config__') is not None:
+        if (
+            getattr(annotation, '__get_pydantic_core_schema__', None) is not None
+            or getattr(annotation, '__get_pydantic_json_schema__', None) is not None
+        ):
             return False
-        children = chain(annotation.__annotations__.values(), (getattr(annotation, '__extra_items__', None),))
-    elif isinstance(annotation, TypeAliasType):
-        children = (annotation.__value__,)
-    else:
-        children = get_args(annotation)
-    return any(_typed_dict_has_forward_refs(child, seen) for child in children)
+        if seen is None:
+            seen = set()
+        if id(annotation) in seen:
+            return True
+        seen.add(id(annotation))
+        extra_items = getattr(annotation, '__extra_items__', None)
+        return (
+            extra_items is None
+            or typing_objects.is_noextraitems(extra_items)
+            or _is_cacheable_typed_dict_annotation(extra_items, seen)
+        ) and all(
+            _is_cacheable_typed_dict_annotation(field_type, seen) for field_type in annotation.__annotations__.values()
+        )
+    origin = get_origin(annotation)
+    return (origin in (list, dict, tuple, set, frozenset) or is_union_origin(origin)) and all(
+        _is_cacheable_typed_dict_annotation(arg, seen) for arg in get_args(annotation)
+    )
 
 
 def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:

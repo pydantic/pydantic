@@ -297,7 +297,7 @@ class TypeAdapter(Generic[T]):
 
             if is_typeddict(self._type):
                 typed_dict_cls = cast(Any, self._type)
-                if _generate_schema._typed_dict_has_forward_refs(typed_dict_cls):
+                if not _generate_schema._is_cacheable_typed_dict_annotation(typed_dict_cls):
                     typed_dict_cls.__pydantic_core_schema_config__ = None
                 else:
                     effective_config = _config.ConfigWrapper(self._model_config).effective_config
