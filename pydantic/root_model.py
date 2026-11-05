@@ -192,4 +192,5 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         ].annotation and super().__eq__(other)
 
     def __repr_args__(self) -> _repr.ReprArgs:
-        yield 'root', self.root
+        if self.__pydantic_fields__['root'].repr:
+            yield 'root', self.root
