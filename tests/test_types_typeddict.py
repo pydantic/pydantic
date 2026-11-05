@@ -4,7 +4,7 @@ Tests for TypedDict
 
 import sys
 import typing
-from typing import Annotated, Any, Generic, Optional, TypeVar
+from typing import Annotated, Any, Generic, NamedTuple, Optional, TypeVar
 
 import pytest
 import typing_extensions
@@ -1346,3 +1346,34 @@ def test_typeddict_cache_does_not_import_unrelated_definitions() -> None:
     assert any(
         error['loc'] == ('data', 'extra') and error['type'] == 'extra_forbidden' for error in exc_info.value.errors()
     )
+
+
+def test_typeddict_cache_resolves_nested_namedtuple_forward_refs_again() -> None:
+    Token = str
+
+    class NamedToken(NamedTuple):
+        value: 'Token'
+
+    class Item(TypedDict):
+        token: NamedToken
+
+    first = TypeAdapter(Item)
+    assert first.validate_python({'token': ('secret',)})['token'].value == 'secret'
+
+    Token = SecretStr
+    second = TypeAdapter(Item)
+    assert isinstance(second.validate_python({'token': ('secret',)})['token'].value, SecretStr)
+
+
+def test_typeddict_cache_skips_custom_core_schema_hook() -> None:
+    class Item(TypedDict):
+        value: int
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return core_schema.no_info_after_validator_function(lambda value: value, handler(source_type))
+
+    assert TypeAdapter(Item).validate_python({'value': '1'}) == {'value': 1}
+    assert TypeAdapter(Item).validate_python({'value': '2'}) == {'value': 2}
