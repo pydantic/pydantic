@@ -4216,3 +4216,36 @@ def test_model_fields_set_plain_set() -> None:
     assert m.model_dump(exclude_unset=True) == {'b': 2}
     m.a = 2
     assert m.model_fields_set == {'a', 'b'}
+
+
+
+def test_model_equality_cached_property_non_bool_comparable():
+    class AmbiguousTruth:
+        def __bool__(self):
+            raise ValueError('The truth value of an array with more than one element is ambiguous.')
+
+    class ArrayLike:
+        def __init__(self, values):
+            self.values = values
+
+        def __eq__(self, other):
+            if isinstance(other, ArrayLike):
+                return AmbiguousTruth()
+            return False
+
+    class Model(BaseModel):
+        val: int
+
+        @cached_property
+        def derived(self) -> ArrayLike:
+            return ArrayLike([self.val, self.val])
+
+    m1 = Model(val=1)
+    m2 = Model(val=1)
+
+    # Compute cached property on both instances so they are present in __dict__
+    _ = m1.derived
+    _ = m2.derived
+
+    # Should fall back to field-only comparison and return True without raising ValueError
+    assert m1 == m2
