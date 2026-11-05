@@ -4218,19 +4218,21 @@ def test_model_fields_set_plain_set() -> None:
     assert m.model_fields_set == {'a', 'b'}
 
 
-
-def test_model_equality_cached_property_non_bool_comparable():
+def test_model_equality_cached_property_non_bool_comparable() -> None:
     class AmbiguousTruth:
-        def __bool__(self):
-            raise ValueError('The truth value of an array with more than one element is ambiguous.')
+        def __init__(self, exc_type: type[Exception]) -> None:
+            self.exc_type = exc_type
+
+        def __bool__(self) -> bool:
+            raise self.exc_type('Boolean value is ambiguous')
 
     class ArrayLike:
-        def __init__(self, values):
-            self.values = values
+        def __init__(self, exc_type: type[Exception] = ValueError) -> None:
+            self.exc_type = exc_type
 
-        def __eq__(self, other):
+        def __eq__(self, other: object) -> object:
             if isinstance(other, ArrayLike):
-                return AmbiguousTruth()
+                return AmbiguousTruth(self.exc_type)
             return False
 
     class Model(BaseModel):
@@ -4238,7 +4240,7 @@ def test_model_equality_cached_property_non_bool_comparable():
 
         @cached_property
         def derived(self) -> ArrayLike:
-            return ArrayLike([self.val, self.val])
+            return ArrayLike(ValueError)
 
     m1 = Model(val=1)
     m2 = Model(val=1)
@@ -4249,3 +4251,18 @@ def test_model_equality_cached_property_non_bool_comparable():
 
     # Should fall back to field-only comparison and return True without raising ValueError
     assert m1 == m2
+
+    # Also test RuntimeError (e.g. PyTorch tensor behavior)
+    class TorchModel(BaseModel):
+        val: int
+
+        @cached_property
+        def derived(self) -> ArrayLike:
+            return ArrayLike(RuntimeError)
+
+    t1 = TorchModel(val=1)
+    t2 = TorchModel(val=1)
+    _ = t1.derived
+    _ = t2.derived
+    assert t1 == t2
+
