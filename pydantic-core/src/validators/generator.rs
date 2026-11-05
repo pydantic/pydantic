@@ -363,8 +363,10 @@ impl InternalValidator {
     }
 }
 
+// `validator` is intentionally not traversed: it is an `Arc` clone of a subtree owned (and
+// traversed) by the `SchemaValidator`. Visiting it here as well would report twice for a single reference,
+// which corrupts the GC's refcount logic.
 impl_py_gc_traverse!(InternalValidator {
-    validator,
     data,
     context,
     self_instance

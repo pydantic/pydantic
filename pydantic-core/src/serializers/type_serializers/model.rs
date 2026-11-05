@@ -1,22 +1,23 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use pyo3::exceptions::PyAttributeError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PySet, PyType};
+use pyo3::types::{PyDict, PyType};
 
-use ahash::AHashMap;
 use pyo3::IntoPyObjectExt;
 
 use super::{
     BuildSerializer, CombinedSerializer, ComputedFields, Extra, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck,
-    SerField, TypeSerializer, infer_json_key, infer_json_key_known,
+    SerField, SerFields, TypeSerializer, infer_json_key, infer_json_key_known,
 };
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
+use crate::fields_set::FieldsSet;
 use crate::serializers::SerializationState;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
@@ -45,7 +46,7 @@ impl BuildSerializer for ModelFieldsBuilder {
         };
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields = AHashMap::with_capacity(fields_dict.len());
+        let mut fields = SerFields::with_capacity(fields_dict.len());
 
         let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
             (Some(v), FieldsMode::ModelExtra) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),
@@ -169,11 +170,23 @@ impl ModelSerializer {
             return self.serialize_root_model(value, state, do_serialize);
         }
 
-        if !self.allow_value(value, state.check)? {
+        let py = value.py();
+        let dict = if state.check == SerCheck::None {
+            // Any value with a `__dict__` is accepted, so look it up once to both check and serialize it:
+            match value.getattr(intern!(py, "__dict__")) {
+                Ok(dict) => dict,
+                Err(err) if err.is_instance_of::<PyAttributeError>(py) => {
+                    return do_serialize.serialize_fallback(self.get_name(), value, state);
+                }
+                Err(err) => return Err(err.into()),
+            }
+        } else if self.allow_value(value, state.check)? {
+            value.getattr(intern!(py, "__dict__"))?
+        } else {
             return do_serialize.serialize_fallback(self.get_name(), value, state);
-        }
+        };
 
-        let inner_value = self.get_inner_value(value, &state.extra)?;
+        let inner_value = self.get_inner_value(value, dict, &state.extra)?;
 
         let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
         do_serialize.serialize_no_infer(&self.serializer, &inner_value, state)
@@ -214,18 +227,21 @@ impl ModelSerializer {
         do_serialize.serialize_no_infer(serializer, &root, state)
     }
 
-    fn get_inner_value<'py>(&self, model: &Bound<'py, PyAny>, extra: &Extra) -> PyResult<Bound<'py, PyAny>> {
+    fn get_inner_value<'py>(
+        &self,
+        model: &Bound<'py, PyAny>,
+        dict: Bound<'py, PyAny>,
+        extra: &Extra,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let py: Python<'_> = model.py();
-        let mut attrs = model.getattr(intern!(py, "__dict__"))?.cast_into::<PyDict>()?;
+        let mut attrs = dict.cast_into::<PyDict>()?;
 
         // If excluding unset fields, mask any fields not in `__pydantic_fields_set__` with the
         // missing sentinel so that the fields serializer will exclude them from the output.
         // The `GeneralFieldsSerializer` makes sure to exclude the value, so any user-defined
         // serializer won't be called.
         if extra.exclude_unset {
-            let fields_set = model
-                .getattr(intern!(py, "__pydantic_fields_set__"))?
-                .cast_into::<PySet>()?;
+            let fields_set: FieldsSet<'_> = model.getattr(intern!(py, "__pydantic_fields_set__"))?.extract()?;
 
             // if nothing actually unset, avoid copying the dict
             let mut new_attrs = None;
@@ -233,7 +249,10 @@ impl ModelSerializer {
 
             for key in attrs.keys() {
                 if !fields_set.contains(&key)? {
-                    let missing_sentinel = missing_sentinel.get_or_insert_with(|| get_missing_sentinel_object(py));
+                    let missing_sentinel = match &missing_sentinel {
+                        Some(missing_sentinel) => missing_sentinel,
+                        None => missing_sentinel.insert(get_missing_sentinel_object(py)?),
+                    };
                     let new_attrs = match &new_attrs {
                         Some(new_attrs) => new_attrs,
                         None => new_attrs.insert(attrs.copy()?),

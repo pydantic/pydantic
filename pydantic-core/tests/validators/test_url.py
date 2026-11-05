@@ -1,3 +1,4 @@
+import platform
 import re
 from copy import deepcopy
 
@@ -362,11 +363,11 @@ def test_multi_trailing_slash(url: str, expected: str, expected_path: str | None
     'validator_kwargs,url,expected',
     [
         (
-            dict(default_port=1234, default_path='/baz'),
+            {'default_port': 1234, 'default_path': '/baz'},
             'http://example.org',
             {'str()': 'http://example.org:1234/baz', 'host': 'example.org', 'port': 1234, 'path': '/baz'},
         ),
-        (dict(default_host='localhost'), 'redis://', {'str()': 'redis://localhost', 'host': 'localhost'}),
+        ({'default_host': 'localhost'}, 'redis://', {'str()': 'redis://localhost', 'host': 'localhost'}),
     ],
 )
 def test_url_defaults_single_url(validator_kwargs, url, expected):
@@ -384,7 +385,7 @@ def test_url_host_required():
     'validator_kwargs,url,expected',
     [
         (
-            dict(default_port=1234, default_path='/baz'),
+            {'default_port': 1234, 'default_path': '/baz'},
             'http://example.org',
             {
                 'str()': 'http://example.org:1234/baz',
@@ -393,7 +394,7 @@ def test_url_host_required():
             },
         ),
         (
-            dict(default_host='localhost'),
+            {'default_host': 'localhost'},
             'redis://',
             {
                 'str()': 'redis://localhost',
@@ -733,6 +734,29 @@ def test_multi_host_url_ok_2(py_and_json: PyAndJson):
         {'username': None, 'password': None, 'host': 'foo.com', 'port': 443},
         {'username': None, 'password': None, 'host': 'bar.com', 'port': 443},
     ]
+
+
+@pytest.mark.timeout(
+    # PyPy and GraalPy are ~3-5x slower, even in linear time:
+    20 if platform.python_implementation() in {'PyPy', 'GraalVM'} else 5
+)
+@pytest.mark.parametrize(
+    ['prefix', 'expected_prefix', 'expected_suffix', 'expected_port'],
+    [
+        (' ' * 150_000 + 'postgres://', 'postgres://', '', None),
+        ('http:' + '/' * 150_000, 'http://', '/', 80),
+    ],
+    ids=['leading_whitespace', 'slashes'],
+)
+def test_multi_host_url_linear_time(prefix: str, expected_prefix: str, expected_suffix: str, expected_port: int | None):
+    """The prefix before the hosts must not be parsed again for every host."""
+    hosts = ','.join(['h'] * 150_000)
+
+    url = MultiHostUrl(prefix + hosts)
+
+    assert str(url) == expected_prefix + hosts + expected_suffix
+    assert url.hosts()[0] == {'username': None, 'password': None, 'host': 'h', 'port': expected_port}
+    assert len(url.hosts()) == 150_000
 
 
 @pytest.fixture(scope='module', name='multi_host_url_validator')
@@ -1120,13 +1144,13 @@ def test_zero_schemas():
         # urlparse doesn't follow RFC 3986 Section 3.2
         (
             'http://google.com#@evil.com/',
-            dict(
-                scheme='http',
-                host='google.com',
+            {
+                'scheme': 'http',
+                'host': 'google.com',
                 # path='', CHANGED
-                path='/',
-                fragment='@evil.com/',
-            ),
+                'path': '/',
+                'fragment': '@evil.com/',
+            },
         ),
         # CVE-2016-5699
         (
@@ -1135,11 +1159,14 @@ def test_zero_schemas():
             Err('Input should be a valid URL, invalid international domain name [type=url_parsing,'),
         ),
         # NodeJS unicode -> double dot
-        ('http://google.com/\uff2e\uff2e/abc', dict(scheme='http', host='google.com', path='/%EF%BC%AE%EF%BC%AE/abc')),
+        (
+            'http://google.com/\uff2e\uff2e/abc',
+            {'scheme': 'http', 'host': 'google.com', 'path': '/%EF%BC%AE%EF%BC%AE/abc'},
+        ),
         # Scheme without ://
         (
             "javascript:a='@google.com:12345/';alert(0)",
-            dict(scheme='javascript', path="a='@google.com:12345/';alert(0)"),
+            {'scheme': 'javascript', 'path': "a='@google.com:12345/';alert(0)"},
         ),
         (
             '//google.com/a/b/c',
@@ -1149,14 +1176,14 @@ def test_zero_schemas():
         # International URLs
         (
             'http://ヒ:キ@ヒ.abc.ニ/ヒ?キ#ワ',
-            dict(
-                scheme='http',
-                host='xn--pdk.abc.xn--idk',
-                auth='%E3%83%92:%E3%82%AD',
-                path='/%E3%83%92',
-                query='%E3%82%AD',
-                fragment='%E3%83%AF',
-            ),
+            {
+                'scheme': 'http',
+                'host': 'xn--pdk.abc.xn--idk',
+                'auth': '%E3%83%92:%E3%82%AD',
+                'path': '/%E3%83%92',
+                'query': '%E3%82%AD',
+                'fragment': '%E3%83%AF',
+            },
         ),
         # Injected headers (CVE-2016-5699, CVE-2019-9740, CVE-2019-9947)
         (
@@ -1172,38 +1199,38 @@ def test_zero_schemas():
         # ADDED, similar to the above with scheme added
         (
             'http://10.251.0.83:7777?a=1 HTTP/1.1\r\nX-injected: header',
-            dict(
-                host='10.251.0.83',
-                port=7777,
-                path='/',
+            {
+                'host': '10.251.0.83',
+                'port': 7777,
+                'path': '/',
                 # query='a=1%20HTTP/1.1%0D%0AX-injected:%20header', CHANGED
-                query='a=1%20HTTP/1.1X-injected:%20header',
-            ),
+                'query': 'a=1%20HTTP/1.1X-injected:%20header',
+            },
         ),
         (
             'http://127.0.0.1:6379?\r\nSET test failure12\r\n:8080/test/?test=a',
-            dict(
-                scheme='http',
-                host='127.0.0.1',
-                port=6379,
+            {
+                'scheme': 'http',
+                'host': '127.0.0.1',
+                'port': 6379,
                 # path='',
-                path='/',
+                'path': '/',
                 # query='%0D%0ASET%20test%20failure12%0D%0A:8080/test/?test=a', CHANGED
-                query='SET%20test%20failure12:8080/test/?test=a',
-            ),
+                'query': 'SET%20test%20failure12:8080/test/?test=a',
+            },
         ),
         # See https://bugs.xdavidhu.me/google/2020/03/08/the-unexpected-google-wide-domain-check-bypass/
         (
             'https://user:pass@xdavidhu.me\\test.corp.google.com:8080/path/to/something?param=value#hash',
-            dict(
-                scheme='https',
-                auth='user:pass',
-                host='xdavidhu.me',
+            {
+                'scheme': 'https',
+                'auth': 'user:pass',
+                'host': 'xdavidhu.me',
                 # path='/%5Ctest.corp.google.com:8080/path/to/something', CHANGED
-                path='/test.corp.google.com:8080/path/to/something',
-                query='param=value',
-                fragment='hash',
-            ),
+                'path': '/test.corp.google.com:8080/path/to/something',
+                'query': 'param=value',
+                'fragment': 'hash',
+            },
         ),
         # # Tons of '@' causing backtracking
         (
@@ -1213,7 +1240,7 @@ def test_zero_schemas():
         ),
         (
             'https://user:' + ('@' * 10000) + 'example.com',
-            dict(scheme='https', auth='user:' + ('%40' * 9999), host='example.com'),
+            {'scheme': 'https', 'auth': 'user:' + ('%40' * 9999), 'host': 'example.com'},
         ),
     ],
 )
@@ -1453,7 +1480,13 @@ def test_multi_url_build_hosts_set_with_single_value(field) -> None:
         {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5432},
         {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5432},
     ]
-    kwargs = dict(scheme='postgresql', hosts=hosts, path='database', query='sslmode=require', fragment='test')
+    kwargs = {
+        'scheme': 'postgresql',
+        'hosts': hosts,
+        'path': 'database',
+        'query': 'sslmode=require',
+        'fragment': 'test',
+    }
     if field == 'port':
         kwargs[field] = 5432
     else:

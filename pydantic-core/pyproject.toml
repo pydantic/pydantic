@@ -1,5 +1,5 @@
 [build-system]
-requires = ['maturin>=1.15.0,<2']
+requires = ['maturin>=1.16.0,<2']
 build-backend = 'maturin'
 
 [project]
@@ -36,6 +36,7 @@ classifiers = [
     'Operating System :: POSIX :: Linux',
     'Operating System :: Microsoft :: Windows',
     'Operating System :: MacOS',
+    'Environment :: WebAssembly :: Emscripten',
     'Typing :: Typed',
 ]
 dependencies = ['typing-extensions>=4.16.0']
@@ -47,7 +48,7 @@ Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic/tree/main/pydantic-core'
 
 [dependency-groups]
-dev = ["maturin>=1.15"]
+dev = ["maturin>=1.16"]
 testing-extra = [
     { include-group = "dev" },
     'coverage',
@@ -96,7 +97,7 @@ editable-profile = 'dev'
 # because uv sync will overwrite the temporary venv created by maturin
 # numpy not needed by the benchmarks and doesn't support the manylinux
 # versions we build PGO wheels for anyway
-pgo-command = "uv export --group testing-extra --no-emit-workspace --no-emit-package numpy --no-emit-package pandas --no-hashes --no-header --no-annotate -o target/pgo-requirements.txt && uv pip install -r target/pgo-requirements.txt && uv run --active --no-sync pytest tests/benchmarks"
+pgo-command = "uv export --frozen --group testing-extra --no-emit-workspace --no-emit-package numpy --no-emit-package pandas --no-header --no-annotate -o target/pgo-requirements.txt && uv pip install -r target/pgo-requirements.txt && uv run --active --no-sync pytest tests/benchmarks"
 
 [tool.ruff]
 line-length = 120
@@ -169,9 +170,10 @@ cache-keys = [
     { file = "Cargo.toml" },
     { file = "Cargo.lock" },
     { file = "build.rs" },
-    { dir = ".cargo" },
-    { dir = "src" },
-    { dir = "python" },
+    { file = "src/**/*.rs" },
+    { file = ".cargo/config.toml" },
+    { file = "python/pydantic_core/**/*.py" },
+    { file = "python/pydantic_core/**/*.pyi" },
     { env = "MATURIN_PEP517_ARGS" },
     { env = "RUSTFLAGS" }
 ]

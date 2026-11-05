@@ -1,14 +1,11 @@
 import json
 import math
 import re
-import sys
 from collections.abc import Generator
-from dataclasses import dataclass as vanilla_dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from pathlib import Path
 from re import Pattern
 from typing import Annotated, Any, Optional, Union
 from uuid import UUID
@@ -29,14 +26,11 @@ from pydantic import (
 )
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
-from pydantic.color import Color
-from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic.deprecated.json import pydantic_encoder, timedelta_isoformat
 from pydantic.functional_serializers import (
     field_serializer,
 )
 from pydantic.json_schema import JsonSchemaValue
-from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
+from pydantic.types import SecretBytes, SecretStr, condecimal
 
 try:
     import email_validator
@@ -62,8 +56,6 @@ class MyModel(BaseModel):
     [
         (UUID, lambda: UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), b'"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
         (IPv4Address, lambda: '192.168.0.1', b'"192.168.0.1"'),
-        (Color, lambda: Color('#000'), b'"black"'),
-        (Color, lambda: Color((1, 12, 123)), b'"#010c7b"'),
         (SecretStr, lambda: SecretStr('abcd'), b'"**********"'),
         (SecretStr, lambda: SecretStr(''), b'""'),
         (SecretBytes, lambda: SecretBytes(b'xyz'), b'"**********"'),
@@ -101,23 +93,6 @@ def test_json_serialization_email():
     schema = gen.generate_schema(NameEmail)
     serializer = SchemaSerializer(schema)
     assert serializer.to_json(NameEmail('foo bar', 'foobaR@example.com')) == b'"foo bar <foobaR@example.com>"'
-
-
-@pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
-def test_path_encoding(tmpdir):
-    class PathModel(BaseModel):
-        path: Path
-        file_path: FilePath
-        dir_path: DirectoryPath
-
-    tmpdir = Path(tmpdir)
-    file_path = tmpdir / 'bar'
-    file_path.touch()
-    dir_path = tmpdir / 'baz'
-    dir_path.mkdir()
-    model = PathModel(path=Path('/path/test/example/'), file_path=file_path, dir_path=dir_path)
-    expected = f'{{"path": "/path/test/example", "file_path": "{file_path}", "dir_path": "{dir_path}"}}'
-    assert json.dumps(model, default=pydantic_encoder) == expected
 
 
 def test_model_encoding():
@@ -188,27 +163,6 @@ def test_subclass_custom_encoding():
     assert m.model_dump_json() == '{"a":"Thu, 01 Jan 20 01:01:00","b":360000.0}'
 
 
-def test_invalid_model():
-    class Foo:
-        pass
-
-    with pytest.raises(TypeError):
-        json.dumps(Foo, default=pydantic_encoder)
-
-
-@pytest.mark.parametrize(
-    'input,output',
-    [
-        (timedelta(days=12, seconds=34, microseconds=56), 'P12DT0H0M34.000056S'),
-        (timedelta(days=1001, hours=1, minutes=2, seconds=3, microseconds=654_321), 'P1001DT1H2M3.654321S'),
-        (timedelta(seconds=-1), '-P1DT23H59M59.000000S'),
-        (timedelta(), 'P0DT0H0M0.000000S'),
-    ],
-)
-def test_iso_timedelta(input, output):
-    assert output == timedelta_isoformat(input)
-
-
 def test_custom_encoder():
     class Model(BaseModel):
         x: timedelta
@@ -266,26 +220,6 @@ def test_json_encoder_simple_inheritance():
             return 'child_encoder'
 
     assert Child().model_dump_json() == '{"dt":"parent_encoder","timedt":"child_encoder"}'
-
-
-def test_encode_dataclass():
-    @vanilla_dataclass
-    class Foo:
-        bar: int
-        spam: str
-
-    f = Foo(bar=123, spam='apple pie')
-    assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
-
-
-def test_encode_pydantic_dataclass():
-    @pydantic_dataclass
-    class Foo:
-        bar: int
-        spam: str
-
-    f = Foo(bar=123, spam='apple pie')
-    assert json.dumps(f, default=pydantic_encoder) == '{"bar": 123, "spam": "apple pie"}'
 
 
 def test_json_nested_encode_models():

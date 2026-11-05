@@ -22,6 +22,8 @@ use super::errors::py_err_se_err;
 #[allow(clippy::struct_field_names)]
 pub(crate) struct SerializationConfig {
     pub temporal_mode: TemporalMode,
+    /// The mode used for timedeltas, which also accounts for the (deprecated) timedelta mode.
+    pub timedelta_mode: TemporalMode,
     pub bytes_mode: BytesMode,
     pub inf_nan_mode: InfNanMode,
 }
@@ -30,6 +32,7 @@ impl Default for SerializationConfig {
     fn default() -> Self {
         Self {
             temporal_mode: TemporalMode::default(),
+            timedelta_mode: TemporalMode::default(),
             bytes_mode: BytesMode::default(),
             inf_nan_mode: InfNanMode::Constants,
         }
@@ -38,20 +41,11 @@ impl Default for SerializationConfig {
 
 impl SerializationConfig {
     pub fn from_config(config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        let temporal_set = config
-            .and_then(|cfg| cfg.contains(intern!(cfg.py(), "ser_json_temporal")).ok())
-            .unwrap_or(false);
-        let temporal_mode = if temporal_set {
-            TemporalMode::from_config(config)?
-        } else {
-            TimedeltaMode::from_config(config)?.into()
-        };
-        let bytes_mode = BytesMode::from_config(config)?;
-        let inf_nan_mode = InfNanMode::from_config(config)?;
         Ok(Self {
-            temporal_mode,
-            bytes_mode,
-            inf_nan_mode,
+            temporal_mode: TemporalMode::from_config(config)?,
+            timedelta_mode: TemporalMode::timedelta_from_config(config)?,
+            bytes_mode: BytesMode::from_config(config)?,
+            inf_nan_mode: InfNanMode::from_config(config)?,
         })
     }
 
@@ -61,13 +55,16 @@ impl SerializationConfig {
         bytes_mode: &str,
         inf_nan_mode: &str,
     ) -> PyResult<Self> {
-        let resolved_temporal_mode = if temporal_mode != "iso8601" {
-            TemporalMode::from_str(temporal_mode)?
-        } else {
+        let temporal_mode = TemporalMode::from_str(temporal_mode)?;
+        // `temporal_mode` takes precedence over `timedelta_mode`, unless left to its default:
+        let timedelta_mode = if temporal_mode == TemporalMode::Iso8601 {
             TimedeltaMode::from_str(timedelta_mode)?.into()
+        } else {
+            temporal_mode
         };
         Ok(Self {
-            temporal_mode: resolved_temporal_mode,
+            temporal_mode,
+            timedelta_mode,
             bytes_mode: BytesMode::from_str(bytes_mode)?,
             inf_nan_mode: InfNanMode::from_str(inf_nan_mode)?,
         })
@@ -158,6 +155,19 @@ impl From<TimedeltaMode> for TemporalMode {
 }
 
 impl TemporalMode {
+    /// Get the mode to use for timedeltas: `ser_json_temporal` takes precedence over `ser_json_timedelta`,
+    /// which only applies when the former isn't set.
+    pub fn timedelta_from_config(config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
+        let temporal_set = config
+            .and_then(|cfg| cfg.contains(intern!(cfg.py(), "ser_json_temporal")).ok())
+            .unwrap_or(false);
+        if temporal_set {
+            Self::from_config(config)
+        } else {
+            TimedeltaMode::from_config(config).map(Into::into)
+        }
+    }
+
     pub fn datetime_to_json(self, py: Python, datetime: &Bound<'_, PyDateTime>) -> PyResult<Py<PyAny>> {
         let dt = pydatetime_as_datetime(datetime)?;
         match self {

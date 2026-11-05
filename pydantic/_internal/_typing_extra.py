@@ -13,7 +13,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, ForwardRef, cast
 
 import typing_extensions
-from typing_extensions import deprecated, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
+from typing_extensions import get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
 from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
@@ -207,9 +207,12 @@ def _type_convert(arg: Any) -> Any:
     if arg is None:
         return NoneType
     if isinstance(arg, str):
-        # Like `typing.get_type_hints()`, assume the arg can be in any context,
-        # hence the proper `is_argument` and `is_class` args:
-        return ForwardRef(arg, is_argument=False, is_class=True)
+        if sys.version_info[:3] == (3, 10, 0):
+            return ForwardRef(arg, is_argument=False)
+        else:
+            # Like `typing.get_type_hints()`, assume the arg can be in any context,
+            # hence the proper `is_argument` and `is_class` args:
+            return ForwardRef(arg, is_argument=False, is_class=True)
     return arg
 
 
@@ -273,6 +276,10 @@ def get_model_type_hints(
                         hints[name] = try_eval_type(value, globalns, localns)
                     except Exception:
                         hints[name] = (value, False)
+                elif name == 'model_config':
+                    # `model_config` is never a field, and `collect_model_fields()` ignores its annotation,
+                    # so there is no need to evaluate it:
+                    hints[name] = (value, False)
                 else:
                     if base_model_fields is not None and name in base_model_fields:
                         # Avoid unnecessarily evaluating annotations from parent models, as we'll end up
@@ -398,19 +405,6 @@ def eval_type(
             raise
         else:
             raise RecursionError(f'{e.args[0]}\n{message}')
-
-
-@deprecated(
-    '`eval_type_lenient()` is deprecated, use `try_eval_type()` instead.',
-    category=None,
-)
-def eval_type_lenient(
-    value: Any,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-) -> Any:  # pragma: no cover
-    ev, _ = try_eval_type(value, globalns, localns)
-    return ev
 
 
 def _eval_type(

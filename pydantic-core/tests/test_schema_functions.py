@@ -20,7 +20,7 @@ def make_5():
 
 
 class MyModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
 
 @dataclasses.dataclass
@@ -132,6 +132,18 @@ all_schema_functions = [
         core_schema.frozendict_schema,
         args({'type': 'str'}, {'type': 'int'}),
         {'type': 'frozendict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
+    ),
+    (core_schema.ordered_dict_schema, args(), {'type': 'ordered-dict'}),
+    (
+        core_schema.ordered_dict_schema,
+        args({'type': 'str'}, {'type': 'int'}),
+        {'type': 'ordered-dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
+    ),
+    (core_schema.counter_schema, args(), {'type': 'counter'}),
+    (
+        core_schema.counter_schema,
+        args({'type': 'str'}, {'type': 'int'}),
+        {'type': 'counter', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
     ),
     (
         core_schema.with_info_before_validator_function,
@@ -420,10 +432,3 @@ def test_expected_serialization_types(return_schema):
 def test_err_on_invalid() -> None:
     with pytest.raises(SchemaError, match='Cannot construct schema with `InvalidSchema` member.'):
         SchemaValidator(core_schema.invalid_schema())
-
-
-def test_deprecation_warning() -> None:
-    with pytest.deprecated_call(
-        match='The `field_name` argument on `with_info_before_validator_function` is deprecated'
-    ):
-        core_schema.with_info_before_validator_function(val_function, schema={'type': 'int'}, field_name='foo')

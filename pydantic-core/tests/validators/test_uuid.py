@@ -81,8 +81,7 @@ def test_uuid(input_value, expected):
     v = SchemaValidator(core_schema.uuid_schema())
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            result = v.validate_python(input_value)
-            print(f'input_value={input_value} result={result}')
+            v.validate_python(input_value)
     else:
         output = v.validate_python(input_value)
         assert output == expected
@@ -117,8 +116,6 @@ def test_uuid_strict(input_value, expected):
         (UUID('a6cc5730-2261-11ee-9c43-2eb5a363657c'), 1, UUID('a6cc5730-2261-11ee-9c43-2eb5a363657c')),
         ('04e4aeb3-8f20-30d0-8852-d295e1265eed', 3, UUID('04e4aeb3-8f20-30d0-8852-d295e1265eed')),
         (UUID('04e4aeb3-8f20-30d0-8852-d295e1265eed'), 3, UUID('04e4aeb3-8f20-30d0-8852-d295e1265eed')),
-        ('0e7ac198-9acd-4c0c-b4b4-761974bf71d7', 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
-        (UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7'), 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
         ('0e7ac198-9acd-4c0c-b4b4-761974bf71d7', 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
         (UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7'), 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
         ('0194fdc2-5d6a-733c-97f9-2feeb9d2a609', 7, UUID('0194fdc2-5d6a-733c-97f9-2feeb9d2a609')),
@@ -230,6 +227,6 @@ def test_uuid_wrap_json():
     )
 
 
-def uuid_safety_unknown():
+def test_uuid_safety_unknown():
     output = SchemaValidator(core_schema.uuid_schema()).validate_python('a6cc5730-2261-11ee-9c43-2eb5a363657c')
     assert output.is_safe is SafeUUID.unknown

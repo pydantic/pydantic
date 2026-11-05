@@ -5,7 +5,7 @@ use std::fmt::{Display, Write};
 use std::str::from_utf8;
 
 use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
-use pyo3::ffi::{self, c_str};
+use pyo3::ffi;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
@@ -28,7 +28,7 @@ use super::types::ErrorType;
 use super::value_exception::PydanticCustomError;
 use super::{InputValue, ValError};
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, skip_from_py_object, frozen)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, frozen)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValidationError {
@@ -206,29 +206,9 @@ impl ValidationError {
 static URL_ENV_VAR: PyOnceLock<bool> = PyOnceLock::new();
 
 fn include_url_env(py: Python) -> bool {
-    *URL_ENV_VAR.get_or_init(py, || {
-        // Check the legacy env var first.
-        // Using `var_os` here instead of `var` because we don't care about
-        // the value (or whether we're able to decode it as UTF-8), just
-        // whether it exists (and if it does, whether it's non-empty).
-        match std::env::var_os("PYDANTIC_ERRORS_OMIT_URL") {
-            Some(val) => {
-                // We don't care whether warning succeeded or not, hence the assignment
-                let _ = PyErr::warn(
-                    py,
-                    &py.get_type::<pyo3::exceptions::PyDeprecationWarning>(),
-                    c_str!("PYDANTIC_ERRORS_OMIT_URL is deprecated, use PYDANTIC_ERRORS_INCLUDE_URL instead"),
-                    1,
-                );
-                // If OMIT_URL exists but is empty, we include the URL:
-                val.is_empty()
-            }
-            // If the legacy env var doesn't exist, check the documented one:
-            None => match std::env::var("PYDANTIC_ERRORS_INCLUDE_URL") {
-                Ok(val) => val == "1" || val.to_lowercase() == "true",
-                Err(_) => true,
-            },
-        }
+    *URL_ENV_VAR.get_or_init(py, || match std::env::var("PYDANTIC_ERRORS_INCLUDE_URL") {
+        Ok(val) => val == "1" || val.to_lowercase() == "true",
+        Err(_) => true,
     })
 }
 
@@ -399,13 +379,28 @@ impl ValidationError {
         let py = slf.py();
         let callable = slf.getattr("from_exception_data")?;
         let borrow = slf.try_borrow()?;
-        let args = (
-            &borrow.title,
-            borrow.errors(py, include_url_env(py), true, true)?,
-            borrow.input_type,
-            borrow.hide_input,
-        )
-            .into_pyobject(py)?;
+        let errors = borrow.errors(py, include_url_env(py), true, true)?;
+        // Custom error types can't be looked up from their type string when unpickling,
+        // so pass the `PydanticCustomError` itself:
+        for (line_error, error) in borrow.line_errors.iter().zip(errors.bind(py).iter()) {
+            if let ErrorType::CustomError {
+                error_type,
+                message_template,
+                context,
+            } = &line_error.error_type
+            {
+                let custom_error = Bound::new(
+                    py,
+                    PydanticCustomError::py_new(
+                        error_type.clone(),
+                        message_template.clone(),
+                        context.as_ref().map(|c| c.bind(py).clone()),
+                    ),
+                )?;
+                error.cast::<PyDict>()?.set_item(intern!(py, "type"), custom_error)?;
+            }
+        }
+        let args = (&borrow.title, errors, borrow.input_type, borrow.hide_input).into_pyobject(py)?;
         Ok((callable, args))
     }
 }

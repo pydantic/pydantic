@@ -87,7 +87,6 @@ def _process_param_defaults(param: Parameter, validate_by_alias: bool) -> Parame
 def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use a refactor)
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
-    validate_by_name: bool,
     extra: ExtraValues | None,
     validate_by_alias: bool,
 ) -> dict[str, Parameter]:
@@ -115,7 +114,6 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
         merged_params[param.name] = param
 
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
-        allow_names = validate_by_name
         for field_name, field in fields.items():
             # when alias is a str it should be used for signature generation
             param_name = _field_name_for_signature(field_name, field, validate_by_alias)
@@ -124,11 +122,9 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
                 continue
 
             if not is_valid_identifier(param_name):
-                if allow_names and is_valid_identifier(field_name):
-                    param_name = field_name
-                else:
-                    use_var_kw = True
-                    continue
+                # Can happen with `create_model()`, where field names are not validated as identifiers:
+                use_var_kw = True
+                continue
 
             if field.is_required():
                 default = Parameter.empty
@@ -173,7 +169,6 @@ def generate_pydantic_signature(
     *,
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
-    validate_by_name: bool,
     validate_by_alias: bool,
     extra: ExtraValues | None,
     is_dataclass: bool = False,
@@ -183,7 +178,6 @@ def generate_pydantic_signature(
     Args:
         init: The class init.
         fields: The model fields.
-        validate_by_name: The `validate_by_name` value of the config.
         validate_by_alias: The `validate_by_alias` value of the config.
         extra: The `extra` value of the config.
         is_dataclass: Whether the model is a dataclass.
@@ -191,7 +185,7 @@ def generate_pydantic_signature(
     Returns:
         The dataclass/BaseModel subclass signature.
     """
-    merged_params = _generate_signature_parameters(init, fields, validate_by_name, extra, validate_by_alias)
+    merged_params = _generate_signature_parameters(init, fields, extra, validate_by_alias)
 
     if is_dataclass:
         merged_params = {k: _process_param_defaults(v, validate_by_alias) for k, v in merged_params.items()}

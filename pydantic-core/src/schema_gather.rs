@@ -12,7 +12,7 @@ use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 use smallvec::SmallVec;
 
 /// A reference was pointing to a non-existing core schema.
-#[pyclass(extends=PyLookupError, module="pydantic_core._pydantic_core._schema_gather", frozen, skip_from_py_object)]
+#[pyclass(extends=PyLookupError, module="pydantic_core._pydantic_core._schema_gather", frozen)]
 #[derive(Debug)]
 pub struct MissingDefinitionError {
     #[pyo3(get)]
@@ -143,7 +143,7 @@ fn collect_child_schemas<'py>(
         "tuple" => {
             children_optional(children, schema, intern!(py, "items_schema"))?;
         }
-        "dict" | "frozendict" => {
+        "dict" | "frozendict" | "ordered-dict" | "counter" => {
             child_optional(children, schema, intern!(py, "keys_schema"))?;
             child_optional(children, schema, intern!(py, "values_schema"))?;
         }

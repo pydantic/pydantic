@@ -113,6 +113,17 @@ def test_use_field_name():
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
 
+def test_populate_by_name_overrides_validate_by_alias():
+    # For backwards compatibility, `populate_by_name=True` forces `validate_by_alias=True`
+    # in the core config. The signature should reflect the effective configuration:
+    class Foo(BaseModel):
+        foo: str = Field(alias='foo_alias')
+
+        model_config = ConfigDict(populate_by_name=True, validate_by_alias=False)
+
+    assert _equals(str(signature(Foo)), '(*, foo_alias: str) -> None')
+
+
 def test_does_not_use_reserved_word():
     class Foo(BaseModel):
         from_: str = Field(alias='from')

@@ -4,6 +4,7 @@ from typing import Annotated
 
 import annotated_types
 import pytest
+from pydantic_core import SchemaError
 
 from pydantic import (
     BaseModel,
@@ -283,6 +284,14 @@ def test_number_multiple_of_int_invalid(value):
     ]
 
 
+@pytest.mark.parametrize('multiple_of', [0, -5, -(2**64)])
+def test_number_multiple_of_int_invalid_constraint(multiple_of: int) -> None:
+    """https://github.com/pydantic/pydantic/issues/13860"""
+
+    with pytest.raises(SchemaError, match="'multiple_of' must be a finite number greater than 0"):
+        TypeAdapter(Annotated[int, annotated_types.MultipleOf(multiple_of)])
+
+
 # A number well outside of i64 range
 _BIG_NUMBER_STR = '1' + ('0' * 40)
 
@@ -308,3 +317,19 @@ def test_int_validate_json(input_value, expected):
             ta.validate_json(input_value)
     else:
         assert ta.validate_json(input_value) == expected
+
+
+@pytest.mark.parametrize('value', ['0-1', '00-5', '0_-1', '0-1.0', '0-0', '-0-1'])
+def test_int_str_interior_minus_sign(value: str) -> None:
+    ta = TypeAdapter(int)
+
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer, unable to parse string as an integer'):
+        ta.validate_python(value)
+
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer, unable to parse string as an integer'):
+        ta.validate_json(json.dumps(value))
+
+
+@pytest.mark.parametrize('value,expected', [('-0001', -1), ('-00_1', -1), ('-0', 0), ('-00', 0)])
+def test_int_str_negative_leading_zeros(value: str, expected: int) -> None:
+    assert TypeAdapter(int).validate_python(value) == expected

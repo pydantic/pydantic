@@ -72,10 +72,6 @@ To enable the plugin, just add `pydantic.mypy` to the list of plugins in your
     plugins = ['pydantic.mypy']
     ```
 
-!!! note
-
-    If you're using `pydantic.v1` models, you'll need to add `pydantic.v1.mypy` to your list of plugins.
-
 See the [plugin configuration](#configuring-the-plugin) for more details.
 
 ## Mypy plugin capabilities
@@ -200,4 +196,4 @@ For this reason, the plugin will add an extra `**kwargs: Any` parameter when syn
 Whether to error when using a dynamically-determined alias or alias generator on a model with
 [`validate_by_name`][pydantic.ConfigDict.validate_by_name] set to `False`. If such aliases are
 present, mypy cannot properly type check calls to `__init__()`. In this case, it will default to
-treating all arguments as not required, by synthesizing the `__init__()` as `(**kwargs: Any) -> None`.
+treating all arguments as not required, by synthesizing the `__init__()` as `(**kwargs: Any) -> None`.

@@ -533,6 +533,9 @@ impl CopyFromPyUrl for EitherMultiHostUrl<'_> {
     }
 }
 
+/// The scheme used to parse the extra hosts of a multi-host URL with a non-special scheme.
+const NON_SPECIAL_PLACEHOLDER_SCHEME: &str = "x";
+
 fn parse_multihost_url<'py>(
     url_str: &str,
     input: &(impl Input<'py> + ?Sized),
@@ -640,10 +643,21 @@ fn parse_multihost_url<'py>(
         if !ref_url.url().has_host() {
             return parsing_err!(ParseError::EmptyHost);
         }
+        // The prefix (leading whitespace, scheme and slashes) was already validated when parsing the
+        // last host above, and reusing it for every other host would take quadratic time (it can be
+        // arbitrarily long). Instead, each host is parsed with a short, normalized prefix. Hosts of
+        // non-special schemes are parsed independently of the scheme, so a placeholder one is used
+        // (only special schemes, which are short, can affect the host or have a default port).
+        let ref_scheme = ref_url.url().scheme();
+        let extra_scheme = if scheme_is_special(ref_scheme) {
+            ref_scheme
+        } else {
+            NON_SPECIAL_PLACEHOLDER_SCHEME
+        };
         let extra_urls: Vec<Url> = hosts
             .iter()
             .map(|host| {
-                let reconstructed_url = format!("{prefix}{host}");
+                let reconstructed_url = format!("{extra_scheme}://{host}");
                 parse_url(&reconstructed_url, input, strict)
             })
             .collect::<ValResult<_>>()?;

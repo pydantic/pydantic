@@ -28,12 +28,6 @@ Unless your change is trivial (typo, docs tweak etc.), please create an issue to
 creating a pull request. Any pull request fixing an existing issue without being assigned first will be
 automatically closed.
 
-!!! note "Pydantic V1 is in maintenance mode"
-    Pydantic v1 is in maintenance mode, meaning that only bug fixes and security fixes will be accepted.
-    New features should be targeted at Pydantic v2.
-
-    To submit a fix to Pydantic v1, use the [`1.10.X-fixes`](https://github.com/pydantic/pydantic/tree/1.10.X-fixes) as a target branch.
-
 To make contributing as easy and fast as possible, you'll want to run tests and linting locally. Luckily,
 Pydantic has few dependencies, doesn't require compiling and tests don't need access to databases, etc.
 Because of this, setting up and running the tests should be very simple.
@@ -57,7 +51,7 @@ Such behavior can also result in a permanent ban from the organization.
 
 You'll need the following prerequisites:
 
-* Any Python version between **Python 3.10 and 3.14**
+* Any Python version between **Python 3.10 and 3.15**
 * [**uv**](https://docs.astral.sh/uv/getting-started/installation/)
 * [**git**](https://git-scm.com/) - For version control
 * [**make**](https://www.gnu.org/software/make/) - For running development commands (or use `nmake` on Windows)
@@ -92,6 +86,28 @@ Create a new branch for your changes.
 git switch -c my-new-feature-branch
 # Make your changes...
 ```
+
+### Writing tests
+
+Pydantic currently has two separate test suites: the Pydantic test suite (located in `tests/`), and the `pydantic-core` test suite (located in `pydantic-core/tests`).
+`pydantic-core/tests` is symlinked under `tests/pydantic_core/`, so that a single `pytest` invocation can run all of them. For it to work, you may need to
+enable the [`core.symlinks`](https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks) Git option.
+
+When adding new tests, prefer adding them in `tests`, using the Pydantic Python API. Most `pydantic-core` tests are using internal APIs (e.g. `SchemaValidator`).
+Make sure to look for the right place to add a test, read the existing test files first. Tests related to types must go in `tests/types/` (one file per type, e.g. `tests/types/test_uuid.py`)
+(create a file if it doesn't exist yet).
+
+When introcuding a test for a specific issue/feature request, mention the issue link as a docstring, e.g.:
+
+```python
+def test_some_feature() -> None:
+    """https://github.com/pydantic/pydantic/issues/1234"""
+```
+
+The test you are adding may be relevant for Pydantic models as well as dataclasses and `TypedDict`. As such, it may be beneficial to use the `container_class` fixture,
+or the `dataclass_decorators()` test utility.
+
+When using `pytest.raises()`, prefer using the `check=lambda err: ...` argument, instead of asserting on `exc_info`.
 
 ### Run tests and linting
 
@@ -144,11 +160,21 @@ For example, if the latest release is `v2.9.2`, you should make sure `docs-updat
 
 ### Commit and push your changes
 
-Commit your changes, push your branch to GitHub, and create a pull request.
+Commit your changes, push your branch to GitHub, and create a pull request, following the pull request template. The title of the pull request
+will be used for our changelog entry, it should follow these guidelines:
 
-Please follow the pull request template and fill in as much information as possible. Link to any relevant issues and include a description of your changes.
+* A one-line subject, sentence case: capitalized first word, imperative mood, no `fix:` or `feat(core):` prefix.
+* It starts with a verb that says what kind of change it is:
+    * Bug fixes: Fix (most common), often naming the symptom and its context. E.g. "Fix infinite recursion when validating an invalid default".
+    * Features: Support, Add, Implement, Honor/Respect, Take … into account.
+    * Performance: Improve performance of ... / Avoid ...
+    * Docs: Document, Correct, Add notes about ...
+    * Dependencies: Bump X from a to b.
+* Use backticks for code elements: classes (e.g. `BaseModel`), functions (e.g. `create_model()`).
+* Do not add the referenced issue in the title.
 
-When your pull request is ready for review, add a comment with the message "please review" and we'll take a look as soon as we can.
+The pull request body should first reference the issue if there is any (e.g. "Fixes #1234"). The body should be succinct, spaced, and code examples are usually
+recommended (e.g. "before / after" examples, showing the changed behavior). If you need to point to existing code, use [.](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-a-permanent-link-to-a-code-snippet)
 
 ## Documentation style
 
@@ -196,12 +222,12 @@ def bar(self, baz: int) -> str:
     return 'bar'
 ```
 
-You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`BeforeValidator`][pydantic.functional_validators.AfterValidator] for an example.
+You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`AfterValidator`][pydantic.functional_validators.AfterValidator] for an example.
 
 !!! note "Class and instance attributes"
     Class attributes should be documented in the class docstring.
 
-    Instance attributes should be documented as "Args" in the `__init__` docstring.
+    Instance attributes should be documented as "Args" in the `__init__()` docstring.
 
 ### Documentation Style
 
@@ -228,7 +254,6 @@ Here's a quick guide on how to do that. This tutorial is done in VSCode, but you
 
 ## Badges
 
-[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json)](https://pydantic.dev)
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
 
 Pydantic has a badge that you can use to show that your project uses Pydantic. You can use this badge in your `README.md`:
@@ -236,18 +261,12 @@ Pydantic has a badge that you can use to show that your project uses Pydantic. Y
 ### With Markdown
 
 ```md
-[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json)](https://pydantic.dev)
-
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
 ```
 
 ### With reStructuredText
 
 ```rst
-.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json
-    :target: https://pydantic.dev
-    :alt: Pydantic
-
 .. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json
     :target: https://pydantic.dev
     :alt: Pydantic
@@ -256,8 +275,6 @@ Pydantic has a badge that you can use to show that your project uses Pydantic. Y
 ### With HTML
 
 ```html
-<a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json" alt="Pydantic Version 1" style="max-width:100%;"></a>
-
 <a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json" alt="Pydantic Version 2" style="max-width:100%;"></a>
 ```
 

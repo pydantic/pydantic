@@ -26,6 +26,7 @@ classifiers = [
     'Programming Language :: Python',
     'Programming Language :: Python :: Implementation :: CPython',
     'Programming Language :: Python :: Implementation :: PyPy',
+    'Programming Language :: Python :: Implementation :: GraalPy',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
     'Programming Language :: Python :: 3.10',
@@ -37,6 +38,7 @@ classifiers = [
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Operating System :: OS Independent',
+    'Environment :: WebAssembly :: Emscripten',
     'Framework :: Hypothesis',
     'Framework :: Pydantic',
     'Topic :: Software Development :: Libraries :: Python Modules',
@@ -47,7 +49,7 @@ dependencies = [
     'typing-extensions>=4.16.0',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.49.0',
+    'pydantic-core==2.50.0',
     'typing-inspection>=0.4.4',
 ]
 dynamic = ['version', 'readme']
@@ -91,7 +93,7 @@ docs = [
     'mkdocs',
     'mkdocs-exclude',
     'mkdocs-llmstxt',
-    'mkdocs-material[imaging]',
+    'mkdocs-material',
     'mkdocs-redirects',
     'mkdocstrings-python',
     'tomli',
@@ -129,7 +131,7 @@ typechecking = [
     'pydantic-settings',
 ]
 build = [
-    'build',
+    'build>=1.6',
     'twine',
 ]
 pyodide-build = [
@@ -203,7 +205,7 @@ markers = [
 
 [tool.uv]
 default-groups = ['dev']
-required-version = '>=0.8.4'
+required-version = '>=0.13.0'
 
 [tool.uv.sources]
 pydantic-core = { workspace = true }
@@ -223,7 +225,7 @@ unconfirmed_label = 'pending'
 [tool.ruff]
 line-length = 120
 target-version = 'py310'
-extend-exclude = ['pydantic/v1', 'tests/mypy', 'tests/pydantic_core']
+extend-exclude = ['tests/mypy', 'tests/pydantic_core', 'tests/benchmarks/corpus']
 
 [tool.ruff.lint]
 select = [
@@ -259,9 +261,7 @@ pydocstyle = { convention = 'google' }
 'tests/test_main.py' = ['PIE807']
 'tests/*' = ['D', 'B', 'C4']
 'pydantic/_internal/_known_annotated_metadata.py' = ['PIE800']
-'pydantic/deprecated/*' = ['D', 'PYI', 'UP007']
 'pydantic/color.py' = ['PYI']
-'pydantic/_internal/_decorators_v1.py' = ['PYI']
 'pydantic/json_schema.py' = ['D']
 "release/*.py" = ["T201"]  # print statements in release scripts
 
@@ -275,7 +275,6 @@ quote-style = 'single'
 
 [tool.coverage.run]
 source = ['pydantic', 'pydantic_core']
-omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
 branch = true
 relative_files = true
 context = '${CONTEXT}'
@@ -298,14 +297,14 @@ source = [
 
 [tool.pyright]
 include = ['pydantic', 'tests/test_pipeline.py']
-exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py', 'pydantic/v1']
+exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py']
 # reportUnnecessaryTypeIgnoreComment can't be set since we run pyright with multiple python versions
 # reportUnnecessaryTypeIgnoreComment = true
 strict = ['tests/test_pipeline.py']
 enableExperimentalFeatures = true
 
 [tool.codespell]
-skip = '.git,env*,pydantic/v1/*,uv.lock'
+skip = '.git,env*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
 ignore-words-list = 'gir,ser,crate,deques,nam'

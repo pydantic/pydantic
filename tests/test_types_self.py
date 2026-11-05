@@ -2,12 +2,15 @@ import dataclasses
 import re
 import sys
 import typing
+from typing import Generic, TypeVar
 
 import pytest
 import typing_extensions
 from typing_extensions import NamedTuple, TypedDict, TypeForm
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError, computed_field, validate_call
+
+from .utils import dataclass_decorators
 
 self_types: list[TypeForm] = []
 ids: list[str] = []
@@ -171,6 +174,44 @@ def test_self_type_in_dataclass(Self):
     assert m.item.ref.x == 2
     with pytest.raises(dataclasses.FrozenInstanceError):
         m.item.ref.x = 3
+
+
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators())
+def test_self_type_in_parametrized_generic_dataclass(Self, dataclass_decorator):
+    T = TypeVar('T')
+
+    @dataclass_decorator
+    class SelfRef(Generic[T]):
+        x: T
+        ref: Self | None = None
+
+    ta = TypeAdapter(SelfRef[int])
+    item = ta.validate_python({'x': '1', 'ref': {'x': '2'}})
+    assert item.x == 1
+    assert item.ref.x == 2
+    assert item.ref.ref is None
+
+
+def test_self_type_in_parametrized_generic_typed_dict(Self):
+    T = TypeVar('T')
+
+    class SelfRefTypedDict(TypedDict, Generic[T]):
+        x: T
+        ref: Self | None
+
+    ta = TypeAdapter(SelfRefTypedDict[int])
+    assert ta.validate_python({'x': '1', 'ref': {'x': '2', 'ref': None}}) == {'x': 1, 'ref': {'x': 2, 'ref': None}}
+
+
+def test_self_type_in_parametrized_generic_named_tuple(Self):
+    T = TypeVar('T')
+
+    class SelfRefNamedTuple(NamedTuple, Generic[T]):
+        x: T
+        ref: Self | None = None
+
+    ta = TypeAdapter(SelfRefNamedTuple[int])
+    assert ta.validate_python(('1', ('2',))) == (1, (2, None))
 
 
 def test_invalid_validate_call(Self):

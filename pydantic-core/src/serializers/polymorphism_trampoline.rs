@@ -50,7 +50,7 @@ impl PolymorphismTrampoline {
             && runtime_polymorphic.unwrap_or(self.enabled_from_config)
             && self.is_subclass(value)?
             // stdlib dataclasses do not have a `__pydantic_serializer__`
-            && let Ok(serializer) = get_pydantic_serializer(value)
+            && let Some(serializer) = get_pydantic_serializer(value)?
         {
             call_pydantic_serializer(&serializer, value, state, do_serialize)
         } else {

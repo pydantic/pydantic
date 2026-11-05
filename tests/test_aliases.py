@@ -129,15 +129,16 @@ def test_annotation_config():
     assert Model(foobar='123').b == 123.0
 
 
-def test_pop_by_field_name():
+def test_pop_by_field_name(py_and_json):
     class Model(BaseModel):
         model_config = ConfigDict(extra='forbid', validate_by_name=True)
         last_updated_by: str | None = Field(None, alias='lastUpdatedBy')
 
-    assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
-    assert Model(last_updated_by='foo').model_dump() == {'last_updated_by': 'foo'}
+    adapter = py_and_json(Model)
+    assert adapter.validate_test({'lastUpdatedBy': 'foo'}).model_dump() == {'last_updated_by': 'foo'}
+    assert adapter.validate_test({'last_updated_by': 'foo'}).model_dump() == {'last_updated_by': 'foo'}
     with pytest.raises(ValidationError) as exc_info:
-        Model(lastUpdatedBy='foo', last_updated_by='bar')
+        adapter.validate_test({'lastUpdatedBy': 'foo', 'last_updated_by': 'bar'})
     assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'bar',

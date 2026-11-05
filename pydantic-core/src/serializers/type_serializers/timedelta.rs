@@ -1,4 +1,3 @@
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use std::borrow::Cow;
@@ -7,7 +6,7 @@ use std::sync::Arc;
 use crate::definitions::DefinitionsBuilder;
 use crate::input::EitherTimedelta;
 use crate::serializers::SerializationState;
-use crate::serializers::config::{FromConfig, TemporalMode, TimedeltaMode};
+use crate::serializers::config::TemporalMode;
 
 use super::{
     BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
@@ -26,15 +25,7 @@ impl BuildSerializer for TimeDeltaSerializer {
         config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Arc<CombinedSerializer>> {
-        let temporal_set = config
-            .and_then(|cfg| cfg.contains(intern!(cfg.py(), "ser_json_temporal")).ok())
-            .unwrap_or(false);
-        let temporal_mode = if temporal_set {
-            TemporalMode::from_config(config)?
-        } else {
-            let td_mode = TimedeltaMode::from_config(config)?;
-            td_mode.into()
-        };
+        let temporal_mode = TemporalMode::timedelta_from_config(config)?;
 
         Ok(Arc::new(Self { temporal_mode }.into()))
     }

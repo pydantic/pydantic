@@ -209,7 +209,7 @@ print(m)
 #> a='hello' b=123
 data = pickle.dumps(m)
 print(data[:20])
-#> b'\x80\x04\x95\x95\x00\x00\x00\x00\x00\x00\x00\x8c\x08__main_'
+#> b'\x80\x05\x95\x95\x00\x00\x00\x00\x00\x00\x00\x8c\x08__main_'
 m2 = pickle.loads(data)
 print(m2)
 #> a='hello' b=123
@@ -645,13 +645,11 @@ print(m.model_dump())  # (1)!
 
 1. Note: the password field is not included
 
-!!! warning "Migration Warning"
-    This behavior is different from how things worked in Pydantic V1, where we would always include
-    all (subclass) fields when recursively serializing models to dictionaries. The motivation behind this change
-    in behavior is that it helps ensure that you know precisely which fields could be included when serializing,
-    even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
-    when adding sensitive information like secrets as fields of subclasses. To enable the old V1 behavior, refer
-    to the next section.
+!!! note
+    The motivation behind this behavior is that it helps ensure that you know precisely which fields could be
+    included when serializing, even if subclasses get passed when instantiating the object. In particular, this can
+    help prevent surprises when adding sensitive information like secrets as fields of subclasses. To include all
+    (subclass) fields when serializing, refer to the next section.
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
@@ -830,8 +828,8 @@ print(outer_model.model_dump(serialize_as_any=False))  # (2)!
 #> {'user1': {'name': 'pydantic'}, 'user2': {'name': 'pydantic'}}
 ```
 
-1. With `serialize_as_any` set to `True`, the result matches that of V1.
-2. With `serialize_as_any` set to `False` (the V2 default), fields present on the subclass,
+1. With `serialize_as_any` set to `True`, fields present on the subclass are included in serialization.
+2. With `serialize_as_any` set to `False` (the default), fields present on the subclass,
    but not the base class, are not included in serialization.
 
 However, do note that the *serialize as any* behavior will apply to *all* values, not only the values where duck typing

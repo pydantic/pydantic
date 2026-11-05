@@ -74,6 +74,11 @@ pub(crate) trait Input<'py>: fmt::Debug {
         None
     }
 
+    /// Identity of the input, used by the recursion guard to detect cycles and limit the depth.
+    ///
+    /// Inputs without an identity (e.g. JSON) can't be cyclic.
+    fn identity(&self) -> Option<usize>;
+
     fn as_json(&self) -> Option<&JsonValue<'_>> {
         None
     }
@@ -146,6 +151,32 @@ pub(crate) trait Input<'py>: fmt::Debug {
     #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_frozendict(&self) -> ValMatch<Self::Dict<'_>> {
         self.strict_frozendict()
+    }
+
+    fn validate_ordered_dict(&self, strict: bool) -> ValMatch<Self::Dict<'_>> {
+        if strict {
+            self.strict_ordered_dict()
+        } else {
+            self.lax_ordered_dict()
+        }
+    }
+    fn strict_ordered_dict(&self) -> ValMatch<Self::Dict<'_>>;
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn lax_ordered_dict(&self) -> ValMatch<Self::Dict<'_>> {
+        self.strict_ordered_dict()
+    }
+
+    fn validate_counter(&self, strict: bool) -> ValMatch<Self::Dict<'_>> {
+        if strict {
+            self.strict_counter()
+        } else {
+            self.lax_counter()
+        }
+    }
+    fn strict_counter(&self) -> ValMatch<Self::Dict<'_>>;
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn lax_counter(&self) -> ValMatch<Self::Dict<'_>> {
+        self.strict_counter()
     }
 
     fn validate_model_fields(&self, strict: bool, _from_attributes: bool) -> ValResult<Self::Dict<'_>> {

@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - '**'
+      - 'v*'
   pull_request: {}
 
 env:
@@ -25,11 +25,11 @@ jobs:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -49,8 +49,13 @@ jobs:
   core-build-sdist:
     runs-on: ubuntu-latest
     name: core / Build sdist
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -59,10 +64,16 @@ jobs:
       - uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: pydantic-core
+          # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
+          maturin-version: v1.16.0
           command: sdist
           args: --out dist
           rust-toolchain: stable
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          subject-path: pydantic-core/dist/*
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_core_pypi_files_sdist
           path: pydantic-core/dist
@@ -71,6 +82,11 @@ jobs:
     name: core / Build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
     # only run on push to main, if a full build was requested or on release:
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -103,21 +119,28 @@ jobs:
           - os: linux
             manylinux: auto
             target: x86_64
-            interpreter: pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: pypy3.11 graalpy3.12 graalpy3.13
           - os: linux
             manylinux: auto
             target: aarch64
-            interpreter: graalpy3.11 graalpy3.12
+            interpreter: graalpy3.12 graalpy3.13
+            # PyPy 8.0 (`pp80` ABI) requires glibc 2.28:
+          - os: linux
+            manylinux: '2_28'
+            target: x86_64
+            interpreter: pypy3.11-pp80
+            # see the "Install PyPy 8.0" step below:
+            interpreter-path: /opt/python/pp311-pypy311_pp80/bin/python
 
           # musllinux
           - os: linux
-            manylinux: musllinux_1_1
+            manylinux: musllinux_1_2
             target: x86_64
           - os: linux
-            manylinux: musllinux_1_1
+            manylinux: musllinux_1_2
             target: aarch64
           - os: linux
-            manylinux: musllinux_1_1
+            manylinux: musllinux_1_2
             target: armv7
 
           # macos;
@@ -125,10 +148,16 @@ jobs:
           # arm pypy and older pythons which can't be run on the arm hardware for PGO
           - os: macos
             target: x86_64
-            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11 graalpy3.12
           - os: macos
             target: aarch64
-            interpreter: pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: pypy3.11 graalpy3.12 graalpy3.13
+          - os: macos
+            target: x86_64
+            interpreter: pypy3.11-pp80
+          - os: macos
+            target: aarch64
+            interpreter: pypy3.11-pp80
 
           # windows;
           # x86_64 pypy builds are not PGO optimized
@@ -137,6 +166,9 @@ jobs:
           - os: windows
             target: x86_64
             interpreter: pypy3.11
+          - os: windows
+            target: x86_64
+            interpreter: pypy3.11-pp80
           - os: windows
             target: i686
             python-architecture: x86
@@ -152,24 +184,43 @@ jobs:
 
     runs-on: ${{ matrix.runs-on || format('{0}-latest', (matrix.os == 'linux' && 'ubuntu') || matrix.os) }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.14'
           enable-cache: false
 
       - run: uv sync --only-group build
 
+      # PyPy 3.11 exists with both the PyPy 7.3 (`pp73`) and 8.0 (`pp80`) ABIs, and `pypy3.11` resolves to PyPy 7.3
+      # on the runners and in the manylinux images (see https://github.com/pypa/manylinux/pull/1996), so we need to
+      # provide a PyPy 8.0 interpreter explicitly (on Linux, using `interpreter-path`).
+      # This can be removed once we drop PyPy 3.11 in favor of PyPy 3.12 (`pp80` only):
+      - name: Install PyPy 8.0
+        id: pypy-pp80
+        if: matrix.interpreter == 'pypy3.11-pp80' && matrix.os != 'linux'
+        shell: bash
+        run: |
+          uv python install pypy3.11
+          interpreter="$(uv python find --managed-python pypy3.11)"
+          "$interpreter" -c 'import sysconfig; soabi = sysconfig.get_config_var("SOABI"); assert "pp80" in soabi, soabi'
+          if command -v cygpath &> /dev/null; then
+            interpreter="$(cygpath --mixed "$interpreter")"
+          fi
+          echo "interpreter=$interpreter" >> "$GITHUB_OUTPUT"
+
       - name: Build wheels
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: pydantic-core
+          # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
+          maturin-version: v1.16.0
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11' }}
+          args: --release --locked --out dist --interpreter ${{ steps.pypy-pp80.outputs.interpreter || matrix.interpreter-path || matrix.interpreter || '3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
 
@@ -178,7 +229,12 @@ jobs:
 
       - run: uv run --no-sync twine check --strict pydantic-core/dist/*
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          subject-path: pydantic-core/dist/*
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_core_pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
           path: pydantic-core/dist
@@ -187,6 +243,11 @@ jobs:
     name: core / Build PGO-optimized on ${{ matrix.platform.os }} / ${{ matrix.interpreter }}
     # only run on push to main, if a full build was requested or on release:
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -203,11 +264,11 @@ jobs:
 
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.interpreter }}
           enable-cache: false
@@ -234,7 +295,12 @@ jobs:
       - run: ${{ (startsWith(matrix.platform.os, 'windows') && 'dir') || 'ls -lh' }} dist/
         working-directory: pydantic-core
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          subject-path: pydantic-core/dist/*
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_core_pypi_files_${{ matrix.platform.os }}_${{ matrix.interpreter }}
           path: pydantic-core/dist
@@ -242,6 +308,11 @@ jobs:
   core-build-pyemscripten:
     name: core / Build PyEmscripten (${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -251,17 +322,22 @@ jobs:
           # For 3.13, pyodide recommends nightly-2025-02-01 (1.86.0), which is below our MSRV — trying to use newer nightly releases
           # fails when building.
           - python-version: '3.14'
+            pyodide-version: '314.0.7'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
 
       - run: uv sync --only-group pyodide-build
+
+      - run: uv run pyodide xbuildenv install ${{ matrix.pyodide-version }}
+        env:
+          UV_NO_SYNC: '1'
 
       - name: Get pyodide config
         id: pyodide-config
@@ -270,6 +346,8 @@ jobs:
           echo "emscripten-version=$(uv run pyodide config get emscripten_version)" >> "$GITHUB_OUTPUT"
           echo "pyodide-abi-version=$(uv run pyodide config get pyodide_abi_version)" >> "$GITHUB_OUTPUT"
           echo "rustflags=$(uv run pyodide config get rustflags)" >> "$GITHUB_OUTPUT"
+        env:
+          UV_NO_SYNC: '1'
 
       - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
         with:
@@ -284,15 +362,22 @@ jobs:
           MATURIN_PYEMSCRIPTEN_PLATFORM_VERSION: ${{ steps.pyodide-config.outputs.pyodide-abi-version }}
         with:
           working-directory: pydantic-core
+          # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
+          maturin-version: v1.16.0
           target: wasm32-unknown-emscripten
-          args: --release --out dist --interpreter ${{ matrix.python-version }}
+          args: --release --locked --out dist --interpreter ${{ matrix.python-version }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
           rust-toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
 
       - run: ls -lh dist/
         working-directory: pydantic-core
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          subject-path: pydantic-core/dist/*
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_core_pypi_files_pyemscripten_${{ matrix.python-version }}
           path: pydantic-core/dist
@@ -302,7 +387,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -335,7 +420,7 @@ jobs:
             distro: alpine_latest
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -346,7 +431,18 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - uses: uraimo/run-on-arch-action@f9b26e3a1a408d5fd530d20c17b9f3f4428ff8d9 # v3.1.0
+      # The workspace is mounted in the container, so the installer can be verified on the host:
+      - name: Get uv installer
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh -o uv-installer.sh
+          gh attestation verify uv-installer.sh \
+            --repo astral-sh/uv \
+            --signer-workflow astral-sh/uv/.github/workflows/release.yml \
+            --deny-self-hosted-runners
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - uses: uraimo/run-on-arch-action@460cb8e6d9f726a588fc9b5e681c8a6cab09ae41 # v3.2.0
         name: Install and test
         with:
           arch: ${{ matrix.target }}
@@ -370,7 +466,7 @@ jobs:
           # and then sync the parent workspace:
           run: |
             set -x
-            curl -LsSf https://astral.sh/uv/install.sh | sh
+            sh uv-installer.sh
             source $HOME/.local/bin/env
             uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
             uv sync --group testing-extra --no-install-package pydantic-core --no-install-package pytest-memray --no-install-package memray --no-install-package pytest-codspeed --no-install-package cffi --no-install-package time-machine --inexact
@@ -400,12 +496,12 @@ jobs:
 
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
@@ -437,7 +533,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -452,7 +548,7 @@ jobs:
         with:
           lookup-only: false # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
@@ -466,16 +562,63 @@ jobs:
       - run: cargo test
         working-directory: pydantic-core
 
+  core-test-graalpy:
+    name: core / Test on GraalPy ${{ matrix.python-version }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['graalpy3.12', 'graalpy3.13']
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install rust stable
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
+        with:
+          toolchain: stable
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          lookup-only: false # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      # - `cffi` (a dependency of `pytest-codspeed`) can't be built on GraalPy.
+      # - `sqlalchemy` (only used in docs tests) fails to import on GraalPy 3.13 (`immutabledict object is immutable`),
+      #   and its `greenlet` dependency can't be built on GraalPy 3.13.
+      - name: Install dependencies
+        run: uv sync --all-packages --group testing-extra --no-install-package pytest-codspeed --no-install-package cffi --no-install-package sqlalchemy --no-install-package greenlet
+        env:
+          RUST_BACKTRACE: 1
+          UV_PYTHON_PREFERENCE: only-managed
+
+      - run: uv pip freeze
+      # `pytest-examples` is not installed on GraalPy.
+      # `test_with_default.py` crashes GraalPy 3.13 during assertion rewriting,
+      # until https://github.com/oracle/graalpython/pull/1129 is released:
+      - run: uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py $EXTRA_PYTEST_ARGS
+        env:
+          EXTRA_PYTEST_ARGS: ${{ matrix.python-version == 'graalpy3.13' && '--ignore=tests/pydantic_core/validators/test_with_default.py' || '' }}
+
   core-test-msrv:
     name: core / Test MSRV
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
@@ -513,15 +656,56 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '3.13'
+          - '3.14'
           - 'pypy3.11'
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      - name: Install rust stable
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
+        with:
+          toolchain: stable
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          lookup-only: false # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras --group testing-extra
+
+      - run: uv run --no-sync maturin develop --uv
+        working-directory: pydantic-core
+
+      - run: uv pip freeze
+      - run: uv run pytest
+
+  core-test-python-debug:
+    name: core / Test with debug Python (${{ matrix.python-version }})
+    if: startsWith(github.ref, 'refs/tags/') || contains(github.event.pull_request.labels.*.name, 'full build')
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - '3.14+debug'
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -558,12 +742,12 @@ jobs:
             pylock-suffix: '314'
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -588,15 +772,20 @@ jobs:
   build-pydantic:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     outputs:
       pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: false
 
@@ -604,16 +793,21 @@ jobs:
 
       - name: Check pydantic version
         id: check-tag
-        uses: samuelcolvin/check-python-version@ee87cddb8049d2694cc03badc8569765a05cef00 # v5
+        uses: samuelcolvin/check-python-version@17d859ba0a6af9ffcaac5c70608fed36ed33e32a # v5.1
         with:
           version_file_path: pydantic/version.py
 
       - name: Build pydantic library
-        run: uv run --no-sync python -m build --installer uv
+        # Regenerate build constraints with `make build-constraints`:
+        run: uv run --no-sync python -m build --installer uv --dependency-constraints-txt .github/build-constraints.txt
 
       - run: ls -lh dist/
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: dist/*
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pydantic_pypi_files
           path: dist
@@ -621,11 +815,11 @@ jobs:
   docs-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.12'
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -651,11 +845,11 @@ jobs:
     name: Test memray
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.12'
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -688,11 +882,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -718,7 +912,7 @@ jobs:
 
       - name: Store coverage files
         if: '!startsWith(matrix.python-version, ''pypy'')'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
           path: coverage
@@ -728,11 +922,11 @@ jobs:
     name: Test Pydantic plugin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.12'
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -751,11 +945,11 @@ jobs:
     name: Mypy typechecking tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.13'
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -772,7 +966,7 @@ jobs:
           CONTEXT: linux-mypy
 
       - name: Store coverage files
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-mypy
           path: coverage
@@ -782,11 +976,11 @@ jobs:
     name: Typechecking integration tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.12'
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -813,11 +1007,11 @@ jobs:
       UV_NO_SYNC: '1'
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.14'
           enable-cache: false
@@ -837,14 +1031,14 @@ jobs:
       - run: uv run coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
       - name: Store coverage data
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-data
           path: .coverage
           include-hidden-files: true
 
       - name: Store coverage HTML
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-html
           path: htmlcov
@@ -858,7 +1052,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -869,12 +1063,12 @@ jobs:
 
       - name: Generate coverage comment
         id: coverage-comment
-        uses: py-cov-action/python-coverage-comment-action@5d8df5979747514c914e1c5a12335a7cf9a2745f # v4.1
+        uses: py-cov-action/python-coverage-comment-action@e5fb2218463c3377f3504b0c5b5646ed53da7a2f # v4.5
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Store coverage comment
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.coverage-comment.outputs.COMMENT_FILE_WRITTEN == 'true'
         with:
           name: python-coverage-comment-action
@@ -888,14 +1082,15 @@ jobs:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
-          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+          # Installs `typing-extensions` from its `main` branch, so don't write to (nor read from) the shared cache:
+          enable-cache: false
 
       - name: Install dependencies
         run: uv sync --all-packages --group testing-extra --all-extras
@@ -911,12 +1106,12 @@ jobs:
     if: always()
     outputs:
       result: ${{ steps.all-green.outputs.result }}
-    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-debug, core-build-pyemscripten]
+    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-graalpy, core-test-debug, core-build-pyemscripten]
     runs-on: ubuntu-latest
 
     steps:
       - name: Decide whether the needed jobs succeeded or failed
-        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
+        uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
         id: all-green
         with:
           jobs: ${{ toJSON(needs) }}
@@ -944,20 +1139,21 @@ jobs:
             -f event_type=docs-update
 
   release-pydantic-core:
-    needs: [core-test-builds-arch, core-test-builds-os, core-build-sdist, check]
+    needs: [core-test-builds-arch, core-test-builds-os, core-build-sdist, core-test-python-debug, check]
     if: needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     environment: release
 
     permissions:
       id-token: write
+      attestations: read
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: false
 
@@ -992,6 +1188,21 @@ jobs:
           merge-multiple: true
           path: pydantic-core-dist
 
+      - name: Verify pydantic-core dist artifacts provenance
+        if: steps.check-pypi.outputs.already_published != 'true'
+        run: |
+          # Fetch the trusted root once, as `gh attestation verify` otherwise fetches it on every call:
+          gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"
+          printf '%s\0' pydantic-core-dist/* | xargs -0 -P 8 -I {} gh attestation verify {} \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/ci.yml" \
+            --source-ref "$GITHUB_REF" \
+            --source-digest "$GITHUB_SHA" \
+            --deny-self-hosted-runners \
+            --custom-trusted-root "$RUNNER_TEMP/trusted-root.jsonl"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Test pydantic-core wheels integrity
         if: steps.check-pypi.outputs.already_published != 'true'
         run: |
@@ -1011,13 +1222,14 @@ jobs:
     permissions:
       id-token: write
       contents: write
+      attestations: read
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: false
 
@@ -1029,13 +1241,26 @@ jobs:
           name: pydantic_pypi_files
           path: pydantic-dist
 
+      - name: Verify pydantic dist artifacts provenance
+        run: |
+          for f in pydantic-dist/*; do
+            gh attestation verify "$f" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/ci.yml" \
+              --source-ref "$GITHUB_REF" \
+              --source-digest "$GITHUB_SHA" \
+              --deny-self-hosted-runners
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Test pydantic artifacts integrity
         run: |
           for whl in pydantic-dist/*.whl; do unzip -qt "$whl"; done
           uv run --no-sync twine check --strict pydantic-dist/*
 
       - name: Upload package to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           packages-dir: pydantic-dist/
 
@@ -1046,7 +1271,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.14'
           enable-cache: false

@@ -143,7 +143,7 @@ def test_key_error():
 def test_mapping_error():
     class BadMapping(Mapping):
         def __getitem__(self, key):
-            raise None
+            raise None  # noqa: B016
 
         def __iter__(self):
             raise RuntimeError('intentional error')
@@ -214,7 +214,7 @@ def test_mapping_error_yield_1(mapping_items):
         (
             {'max_length': 3},
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
-            Err('Dictionary should have at most 3 items after validation, not 4 [type=too_long,'),
+            Err('Dictionary should have at most 3 items after validation, not more [type=too_long,'),
         ),
     ],
 )
@@ -255,7 +255,7 @@ def test_json_dict_complex_key():
     assert v.validate_json('{"1+2j": 2, "-3": 4}') == {complex(1, 2): 2, complex(-3, 0): 4}
     assert v.validate_json('{"1+2j": 2, "infj": 4}') == {complex(1, 2): 2, complex(0, float('inf')): 4}
     with pytest.raises(ValidationError, match='Input should be a valid complex string'):
-        v.validate_json('{"1+2j": 2, "": 4}') == {complex(1, 2): 2, complex(0, float('inf')): 4}
+        assert v.validate_json('{"1+2j": 2, "": 4}') == {complex(1, 2): 2, complex(0, float('inf')): 4}
 
 
 @pytest.mark.parametrize(

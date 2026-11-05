@@ -1,13 +1,14 @@
 use pyo3::exceptions::{PyException, PyValueError};
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString};
+use pyo3::types::{PyDict, PyString, PyTuple};
 
 use crate::input::InputType;
 
 use super::line_error::ToErrorValue;
 use super::{ErrorType, ValError};
 
-#[pyclass(extends=PyException, module="pydantic_core._pydantic_core", skip_from_py_object)]
+#[pyclass(extends=PyException, module="pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
 pub struct PydanticOmit {}
 
@@ -33,7 +34,7 @@ impl PydanticOmit {
     }
 }
 
-#[pyclass(extends=PyException, module="pydantic_core._pydantic_core", skip_from_py_object)]
+#[pyclass(extends=PyException, module="pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
 pub struct PydanticUseDefault {}
 
@@ -53,7 +54,7 @@ impl PydanticUseDefault {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, frozen, skip_from_py_object)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, frozen)]
 #[derive(Debug, Clone, Default)]
 pub struct PydanticCustomError {
     error_type: String,
@@ -103,6 +104,29 @@ impl PydanticCustomError {
             None => Ok(format!("{msg} [type={}, context=None]", self.error_type)),
         }
     }
+
+    // Instances created from Rust don't go through `BaseException.__init__()` and have empty `args`,
+    // so `BaseException.__reduce__()` can't be relied on:
+    fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<Bound<'py, PyTuple>> {
+        let py = slf.py();
+        let args = slf.getattr(intern!(py, "args"))?.cast_into::<PyTuple>()?;
+        // Only use the stored values if `args` is empty, as `args` reflects the arguments
+        // passed to (potentially overridden) `__new__()` implementations of subclasses:
+        let args = if args.is_empty() {
+            let this = slf.get();
+            match &this.context {
+                Some(context) => (&this.error_type, &this.message_template, context).into_pyobject(py)?,
+                None => (&this.error_type, &this.message_template).into_pyobject(py)?,
+            }
+        } else {
+            args
+        };
+        match slf.getattr_opt(intern!(py, "__dict__"))? {
+            // e.g. attributes set on subclass instances, or exception notes:
+            Some(dict) if dict.is_truthy()? => (slf.get_type(), args, dict).into_pyobject(py),
+            _ => (slf.get_type(), args).into_pyobject(py),
+        }
+    }
 }
 
 impl PydanticCustomError {
@@ -134,7 +158,7 @@ impl PydanticCustomError {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object, frozen)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", frozen)]
 #[derive(Debug, Clone)]
 pub struct PydanticKnownError {
     error_type: ErrorType,

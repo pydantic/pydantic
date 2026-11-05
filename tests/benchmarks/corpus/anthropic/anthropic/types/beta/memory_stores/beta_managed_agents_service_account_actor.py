@@ -1,0 +1,11 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing_extensions import Literal
+from ...._models import BaseModel
+
+class BetaManagedAgentsServiceAccountActor(BaseModel):
+    """
+    A workload authenticated as a service account, for example via Workload Identity Federation.
+    """
+    service_account_id: str
+    type: Literal['service_account_actor']

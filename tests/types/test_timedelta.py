@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Annotated
 
 import pytest
+from pydantic_core import SchemaError
 
 from pydantic import Field, TypeAdapter, ValidationError
 
@@ -63,3 +64,38 @@ def test_strict_timedelta():
             'input': '1 days',
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'value',
+    [timedelta(0), timedelta(minutes=45), timedelta(minutes=-30), timedelta(days=3), 'PT1H', 900],
+)
+def test_timedelta_multiple_of(value: object) -> None:
+
+    ta = TypeAdapter(Annotated[timedelta, Field(multiple_of=timedelta(minutes=15))])
+    assert ta.validate_python(value) % timedelta(minutes=15) == timedelta(0)
+
+
+def test_timedelta_multiple_of_error() -> None:
+    ta = TypeAdapter(Annotated[timedelta, Field(multiple_of=timedelta(minutes=15))])
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(timedelta(minutes=50))
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'multiple_of',
+            'loc': (),
+            'msg': 'Input should be a multiple of 15 minutes',
+            'input': timedelta(minutes=50),
+            'ctx': {'multiple_of': '15 minutes'},
+        }
+    ]
+
+
+@pytest.mark.parametrize('multiple_of', [timedelta(0), timedelta(minutes=-15)])
+def test_timedelta_multiple_of_invalid_constraint(multiple_of: timedelta) -> None:
+    """https://github.com/pydantic/pydantic/issues/13868"""
+
+    with pytest.raises(SchemaError, match="'multiple_of' must be greater than 0"):
+        TypeAdapter(Annotated[timedelta, Field(multiple_of=multiple_of)])

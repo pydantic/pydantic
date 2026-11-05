@@ -16,12 +16,12 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from typing import Any, TypeAlias, TypeVar, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-import typing_extensions
 from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic._internal._import_utils import import_cached_field_info
+from pydantic._internal._typing_extra import is_namedtuple
 from pydantic.errors import PydanticSchemaGenerationError
 
 
@@ -60,6 +60,8 @@ def sequence_validator(
         return v_list
     elif value_type is tuple:
         return tuple(v_list)
+    elif is_namedtuple(value_type):
+        return value_type(*v_list)
     else:
         # best guess at how to re-create the original type, more custom construction logic might be required
         return value_type(v_list)  # type: ignore[call-arg]
@@ -396,14 +398,25 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'max_digits' to supplied value {x}")
 
 
-def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
+def decimal_places_validator(x: Any, decimal_places: Any, max_digits: Any = None) -> Any:
     try:
-        (decimal_places_, _), (normalized_decimal_places, _) = _extract_decimal_digits_info(x)
+        (decimal_places_, num_digits), (normalized_decimal_places, normalized_num_digits) = (
+            _extract_decimal_digits_info(x)
+        )
         if (decimal_places_ > decimal_places) and (normalized_decimal_places > decimal_places):
             raise PydanticKnownError(
                 'decimal_max_places',
                 {'decimal_places': decimal_places},
             )
+        if max_digits is not None:
+            max_whole_digits = max(max_digits - decimal_places, 0)
+            if (num_digits - decimal_places_ > max_whole_digits) and (
+                normalized_num_digits - normalized_decimal_places > max_whole_digits
+            ):
+                raise PydanticKnownError(
+                    'decimal_whole_digits',
+                    {'whole_digits': max_whole_digits},
+                )
         return x
     except TypeError:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
@@ -435,6 +448,8 @@ _defaultdict_allowed_default_types: dict[type[Any], type[Any]] = {
     dict: dict,
     collections.abc.Mapping: dict,
     collections.abc.MutableMapping: dict,
+    collections.OrderedDict: collections.OrderedDict,
+    collections.Counter: collections.Counter,
 }
 
 if sys.version_info >= (3, 15):
@@ -487,7 +502,7 @@ def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
         return value
     try:
         return ZoneInfo(value)
-    except (ZoneInfoNotFoundError, ValueError, TypeError):
+    except (ZoneInfoNotFoundError, ValueError, TypeError, OSError):
         raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
 
@@ -517,11 +532,6 @@ IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
 MAPPING_ORIGIN_MAP: dict[Any, Any] = {
     typing.DefaultDict: collections.defaultdict,  # noqa: UP006
     collections.defaultdict: collections.defaultdict,
-    typing.OrderedDict: collections.OrderedDict,  # noqa: UP006
-    collections.OrderedDict: collections.OrderedDict,
-    typing_extensions.OrderedDict: collections.OrderedDict,
-    typing.Counter: collections.Counter,
-    collections.Counter: collections.Counter,
     # this doesn't handle subclasses of these
     typing.Mapping: dict,
     typing.MutableMapping: dict,

@@ -1,6 +1,7 @@
 import datetime
-from collections.abc import Callable, Mapping
-from typing import Any, Generic, Literal, TypeAlias, TypeVar, final, overload
+from collections.abc import Callable, Iterable, Iterator, Mapping, MutableSet
+from collections.abc import Set as AbstractSet
+from typing import Any, ClassVar, Generic, Literal, TypeAlias, TypeVar, final, overload
 
 from _typeshed import SupportsAllComparisons
 from typing_extensions import LiteralString, Self
@@ -11,44 +12,44 @@ from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType, ExtraBe
 from . import _schema_gather as _schema_gather
 
 __all__ = [
-    '__version__',
-    'build_profile',
-    'build_info',
-    '_recursion_limit',
     'ArgsKwargs',
-    'SchemaValidator',
-    'SchemaSerializer',
-    'Url',
     'MultiHostUrl',
-    'SchemaError',
-    'ValidationError',
     'PydanticCustomError',
     'PydanticKnownError',
     'PydanticOmit',
-    'PydanticUseDefault',
     'PydanticSerializationError',
     'PydanticSerializationUnexpectedValue',
     'PydanticUndefined',
     'PydanticUndefinedType',
+    'PydanticUseDefault',
+    'SchemaError',
+    'SchemaSerializer',
+    'SchemaValidator',
     'Some',
-    'to_json',
-    'from_json',
-    'to_jsonable_python',
-    'list_all_errors',
     'TzInfo',
+    'Url',
+    'ValidationError',
+    '__version__',
+    '_recursion_limit',
     '_schema_gather',
+    'build_info',
+    'build_profile',
+    'from_json',
+    'list_all_errors',
+    'to_json',
+    'to_jsonable_python',
 ]
 __version__: str
 build_profile: str
 build_info: str
 _recursion_limit: int
 
-_T = TypeVar('_T', default=Any, covariant=True)
+_T_co = TypeVar('_T_co', default=Any, covariant=True)
 
-_StringInput: TypeAlias = 'dict[str, _StringInput]'
+_StringInput: TypeAlias = dict[str, _StringInput]
 
 @final
-class Some(Generic[_T]):
+class Some(Generic[_T_co]):
     """
     Similar to Rust's [`Option::Some`](https://doc.rust-lang.org/std/option/enum.Option.html) type, this
     identifies a value as being present, and provides a way to access it.
@@ -59,7 +60,7 @@ class Some(Generic[_T]):
     __match_args__ = ('value',)
 
     @property
-    def value(self) -> _T:
+    def value(self) -> _T_co:
         """
         Returns the value wrapped by `Some`.
         """
@@ -628,8 +629,6 @@ class Url(SupportsAllComparisons):
     @property
     def fragment(self) -> str | None: ...
     def unicode_string(self) -> str: ...
-    def __repr__(self) -> str: ...
-    def __str__(self) -> str: ...
     def __deepcopy__(self, memo: dict) -> str: ...
     @classmethod
     def build(
@@ -666,8 +665,6 @@ class MultiHostUrl(SupportsAllComparisons):
     def fragment(self) -> str | None: ...
     def hosts(self) -> list[MultiHostHost]: ...
     def unicode_string(self) -> str: ...
-    def __repr__(self) -> str: ...
-    def __str__(self) -> str: ...
     def __deepcopy__(self, memo: dict) -> Self: ...
     @classmethod
     @overload
@@ -786,7 +783,7 @@ class ValidationError(ValueError):
             a JSON string.
         """
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # noqa: PYI029
         """
         A string representation of the validation error.
 
@@ -1116,3 +1113,62 @@ class TzInfo(datetime.tzinfo):
         More info can be found at [`tzinfo.fromutc`][datetime.tzinfo.fromutc]."""
 
     def __deepcopy__(self, _memo: dict[Any, Any]) -> TzInfo: ...
+
+@final
+class ModelFieldsSet(MutableSet[str]):
+    """The set of field names explicitly set on a model instance, available as `__pydantic_fields_set__`.
+
+    While this class is not a subclass of `set`, it implements the same API and is registered as a virtual
+    subclass of [`collections.abc.MutableSet`][]. A plain [`set`][] can be used interchangeably.
+    """
+
+    def __init__(self, iterable: Iterable[str] = (), field_names: Iterable[str] = ()) -> None:
+        """Create a new set from the elements of `iterable`, for a model with the provided `field_names`.
+
+        Args:
+            iterable: The elements of the set.
+            field_names: The names of the fields of the model, in definition order.
+        """
+
+    def __contains__(self, value: object, /) -> bool: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def __len__(self) -> int: ...
+    def __eq__(self, other: object, /) -> bool: ...
+    def __ne__(self, other: object, /) -> bool: ...
+    def __le__(self, other: AbstractSet[Any], /) -> bool: ...
+    def __lt__(self, other: AbstractSet[Any], /) -> bool: ...
+    def __ge__(self, other: AbstractSet[Any], /) -> bool: ...
+    def __gt__(self, other: AbstractSet[Any], /) -> bool: ...
+    __hash__: ClassVar[None]  # type: ignore[assignment]
+    def __copy__(self) -> Self: ...
+    def __deepcopy__(self, memo: dict[int, Any] | None, /) -> Self: ...
+    def __reduce__(self) -> tuple[Any, ...]: ...
+    def add(self, value: str, /) -> None: ...
+    def discard(self, value: str, /) -> None: ...
+    def remove(self, value: str, /) -> None: ...
+    def pop(self) -> str: ...
+    def clear(self) -> None: ...
+    def copy(self) -> Self: ...
+    def update(self, *others: Iterable[str]) -> None: ...
+    def intersection_update(self, *others: Iterable[Any]) -> None: ...
+    def difference_update(self, *others: Iterable[Any]) -> None: ...
+    def symmetric_difference_update(self, other: Iterable[str], /) -> None: ...
+    def union(self, *others: Iterable[str]) -> Self: ...
+    def intersection(self, *others: Iterable[Any]) -> Self: ...
+    def difference(self, *others: Iterable[Any]) -> Self: ...
+    def symmetric_difference(self, other: Iterable[str], /) -> Self: ...
+    def issubset(self, other: Iterable[Any], /) -> bool: ...
+    def issuperset(self, other: Iterable[Any], /) -> bool: ...
+    def isdisjoint(self, other: Iterable[Any], /) -> bool: ...
+    def __or__(self, other: AbstractSet[str], /) -> Self: ...  # type: ignore[override]
+    def __ror__(self, other: AbstractSet[str], /) -> set[str]: ...
+    def __ior__(self, other: AbstractSet[str], /) -> Self: ...  # type: ignore[override]
+    def __and__(self, other: AbstractSet[Any], /) -> Self: ...
+    def __rand__(self, other: AbstractSet[Any], /) -> set[Any]: ...
+    def __iand__(self, other: AbstractSet[Any], /) -> Self: ...
+    def __sub__(self, other: AbstractSet[Any], /) -> Self: ...
+    def __rsub__(self, other: AbstractSet[Any], /) -> set[Any]: ...
+    def __isub__(self, other: AbstractSet[Any], /) -> Self: ...
+    def __xor__(self, other: AbstractSet[str], /) -> Self: ...  # type: ignore[override]
+    def __rxor__(self, other: AbstractSet[str], /) -> set[str]: ...
+    def __ixor__(self, other: AbstractSet[str], /) -> Self: ...  # type: ignore[override]

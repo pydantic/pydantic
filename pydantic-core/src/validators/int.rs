@@ -98,9 +98,17 @@ pub struct ConstrainedIntValidator {
 impl ConstrainedIntValidator {
     fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
+        let multiple_of = validate_as_int(schema, intern!(py, "multiple_of"))?;
+        if let Some(ref m) = multiple_of
+            && m <= &Int::I64(0)
+        {
+            return Err(PyValueError::new_err(
+                "'multiple_of' must be a finite number greater than 0",
+            ));
+        }
         Ok(CombinedValidator::ConstrainedInt(Box::new(Self {
             strict: is_strict(schema, config)?,
-            multiple_of: validate_as_int(schema, intern!(py, "multiple_of"))?,
+            multiple_of,
             le: validate_as_int(schema, intern!(py, "le"))?,
             lt: validate_as_int(schema, intern!(py, "lt"))?,
             ge: validate_as_int(schema, intern!(py, "ge"))?,

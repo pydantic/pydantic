@@ -123,7 +123,7 @@ print(field_info.metadata)
 #> [Gt(gt=1), WithJsonSchema(json_schema={'extra': 'data'}, mode=None)]
 ```
 
-/// deprecated-removed | v2.11 v3
+/// version-changed | v3
 [`model_fields`][pydantic.main.BaseModel.model_fields] can only be accessed from the class object, not the instance.
 ///
 
@@ -141,12 +141,6 @@ class User(BaseModel):
     name: str = 'John Doe'
     age: int = Field(default=20)
 ```
-
-/// version-changed | v2
-[In Pydantic V1](../migration.md#required-optional-and-nullable-fields), a type annotated as [`Any`][typing.Any]
-or wrapped by [`Optional`][typing.Optional] would be given an implicit default of `None` even if no
-default was explicitly specified. This is no longer the case in Pydantic V2.
-///
 
 You can also pass a callable to the `default_factory` argument that will be called to generate a default value:
 
@@ -658,6 +652,9 @@ except ValidationError as e:
 ```
 
 1. Since `name` field is frozen, the assignment is not allowed.
+
+Fields can also be made immutable using the [`Final`][typing.Final] type qualifier (e.g. `name: Final[str]`).
+If no type is provided (e.g. `name: Final = 'John'`), it is inferred from the default value.
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->

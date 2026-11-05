@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::sync::Arc;
 
 use pyo3::IntoPyObjectExt;
+use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -183,10 +184,18 @@ impl BuildValidator for ConstrainedFloatValidator {
         _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
+        let multiple_of: Option<f64> = schema.get_as(intern!(py, "multiple_of"))?;
+        if let Some(m) = multiple_of
+            && (!m.is_finite() || m <= 0.0)
+        {
+            return Err(PyValueError::new_err(
+                "'multiple_of' must be a finite number greater than 0",
+            ));
+        }
         Ok(CombinedValidator::ConstrainedFloat(Self {
             strict: is_strict(schema, config)?,
             allow_inf_nan: schema_or_config_same(schema, config, intern!(py, "allow_inf_nan"))?.unwrap_or(true),
-            multiple_of: schema.get_as(intern!(py, "multiple_of"))?,
+            multiple_of,
             le: schema.get_as(intern!(py, "le"))?,
             lt: schema.get_as(intern!(py, "lt"))?,
             ge: schema.get_as(intern!(py, "ge"))?,

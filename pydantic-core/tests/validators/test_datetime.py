@@ -41,7 +41,7 @@ def test_constraints_schema_validation() -> None:
         (b'2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
         ((1,), Err('Input should be a valid datetime [type=datetime_type')),
         (time(1, 2, 3), Err('Input should be a valid datetime [type=datetime_type')),
-        (Decimal('1654646400'), datetime(2022, 6, 8, tzinfo=timezone.utc)),
+        (Decimal(1654646400), datetime(2022, 6, 8, tzinfo=timezone.utc)),
         ('1654646400', datetime(2022, 6, 8, tzinfo=timezone.utc)),
         (Decimal('1654646400.123456'), datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
         (Decimal('1654646400.1234564'), datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
@@ -81,8 +81,7 @@ def test_datetime(input_value, expected):
     v = SchemaValidator(cs.datetime_schema())
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            result = v.validate_python(input_value)
-            print(f'input_value={input_value} result={result}')
+            v.validate_python(input_value)
     else:
         output = v.validate_python(input_value)
         assert output == expected
@@ -97,7 +96,7 @@ def test_datetime(input_value, expected):
         (b'2022-06-08T12:13:14', Err('Input should be a valid datetime [type=datetime_type')),
         (time(1, 2, 3), Err('Input should be a valid datetime [type=datetime_type')),
         (1654646400, Err('Input should be a valid datetime [type=datetime_type')),
-        (Decimal('1654646400'), Err('Input should be a valid datetime [type=datetime_type')),
+        (Decimal(1654646400), Err('Input should be a valid datetime [type=datetime_type')),
     ],
 )
 def test_datetime_strict(input_value, expected):
@@ -537,6 +536,16 @@ def test_tz_cmp() -> None:
         ),
         ('infer', 8640000000.0, datetime(2243, 10, 17, tzinfo=timezone.utc)),
         ('infer', 92534400000.0, datetime(1972, 12, 7, tzinfo=timezone.utc)),
+        # negative fractional timestamps:
+        ('seconds', -0.125, datetime(1969, 12, 31, 23, 59, 59, 875000, tzinfo=timezone.utc)),
+        ('seconds', '-0.125', datetime(1969, 12, 31, 23, 59, 59, 875000, tzinfo=timezone.utc)),
+        ('milliseconds', -125.5, datetime(1969, 12, 31, 23, 59, 59, 874500, tzinfo=timezone.utc)),
+        ('milliseconds', '-125.5', datetime(1969, 12, 31, 23, 59, 59, 874500, tzinfo=timezone.utc)),
+        ('infer', -1.125, datetime(1969, 12, 31, 23, 59, 58, 875000, tzinfo=timezone.utc)),
+        # fractional timestamps as strings use the configured unit:
+        ('milliseconds', '125.5', datetime(1970, 1, 1, 0, 0, 0, 125500, tzinfo=timezone.utc)),
+        ('seconds', '20000000001.5', datetime(2603, 10, 11, 11, 33, 21, 500000, tzinfo=timezone.utc)),
+        ('infer', '30000000000000.5', datetime(2920, 8, 30, 5, 20, 0, 500, tzinfo=timezone.utc)),
     ],
 )
 def test_val_temporal_unit_datetime(val_temporal_unit, input_value, expected):

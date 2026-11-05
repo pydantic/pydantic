@@ -163,55 +163,55 @@ def test_typed_dict_literal():
         core_schema.union_schema(
             [
                 core_schema.typed_dict_schema(
-                    dict(
-                        pet_type=core_schema.typed_dict_field(core_schema.literal_schema(['cat'])),
-                        sound=core_schema.typed_dict_field(
+                    {
+                        'pet_type': core_schema.typed_dict_field(core_schema.literal_schema(['cat'])),
+                        'sound': core_schema.typed_dict_field(
                             core_schema.int_schema(serialization=core_schema.format_ser_schema('04d'))
                         ),
-                    )
+                    }
                 ),
                 core_schema.typed_dict_schema(
-                    dict(
-                        pet_type=core_schema.typed_dict_field(core_schema.literal_schema(['dog'])),
-                        sound=core_schema.typed_dict_field(
+                    {
+                        'pet_type': core_schema.typed_dict_field(core_schema.literal_schema(['dog'])),
+                        'sound': core_schema.typed_dict_field(
                             core_schema.float_schema(serialization=core_schema.format_ser_schema('0.3f'))
                         ),
-                    )
+                    }
                 ),
             ]
         )
     )
 
-    assert s.to_python(dict(pet_type='cat', sound=3), mode='json') == {'pet_type': 'cat', 'sound': '0003'}
-    assert s.to_python(dict(pet_type='dog', sound=3), mode='json') == {'pet_type': 'dog', 'sound': '3.000'}
+    assert s.to_python({'pet_type': 'cat', 'sound': 3}, mode='json') == {'pet_type': 'cat', 'sound': '0003'}
+    assert s.to_python({'pet_type': 'dog', 'sound': 3}, mode='json') == {'pet_type': 'dog', 'sound': '3.000'}
 
 
 def test_typed_dict_missing():
     s = SchemaSerializer(
         core_schema.union_schema(
             [
-                core_schema.typed_dict_schema(dict(foo=core_schema.typed_dict_field(core_schema.int_schema()))),
+                core_schema.typed_dict_schema({'foo': core_schema.typed_dict_field(core_schema.int_schema())}),
                 core_schema.typed_dict_schema(
-                    dict(
-                        foo=core_schema.typed_dict_field(
+                    {
+                        'foo': core_schema.typed_dict_field(
                             core_schema.int_schema(
                                 serialization=core_schema.format_ser_schema('04d', when_used='always')
                             )
                         ),
-                        bar=core_schema.typed_dict_field(core_schema.int_schema()),
-                    )
+                        'bar': core_schema.typed_dict_field(core_schema.int_schema()),
+                    }
                 ),
             ]
         )
     )
 
-    assert s.to_python(dict(foo=1)) == {'foo': 1}
-    assert s.to_python(dict(foo=1), mode='json') == {'foo': 1}
-    assert s.to_json(dict(foo=1)) == b'{"foo":1}'
+    assert s.to_python({'foo': 1}) == {'foo': 1}
+    assert s.to_python({'foo': 1}, mode='json') == {'foo': 1}
+    assert s.to_json({'foo': 1}) == b'{"foo":1}'
 
-    assert s.to_python(dict(foo=1, bar=2)) == {'foo': '0001', 'bar': 2}
-    assert s.to_python(dict(foo=1, bar=2), mode='json') == {'foo': '0001', 'bar': 2}
-    assert s.to_json(dict(foo=1, bar=2)) == b'{"foo":"0001","bar":2}'
+    assert s.to_python({'foo': 1, 'bar': 2}) == {'foo': '0001', 'bar': 2}
+    assert s.to_python({'foo': 1, 'bar': 2}, mode='json') == {'foo': '0001', 'bar': 2}
+    assert s.to_json({'foo': 1, 'bar': 2}) == b'{"foo":"0001","bar":2}'
 
 
 def test_typed_dict_extra():
@@ -222,34 +222,34 @@ def test_typed_dict_extra():
         core_schema.union_schema(
             [
                 core_schema.typed_dict_schema(
-                    dict(
-                        foo=core_schema.typed_dict_field(core_schema.int_schema()),
-                        bar=core_schema.typed_dict_field(core_schema.nullable_schema(core_schema.int_schema())),
-                    )
+                    {
+                        'foo': core_schema.typed_dict_field(core_schema.int_schema()),
+                        'bar': core_schema.typed_dict_field(core_schema.nullable_schema(core_schema.int_schema())),
+                    }
                 ),
                 core_schema.typed_dict_schema(
-                    dict(
-                        foo=core_schema.typed_dict_field(
+                    {
+                        'foo': core_schema.typed_dict_field(
                             core_schema.int_schema(serialization=core_schema.format_ser_schema('04d'))
                         )
-                    )
+                    }
                 ),
             ]
         )
     )
 
-    assert s.to_python(dict(foo=1, bar=2)) == {'foo': 1, 'bar': 2}
-    assert s.to_python(dict(foo=1, bar=2), mode='json') == {'foo': 1, 'bar': 2}
-    assert s.to_json(dict(foo=1, bar=2)) == b'{"foo":1,"bar":2}'
-    assert s.to_python(dict(foo=1)) == {'foo': 1}
-    assert s.to_python(dict(foo=1), mode='json') == {'foo': '0001'}
-    assert s.to_json(dict(foo=1)) == b'{"foo":"0001"}'
+    assert s.to_python({'foo': 1, 'bar': 2}) == {'foo': 1, 'bar': 2}
+    assert s.to_python({'foo': 1, 'bar': 2}, mode='json') == {'foo': 1, 'bar': 2}
+    assert s.to_json({'foo': 1, 'bar': 2}) == b'{"foo":1,"bar":2}'
+    assert s.to_python({'foo': 1}) == {'foo': 1}
+    assert s.to_python({'foo': 1}, mode='json') == {'foo': '0001'}
+    assert s.to_json({'foo': 1}) == b'{"foo":"0001"}'
 
-    assert s.to_python(dict(foo=1, bar=None), mode='json', exclude_none=True) == {'foo': 1}
-    assert s.to_json(dict(foo=1, bar=None), exclude_none=True) == b'{"foo":1}'
+    assert s.to_python({'foo': 1, 'bar': None}, mode='json', exclude_none=True) == {'foo': 1}
+    assert s.to_json({'foo': 1, 'bar': None}, exclude_none=True) == b'{"foo":1}'
 
-    assert s.to_python(dict(foo=1), mode='json', exclude_none=True) == {'foo': '0001'}
-    assert s.to_json(dict(foo=1), exclude_none=True) == b'{"foo":"0001"}'
+    assert s.to_python({'foo': 1}, mode='json', exclude_none=True) == {'foo': '0001'}
+    assert s.to_json({'foo': 1}, exclude_none=True) == b'{"foo":"0001"}'
 
 
 def test_typed_dict_different_fields():
@@ -260,29 +260,29 @@ def test_typed_dict_different_fields():
         core_schema.union_schema(
             [
                 core_schema.typed_dict_schema(
-                    dict(
-                        foo=core_schema.typed_dict_field(core_schema.int_schema()),
-                        bar=core_schema.typed_dict_field(core_schema.int_schema()),
-                    )
+                    {
+                        'foo': core_schema.typed_dict_field(core_schema.int_schema()),
+                        'bar': core_schema.typed_dict_field(core_schema.int_schema()),
+                    }
                 ),
                 core_schema.typed_dict_schema(
-                    dict(
-                        spam=core_schema.typed_dict_field(core_schema.int_schema()),
-                        ham=core_schema.typed_dict_field(
+                    {
+                        'spam': core_schema.typed_dict_field(core_schema.int_schema()),
+                        'ham': core_schema.typed_dict_field(
                             core_schema.int_schema(serialization=core_schema.format_ser_schema('04d'))
                         ),
-                    )
+                    }
                 ),
             ]
         )
     )
 
-    assert s.to_python(dict(foo=1, bar=2)) == {'foo': 1, 'bar': 2}
-    assert s.to_python(dict(foo=1, bar=2), mode='json') == {'foo': 1, 'bar': 2}
-    assert s.to_json(dict(foo=1, bar=2)) == b'{"foo":1,"bar":2}'
-    assert s.to_python(dict(spam=1, ham=2)) == {'spam': 1, 'ham': 2}
-    assert s.to_python(dict(spam=1, ham=2), mode='json') == {'spam': 1, 'ham': '0002'}
-    assert s.to_json(dict(spam=1, ham=2)) == b'{"spam":1,"ham":"0002"}'
+    assert s.to_python({'foo': 1, 'bar': 2}) == {'foo': 1, 'bar': 2}
+    assert s.to_python({'foo': 1, 'bar': 2}, mode='json') == {'foo': 1, 'bar': 2}
+    assert s.to_json({'foo': 1, 'bar': 2}) == b'{"foo":1,"bar":2}'
+    assert s.to_python({'spam': 1, 'ham': 2}) == {'spam': 1, 'ham': 2}
+    assert s.to_python({'spam': 1, 'ham': 2}, mode='json') == {'spam': 1, 'ham': '0002'}
+    assert s.to_json({'spam': 1, 'ham': 2}) == b'{"spam":1,"ham":"0002"}'
 
 
 def test_dataclass_union():
@@ -405,7 +405,7 @@ def test_union_literal_with_other_type(data, json_value):
 
 def test_union_serializes_model_subclass_from_definition() -> None:
     class BaseModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         def __init__(self, **kwargs: Any):
             for key, value in kwargs.items():
@@ -458,7 +458,7 @@ def test_union_serializes_model_subclass_from_definition() -> None:
 
 def test_union_serializes_list_of_model_subclass_from_definition() -> None:
     class BaseModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
         def __init__(self, **kwargs: Any):
             for key, value in kwargs.items():
@@ -512,7 +512,7 @@ def test_union_serializes_list_of_model_subclass_from_definition() -> None:
     assert s.to_python([DBUser(name='John', password='secret')]) == [{'name': 'John'}]
 
 
-EXAMPLE_UUID = uuid.uuid4()
+EXAMPLE_UUID = uuid.UUID('12345678-1234-5678-1234-567812345678')
 
 
 class IntSubclass(int):
@@ -531,8 +531,8 @@ class IntSubclass(int):
         (
             core_schema.decimal_schema(),
             core_schema.int_schema(),
-            Decimal('1'),
-            Decimal('1'),
+            Decimal(1),
+            Decimal(1),
         ),
         (core_schema.decimal_schema(), core_schema.int_schema(), 1, 1),
         (
@@ -544,8 +544,8 @@ class IntSubclass(int):
         (
             core_schema.decimal_schema(),
             core_schema.str_schema(),
-            Decimal('_1'),
-            Decimal('_1'),
+            Decimal(1),
+            Decimal(1),
         ),
         (
             core_schema.decimal_schema(),
@@ -590,7 +590,7 @@ def test_union_serializer_picks_exact_type_over_subclass(
         (
             core_schema.decimal_schema(),
             core_schema.int_schema(),
-            Decimal('1'),
+            Decimal(1),
             '1',
         ),
         (core_schema.decimal_schema(), core_schema.int_schema(), 1, 1),
@@ -603,7 +603,7 @@ def test_union_serializer_picks_exact_type_over_subclass(
         (
             core_schema.decimal_schema(),
             core_schema.str_schema(),
-            Decimal('_1'),
+            Decimal(1),
             '1',
         ),
         (

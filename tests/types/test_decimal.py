@@ -4,7 +4,7 @@ from typing import Annotated
 import pytest
 from pydantic_core import SchemaError
 
-from pydantic import AllowInfNan, BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import AfterValidator, AllowInfNan, BaseModel, Field, TypeAdapter, ValidationError
 
 pos_int_values = 'Inf', '+Inf', 'Infinity', '+Infinity'
 neg_int_values = '-Inf', '-Infinity'
@@ -331,8 +331,7 @@ def test_decimal_validation(mode, type_args, value, result):
 
     if not isinstance(result, Decimal):
         with pytest.raises(ValidationError) as exc_info:
-            m = Model(foo=value)
-            print(f'unexpected result: {m!r}')
+            Model(foo=value)
         # debug(exc_info.value.errors(include_url=False))
         # dirty_equals.AnyThing() doesn't work with Decimal on PyPy, hence this hack
         errors = exc_info.value.errors(include_url=False)
@@ -343,6 +342,34 @@ def test_decimal_validation(mode, type_args, value, result):
         # assert exc_info.value.json().startswith('[')
     else:
         assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize(
+    ['value', 'result'],
+    [
+        (Decimal('1.23'), Decimal('1.23')),
+        (Decimal('12.3'), 'decimal_whole_digits'),
+        (Decimal('0.123'), 'decimal_max_places'),
+        (Decimal('1234'), 'decimal_max_digits'),
+    ],
+)
+def test_decimal_constraints_python_validators(value: Decimal, result: Decimal | str) -> None:
+    """https://github.com/pydantic/pydantic/issues/13965"""
+
+    ta = TypeAdapter(Annotated[Decimal, AfterValidator(lambda v: v), Field(max_digits=3, decimal_places=2)])
+    core_ta = TypeAdapter(Annotated[Decimal, Field(max_digits=3, decimal_places=2)])
+
+    if isinstance(result, Decimal):
+        assert ta.validate_python(value) == result
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            ta.validate_python(value)
+        with pytest.raises(ValidationError) as core_exc_info:
+            core_ta.validate_python(value)
+
+        errors = exc_info.value.errors(include_url=False)
+        assert errors[0]['type'] == result
+        assert errors == core_exc_info.value.errors(include_url=False)
 
 
 @pytest.mark.parametrize(
@@ -372,3 +399,14 @@ def test_decimal_not_finite(value, result):
 def test_decimal_invalid():
     with pytest.raises(SchemaError, match='allow_inf_nan=True cannot be used with max_digits or decimal_places'):
         TypeAdapter(Annotated[Decimal, Field(allow_inf_nan=True, max_digits=4)])
+
+
+@pytest.mark.parametrize(
+    'multiple_of',
+    [Decimal('0'), Decimal('-0'), Decimal('-0.1'), Decimal('NaN'), Decimal('Infinity'), Decimal('-Infinity')],
+)
+def test_decimal_multiple_of_invalid_constraint(multiple_of: Decimal) -> None:
+    """https://github.com/pydantic/pydantic/issues/13860"""
+
+    with pytest.raises(SchemaError, match="'multiple_of' must be a finite number greater than 0"):
+        TypeAdapter(Annotated[Decimal, Field(multiple_of=multiple_of)])

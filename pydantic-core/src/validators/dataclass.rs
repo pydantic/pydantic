@@ -182,7 +182,7 @@ impl Validator for DataclassArgsValidator {
         // go through fields getting the value from args or kwargs and validating it
         for (index, field) in self.fields.iter().enumerate() {
             if !field.init {
-                match field.validator.default_value(py, Some(field.name.clone()), state) {
+                match field.validator.default_value(py, Some(field.name.as_str()), state) {
                     Ok(Some(value)) => {
                         // Default value exists, and passed validation if required
                         set_item!(field, value);
@@ -258,7 +258,7 @@ impl Validator for DataclassArgsValidator {
                 },
                 // found neither, check if there is a default value, otherwise error
                 (None, None) => {
-                    match field.validator.default_value(py, Some(field.name.clone()), state) {
+                    match field.validator.default_value(py, Some(field.name.as_str()), state) {
                         Ok(Some(value)) => {
                             // Default value exists, and passed validation if required
                             set_item!(field, value);
@@ -302,6 +302,8 @@ impl Validator for DataclassArgsValidator {
         if let Some(kwargs) = args.kwargs()
             && kwargs.len() != used_keys.len()
         {
+            // Built lazily, only if an extra key needs to be checked against it
+            let mut field_names: Option<AHashSet<&str>> = None;
             for result in kwargs.iter() {
                 let (raw_key, value) = result?;
                 match raw_key
@@ -310,7 +312,8 @@ impl Validator for DataclassArgsValidator {
                     .map(ValidationMatch::into_inner)
                 {
                     Ok(either_str) => {
-                        if !used_keys.contains(either_str.as_cow()?.as_ref()) {
+                        let cow = either_str.as_cow()?;
+                        if !used_keys.contains(cow.as_ref()) {
                             // Unknown / extra field
                             match extra_behavior {
                                 ExtraBehavior::Forbid => {
@@ -321,6 +324,12 @@ impl Validator for DataclassArgsValidator {
                                     ));
                                 }
                                 ExtraBehavior::Ignore => {}
+                                // An extra key matching a field name (e.g. when validating by alias) is
+                                // ignored, as it would otherwise override the field.
+                                ExtraBehavior::Allow
+                                    if field_names
+                                        .get_or_insert_with(|| self.fields.iter().map(|field| &*field.name).collect())
+                                        .contains(cow.as_ref()) => {}
                                 ExtraBehavior::Allow => {
                                     if let Some(ref validator) = self.extras_validator {
                                         match validator.validate(py, value.borrow_input(), state) {

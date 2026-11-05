@@ -72,3 +72,13 @@ class Child(ElementWithChildren['Child']):
 
 child = Child(children=[Child()])
 assert_type(child.children, list[Child])
+
+AnyBaseFoo = TypeVar("AnyBaseFoo", bound="BaseFoo")
+
+class BaseFoo:
+    pass
+
+class Foo(BaseModel, Generic[AnyBaseFoo]):
+    pass  # intentionally empty
+
+assert_type(Foo[BaseFoo](), Foo[BaseFoo])

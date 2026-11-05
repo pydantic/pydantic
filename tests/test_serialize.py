@@ -3,6 +3,7 @@ New tests for v2 of serialization logic.
 """
 
 import json
+import pickle
 import re
 import sys
 from collections.abc import Callable
@@ -12,7 +13,12 @@ from re import Pattern
 from typing import Annotated, Any, ClassVar, Optional
 
 import pytest
-from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
+from pydantic_core import (
+    PydanticSerializationError,
+    PydanticSerializationUnexpectedValue,
+    core_schema,
+    to_jsonable_python,
+)
 from typing_extensions import TypedDict
 
 from pydantic import (
@@ -1207,6 +1213,46 @@ def test_subclass_support_unions() -> None:
     assert s.model_dump() == {'pets': [{'name': 'fluffy'}, {'name': 'patches'}]}
 
 
+def test_nested_union_errors_formatted_lazily() -> None:
+    """https://github.com/pydantic/pydantic/issues/14073"""
+
+    repr_calls = 0
+
+    class Pet(BaseModel):
+        name: str
+
+    class Dog(Pet):
+        def __repr__(self) -> str:
+            nonlocal repr_calls
+            repr_calls += 1
+            return super().__repr__()
+
+    caught: list[PydanticSerializationUnexpectedValue] = []
+
+    def wrap(v: Any, handler: SerializerFunctionWrapHandler) -> Any:
+        try:
+            return handler(v)
+        except PydanticSerializationUnexpectedValue as e:
+            caught.append(e)
+            raise
+
+    ta = TypeAdapter(str | list[Annotated[str | Pet, WrapSerializer(wrap)]])
+
+    # The nested union fails during the strict pass of the outer union, and succeeds during the lax one:
+    assert ta.dump_python([Dog(name='fluffy')], warnings='error') == [{'name': 'fluffy'}]
+    assert ta.dump_json([Dog(name='fluffy')], warnings='error') == b'[{"name":"fluffy"}]'
+    assert repr_calls == 0
+
+    err = caught[0]
+    assert str(err) == (
+        'PydanticSerializationUnexpectedValue: Expected `str` - serialized value may not be as expected '
+        "[input_value=Dog(name='fluffy'), input_type=Dog]\n"
+        'PydanticSerializationUnexpectedValue: Expected `Pet` - serialized value may not be as expected '
+        "[input_value=Dog(name='fluffy'), input_type=Dog]"
+    )
+    assert str(pickle.loads(pickle.dumps(err))) == str(err)
+
+
 def test_subclass_support_unions_with_forward_ref() -> None:
     class Bar(BaseModel):
         bar_id: int
@@ -1302,8 +1348,7 @@ def test_plain_serializer_builtin_function() -> None:
     assert MyModel(x=-1).model_dump() == {'x': 1}
 
 
-@pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
-def smart_union_serialization() -> None:
+def test_smart_union_serialization() -> None:
     """Initially reported via https://github.com/pydantic/pydantic/issues/9417, effectively a round tripping problem with type consistency."""
 
     class FloatThenInt(BaseModel):
@@ -1313,9 +1358,13 @@ def smart_union_serialization() -> None:
         value: int | float | str = Field(union_mode='smart')
 
     float_then_int = FloatThenInt(value=100)
+    assert type(float_then_int.value) is int
+    assert type(float_then_int.model_dump()['value']) is int
     assert type(json.loads(float_then_int.model_dump_json())['value']) is int
 
     int_then_float = IntThenFloat(value=100)
+    assert type(int_then_float.value) is int
+    assert type(int_then_float.model_dump()['value']) is int
     assert type(json.loads(int_then_float.model_dump_json())['value']) is int
 
 

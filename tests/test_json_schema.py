@@ -29,7 +29,7 @@ from uuid import UUID
 import pytest
 from annotated_types import Interval
 from dirty_equals import HasRepr
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import TypeAliasType, TypedDict, deprecated
 
@@ -46,8 +46,6 @@ from pydantic import (
     InstanceOf,
     PlainSerializer,
     PlainValidator,
-    PydanticDeprecatedSince20,
-    PydanticDeprecatedSince29,
     PydanticUserError,
     RootModel,
     ValidationError,
@@ -56,9 +54,9 @@ from pydantic import (
     computed_field,
     field_serializer,
     field_validator,
+    with_config,
 )
-from pydantic.color import Color
-from pydantic.config import ConfigDict
+from pydantic.config import ConfigDict, ExtraValues
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.json_schema import (
@@ -173,6 +171,51 @@ def test_validate_by_alias_false_is_scoped_to_its_own_model():
     assert list(json_schema['$defs']['Inner']['properties']) == ['inner_field']
 
     assert Outer.model_validate({'outerAlias': 'x', 'inner': {'inner_field': 'y'}}).outer_field == 'x'
+
+
+def test_explicit_by_alias_overrides_validate_by_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/13993"""
+
+    class Inner(BaseModel):
+        model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
+        inner_field: str = Field(alias='innerAlias')
+
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
+        with_alias: str = Field(alias='withAlias')
+        with_validation_alias: str = Field(validation_alias='withValidationAlias')
+        inner: Inner
+
+    json_schema = Model.model_json_schema(by_alias=True)
+    assert list(json_schema['properties']) == ['withAlias', 'withValidationAlias', 'inner']
+    assert list(json_schema['$defs']['Inner']['properties']) == ['innerAlias']
+    assert list(TypeAdapter(Model).json_schema(by_alias=True)['properties']) == [
+        'withAlias',
+        'withValidationAlias',
+        'inner',
+    ]
+
+    # Consistent with the `by_alias` validation runtime setting:
+    Model.model_validate(
+        {'withAlias': 'a', 'withValidationAlias': 'b', 'inner': {'innerAlias': 'c'}},
+        by_alias=True,
+        by_name=False,
+    )
+
+    assert list(Model.model_json_schema(by_alias=False)['properties']) == [
+        'with_alias',
+        'with_validation_alias',
+        'inner',
+    ]
+
+
+def test_explicit_by_alias_false_overrides_validate_by_alias() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+        my_field: str = Field(alias='myAlias')
+
+    assert list(Model.model_json_schema()['properties']) == ['myAlias']
+    assert list(Model.model_json_schema(by_alias=False)['properties']) == ['my_field']
 
 
 def test_ref_template():
@@ -1979,6 +2022,77 @@ def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601']
 
 
 @pytest.mark.parametrize(
+    'config',
+    [
+        ConfigDict(ser_json_timedelta='float'),
+        ConfigDict(ser_json_temporal='seconds'),
+        ConfigDict(ser_json_temporal='milliseconds'),
+    ],
+)
+def test_model_default_temporal_validation_mode(config: ConfigDict) -> None:
+    """Temporal serialization formats aren't applied to validation JSON Schemas, including defaults."""
+
+    class Model(BaseModel):
+        model_config = config
+
+        duration: timedelta = timedelta(minutes=5)
+        dt: datetime = datetime(2020, 1, 1)
+
+    properties = Model.model_json_schema(mode='validation')['properties']
+    assert properties['duration'] == {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}
+    assert properties['dt'] == {
+        'default': '2020-01-01T00:00:00',
+        'format': 'date-time',
+        'title': 'Dt',
+        'type': 'string',
+    }
+
+
+@pytest.mark.xfail(
+    reason=(
+        'Model instances used as defaults are encoded using their own serializer, '
+        'and the temporal serialization format of the model config cannot be overridden.'
+    ),
+)
+def test_model_instance_default_temporal_validation_mode() -> None:
+    class Inner(BaseModel):
+        model_config = ConfigDict(ser_json_temporal='seconds')
+
+        duration: timedelta = timedelta(minutes=5)
+
+    class Model(BaseModel):
+        inner: Inner = Inner()
+
+    assert Model.model_json_schema(mode='validation')['properties']['inner']['default'] == {'duration': 'PT5M'}
+
+
+def test_stdlib_dataclass_default_uses_config() -> None:
+    """Stdlib dataclasses don't have their own config, so the enclosing one is used to encode them."""
+
+    @dataclasses.dataclass
+    class DC:
+        duration: timedelta = timedelta(minutes=5)
+        data: bytes = b'\xff'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_temporal='milliseconds', ser_json_bytes='base64')
+
+        dc: DC = DC()
+
+    ser_schema = Model.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['dc']['default'] == {'duration': 300000.0, 'data': '_w=='}
+    assert ser_schema['properties']['dc']['default'] == Model().model_dump(mode='json')['dc']
+    assert ser_schema['$defs']['DC']['properties'] == {
+        'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'},
+        'data': {'default': '_w==', 'format': 'base64url', 'title': 'Data', 'type': 'string'},
+    }
+
+    val_schema = Model.model_json_schema(mode='validation')
+    assert val_schema['properties']['dc']['default'] == {'duration': 'PT5M', 'data': '_w=='}
+    assert val_schema['$defs']['DC']['title'] == 'DC'
+
+
+@pytest.mark.parametrize(
     'ser_json_bytes,properties',
     [
         ('base64', {'data': {'default': 'Zm9vYmFy', 'format': 'base64url', 'title': 'Data', 'type': 'string'}}),
@@ -2079,6 +2193,100 @@ def test_typeddict_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
         'title': 'MyTypedDict',
         'type': 'object',
     }
+
+
+def test_stdlib_types_config_propagation() -> None:
+    """Configuration is propagated to stdlib dataclasses and typed dictionaries, unless they have their own config."""
+
+    @dataclasses.dataclass
+    class DCWithoutConfig:
+        name: str
+
+    @dataclasses.dataclass
+    @with_config(str_to_lower=True)
+    class DCWithConfig:
+        name: str
+
+    class TDWithoutConfig(TypedDict):
+        name: str
+
+    @with_config(str_to_lower=True)
+    class TDWithConfig(TypedDict):
+        name: str
+
+    class Parent(BaseModel):
+        model_config = ConfigDict(str_max_length=5, title='ParentTitle')
+
+        dc_1: DCWithoutConfig
+        dc_2: DCWithConfig
+        td_1: TDWithoutConfig
+        td_2: TDWithConfig
+
+    defs = Parent.model_json_schema()['$defs']
+    for name in ('DCWithoutConfig', 'TDWithoutConfig'):
+        assert defs[name]['title'] == name
+        assert defs[name]['properties']['name'] == {'maxLength': 5, 'title': 'Name', 'type': 'string'}
+    for name in ('DCWithConfig', 'TDWithConfig'):
+        assert defs[name]['title'] == name
+        assert defs[name]['properties']['name'] == {'title': 'Name', 'type': 'string'}
+
+    # Consistent with validation:
+    with pytest.raises(ValidationError):
+        Parent(dc_1={'name': 'long name'}, dc_2={'name': 'x'}, td_1={'name': 'x'}, td_2={'name': 'x'})
+    with pytest.raises(ValidationError):
+        Parent(dc_1={'name': 'x'}, dc_2={'name': 'x'}, td_1={'name': 'long name'}, td_2={'name': 'x'})
+    Parent(dc_1={'name': 'x'}, dc_2={'name': 'long name'}, td_1={'name': 'x'}, td_2={'name': 'long name'})
+
+
+@pytest.mark.parametrize(
+    ['extra', 'additional_properties'],
+    [('forbid', False), ('allow', True), ('ignore', None)],
+)
+def test_stdlib_dataclass_extra_config_propagation(extra: ExtraValues, additional_properties: bool | None) -> None:
+    """https://github.com/pydantic/pydantic/issues/13845"""
+
+    @dataclasses.dataclass
+    class DCWithoutConfig:
+        a: int
+
+    @dataclasses.dataclass
+    @with_config(str_to_lower=True)
+    class DCWithConfig:
+        a: int
+
+    @dataclasses.dataclass
+    @with_config(extra='allow')
+    class DCWithExtraConfig:
+        a: int
+
+    @pydantic.dataclasses.dataclass
+    class PydanticDC:
+        a: int
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra=extra)
+
+        dc_1: DCWithoutConfig
+        dc_2: DCWithConfig
+        dc_3: DCWithExtraConfig
+        dc_4: PydanticDC
+
+    defs = Model.model_json_schema()['$defs']
+    assert defs['DCWithoutConfig'].get('additionalProperties') == additional_properties
+    assert 'additionalProperties' not in defs['DCWithConfig']
+    assert defs['DCWithExtraConfig']['additionalProperties'] is True
+    assert 'additionalProperties' not in defs['PydanticDC']
+
+    ta = TypeAdapter(list[DCWithoutConfig], config=ConfigDict(extra=extra))
+    assert ta.json_schema()['$defs']['DCWithoutConfig'].get('additionalProperties') == additional_properties
+
+    # Consistent with validation:
+    if extra == 'forbid':
+        with pytest.raises(ValidationError):
+            Model(dc_1={'a': 1, 'b': 2}, dc_2={'a': 1}, dc_3={'a': 1}, dc_4={'a': 1})
+        with pytest.raises(ValidationError):
+            ta.validate_python([{'a': 1, 'b': 2}])
+    Model(dc_1={'a': 1}, dc_2={'a': 1, 'b': 2}, dc_3={'a': 1, 'b': 2}, dc_4={'a': 1, 'b': 2})
 
 
 def test_str_length_config() -> None:
@@ -2710,19 +2918,6 @@ def test_literal_types() -> None:
     }
 
 
-def test_color_type():
-    class Model(BaseModel):
-        color: Color
-
-    model_schema = Model.model_json_schema()
-    assert model_schema == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'color': {'title': 'Color', 'type': 'string', 'format': 'color'}},
-        'required': ['color'],
-    }
-
-
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         model_config = ConfigDict(extra='forbid')
@@ -2796,7 +2991,7 @@ def test_dataclass_with_extra_ignore():
 def test_dataclass_with_extra_forbid():
     @pydantic.dataclasses.dataclass
     class Model:
-        __pydantic_config__ = ConfigDict(extra='ignore')
+        __pydantic_config__ = ConfigDict(extra='forbid')
         a: str
 
     assert TypeAdapter(Model).json_schema() == {
@@ -2804,6 +2999,7 @@ def test_dataclass_with_extra_forbid():
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
+        'additionalProperties': False,
     }
 
 
@@ -3526,10 +3722,6 @@ def test_schema_for_generic_field():
             self.data = data
 
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
-
-        @classmethod
         def validate(cls, v: Any):
             return v
 
@@ -3657,10 +3849,6 @@ def test_advanced_generic_schema():  # noqa: C901
             self.data = data
 
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
-
-        @classmethod
         def validate(cls, v: Any):
             return v
 
@@ -3697,10 +3885,6 @@ def test_advanced_generic_schema():  # noqa: C901
         def __init__(self, x: str, y: Any):
             self.x = x
             self.y = y
-
-        @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
 
         @classmethod
         def validate(cls, v: Any):
@@ -5083,74 +5267,6 @@ def test_model_with_schema_extra_callable_no_model_class():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_config_class():
-    with pytest.warns(PydanticDeprecatedSince20, match='use ConfigDict instead'):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                @staticmethod
-                def json_schema_extra(schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-                    assert model_class is Model
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_no_model_class_config_class():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                @staticmethod
-                def json_schema_extra(schema):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_classmethod():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                type = 'foo'
-
-                @classmethod
-                def json_schema_extra(cls, schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = cls.type
-                    assert model_class is Model
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
-
-
-@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
-def test_model_with_schema_extra_callable_instance_method():
-    with pytest.warns(PydanticDeprecatedSince20):
-
-        class Model(BaseModel):
-            name: str = None
-
-            class Config:
-                def json_schema_extra(schema, model_class):
-                    schema.pop('properties')
-                    schema['type'] = 'override'
-                    assert model_class is Model
-
-        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
 def test_serialization_validation_interaction():
     class Inner(BaseModel):
         x: Json[int]
@@ -5844,81 +5960,6 @@ def test_examples_annotation() -> None:
     }
 
 
-@pytest.mark.skip_json_schema_validation(reason='Uses old examples format, planned for removal in v3.0.')
-def test_examples_annotation_dict() -> None:
-    with pytest.warns(PydanticDeprecatedSince29):
-        ListWithExamples = Annotated[
-            list[float],
-            Examples({'Fibonacci': [1, 1, 2, 3, 5]}),
-        ]
-
-    ta = TypeAdapter(ListWithExamples)
-
-    # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {
-        'examples': {'Fibonacci': [1, 1, 2, 3, 5]},
-        'items': {'type': 'number'},
-        'type': 'array',
-    }
-
-    with pytest.warns(PydanticDeprecatedSince29):
-        ListWithMoreExamples = Annotated[
-            ListWithExamples,
-            Examples(
-                {
-                    'Constants': [
-                        3.14,
-                        2.71,
-                    ]
-                }
-            ),
-        ]
-
-    ta = TypeAdapter(ListWithMoreExamples)
-
-    assert ta.json_schema() == {
-        'examples': {'Constants': [3.14, 2.71], 'Fibonacci': [1, 1, 2, 3, 5]},
-        'items': {'type': 'number'},
-        'type': 'array',
-    }
-
-
-def test_examples_mixed_types() -> None:
-    with pytest.warns(PydanticDeprecatedSince29):
-        ListThenDict = Annotated[
-            int,
-            Examples([1, 2]),
-            Examples({'some_example': [3, 4]}),
-        ]
-
-        DictThenList = Annotated[
-            int,
-            Examples({'some_example': [3, 4]}),
-            Examples([1, 2]),
-        ]
-
-    list_then_dict_ta = TypeAdapter(ListThenDict)
-    dict_then_list_ta = TypeAdapter(DictThenList)
-
-    with pytest.warns(
-        UserWarning,
-        match=re.escape('Updating existing JSON Schema examples of type list with examples of type dict.'),
-    ):
-        assert list_then_dict_ta.json_schema() == {
-            'examples': [1, 2, 3, 4],
-            'type': 'integer',
-        }
-
-    with pytest.warns(
-        UserWarning,
-        match=re.escape('Updating existing JSON Schema examples of type dict with examples of type list.'),
-    ):
-        assert dict_then_list_ta.json_schema() == {
-            'examples': [3, 4, 1, 2],
-            'type': 'integer',
-        }
-
-
 def test_skip_json_schema_annotation() -> None:
     class Model(BaseModel):
         x: int | SkipJsonSchema[None] = None
@@ -6379,6 +6420,55 @@ def test_json_schema_mode_override():
     assert SerializationModel.model_json_schema(mode='validation') == Model.model_json_schema(mode='serialization')
 
 
+@pytest.mark.parametrize('reverse', [False, True])
+def test_json_schema_mode_override_nested_cache_key(reverse: bool) -> None:
+    """https://github.com/pydantic/pydantic/issues/13971"""
+
+    class Inner(BaseModel):
+        a: int = 0
+
+        @computed_field
+        @property
+        def c(self) -> int:
+            return 1
+
+    class Outer(BaseModel):
+        model_config = ConfigDict(json_schema_mode_override='validation')
+
+        inner: Inner
+
+    inputs: list[tuple[type[BaseModel], JsonSchemaMode]] = [(Outer, 'serialization'), (Inner, 'validation')]
+    if reverse:
+        inputs.reverse()
+
+    mapping, schema = models_json_schema(inputs)
+
+    assert mapping[(Inner, 'validation')] == {'$ref': '#/$defs/Inner-Input'}
+    assert schema['$defs']['Inner-Input'] == Inner.model_json_schema(mode='validation')
+    # `Inner` doesn't set `json_schema_mode_override`, so it uses the mode the generation was requested with:
+    assert schema['$defs']['Outer']['properties']['inner'] == {'$ref': '#/$defs/Inner-Output'}
+    assert schema['$defs']['Inner-Output'] == Inner.model_json_schema(mode='serialization')
+
+
+def test_json_schema_mode_override_typed_dict_computed_fields() -> None:
+    class TD(TypedDict):
+        __pydantic_config__ = ConfigDict(json_schema_mode_override='validation')  # pyright: ignore[reportGeneralTypeIssues]
+
+        a: int
+
+    td_schema = TypeAdapter(TD).core_schema
+    assert td_schema['type'] == 'typed-dict'
+    # Computed fields can't be defined on typed dictionaries, add one manually:
+    td_schema['computed_fields'] = [core_schema.computed_field('c', return_schema=core_schema.int_schema())]
+
+    assert GenerateJsonSchema().generate(td_schema, mode='serialization') == {
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'title': 'TD',
+        'type': 'object',
+    }
+
+
 def test_models_json_schema_generics() -> None:
     class G(BaseModel, Generic[T]):
         foo: T
@@ -6824,6 +6914,70 @@ def test_plain_serializer_does_not_apply_with_unless_none() -> None:
         },
         'title': 'Model',
         'type': 'object',
+    }
+
+
+def test_unless_none_serializer_on_wrapped_nullable_schema() -> None:
+    """Test that `null` is kept when a serializer with `when_used` set to `'unless-none'` or `'json-unless-none'`
+    is applied on a schema wrapping the `nullable` schema (e.g. a default or validator schema)."""
+
+    class Model(BaseModel):
+        with_default: Decimal | None = None
+        with_validator: Decimal | None
+        annotated_with_validator: Annotated[
+            Decimal | None,
+            AfterValidator(lambda v: v),
+            PlainSerializer(float, return_type=float, when_used='json-unless-none'),
+        ]
+
+        @field_validator('with_validator')
+        @classmethod
+        def validate_with_validator(cls, v: Decimal | None) -> Decimal | None:
+            return v
+
+        @field_serializer('with_default', 'with_validator', when_used='unless-none')
+        def serialize_decimal(self, v: Decimal) -> float:
+            return float(v)
+
+    properties = Model.model_json_schema(mode='serialization')['properties']
+
+    assert properties['with_default']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+    assert properties['with_validator']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+    assert properties['annotated_with_validator']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+
+    assert Model(with_validator=None, annotated_with_validator=None).model_dump(mode='json') == {
+        'with_default': None,
+        'with_validator': None,
+        'annotated_with_validator': None,
+    }
+
+
+@pytest.mark.parametrize(
+    'wrap',
+    [
+        pytest.param(
+            lambda s, ser: core_schema.chain_schema([core_schema.any_schema(), s], serialization=ser), id='chain'
+        ),
+        pytest.param(lambda s, ser: core_schema.lax_or_strict_schema(s, s, serialization=ser), id='lax-or-strict'),
+        pytest.param(lambda s, ser: core_schema.json_or_python_schema(s, s, serialization=ser), id='json-or-python'),
+    ],
+)
+@pytest.mark.parametrize('when_used', ['unless-none', 'json-unless-none'])
+def test_unless_none_serializer_on_nullable_schema_in_wrapper(wrap: Any, when_used: str) -> None:
+    """Test that `null` is kept when a serializer with `when_used` set to `'unless-none'` or `'json-unless-none'`
+    is applied on a schema wrapping the `nullable` schema in the branch used for serialization."""
+    ser = core_schema.plain_serializer_function_ser_schema(
+        str, return_schema=core_schema.str_schema(), when_used=when_used
+    )
+    schema = wrap(core_schema.nullable_schema(core_schema.int_schema()), ser)
+
+    assert SchemaValidator(schema).validate_python(None) is None
+    serializer = SchemaSerializer(schema)
+    assert serializer.to_python(None, mode='json') is None
+    assert serializer.to_python(1, mode='json') == '1'
+
+    assert GenerateJsonSchema().generate(schema, mode='serialization') == {
+        'anyOf': [{'type': 'null'}, {'type': 'string'}]
     }
 
 

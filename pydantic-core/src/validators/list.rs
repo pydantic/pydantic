@@ -72,7 +72,6 @@ macro_rules! length_check {
         }
     }};
 }
-pub(crate) use length_check;
 
 macro_rules! min_length_check {
     ($input:ident, $field_type:literal, $min_length:expr, $obj:ident) => {{
@@ -93,6 +92,29 @@ macro_rules! min_length_check {
     }};
 }
 pub(crate) use min_length_check;
+
+/// Check the max length of an object being built during iteration.
+macro_rules! max_length_check {
+    ($input:expr, $field_type:literal, $max_length:expr, $obj:ident) => {{
+        if let Some(max_length) = $max_length
+            && $obj.len() > max_length
+        {
+            return Err(crate::errors::ValError::new(
+                crate::errors::ErrorType::TooLong {
+                    field_type: $field_type.to_string(),
+                    max_length,
+                    // The logic here is that it doesn't matter how many elements the
+                    // input actually had; all we know is it had more than the allowed
+                    // number of deduplicated elements.
+                    actual_length: None,
+                    context: None,
+                },
+                $input,
+            ));
+        }
+    }};
+}
+pub(crate) use max_length_check;
 
 impl BuildValidator for ListValidator {
     const EXPECTED_TYPE: &'static str = "list";

@@ -4,7 +4,7 @@ import json
 import platform
 import re
 import sys
-from collections import deque, namedtuple
+from collections import Counter, OrderedDict, deque, namedtuple
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -276,7 +276,7 @@ def test_exclude_dict(any_serializer):
 
 class FieldsSetModel:
     __pydantic_serializer__ = 42
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     def __init__(self, **kwargs):
         fields = {}
@@ -376,7 +376,7 @@ def test_fallback_cycle_change(any_serializer: SchemaSerializer):
     f = FoobarCount(0)
     assert any_serializer.to_python(f) == f
 
-    with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
         any_serializer.to_python(f, mode='json', fallback=fallback_func)
 
     f = FoobarCount(0)
@@ -385,7 +385,7 @@ def test_fallback_cycle_change(any_serializer: SchemaSerializer):
     expected_visits = pydantic_core._pydantic_core._recursion_limit
     assert any_serializer.to_python(f, fallback=fallback_func) == HasRepr(f'<FoobarCount {expected_visits} repr>')
 
-    with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):
+    with pytest.raises(ValueError, match='Maximum serialization depth exceeded'):
         any_serializer.to_json(f, fallback=fallback_func)
 
 
@@ -431,21 +431,23 @@ def test_base64():
         (lambda: datetime(2032, 1, 1), {}, b'"2032-01-01T00:00:00"'),
         (lambda: time(12, 34, 56), {}, b'"12:34:56"'),
         (lambda: timedelta(days=12, seconds=34, microseconds=56), {}, b'"P12DT34.000056S"'),
-        (lambda: timedelta(days=12, seconds=34, microseconds=56), dict(timedelta_mode='float'), b'1036834.000056'),
+        (lambda: timedelta(days=12, seconds=34, microseconds=56), {'timedelta_mode': 'float'}, b'1036834.000056'),
         (lambda: timedelta(seconds=-1), {}, b'"-PT1S"'),
-        (lambda: timedelta(seconds=-1), dict(timedelta_mode='float'), b'-1.0'),
+        (lambda: timedelta(seconds=-1), {'timedelta_mode': 'float'}, b'-1.0'),
         (lambda: {1, 2, 3}, {}, b'[1,2,3]'),
         (lambda: frozenset([1, 2, 3]), {}, b'[1,2,3]'),
         (lambda: deque([1, 2, 3]), {}, b'[1,2,3]'),
         (lambda: deque([1, 2, 3], maxlen=5), {}, b'[1,2,3]'),
+        (lambda: OrderedDict([('a', 1), ('b', 2)]), {}, b'{"a":1,"b":2}'),
+        (lambda: Counter({'a': 1, 'b': 2}), {}, b'{"a":1,"b":2}'),
         (lambda: (v for v in range(4)), {}, b'[0,1,2,3]'),
         (lambda: iter([0, 1, 2, 3]), {}, b'[0,1,2,3]'),
         (lambda: iter((0, 1, 2, 3)), {}, b'[0,1,2,3]'),
         (lambda: iter(range(4)), {}, b'[0,1,2,3]'),
         (lambda: b'this is bytes', {}, b'"this is bytes"'),
-        (lambda: b'this is bytes', dict(bytes_mode='base64'), b'"dGhpcyBpcyBieXRlcw=="'),
+        (lambda: b'this is bytes', {'bytes_mode': 'base64'}, b'"dGhpcyBpcyBieXRlcw=="'),
         (lambda: bytearray(b'this is bytes'), {}, b'"this is bytes"'),
-        (lambda: bytearray(b'this is bytes'), dict(bytes_mode='base64'), b'"dGhpcyBpcyBieXRlcw=="'),
+        (lambda: bytearray(b'this is bytes'), {'bytes_mode': 'base64'}, b'"dGhpcyBpcyBieXRlcw=="'),
         (lambda: Decimal('12.34'), {}, b'"12.34"'),
         (lambda: MyEnum.a, {}, b'1'),
         (lambda: MyEnum.b, {}, b'"b"'),
@@ -633,10 +635,10 @@ def test_ser_json_inf_nan_with_any() -> None:
 
     s = SchemaSerializer(core_schema.any_schema(), core_schema.CoreConfig(ser_json_inf_nan='strings'))
     assert isinf(s.to_python(inf))
-    assert isinf(s.to_python(inf, mode='json'))
+    assert s.to_python(inf, mode='json') == 'Infinity'
     assert s.to_json(inf) == b'"Infinity"'
     assert isnan(s.to_python(nan))
-    assert isnan(s.to_python(nan, mode='json'))
+    assert s.to_python(nan, mode='json') == 'NaN'
     assert s.to_json(nan) == b'"NaN"'
 
 
@@ -669,14 +671,14 @@ def test_ser_json_int_subclass_value_larger_than_i64():
     schema = core_schema.model_schema(
         MyModel,
         core_schema.model_fields_schema(
-            dict(
-                stuff=core_schema.model_field(
+            {
+                'stuff': core_schema.model_field(
                     core_schema.dict_schema(
                         keys_schema=core_schema.str_schema(),
                         values_schema=core_schema.any_schema(),
                     )
                 )
-            )
+            }
         ),
     )
     s = SchemaSerializer(schema)
@@ -809,3 +811,69 @@ def test_deque_subclass(any_serializer):
     assert output == deque([1, 2])
     assert type(output) is deque
     assert any_serializer.to_json(MyDeque([1, 2])) == b'[1,2]'
+
+
+def test_ordered_dict(any_serializer) -> None:
+    d = OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+    # the `dict` C API doesn't account for reorderings, make sure we don't use it:
+    d.move_to_end('a')
+    output = any_serializer.to_python(d)
+
+    assert output == d
+    assert list(output) == ['b', 'c', 'a']
+    assert type(output) is OrderedDict
+    assert output is not d
+    assert any_serializer.to_python(d, mode='json') == {'b': 2, 'c': 3, 'a': 1}
+    assert any_serializer.to_json(d) == b'{"b":2,"c":3,"a":1}'
+    assert to_jsonable_python(d) == {'b': 2, 'c': 3, 'a': 1}
+
+    # key-based include/exclude, like dicts:
+    assert any_serializer.to_python(d, include={'a', 'b'}) == OrderedDict([('b', 2), ('a', 1)])
+    assert any_serializer.to_python(d, exclude={'a'}, mode='json') == {'b': 2, 'c': 3}
+    assert any_serializer.to_json(d, exclude={'b'}) == b'{"c":3,"a":1}'
+
+    # nested values are inferred as well:
+    assert any_serializer.to_json(OrderedDict(m=MyModel(a=1, b='b'))) == b'{"m":{"a":1,"b":"b"}}'
+
+
+def test_ordered_dict_subclass(any_serializer) -> None:
+    class MyOrderedDict(OrderedDict):
+        pass
+
+    output = any_serializer.to_python(MyOrderedDict([('a', 1)]))
+
+    assert output == OrderedDict([('a', 1)])
+    assert type(output) is OrderedDict
+    assert any_serializer.to_json(MyOrderedDict([('a', 1)])) == b'{"a":1}'
+
+
+def test_counter(any_serializer) -> None:
+    c = Counter({'a': 3, 'b': 0, 'c': -2})
+    output = any_serializer.to_python(c)
+
+    assert output == c
+    assert dict(output) == {'a': 3, 'b': 0, 'c': -2}
+    assert type(output) is Counter
+    assert output is not c
+    assert any_serializer.to_python(c, mode='json') == {'a': 3, 'b': 0, 'c': -2}
+    assert any_serializer.to_json(c) == b'{"a":3,"b":0,"c":-2}'
+    assert to_jsonable_python(c) == {'a': 3, 'b': 0, 'c': -2}
+
+    # key-based include/exclude, like dicts:
+    assert any_serializer.to_python(c, include={'a', 'b'}) == Counter({'a': 3, 'b': 0})
+    assert any_serializer.to_python(c, exclude={'a'}, mode='json') == {'b': 0, 'c': -2}
+    assert any_serializer.to_json(c, exclude={'b'}) == b'{"a":3,"c":-2}'
+
+    # nested values are inferred as well:
+    assert any_serializer.to_json(Counter(m=MyModel(a=1, b='b'))) == b'{"m":{"a":1,"b":"b"}}'
+
+
+def test_counter_subclass(any_serializer) -> None:
+    class MyCounter(Counter):
+        pass
+
+    output = any_serializer.to_python(MyCounter({'a': 1}))
+
+    assert output == Counter({'a': 1})
+    assert type(output) is Counter
+    assert any_serializer.to_json(MyCounter({'a': 1})) == b'{"a":1}'

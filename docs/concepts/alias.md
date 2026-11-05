@@ -73,6 +73,7 @@ print(user)
 2. We are using the first alias choice for the field `'first_name'` and the second alias choice
    for the field `'last_name'`.
 3. Both `'first_name'` and `'fname'` are provided, `'first_name'` is used because it has higher priority.
+   `'fname'` is not used, and is considered as [extra data](./models.md#extra-data).
 
 You can also use `AliasChoices` with `AliasPath`:
 
@@ -224,8 +225,8 @@ this behavior for nested models/surpassing the config-model boundary, use [runti
 When validating data, you can enable population of attributes by attribute name, alias, or both.
 **By default**, Pydantic uses aliases for validation. Further configuration is available via:
 
-* [`ConfigDict.validate_by_alias`][pydantic.config.ConfigDict.validate_by_alias]: `True` by default
-* [`ConfigDict.validate_by_name`][pydantic.config.ConfigDict.validate_by_name]: `False` by default
+* [`validate_by_alias`][pydantic.config.ConfigDict.validate_by_alias]: `True` by default
+* [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name]: `False` by default
 
 === "`validate_by_alias`"
 
@@ -280,10 +281,14 @@ When validating data, you can enable population of attributes by attribute name,
 
     print(repr(Model(my_field='foo')))  # (2)!
     #> Model(my_field='foo')
+
+    print(repr(Model(my_alias='foo', my_field='bar')))  # (3)!
+    #> Model(my_field='foo')
     ```
 
     1. The alias `my_alias` is used for validation.
     2. the attribute identifier `my_field` is used for validation.
+    3. When both are provided, the alias takes precedence.
 
 !!! warning
     You cannot set both `validate_by_alias` and `validate_by_name` to `False`.

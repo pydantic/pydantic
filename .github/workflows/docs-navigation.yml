@@ -1,0 +1,155 @@
+name: Docs Navigation Check
+
+# Label-triggered navigation validation. Adding `trigger:docs` to a PR asks
+# pydantic/unified-docs to validate this PR's MkDocs navigation and referenced
+# Markdown files without executing pull-request content.
+#
+# This workflow is purely a dispatcher. The data-only validation and final
+# comment happen in unified-docs. After a successful dispatch, the label stays
+# present until unified-docs reaches a terminal result so a pushed commit can
+# supersede an in-flight exact-SHA run.
+
+on:
+  # zizmor: ignore[dangerous-triggers] -- pull_request_target is required so fork PRs can
+  # access the DOCS_APP credentials. Every run verifies that the actor who most
+  # recently applied the label has write access. While that trusted label remains
+  # present, synchronize events supersede an in-flight dispatch so the receiver
+  # never gets stranded on a stale SHA. This workflow never checks out or executes
+  # PR code.
+  pull_request_target:
+    types: [labeled, synchronize]
+
+permissions: {}
+
+concurrency:
+  group: docs-navigation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dispatch:
+    name: Dispatch Docs Navigation Check
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == 'trigger:docs') ||
+      (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'trigger:docs'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Needed to post the queued comment and clean up a failed dispatch.
+      pull-requests: write
+
+    steps:
+      - name: Verify a maintainer owns the trigger label
+        id: verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          label_actor=$(gh api --paginate --slurp \
+            "repos/${REPO}/issues/${PR_NUMBER}/timeline?per_page=100" \
+            --jq '([.[][] | select(.event == "labeled" and .label.name == "trigger:docs")] | last | .actor.login) // empty')
+          if [ -z "$label_actor" ]; then
+            echo "Could not identify who applied trigger:docs" >&2
+            exit 1
+          fi
+
+          permission=$(gh api "repos/${REPO}/collaborators/${label_actor}/permission" --jq .permission)
+          case "$permission" in
+            admin|maintain|write) ;;
+            *)
+              echo "${label_actor} does not have permission to dispatch a docs navigation check" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Generate app token for unified-docs
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.DOCS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DOCS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: unified-docs
+          permission-contents: write
+
+      - name: Dispatch navigation check
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api repos/pydantic/unified-docs/dispatches \
+            --method POST \
+            -f event_type=docs-preview \
+            -f "client_payload[library]=validation" \
+            -f "client_payload[source_repo]=${REPO}" \
+            -f "client_payload[source_pr]=${PR_NUMBER}" \
+            -f "client_payload[source_sha]=${HEAD_SHA}"
+
+      - name: Acknowledge on PR
+        id: acknowledge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          sha7=${HEAD_SHA:0:7}
+          body=$(cat <<EOF
+          ## Docs Navigation Check — queued
+
+          Navigation validation for commit \`${sha7}\` has been queued. This comment will be updated when the check completes.
+          EOF
+          )
+
+          existing=$(gh api --paginate --slurp "repos/${REPO}/issues/${PR_NUMBER}/comments?per_page=100" \
+            --jq '([.[][] | select(.user.login == "github-actions[bot]" and ((.body | startswith("## Docs Navigation Check")) or (.body | startswith("## Docs Preview"))))] | last).url // empty')
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "$existing" -f body="$body"
+          else
+            gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$body"
+          fi
+
+      - name: Comment failure on PR
+        if: failure() && (steps.verify.outcome == 'failure' || steps.app-token.outcome == 'failure' || steps.dispatch.outcome == 'failure')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          body=$(cat <<EOF
+          ## Docs Navigation Check — dispatch failed
+
+          The navigation check could not be queued. See [the workflow run](${RUN_URL}) for details.
+
+          <sub>Re-add the \`trigger:docs\` label to retry.</sub>
+          EOF
+          )
+          gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$body"
+
+      - name: Report acknowledgement failure on PR
+        if: failure() && steps.dispatch.outcome == 'success' && steps.acknowledge.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          body=$(cat <<EOF
+          ## Docs Navigation Check — queued
+
+          Navigation validation was queued, but this workflow could not post its normal acknowledgement. See [the workflow run](${RUN_URL}) for details.
+          EOF
+          )
+          gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$body"
+
+      - name: Remove trigger:docs label after dispatch failure
+        if: always() && steps.dispatch.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: gh api -X DELETE "repos/${REPO}/issues/${PR_NUMBER}/labels/trigger:docs" || true

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import platform
 import re
 import subprocess
 import sys
@@ -98,18 +99,18 @@ def test_decimal(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         ((0, (1, 4, 1, 4), -3), Decimal('1.414')),
-        ((0, (1, 2, 3), 0), Decimal('123')),
-        ((0, (1, 2, 3), 2), Decimal('12300')),
+        ((0, (1, 2, 3), 0), Decimal(123)),
+        ((0, (1, 2, 3), 2), Decimal(12300)),
         ((0, (1, 2, 3), -2), Decimal('1.23')),
         ((1, (1, 4, 1, 4), -3), Decimal('-1.414')),
-        ((1, (1, 2, 3), 0), Decimal('-123')),
-        ((1, (1, 2, 3), 2), Decimal('-12300')),
+        ((1, (1, 2, 3), 0), Decimal(-123)),
+        ((1, (1, 2, 3), 2), Decimal(-12300)),
         ((1, (1, 2, 3), -2), Decimal('-1.23')),
-        ((0, (0,), 0), Decimal('0')),
+        ((0, (0,), 0), Decimal(0)),
         ((0, (5,), -1), Decimal('0.5')),
         ((1, (5,), -1), Decimal('-0.5')),
         ((0, (1, 0, 0), -2), Decimal('1.00')),
-        ((0, (9, 9, 9), 3), Decimal('999000')),
+        ((0, (9, 9, 9), 3), Decimal(999000)),
     ],
     ids=repr,
 )
@@ -119,6 +120,31 @@ def test_decimal_three_tuple_constructor(py_and_json: PyAndJson, input_value, ex
     output = v.validate_test(input_value)
     assert output == expected
     assert isinstance(output, Decimal)
+
+
+skip_unbounded_exponent = pytest.mark.skipif(
+    platform.python_implementation() in {'PyPy', 'GraalVM'},
+    reason='Decimal exponents are unbounded on PyPy and GraalPy',
+)
+
+
+@pytest.mark.parametrize(
+    'input_value',
+    [
+        (2, (1,), 0),  # `ValueError`: invalid sign
+        (0, (10,), 0),  # `ValueError`: invalid digit
+        (0, (1,), 'x'),  # `ValueError`: invalid special exponent
+        (0, (1,), 1.5),  # `ValueError`: non-integer exponent
+        # `OverflowError`: exponent doesn't fit in a `Py_ssize_t`
+        pytest.param((0, (1,), 10**30), marks=skip_unbounded_exponent),
+        pytest.param((0, (1,), -(10**30)), marks=skip_unbounded_exponent),
+    ],
+    ids=repr,
+)
+def test_decimal_three_tuple_constructor_invalid(py_and_json: PyAndJson, input_value):
+    v = py_and_json(cs.decimal_schema())
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'decimal_type'):
+        v.validate_test(input_value)
 
 
 @pytest.mark.parametrize(
@@ -156,7 +182,7 @@ def test_decimal_strict_py(input_value, expected):
         ('42.0', Decimal('42.0')),
         ('42.5', Decimal('42.5')),
         (42.0, Decimal('42.0')),
-        ('42', Decimal('42')),
+        ('42', Decimal(42)),
         (
             True,
             Err(
@@ -270,6 +296,20 @@ def test_decimal_multiple_of(py_and_json: PyAndJson, multiple_of: float, input_v
         assert isinstance(output, Decimal)
 
 
+@pytest.mark.parametrize(
+    ['multiple_of', 'input_value'],
+    [
+        ('3', '1e30'),  # `InvalidOperation`: integral part of the quotient exceeds the context precision
+        ('0.01', '9' * 1000),
+        ('0.01', '1e999999'),  # `Overflow`: exponent of the quotient exceeds `Emax`
+    ],
+)
+def test_decimal_multiple_of_quotient_out_of_context(py_and_json: PyAndJson, multiple_of: str, input_value: str):
+    v = py_and_json(cs.decimal_schema(multiple_of=Decimal(multiple_of)))
+    with pytest.raises(ValidationError, check=lambda e: e.errors()[0]['type'] == 'multiple_of'):
+        v.validate_test(input_value)
+
+
 def test_union_decimal_py():
     v = SchemaValidator(cs.union_schema(choices=[cs.decimal_schema(strict=True), cs.decimal_schema(multiple_of=7)]))
     assert v.validate_python('14') == 14
@@ -330,7 +370,7 @@ def test_decimal_repr():
     assert plain_repr(v).startswith('SchemaValidator(title="decimal",validator=Decimal(')
 
 
-@pytest.mark.parametrize('input_value,expected', [(Decimal('1.23'), Decimal('1.23')), (Decimal('1'), Decimal('1.0'))])
+@pytest.mark.parametrize('input_value,expected', [(Decimal('1.23'), Decimal('1.23')), (Decimal(1), Decimal('1.0'))])
 def test_decimal_not_json(input_value, expected):
     v = SchemaValidator(cs.decimal_schema())
     if isinstance(expected, Err):
@@ -352,7 +392,7 @@ def test_decimal_nan(py_and_json: PyAndJson):
 
 def test_decimal_key(py_and_json: PyAndJson):
     v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'decimal'}, 'values_schema': {'type': 'int'}})
-    assert v.validate_test({'1': 1, '2': 2}) == {Decimal('1'): 1, Decimal('2'): 2}
+    assert v.validate_test({'1': 1, '2': 2}) == {Decimal(1): 1, Decimal(2): 2}
     assert v.validate_test({'1.5': 1, '2.4': 2}) == {Decimal('1.5'): 1, Decimal('2.4'): 2}
     if v.validator_type == 'python':
         with pytest.raises(ValidationError, match='Input should be an instance of Decimal'):

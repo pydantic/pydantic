@@ -13,7 +13,6 @@ import sys
 import typing
 import warnings
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
-from contextlib import contextmanager
 from copy import copy
 from decimal import Decimal
 from enum import Enum
@@ -80,11 +79,9 @@ from ..warnings import (
 )
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _type_refs, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
+from ._contextlib import contextmanager
 from ._core_metadata import CoreMetadata, update_core_metadata
-from ._core_utils import (
-    get_ref,
-    is_list_like_schema_with_items_schema,
-)
+from ._core_utils import get_ref
 from ._decorators import (
     Decorator,
     DecoratorInfos,
@@ -92,12 +89,11 @@ from ._decorators import (
     FieldValidatorDecoratorInfo,
     ModelSerializerDecoratorInfo,
     ModelValidatorDecoratorInfo,
-    RootValidatorDecoratorInfo,
-    ValidatorDecoratorInfo,
     get_attribute_from_bases,
     inspect_field_serializer,
     inspect_model_serializer,
     inspect_validator,
+    mro,
 )
 from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import (
@@ -108,7 +104,7 @@ from ._fields import (
     update_field_from_config,
 )
 from ._forward_ref import PydanticRecursiveRef
-from ._generics import get_standard_typevars_map, replace_types
+from ._generics import get_model_typevars_map, get_standard_typevars_map, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
@@ -128,17 +124,55 @@ if sys.version_info >= (3, 15):
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
 
-FieldDecoratorInfo: TypeAlias = ValidatorDecoratorInfo | FieldValidatorDecoratorInfo | FieldSerializerDecoratorInfo
+FieldDecoratorInfo: TypeAlias = FieldValidatorDecoratorInfo | FieldSerializerDecoratorInfo
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
-AnyFieldDecorator = (
-    Decorator[ValidatorDecoratorInfo] | Decorator[FieldValidatorDecoratorInfo] | Decorator[FieldSerializerDecoratorInfo]
-)
+AnyFieldDecorator = Decorator[FieldValidatorDecoratorInfo] | Decorator[FieldSerializerDecoratorInfo]
 
 ModifyCoreSchemaWrapHandler: TypeAlias = GetCoreSchemaHandler
 GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
 ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None]
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
+_NONE_SCHEMA = core_schema.none_schema()
+_CALLABLE_SCHEMA = core_schema.callable_schema()
+
+
+_SIMPLE_SCHEMA_TYPES: frozenset[type[Any]] = frozenset(
+    {
+        str,
+        int,
+        bool,
+        float,
+        bytes,
+        complex,
+        NoneType,
+        object,
+        type,
+        EllipsisType,
+        re.Pattern,
+        datetime.datetime,
+        datetime.date,
+        datetime.time,
+        datetime.timedelta,
+        Decimal,
+        ZoneInfo,
+    }
+)
+"""Exact types handled directly, without checking for `__get_pydantic_core_schema__()`/`__get_pydantic_json_schema__()` methods."""
+
+
+def _is_simple_schema_type(obj: Any) -> bool:
+    return obj is None or (type(obj) is type and obj in _SIMPLE_SCHEMA_TYPES)
+
+
+def _copy_schema_handler(schema: CoreSchema) -> Callable[[GenerateSchema, Any], CoreSchema]:
+    """Return fresh copies of a fixed schema made only of immutable values."""
+
+    def handler(self: GenerateSchema, obj: Any) -> CoreSchema:
+        return schema.copy()
+
+    return handler
+
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
@@ -220,44 +254,6 @@ def filter_field_decorator_info_by_field(
     return [dec for dec in validator_functions if check_validator_fields_against_field_name(dec.info, field)]
 
 
-def apply_each_item_validators(
-    schema: core_schema.CoreSchema,
-    each_item_validators: list[Decorator[ValidatorDecoratorInfo]],
-) -> core_schema.CoreSchema:
-    # This V1 compatibility shim should eventually be removed
-
-    # fail early if each_item_validators is empty
-    if not each_item_validators:
-        return schema
-
-    # push down any `each_item=True` validators
-    # note that this won't work for any Annotated types that get wrapped by a function validator
-    # but that's okay because that didn't exist in V1
-    if schema['type'] == 'nullable':
-        schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators)
-        return schema
-    elif schema['type'] == 'missing-sentinel' and 'schema' in schema:
-        schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators)
-        return schema
-    elif schema['type'] == 'tuple':
-        if (variadic_item_index := schema.get('variadic_item_index')) is not None:
-            schema['items_schema'][variadic_item_index] = apply_validators(
-                schema['items_schema'][variadic_item_index],
-                each_item_validators,
-            )
-    elif is_list_like_schema_with_items_schema(schema):
-        inner_schema = schema.get('items_schema', core_schema.any_schema())
-        schema['items_schema'] = apply_validators(inner_schema, each_item_validators)
-    elif schema['type'] == 'dict':
-        inner_schema = schema.get('values_schema', core_schema.any_schema())
-        schema['values_schema'] = apply_validators(inner_schema, each_item_validators)
-    else:
-        raise TypeError(
-            f'`@validator(..., each_item=True)` cannot be applied to fields with a schema of {schema["type"]}'
-        )
-    return schema
-
-
 def _extract_json_schema_info_from_field_info(
     info: FieldInfo | ComputedFieldInfo,
 ) -> tuple[JsonDict | None, JsonDict | JsonSchemaExtraCallable | None]:
@@ -317,6 +313,37 @@ GENERATE_SCHEMA_ERRORS = (
 """Errors raised during core schema generation. This does *not* include `InvalidSchemaError`, which is raised during schema cleaning."""
 
 
+def _get_typed_dict_extra_items(typed_dict_cls: type[Any]) -> tuple[bool, Any, bool]:
+    """Return whether the TypedDict class is closed, the type of its extra items and whether
+    they are read-only (as per PEP 728).
+
+    The `__closed__` and `__extra_items__` attributes only reflect the arguments passed to the class itself,
+    so the first class in the (virtual) MRO explicitly specifying one of them is used.
+    `extra_items=Never` is normalized to `closed=True`, and the `ReadOnly` qualifier is stripped.
+    """
+    for base in mro(typed_dict_cls):
+        # `__closed__` is `None` when not specified:
+        closed = base.__dict__.get('__closed__')
+        extra_items = base.__dict__.get('__extra_items__', typing_extensions.NoExtraItems)
+        if closed is not None or not typing_objects.is_noextraitems(extra_items):
+            break
+    else:
+        return False, typing_extensions.NoExtraItems, False
+
+    if closed is not None:
+        # `closed` and `extra_items` can't be used together:
+        return closed, typing_extensions.NoExtraItems, False
+
+    readonly = typing_objects.is_readonly(get_origin(extra_items))
+    if readonly:
+        extra_items = get_args(extra_items)[0]
+    # TODO: `Never` wrapped in a type alias (e.g. `type NoExtras = Never`) or in `Annotated` isn't detected here,
+    # and fails during schema generation. Unwrapping should only apply to this check (to preserve alias handling).
+    if typing_objects.is_never(extra_items):
+        return True, typing_extensions.NoExtraItems, False
+    return False, extra_items, readonly
+
+
 class InvalidSchemaError(Exception):
     """The core schema is invalid."""
 
@@ -350,26 +377,26 @@ class GenerateSchema:
     # The handler lambdas take the `GenerateSchema` instance as their first argument, so that
     # the dicts can be built once at class creation time and shared by all instances:
     _handlers: ClassVar[dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]]] = {
-        str: lambda self, obj: core_schema.str_schema(),
-        bytes: lambda self, obj: core_schema.bytes_schema(),
-        int: lambda self, obj: core_schema.int_schema(),
-        float: lambda self, obj: core_schema.float_schema(),
-        bool: lambda self, obj: core_schema.bool_schema(),
-        complex: lambda self, obj: core_schema.complex_schema(),
-        object: lambda self, obj: core_schema.any_schema(),
-        datetime.date: lambda self, obj: core_schema.date_schema(),
-        datetime.datetime: lambda self, obj: core_schema.datetime_schema(),
-        datetime.time: lambda self, obj: core_schema.time_schema(),
-        datetime.timedelta: lambda self, obj: core_schema.timedelta_schema(),
-        Decimal: lambda self, obj: core_schema.decimal_schema(),
-        UUID: lambda self, obj: core_schema.uuid_schema(),
-        Url: lambda self, obj: core_schema.url_schema(),
-        Fraction: lambda self, obj: core_schema.fraction_schema(),
-        MultiHostUrl: lambda self, obj: core_schema.multi_host_url_schema(),
-        None: lambda self, obj: core_schema.none_schema(),
-        NoneType: lambda self, obj: core_schema.none_schema(),
-        MISSING: lambda self, obj: core_schema.missing_sentinel_schema(),
-        EllipsisType: lambda self, obj: core_schema.ellipsis_schema(),
+        str: _copy_schema_handler(core_schema.str_schema()),
+        bytes: _copy_schema_handler(core_schema.bytes_schema()),
+        int: _copy_schema_handler(core_schema.int_schema()),
+        float: _copy_schema_handler(core_schema.float_schema()),
+        bool: _copy_schema_handler(core_schema.bool_schema()),
+        complex: _copy_schema_handler(core_schema.complex_schema()),
+        object: _copy_schema_handler(core_schema.any_schema()),
+        datetime.date: _copy_schema_handler(core_schema.date_schema()),
+        datetime.datetime: _copy_schema_handler(core_schema.datetime_schema()),
+        datetime.time: _copy_schema_handler(core_schema.time_schema()),
+        datetime.timedelta: _copy_schema_handler(core_schema.timedelta_schema()),
+        Decimal: _copy_schema_handler(core_schema.decimal_schema()),
+        UUID: _copy_schema_handler(core_schema.uuid_schema()),
+        Url: _copy_schema_handler(core_schema.url_schema()),
+        Fraction: _copy_schema_handler(core_schema.fraction_schema()),
+        MultiHostUrl: _copy_schema_handler(core_schema.multi_host_url_schema()),
+        None: _copy_schema_handler(_NONE_SCHEMA),
+        NoneType: _copy_schema_handler(_NONE_SCHEMA),
+        MISSING: _copy_schema_handler(core_schema.missing_sentinel_schema()),
+        EllipsisType: _copy_schema_handler(core_schema.ellipsis_schema()),
         type: lambda self, obj: self._type_schema(),
         dict: lambda self, obj: self._dict_schema(Any, Any),
         tuple: lambda self, obj: self._tuple_schema(obj),
@@ -385,10 +412,10 @@ class GenerateSchema:
         collections.abc.Generator: lambda self, obj: self._iterable_schema(obj),
         collections.abc.Mapping: lambda self, obj: self._mapping_schema(obj, Any, Any),
         collections.abc.MutableMapping: lambda self, obj: self._mapping_schema(obj, Any, Any),
-        collections.OrderedDict: lambda self, obj: self._mapping_schema(obj, Any, Any),
+        collections.OrderedDict: lambda self, obj: self._ordered_dict_schema(Any, Any),
         collections.defaultdict: lambda self, obj: self._mapping_schema(obj, Any, Any),
-        collections.Counter: lambda self, obj: self._mapping_schema(obj, Any, int),
-        collections.abc.Callable: lambda self, obj: core_schema.callable_schema(),
+        collections.Counter: lambda self, obj: self._counter_schema(Any),
+        collections.abc.Callable: _copy_schema_handler(_CALLABLE_SCHEMA),
         collections.abc.Hashable: lambda self, obj: self._hashable_schema(),
         IPv4Address: lambda self, obj: self._ip_schema(obj),
         IPv4Interface: lambda self, obj: self._ip_schema(obj),
@@ -424,15 +451,11 @@ class GenerateSchema:
         collections.abc.MutableMapping: lambda self, obj: self._mapping_schema(
             collections.abc.MutableMapping, *self._get_first_two_args_or_any(obj)
         ),
-        collections.OrderedDict: lambda self, obj: self._mapping_schema(
-            collections.OrderedDict, *self._get_first_two_args_or_any(obj)
-        ),
+        collections.OrderedDict: lambda self, obj: self._ordered_dict_schema(*self._get_first_two_args_or_any(obj)),
         collections.defaultdict: lambda self, obj: self._mapping_schema(
             collections.defaultdict, *self._get_first_two_args_or_any(obj)
         ),
-        collections.Counter: lambda self, obj: self._mapping_schema(
-            collections.Counter, self._get_first_arg_or_any(obj), int
-        ),
+        collections.Counter: lambda self, obj: self._counter_schema(self._get_first_arg_or_any(obj)),
         os.PathLike: lambda self, obj: self._path_schema(os.PathLike, self._get_first_arg_or_any(obj)),
         pathlib.Path: lambda self, obj: self._path_schema(pathlib.Path, self._get_first_arg_or_any(obj)),
         pathlib.PurePath: lambda self, obj: self._path_schema(pathlib.PurePath, self._get_first_arg_or_any(obj)),
@@ -448,7 +471,7 @@ class GenerateSchema:
         collections.abc.Iterable: lambda self, obj: self._iterable_schema(obj),
         collections.abc.Generator: lambda self, obj: self._iterable_schema(obj),
         re.Pattern: lambda self, obj: self._pattern_schema(obj),
-        collections.abc.Callable: lambda self, obj: core_schema.callable_schema(),
+        collections.abc.Callable: _copy_schema_handler(_CALLABLE_SCHEMA),
     }
 
     if sys.version_info >= (3, 15):
@@ -485,6 +508,12 @@ class GenerateSchema:
 
     def _frozendict_schema(self, keys_type: Any, values_type: Any) -> CoreSchema:
         return core_schema.frozendict_schema(self.generate_schema(keys_type), self.generate_schema(values_type))
+
+    def _ordered_dict_schema(self, keys_type: Any, values_type: Any) -> CoreSchema:
+        return core_schema.ordered_dict_schema(self.generate_schema(keys_type), self.generate_schema(values_type))
+
+    def _counter_schema(self, keys_type: Any) -> CoreSchema:
+        return core_schema.counter_schema(self.generate_schema(keys_type), core_schema.int_schema())
 
     def _set_schema(self, items_type: Any) -> CoreSchema:
         return core_schema.set_schema(self.generate_schema(items_type))
@@ -527,13 +556,10 @@ class GenerateSchema:
                 original_schema.update(js_updates)
                 return json_schema
 
-            # we don't want to add the missing to the schema if it's the default one
-            default_missing = getattr(enum_type._missing_, '__func__', None) is Enum._missing_.__func__  # pyright: ignore[reportFunctionMemberAccess]
             enum_schema = core_schema.enum_schema(
                 enum_type,
                 cases,
                 sub_type=sub_type,
-                missing=None if default_missing else enum_type._missing_,
                 ref=enum_ref,
                 metadata={'pydantic_js_functions': [get_json_schema]},
             )
@@ -779,11 +805,14 @@ class GenerateSchema:
                 If it is not possible to generate pydantic-core schema.
             TypeError:
                 - If `alias_generator` returns a disallowed type (must be str, AliasPath or AliasChoices).
-                - If V1 style validator with `each_item=True` applied on a wrong field.
             PydanticUserError:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
-                - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
         """
+        if _is_simple_schema_type(obj):
+            return _add_custom_serialization_from_json_encoders(
+                self._config_wrapper.json_encoders, obj, self._handlers[obj](self, obj)
+            )
+
         origin = get_origin(obj)
         schema: CoreSchema | None = None
         if origin is None:
@@ -853,21 +882,21 @@ class GenerateSchema:
                             cls,
                             config_wrapper=self._config_wrapper,
                             ns_resolver=self._ns_resolver,
-                            typevars_map=self._typevars_map or {},
+                            typevars_map=get_model_typevars_map(cls),
                         )
                     except NameError as e:
                         raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
                 decorators = cls.__pydantic_decorators__
                 computed_fields = decorators.computed_fields
-                check_decorator_fields_exist(
-                    chain(
-                        decorators.field_validators.values(),
-                        decorators.field_serializers.values(),
-                        decorators.validators.values(),
-                    ),
-                    {*fields.keys(), *computed_fields.keys()},
-                )
+                if decorators.field_validators or decorators.field_serializers:
+                    check_decorator_fields_exist(
+                        chain(
+                            decorators.field_validators.values(),
+                            decorators.field_serializers.values(),
+                        ),
+                        {*fields.keys(), *computed_fields.keys()},
+                    )
 
                 model_validators = decorators.model_validators.values()
 
@@ -927,8 +956,7 @@ class GenerateSchema:
                         extras_keys_schema=extras_keys_schema,
                         model_name=cls.__name__,
                     )
-                    inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
-                    inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
+                    inner_schema = apply_model_validators(fields_schema, model_validators, 'inner')
 
                     model_schema = core_schema.model_schema(
                         cls,
@@ -992,21 +1020,6 @@ class GenerateSchema:
             # safety measure (because these are inlined in place -- i.e. mutated directly)
             return schema
 
-        if get_schema is None and (validators := getattr(obj, '__get_validators__', None)) is not None:
-            from pydantic.v1 import BaseModel as BaseModelV1
-
-            if issubclass(obj, BaseModelV1):
-                warnings.warn(
-                    f'Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `{obj.__name__}` to V2.',
-                    UserWarning,
-                )
-            else:
-                warnings.warn(
-                    '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
-                    PydanticDeprecatedSince20,
-                )
-            return core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
-
     def _resolve_forward_ref(self, obj: Any) -> Any:
         # we assume that types_namespace has the target of forward references in its scope,
         # but this could fail, for example, if calling Validator on an imported type which contains
@@ -1067,11 +1080,14 @@ class GenerateSchema:
     def _generate_schema_inner(self, obj: Any, origin: Any | None = PydanticUndefined) -> core_schema.CoreSchema:
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
+            # The resolved type can be a parametrized generic (e.g. `GenericDataclass[int]`),
+            # so the origin provided by the caller (computed on `Self`) is stale:
+            origin = get_origin(obj)
 
         origin = origin if origin is not PydanticUndefined else get_origin(obj)
 
         if is_union_origin(origin):
-            return self._union_schema(obj)
+            return self._direct_union_schema(obj)
 
         if typing_objects.is_annotated(origin):
             return self._annotated_schema(obj)
@@ -1287,20 +1303,6 @@ class GenerateSchema:
                     annotations + validators_from_decorators,
                 )
 
-        if decorators.validators:
-            # This V1 compatibility shim should eventually be removed
-            # push down any `each_item=True` validators
-            # note that this won't work for any Annotated types that get wrapped by a function validator
-            # but that's okay because that didn't exist in V1
-            this_field_validators = filter_field_decorator_info_by_field(decorators.validators.values(), name)
-            if _validators_require_validate_default(this_field_validators):
-                field_info.validate_default = True
-            each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
-            this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
-            schema = apply_each_item_validators(schema, each_item_validators)
-
-            schema = apply_validators(schema, this_field_validators)
-
         # the default validator needs to go outside of any other validators
         # so that it is the topmost validator for the field validator
         # which uses it to check if the field has a default value or not
@@ -1320,6 +1322,24 @@ class GenerateSchema:
 
         return schema, core_metadata
 
+    def _direct_union_schema(self, obj: Any) -> CoreSchema:
+        """Generate the optimized union schema without enlarging general dispatch frames."""
+        if not self._config_wrapper.json_encoders:
+            args = get_args(obj)
+            # These exact simple types cannot attach hooks or union tags. Field-level
+            # metadata and validators still process the fresh schema normally.
+            if all(map(_is_simple_schema_type, args)):
+                choices = [self._handlers[arg](self, arg) for arg in args if arg is not NoneType]
+                if len(choices) == 1:
+                    schema = choices[0]
+                else:
+                    schema = cast(core_schema.UnionSchema, {'type': 'union', 'choices': choices})
+                if len(choices) < len(args):  # one of the args is NoneType, so we need to make the schema nullable
+                    return {'type': 'nullable', 'schema': schema}
+                else:
+                    return schema
+        return self._union_schema(obj)
+
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
@@ -1327,7 +1347,7 @@ class GenerateSchema:
         nullable = False
         allow_missing = False
         for arg in args:
-            if arg is None or arg is NoneType:
+            if arg is NoneType:
                 nullable = True
             elif arg is MISSING:
                 allow_missing = True
@@ -1483,15 +1503,20 @@ class GenerateSchema:
                 extra_behavior: core_schema.ExtraBehavior = 'ignore'
                 extras_schema: CoreSchema | None = None  # For 'allow', equivalent to `Any` - no validation performed.
 
-                # `__closed__` is `None` when not specified (equivalent to `False`):
-                is_closed = bool(getattr(typed_dict_cls, '__closed__', False))
-                extra_items = getattr(typed_dict_cls, '__extra_items__', typing_extensions.NoExtraItems)
+                is_closed, extra_items, extra_items_readonly = _get_typed_dict_extra_items(typed_dict_cls)
                 if is_closed:
                     extra_behavior = 'forbid'
                     extras_schema = None
                 elif not typing_objects.is_noextraitems(extra_items):
                     extra_behavior = 'allow'
                     extras_schema = self.generate_schema(replace_types(extra_items, typevars_map))
+
+                if extra_items_readonly:
+                    warnings.warn(
+                        f'Extra items on TypedDict class {typed_dict_cls.__name__!r} are using the `ReadOnly` qualifier. '
+                        'Pydantic will not protect items from any mutation on dictionary instances.',
+                        UserWarning,
+                    )
 
                 if (config_extra := self._config_wrapper.extra) in ('allow', 'forbid'):
                     if is_closed and config_extra == 'allow':
@@ -1957,10 +1982,8 @@ class GenerateSchema:
                     collect_init_only=has_post_init,
                 )
 
-                inner_schema = apply_validators(args_schema, decorators.root_validators.values())
-
                 model_validators = decorators.model_validators.values()
-                inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
+                inner_schema = apply_model_validators(args_schema, model_validators, 'inner')
 
                 core_config = self._config_wrapper.core_config(title=dataclass.__name__)
 
@@ -2250,11 +2273,11 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
-        annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
-
-        pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
+            if _is_simple_schema_type(obj):
+                return transform_inner_schema(self._handlers[obj](self, obj))
+
             origin = get_origin(obj)
             schema: CoreSchema | None = None
             if origin is None:
@@ -2273,6 +2296,15 @@ class GenerateSchema:
                     self._add_js_function(metadata_schema, metadata_js_function)
             return transform_inner_schema(schema)
 
+        if not annotations:
+            schema = inner_handler(source_type)
+            # Preserve the callback handler's reference conversion before applying encoders.
+            if schema.get('ref') is not None:
+                schema = self.defs.create_definition_reference_schema(schema)
+            return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
+
+        annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
+        pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
         get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
 
         for annotation in annotations:
@@ -2306,7 +2338,7 @@ class GenerateSchema:
                 # with its subclasses and their annotations:
                 and type(metadata) is FieldInfo
             ):
-                for attr, value in (unsupported_attributes := self._get_unsupported_field_info_attributes(metadata)):
+                for attr, value in self._get_unsupported_field_info_attributes(metadata):
                     warnings.warn(
                         f'The {attr!r} attribute with value {value!r} was provided to the `Field()` function, '
                         f'which has no effect in the context it was used. {attr!r} is field-specific metadata, '
@@ -2316,11 +2348,8 @@ class GenerateSchema:
                         category=UnsupportedFieldAttributeWarning,
                     )
 
-                if (
-                    metadata.default_factory_takes_validated_data
-                    and self.model_type_stack.get() is None
-                    and 'defaut_factory' not in unsupported_attributes
-                ):
+                # Inside a model, a standalone `default_factory` is already reported as unsupported above:
+                if metadata.default_factory_takes_validated_data and self.model_type_stack.get() is None:
                     warnings.warn(
                         "A 'default_factory' taking validated data as an argument was provided to the `Field()` function, "
                         'but no validated data is available in the context it was used.',
@@ -2542,64 +2571,6 @@ class GenerateSchema:
         return schema
 
 
-_VALIDATOR_F_MATCH: Mapping[
-    tuple[FieldValidatorModes, Literal['no-info', 'with-info']],
-    Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema],
-] = {
-    ('before', 'no-info'): lambda f, schema: core_schema.no_info_before_validator_function(f, schema),
-    ('after', 'no-info'): lambda f, schema: core_schema.no_info_after_validator_function(f, schema),
-    ('plain', 'no-info'): lambda f, _: core_schema.no_info_plain_validator_function(f),
-    ('wrap', 'no-info'): lambda f, schema: core_schema.no_info_wrap_validator_function(f, schema),
-    ('before', 'with-info'): lambda f, schema: core_schema.with_info_before_validator_function(f, schema),
-    ('after', 'with-info'): lambda f, schema: core_schema.with_info_after_validator_function(f, schema),
-    ('plain', 'with-info'): lambda f, _: core_schema.with_info_plain_validator_function(f),
-    ('wrap', 'with-info'): lambda f, schema: core_schema.with_info_wrap_validator_function(f, schema),
-}
-
-
-# TODO V3: this function is only used for deprecated decorators. It should
-# be removed once we drop support for those.
-def apply_validators(
-    schema: core_schema.CoreSchema,
-    validators: Iterable[Decorator[RootValidatorDecoratorInfo]]
-    | Iterable[Decorator[ValidatorDecoratorInfo]]
-    | Iterable[Decorator[FieldValidatorDecoratorInfo]],
-) -> core_schema.CoreSchema:
-    """Apply validators to a schema.
-
-    Args:
-        schema: The schema to apply validators on.
-        validators: An iterable of validators.
-
-    Returns:
-        The updated schema.
-    """
-    for validator in validators:
-        # Actually, type could be 'field' or 'model', but this is only used for deprecated
-        # decorators, so let's not worry about it.
-        info_arg = inspect_validator(validator.func, mode=validator.info.mode, type='field')
-        val_type = 'with-info' if info_arg else 'no-info'
-
-        schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, schema)
-    return schema
-
-
-def _validators_require_validate_default(validators: Iterable[Decorator[ValidatorDecoratorInfo]]) -> bool:
-    """In v1, if any of the validators for a field had `always=True`, the default value would be validated.
-
-    This serves as an auxiliary function for re-implementing that logic, by looping over a provided
-    collection of (v1-style) ValidatorDecoratorInfo's and checking if any of them have `always=True`.
-
-    We should be able to drop this function and the associated logic calling it once we drop support
-    for v1-style validator decorators. (Or we can extend it and keep it if we add something equivalent
-    to the v1-validator `always` kwarg to `field_validator`.)
-    """
-    for validator in validators:
-        if validator.info.always:
-            return True
-    return False
-
-
 def _convert_to_aliases(
     alias: str | AliasChoices | AliasPath | None,
 ) -> str | list[str | int] | list[list[str | int]] | None:
@@ -2682,30 +2653,8 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
 
 
 def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
-    """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`."""
-    js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
-
-    if hasattr(tp, '__modify_schema__'):
-        BaseModel = import_cached_base_model()
-
-        has_custom_v2_modify_js_func = (
-            js_modify_function is not None
-            and BaseModel.__get_pydantic_json_schema__.__func__  # type: ignore
-            not in (js_modify_function, getattr(js_modify_function, '__func__', None))
-        )
-
-        if not has_custom_v2_modify_js_func:
-            cls_name = getattr(tp, '__name__', None)
-            raise PydanticUserError(
-                f'The `__modify_schema__` method is not supported in Pydantic v2. '
-                f'Use `__get_pydantic_json_schema__` instead{f" in class `{cls_name}`" if cls_name else ""}.',
-                code='custom-json-schema',
-            )
-
-    if js_modify_function is None:
-        return None
-
-    return js_modify_function
+    """Extract `__get_pydantic_json_schema__` from a type."""
+    return getattr(tp, '__get_pydantic_json_schema__', None)
 
 
 def resolve_original_schema(schema: CoreSchema, definitions: _Definitions) -> CoreSchema | None:
@@ -2911,8 +2860,10 @@ class _FieldNameStack:
     @contextmanager
     def push(self, field_name: str) -> Iterator[None]:
         self._stack.append(field_name)
-        yield
-        self._stack.pop()
+        try:
+            yield
+        finally:
+            self._stack.pop()
 
     def get(self) -> str | None:
         if self._stack:
@@ -2930,8 +2881,10 @@ class _ModelTypeStack:
     @contextmanager
     def push(self, type_obj: type) -> Iterator[None]:
         self._stack.append(type_obj)
-        yield
-        self._stack.pop()
+        try:
+            yield
+        finally:
+            self._stack.pop()
 
     def get(self) -> type | None:
         if self._stack:

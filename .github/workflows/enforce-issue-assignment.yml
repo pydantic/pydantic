@@ -14,7 +14,8 @@ jobs:
     if: >
       github.event.pull_request.author_association != 'MEMBER' &&
       github.event.pull_request.author_association != 'OWNER' &&
-      github.event.pull_request.author_association != 'COLLABORATOR'
+      github.event.pull_request.author_association != 'COLLABORATOR' &&
+      !contains(github.event.pull_request.labels.*.name, 'skip-assignment-check')
     runs-on: ubuntu-latest
     steps:
       - name: Check referenced issues and close if unauthorized

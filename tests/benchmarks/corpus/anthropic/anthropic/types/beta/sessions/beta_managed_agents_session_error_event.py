@@ -1,0 +1,27 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing import Union
+from datetime import datetime
+from typing_extensions import Literal, Annotated, TypeAlias
+from ...._models import BaseModel, UnionDiscriminator
+from .beta_managed_agents_billing_error import BetaManagedAgentsBillingError
+from .beta_managed_agents_unknown_error import BetaManagedAgentsUnknownError
+from .beta_managed_agents_model_overloaded_error import BetaManagedAgentsModelOverloadedError
+from .beta_managed_agents_repository_clone_error import BetaManagedAgentsRepositoryCloneError
+from .beta_managed_agents_model_rate_limited_error import BetaManagedAgentsModelRateLimitedError
+from .beta_managed_agents_repository_checkout_error import BetaManagedAgentsRepositoryCheckoutError
+from .beta_managed_agents_model_request_failed_error import BetaManagedAgentsModelRequestFailedError
+from .beta_managed_agents_repository_forbidden_error import BetaManagedAgentsRepositoryForbiddenError
+from .beta_managed_agents_repository_not_found_error import BetaManagedAgentsRepositoryNotFoundError
+from .beta_managed_agents_mcp_connection_failed_error import BetaManagedAgentsMCPConnectionFailedError
+from .beta_managed_agents_mcp_authentication_failed_error import BetaManagedAgentsMCPAuthenticationFailedError
+from .beta_managed_agents_repository_authentication_error import BetaManagedAgentsRepositoryAuthenticationError
+from .beta_managed_agents_credential_host_unreachable_error import BetaManagedAgentsCredentialHostUnreachableError
+Error: TypeAlias = Annotated[Union[BetaManagedAgentsUnknownError, BetaManagedAgentsModelOverloadedError, BetaManagedAgentsModelRateLimitedError, BetaManagedAgentsModelRequestFailedError, BetaManagedAgentsMCPConnectionFailedError, BetaManagedAgentsMCPAuthenticationFailedError, BetaManagedAgentsBillingError, BetaManagedAgentsCredentialHostUnreachableError, BetaManagedAgentsRepositoryAuthenticationError, BetaManagedAgentsRepositoryForbiddenError, BetaManagedAgentsRepositoryNotFoundError, BetaManagedAgentsRepositoryCheckoutError, BetaManagedAgentsRepositoryCloneError], UnionDiscriminator('type')]
+
+class BetaManagedAgentsSessionErrorEvent(BaseModel):
+    """An error event indicating a problem occurred during session execution."""
+    id: str
+    error: Error
+    processed_at: datetime
+    type: Literal['session.error']

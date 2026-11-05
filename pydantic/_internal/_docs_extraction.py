@@ -37,6 +37,16 @@ class DocstringVisitor(ast.NodeVisitor):
                 self.attrs[self.target] = docstring
             self.target = None
 
+    # Don't look into nested classes and functions, as their attributes don't belong to the inspected class:
+    def visit_ClassDef(self, node: ast.ClassDef) -> Any:
+        pass
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        pass
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+        pass
+
 
 def _dedent_source_lines(source: list[str]) -> str:
     # Required for nested class definitions, e.g. in a function block
@@ -97,7 +107,7 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
         # making it way more robust.
         try:
             source, _ = inspect.getsourcelines(cls)
-        except OSError:  # pragma: no cover
+        except (OSError, TypeError):  # pragma: no cover
             return {}
     else:
         # TODO remove this implementation when we drop support for Python 3.12:
@@ -108,6 +118,11 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
 
     dedent_source = _dedent_source_lines(source)
 
+    stmt = ast.parse(dedent_source).body[0]
+    if isinstance(stmt, ast.FunctionDef) and stmt.name == 'dedent_workaround':
+        # `_dedent_source_lines()` wrapped the class around the workaround function
+        stmt = stmt.body[0]
+
     visitor = DocstringVisitor()
-    visitor.visit(ast.parse(dedent_source))
+    visitor.generic_visit(stmt)
     return visitor.attrs
