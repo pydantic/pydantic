@@ -44,6 +44,32 @@ def test_decimal():
     assert isinstance(v, Decimal)
 
 
+@pytest.mark.parametrize(
+    'value',
+    [
+        pytest.param((0, (1, 4), -1), id='tuple'),
+        pytest.param([0, [1, 4], -1], id='list'),
+        pytest.param([0, (1, 4), -1], id='list_with_tuple_digits'),
+        pytest.param(Decimal('1.4').as_tuple(), id='decimal_tuple'),
+    ],
+)
+def test_decimal_sign_digits_exponent_form(value) -> None:
+    assert TypeAdapter(Decimal).validate_python(value) == Decimal('1.4')
+
+
+@pytest.mark.parametrize('value', [[0, [1, 4]], [0, [1, 4], 'x']])
+def test_decimal_sign_digits_exponent_form_invalid(value) -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        TypeAdapter(Decimal).validate_python(value)
+
+    assert exc_info.value.errors()[0]['type'] == 'decimal_type'
+
+
+def test_decimal_sign_digits_exponent_form_strict() -> None:
+    with pytest.raises(ValidationError):
+        TypeAdapter(Decimal, config={'strict': True}).validate_python([0, [1, 4], -1])
+
+
 def test_decimal_constraint_coerced() -> None:
     ta = TypeAdapter(Annotated[Decimal, Field(gt=2)])
 

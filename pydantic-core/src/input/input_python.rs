@@ -384,9 +384,17 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                 return create_decimal(self.str()?.as_any(), self).map(ValidationMatch::lax);
             }
 
-            // Handle three-tuple constructor: (sign, digits_tuple, exponent)
-            if let Ok(tuple) = self.cast_exact::<PyTuple>()
-                && tuple.len() == 3
+            // Handle the (sign, digits, exponent) constructor form. Like the `Decimal` constructor, accept
+            // tuples (including subclasses, such as the `DecimalTuple` returned by `Decimal.as_tuple()`)
+            // and lists:
+            let len = if let Ok(tuple) = self.cast::<PyTuple>() {
+                Some(tuple.len())
+            } else if let Ok(list) = self.cast_exact::<PyList>() {
+                Some(list.len())
+            } else {
+                None
+            };
+            if len == Some(3)
                 && let Ok(decimal) = create_decimal(self, self)
             {
                 return Ok(ValidationMatch::lax(decimal));
