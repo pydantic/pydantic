@@ -2009,7 +2009,7 @@ class GenerateSchema:
 
         TODO support functional validators once we support them in Config
         """
-        arguments_schema = self._arguments_schema(function)
+        arguments_schema = self._arguments_v3_schema(function)
 
         return_schema: core_schema.CoreSchema | None = None
         config_wrapper = self._config_wrapper
@@ -2170,9 +2170,18 @@ class GenerateSchema:
                 )
             )
 
+        # Unexpected arguments are only rejected with `'forbid'`, so `'allow'` behaves like `'ignore'`.
+        # This is set on the schema (the validator would otherwise read it from the config) so that
+        # the JSON Schema generation can take it into account:
+        extra = core_config.get('extra_fields_behavior')
+        extra_behavior: Literal['forbid', 'ignore'] | None = (
+            None if extra is None else 'forbid' if extra == 'forbid' else 'ignore'
+        )
+
         return core_schema.arguments_v3_schema(
             parameters_list,
             validate_by_name=core_config.get('validate_by_name'),
+            extra_behavior=extra_behavior,
         )
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:

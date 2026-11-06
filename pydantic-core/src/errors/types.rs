@@ -601,7 +601,7 @@ impl ErrorType {
                 "Input tag '{tag}' found using {discriminator} does not match any of the expected tags: {expected_tags}"
             }
             Self::UnionTagNotFound { .. } => "Unable to extract tag using discriminator {discriminator}",
-            Self::ArgumentsType { .. } => "Arguments must be a tuple, list or a dictionary",
+            Self::ArgumentsType { .. } => "Arguments must be a dictionary",
             Self::MissingArgument { .. } => "Missing required argument",
             Self::UnexpectedKeywordArgument { .. } => "Unexpected keyword argument",
             Self::MissingKeywordOnlyArgument { .. } => "Missing required keyword only argument",
@@ -657,7 +657,7 @@ impl ErrorType {
             Self::NamedTupleType { .. } => "Input should be an array or an object",
             Self::TimeDeltaType { .. } => "Input should be a valid duration",
             Self::TimeDeltaParsing { .. } => "Input should be a valid duration, {error}",
-            Self::ArgumentsType { .. } => "Arguments must be an array or an object",
+            Self::ArgumentsType { .. } => "Arguments must be an object",
             _ => self.message_template_python(),
         }
     }
