@@ -1,7 +1,8 @@
 import json
 import math
 import re
-from collections.abc import Generator
+import sys
+from collections.abc import Callable, Generator
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -520,3 +521,37 @@ def test_json_ensure_ascii() -> None:
         f: str
 
     assert Model(f='à').model_dump_json(ensure_ascii=True) == '{"f":"\\u00e0"}'
+
+
+@pytest.mark.skipif(
+    sys.implementation.name != 'cpython' or sys.platform not in ('darwin', 'linux'),
+    reason='Regression uses CPython with a small POSIX thread stack',
+)
+def test_deep_json_streaming_plan_on_small_stack(
+    subprocess_run_code: Callable[[Callable[[], None]], str],
+) -> None:
+    def code() -> None:
+        import sys
+        import threading
+        from typing import Any
+
+        from pydantic import create_model
+
+        sys.setrecursionlimit(10000)
+        annotation: Any = int
+        for _ in range(350):
+            annotation = list[annotation]
+        model = create_model('Model', x=(annotation, ...))
+        results: list[list[int]] = []
+
+        def validate() -> None:
+            assert model.__pydantic_validator__._stream_plan_accepted
+            results.extend(model.model_validate_json('{"x":[]}').x for _ in range(2))
+
+        threading.stack_size(65536)
+        thread = threading.Thread(target=validate)
+        thread.start()
+        thread.join()
+        assert results == [[], []]
+
+    subprocess_run_code(code)

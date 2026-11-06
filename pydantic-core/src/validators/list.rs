@@ -21,6 +21,23 @@ pub struct ListValidator {
     fail_fast: bool,
 }
 
+/// The element validator and bounds needed to stream a list field.
+pub(crate) struct StreamList<'a> {
+    pub items: &'a Arc<CombinedValidator>,
+    pub min_length: Option<usize>,
+    pub max_length: Option<usize>,
+}
+
+impl ListValidator {
+    pub(crate) fn stream_list(&self) -> Option<StreamList<'_>> {
+        Some(StreamList {
+            items: self.item_validator.as_ref()?,
+            min_length: self.min_length,
+            max_length: self.max_length,
+        })
+    }
+}
+
 pub fn get_items_schema(
     schema: &Bound<'_, PyDict>,
     config: Option<&Bound<'_, PyDict>>,
