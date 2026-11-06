@@ -1,6 +1,5 @@
 import dataclasses
 import re
-import sys
 import typing
 from typing import Generic, TypeVar
 

@@ -1,5 +1,4 @@
 import re
-import sys
 import warnings
 from collections.abc import Callable, Sequence
 from copy import deepcopy

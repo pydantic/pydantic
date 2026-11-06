@@ -1,4 +1,4 @@
-from datetime import UTC, time, timezone
+from datetime import UTC, time
 from decimal import Decimal
 from typing import Annotated
 

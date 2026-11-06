@@ -4,7 +4,7 @@ import pickle
 import re
 import sys
 from collections import UserDict
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from functools import partial
 from typing import Annotated, Any, Generic, Literal, Required, TypeVar
 
