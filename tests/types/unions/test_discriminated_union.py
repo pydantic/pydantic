@@ -4,7 +4,7 @@ import warnings
 from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from types import SimpleNamespace
 from typing import Annotated, Any, ClassVar, Generic, Literal, TypeVar, Union
 
@@ -409,11 +409,8 @@ ENUM_TEST_CASES = [
     (FooIntEnum, {'a': 1, 'b': 2}),
     (IntEnum, {'a': 1, 'b': 2}),
     (FooStrEnum, {'a': 'v_a', 'b': 'v_b'}),
+    (StrEnum, {'a': 'v_a', 'b': 'v_b'}),
 ]
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-
-    ENUM_TEST_CASES.append((StrEnum, {'a': 'v_a', 'b': 'v_b'}))
 
 
 @pytest.mark.parametrize('base_class,choices', ENUM_TEST_CASES)

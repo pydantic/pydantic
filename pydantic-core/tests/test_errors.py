@@ -705,7 +705,7 @@ class CauseResult(enum.Enum):
         (
             'Enabled',
             CoreConfig(validation_error_cause=True),
-            CauseResult.CAUSE if sys.version_info >= (3, 11) else CauseResult.IMPORT_ERROR,
+            CauseResult.CAUSE,
         ),
         ('Disabled specifically', CoreConfig(validation_error_cause=False), CauseResult.NO_CAUSE),
         ('Disabled implicitly', {}, CauseResult.NO_CAUSE),

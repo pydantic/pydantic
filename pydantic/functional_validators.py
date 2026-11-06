@@ -3,11 +3,10 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import sys
 import warnings
 from collections.abc import Callable
 from functools import partialmethod
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Self, TypeAlias, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol, Self, TypeAlias, TypeVar, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import TypeForm
@@ -16,11 +15,6 @@ from ._internal import _decorators, _generics
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
 from .warnings import ArbitraryTypeWarning
-
-if sys.version_info < (3, 11):
-    from typing_extensions import Protocol
-else:
-    from typing import Protocol
 
 _inspect_validator = _decorators.inspect_validator
 

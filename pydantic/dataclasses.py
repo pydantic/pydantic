@@ -7,7 +7,7 @@ import functools
 import sys
 import types
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Generic, Literal, NoReturn, TypeGuard, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeGuard, TypeVar, overload
 from warnings import warn
 
 from typing_extensions import dataclass_transform
@@ -280,20 +280,6 @@ def _pydantic_fields_complete(cls: type[PydanticDataclass]) -> bool:
     This is a private helper, not meant to be used outside Pydantic.
     """
     return all(field_info._complete for field_info in cls.__pydantic_fields__.values())
-
-
-if sys.version_info < (3, 11):
-    # Monkeypatch dataclasses.InitVar so that typing doesn't error if it occurs as a type when evaluating type hints
-    # Starting in 3.11, typing.get_type_hints will not raise an error if the retrieved type hints are not callable.
-
-    def _call_initvar(*args: Any, **kwargs: Any) -> NoReturn:
-        """This function does nothing but raise an error that is as similar as possible to what you'd get
-        if you were to try calling `InitVar[int]()` without this monkeypatch. The whole purpose is just
-        to ensure typing._type_check does not error if the type hint evaluates to `InitVar[<parameter>]`.
-        """
-        raise TypeError("'InitVar' object is not callable")
-
-    dataclasses.InitVar.__call__ = _call_initvar
 
 
 def rebuild_dataclass(

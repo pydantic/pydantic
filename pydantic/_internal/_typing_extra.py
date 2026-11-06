@@ -389,22 +389,16 @@ def eval_type(
             message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
         else:
             message = f'Unable to evaluate type annotation {value!r}.'
-        if sys.version_info >= (3, 11):
-            e.add_note(message)
-            raise
-        else:
-            raise TypeError(message) from e
+        e.add_note(message)
+        raise
     except RecursionError as e:
         message = (
             "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
             'consider using PEP 695 type aliases instead. For more details, refer to the documentation: '
             f'https://pydantic.dev/docs/validation/{version_short()}/concepts/types/#named-recursive-types'
         )
-        if sys.version_info >= (3, 11):
-            e.add_note(message)
-            raise
-        else:
-            raise RecursionError(f'{e.args[0]}\n{message}')
+        e.add_note(message)
+        raise
 
 
 def _eval_type(
