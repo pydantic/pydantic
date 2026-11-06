@@ -229,14 +229,14 @@ Built-in type: [`float`][].
 
 Floats support the following constraints:
 
-| Constraint      | Description                                             | JSON Schema                                                                                             |
-| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `le`            | The value must be less than or equal to this number     | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
-| `ge`            | The value must be greater than or equal to this number  | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
-| `lt`            | The value must be strictly less than this number        | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
-| `gt`            | The value must be strictly greater than this number     | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
-| `multiple_of`   | The value must be a multiple of this number             | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword   |
-| `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A                                                                                                     |
+| Constraint      | Description                                                                  | JSON Schema                                                                                             |
+| --------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `le`            | The value must be less than or equal to this number                          | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
+| `ge`            | The value must be greater than or equal to this number                       | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
+| `lt`            | The value must be strictly less than this number                             | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
+| `gt`            | The value must be strictly greater than this number                          | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
+| `multiple_of`   | The value must be a multiple of this number                                  | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword   |
+| `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values. Defaults to `True`. | N/A                                                                                                     |
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 
@@ -286,9 +286,8 @@ Standard library type: [`decimal.Decimal`][].
 <h4>Validation</h4>
 
 * [`Decimal`][decimal.Decimal] instances are validated as is.
-* Strings, integers and three-element tuples are validated using the [`Decimal`][decimal.Decimal] constructor.
 * Floats are converted to strings before being passed to the [`Decimal`][decimal.Decimal] constructor.
-* Boolean values are rejected.
+* All other values are passed to the [`Decimal`][decimal.Decimal] constructor, except boolean values which are rejected.
 
 <h4>Constraints</h4>
 
@@ -301,9 +300,9 @@ Decimals support the following constraints (numbers must be coercible to decimal
 | `lt`             | The value must be strictly less than this number                                                                    | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                        |
 | `gt`             | The value must be strictly greater than this number                                                                 | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                        |
 | `multiple_of`    | The value must be a multiple of this number                                                                         | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword                          |
-| `allow_inf_nan`  | Whether to allow NaN (not-a-number) and infinite values                                                             | N/A                                                                                                                            |
-| `max_digits`     | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | N/A (see below)                                                                                                           |
-| `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted.                                       | N/A (see below)                                                                                                           |
+| `allow_inf_nan`  | Whether to allow NaN (not-a-number) and infinite values. Defaults to `False`.                                       | N/A                                                                                                                            |
+| `max_digits`     | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | N/A (see below)                                                                                                                |
+| `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted.                                       | N/A (see below)                                                                                                                |
 
 /// version-changed | v2.12
 The JSON Schema includes a [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) matching the `max_digits`
