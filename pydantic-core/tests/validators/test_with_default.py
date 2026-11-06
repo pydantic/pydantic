@@ -51,6 +51,7 @@ def test_typed_dict_omit():
     assert v.validate_python({'x': 'x', 'y': 42}) == {'x': 'x'}
 
 
+@pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
 def test_arguments():
     v = SchemaValidator(
         core_schema.arguments_schema(
@@ -71,6 +72,7 @@ def test_arguments():
     assert v.validate_python(()) == ((), {'a': 1})
 
 
+@pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
 def test_arguments_omit():
     with pytest.raises(SchemaError, match="Parameter 'a': omit_on_error cannot be used with arguments"):
         SchemaValidator(

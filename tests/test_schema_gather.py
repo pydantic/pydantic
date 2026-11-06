@@ -35,6 +35,8 @@ def find_def_ref(schema: Any, ref: str) -> Any:
     return found[0]
 
 
+# The deprecated `arguments` schema is still supported:
+@pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
 def test_all_schema_kinds() -> None:
     int_schema = cs.int_schema()
     shared = cs.list_schema(cs.definition_reference_schema('shared'))

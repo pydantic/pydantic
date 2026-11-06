@@ -931,6 +931,7 @@ def test_tuple_many_positional(benchmark):
     benchmark(v.validate_python, list(range(10)))
 
 
+@pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
 @pytest.mark.benchmark(group='arguments')
 def test_arguments(benchmark):
     v = SchemaValidator(
