@@ -99,10 +99,8 @@ bindings = 'pyo3'
 # when using `uv` to build `pydantic-core`, use the `dev` profile
 # can override by e.g. `make build-pgo` and then using `uv run --no-sync`
 editable-profile = 'dev'
-# uses uv export followed by uv pip install to achieve a locked install
-# because uv sync will overwrite the temporary venv created by maturin
-# numpy not needed by the benchmarks and doesn't support the manylinux
-# versions we build PGO wheels for anyway
+# maturin installs the `pgo` group into its temporary venv with uv export
+# followed by uv pip install, so versions come from `uv.lock`
 pgo-command = "pytest tests/benchmarks"
 pgo-dependency-group = "pgo"
 
