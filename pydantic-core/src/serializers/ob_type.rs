@@ -523,11 +523,24 @@ impl PartialEq for ObType {
 }
 
 fn get_base_type<'py>(py_type: &Bound<'py, PyType>) -> Option<Bound<'py, PyType>> {
-    let base_type_ptr = unsafe { (*py_type.as_type_ptr()).tp_base };
-    // Safety: `base_type_ptr` must be a valid pointer to a Python type object, or null.
-    if base_type_ptr.is_null() {
-        None
-    } else {
-        Some(unsafe { PyType::from_borrowed_type_ptr(py_type.py(), base_type_ptr) })
+    #[cfg(Py_LIMITED_API)]
+    {
+        let base_type = py_type.getattr(intern!(py_type.py(), "__base__")).ok()?;
+        if base_type.is_none() {
+            None
+        } else {
+            base_type.cast_into::<PyType>().ok()
+        }
+    }
+
+    #[cfg(not(Py_LIMITED_API))]
+    {
+        let base_type_ptr = unsafe { (*py_type.as_type_ptr()).tp_base };
+        // Safety: `base_type_ptr` must be a valid pointer to a Python type object, or null.
+        if base_type_ptr.is_null() {
+            None
+        } else {
+            Some(unsafe { PyType::from_borrowed_type_ptr(py_type.py(), base_type_ptr) })
+        }
     }
 }
