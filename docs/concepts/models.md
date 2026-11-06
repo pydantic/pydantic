@@ -1092,8 +1092,8 @@ except ValidationError as e:
     Note, validation will still fail if you, for example are validating against `GenericModel[int]` and pass in an instance `GenericModel[str](a='not an int')`.
 
     It's also worth noting that this pattern will re-trigger any custom validation as well, like additional model validators and the like.
-    Validators will be called once on the first pass, validating directly against `GenericModel[Any]`. That validation fails, as `GenericModel[int]` is not a subclass of `GenericModel[Any]`. This relates to the warning above about the complications of using parametrized generics in `isinstance()` and `issubclass()` checks.
-    Then, the validators will be called again on the second pass, during more lax force-revalidation phase, which succeeds.
+    The first pass fails before the validators run, as `GenericModel[int]` is not a subclass of `GenericModel[Any]`. This relates to the warning above about the complications of using parametrized generics in `isinstance()` and `issubclass()` checks.
+    The validators are called only once, on the second pass, during more lax force-revalidation phase, which succeeds. The first printed line in the example below comes from creating `GenericModel[int](a=1)`.
     To better understand this consequence, see below:
 
     ```python {test="skip"}
