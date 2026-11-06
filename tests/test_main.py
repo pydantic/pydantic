@@ -3168,6 +3168,36 @@ def test_equality_delegation():
     assert MyModel(foo='bar') == ANY
 
 
+def test_equality_cached_property_non_bool_comparable():
+    from functools import cached_property
+
+    class ArrayLike:
+        def __init__(self, val: int):
+            self.val = val
+
+        def __eq__(self, other: Any) -> bool:
+            raise ValueError('The truth value of an array with more than one element is ambiguous.')
+
+    class Model(BaseModel):
+        value: int
+
+        @cached_property
+        def derived(self) -> ArrayLike:
+            return ArrayLike(self.value)
+
+    a = Model(value=1)
+    b = Model(value=1)
+    assert a == b
+    _ = a.derived
+    assert a == b
+    _ = b.derived
+    assert a == b
+
+    c = Model(value=2)
+    _ = c.derived
+    assert not (a == c)
+
+
 def test_recursion_loop_error():
     class Model(BaseModel):
         x: list['Model']
