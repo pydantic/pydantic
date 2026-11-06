@@ -6,7 +6,7 @@ import decimal
 import json
 import platform
 import sys
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from typing import Any
@@ -586,7 +586,7 @@ class TestBenchmarkDateTime:
     @pytest.fixture(scope='class')
     @classmethod
     def datetime_raw(cls):
-        return datetime.now(timezone.utc) + timedelta(days=1)
+        return datetime.now(UTC) + timedelta(days=1)
 
     @pytest.fixture(scope='class')
     @classmethod

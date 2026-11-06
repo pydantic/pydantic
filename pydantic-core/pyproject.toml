@@ -5,7 +5,7 @@ build-backend = 'maturin'
 [project]
 name = 'pydantic_core'
 description = "Core functionality for Pydantic validation and serialization"
-requires-python = '>=3.10'
+requires-python = '>=3.11'
 license = 'MIT'
 license-files = ['LICENSE']
 authors = [
@@ -101,7 +101,6 @@ pgo-command = "uv export --frozen --group testing-extra --no-emit-workspace --no
 
 [tool.ruff]
 line-length = 120
-target-version = 'py310'
 
 [tool.ruff.lint]
 extend-select = ['Q', 'RUF100', 'C90', 'I', 'UP']

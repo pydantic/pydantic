@@ -3,7 +3,7 @@ import json
 import re
 import types
 import zoneinfo
-from datetime import date, datetime, time, timedelta, timezone, tzinfo
+from datetime import UTC, date, datetime, time, timedelta, timezone, tzinfo
 from decimal import Decimal
 
 import pytest
@@ -36,20 +36,20 @@ def test_constraints_schema_validation() -> None:
         (date(2022, 6, 8), datetime(2022, 6, 8)),
         ('2022-01-01', datetime(2022, 1, 1, 0, 0, 0)),
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
-        ('1000000000000', datetime(2001, 9, 9, 1, 46, 40, tzinfo=timezone.utc)),
+        ('1000000000000', datetime(2001, 9, 9, 1, 46, 40, tzinfo=UTC)),
         (b'2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
-        (b'2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
+        (b'2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=UTC)),
         ((1,), Err('Input should be a valid datetime [type=datetime_type')),
         (time(1, 2, 3), Err('Input should be a valid datetime [type=datetime_type')),
-        (Decimal(1654646400), datetime(2022, 6, 8, tzinfo=timezone.utc)),
-        ('1654646400', datetime(2022, 6, 8, tzinfo=timezone.utc)),
-        (Decimal('1654646400.123456'), datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
-        (Decimal('1654646400.1234564'), datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
-        (Decimal('1654646400.1234568'), datetime(2022, 6, 8, 0, 0, 0, 123457, tzinfo=timezone.utc)),
-        ('1654646400.1234568', datetime(2022, 6, 8, 0, 0, 0, 123457, tzinfo=timezone.utc)),
+        (Decimal(1654646400), datetime(2022, 6, 8, tzinfo=UTC)),
+        ('1654646400', datetime(2022, 6, 8, tzinfo=UTC)),
+        (Decimal('1654646400.123456'), datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=UTC)),
+        (Decimal('1654646400.1234564'), datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=UTC)),
+        (Decimal('1654646400.1234568'), datetime(2022, 6, 8, 0, 0, 0, 123457, tzinfo=UTC)),
+        ('1654646400.1234568', datetime(2022, 6, 8, 0, 0, 0, 123457, tzinfo=UTC)),
         (
             Decimal('1654646400123.456'),
-            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=UTC),
         ),
         (253_402_300_800_000, Err('should be a valid datetime, dates after 9999 are not supported as unix timestamps')),
         (
@@ -69,7 +69,7 @@ def test_constraints_schema_validation() -> None:
         ),
         (
             '0001-01-01T00:00:00.000000Z',
-            datetime(1, 1, 1, tzinfo=timezone.utc),
+            datetime(1, 1, 1, tzinfo=UTC),
         ),
         (
             '0000-12-31T23:59:59.999999Z',
@@ -142,7 +142,7 @@ def test_keep_tz_bound():
     'input_value,expected',
     [
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
-        ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
+        ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=UTC)),
         (
             '2022-06-08T12:13:14+12:15',
             datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone(timedelta(hours=12, minutes=15))),
@@ -151,8 +151,8 @@ def test_keep_tz_bound():
             '2022-06-08T12:13:14+23:59',
             datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone(timedelta(hours=23, minutes=59))),
         ),
-        (1655205632, datetime(2022, 6, 14, 11, 20, 32, tzinfo=timezone.utc)),
-        (1655205632.331557, datetime(2022, 6, 14, 11, 20, 32, microsecond=331557, tzinfo=timezone.utc)),
+        (1655205632, datetime(2022, 6, 14, 11, 20, 32, tzinfo=UTC)),
+        (1655205632.331557, datetime(2022, 6, 14, 11, 20, 32, microsecond=331557, tzinfo=UTC)),
         (
             '2022-06-08T12:13:14+24:00',
             Err(
@@ -178,7 +178,7 @@ def test_datetime_json(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
-        ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
+        ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=UTC)),
         (123, Err('Input should be a valid datetime [type=datetime_type')),
         (123.4, Err('Input should be a valid datetime [type=datetime_type')),
         (True, Err('Input should be a valid datetime [type=datetime_type')),
@@ -325,8 +325,8 @@ def test_union():
     'input_value,expected',
     [
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
-        ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
-        (1655205632, datetime(2022, 6, 14, 11, 20, 32, tzinfo=timezone.utc)),
+        ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=UTC)),
+        (1655205632, datetime(2022, 6, 14, 11, 20, 32, tzinfo=UTC)),
         ('2068-06-08T12:13:14', Err('Input should be in the past [type=datetime_past,')),
         (3105730800, Err('Input should be in the past [type=datetime_past,')),
     ],
@@ -343,7 +343,7 @@ def test_datetime_past(py_and_json: PyAndJson, input_value, expected):
 
 def test_datetime_past_timezone():
     v = SchemaValidator(core_schema.datetime_schema(now_utc_offset=0, now_op='past'))
-    now_utc = datetime.now(timezone.utc) - timedelta(seconds=1)
+    now_utc = datetime.now(UTC) - timedelta(seconds=1)
     assert v.isinstance_python(now_utc)
     # "later" in the day
     assert v.isinstance_python(now_utc.astimezone(zoneinfo.ZoneInfo('Europe/Istanbul')))
@@ -368,8 +368,8 @@ def test_datetime_past_timezone():
     'input_value,expected',
     [
         ('2068-06-08T12:13:14', datetime(2068, 6, 8, 12, 13, 14)),
-        ('2068-06-08T12:13:14Z', datetime(2068, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
-        (3105730800, datetime(2068, 5, 31, 23, 0, tzinfo=timezone.utc)),
+        ('2068-06-08T12:13:14Z', datetime(2068, 6, 8, 12, 13, 14, tzinfo=UTC)),
+        (3105730800, datetime(2068, 5, 31, 23, 0, tzinfo=UTC)),
         ('2022-06-08T12:13:14', Err('Input should be in the future [type=datetime_future,')),
         (1655205632, Err('Input should be in the future [type=datetime_future,')),
     ],
@@ -386,7 +386,7 @@ def test_datetime_future(py_and_json: PyAndJson, input_value, expected):
 
 def test_datetime_future_timezone():
     v = SchemaValidator(core_schema.datetime_schema(now_utc_offset=0, now_op='future'))
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
 
     soon_utc = now_utc + timedelta(minutes=1)
     assert v.isinstance_python(soon_utc)
@@ -407,9 +407,9 @@ def test_datetime_future_timezone():
 
 def test_aware():
     v = SchemaValidator(core_schema.datetime_schema(tz_constraint='aware'))
-    value = datetime.now(tz=timezone.utc)
+    value = datetime.now(tz=UTC)
     assert value is v.validate_python(value)
-    assert v.validate_python('2022-06-08T12:13:14Z') == datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)
+    assert v.validate_python('2022-06-08T12:13:14Z') == datetime(2022, 6, 8, 12, 13, 14, tzinfo=UTC)
 
     value = datetime.now()
     with pytest.raises(ValidationError, match=r'Input should have timezone info \[type=timezone_aware,'):
@@ -425,7 +425,7 @@ def test_naive():
     assert value is v.validate_python(value)
     assert v.validate_python('2022-06-08T12:13:14') == datetime(2022, 6, 8, 12, 13, 14)
 
-    value = datetime.now(tz=timezone.utc)
+    value = datetime.now(tz=UTC)
     with pytest.raises(ValidationError, match=r'Input should not have timezone info \[type=timezone_naive,'):
         v.validate_python(value)
 
@@ -435,9 +435,9 @@ def test_naive():
 
 def test_aware_specific():
     v = SchemaValidator(core_schema.datetime_schema(tz_constraint=0))
-    value = datetime.now(tz=timezone.utc)
+    value = datetime.now(tz=UTC)
     assert value is v.validate_python(value)
-    assert v.validate_python('2022-06-08T12:13:14Z') == datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)
+    assert v.validate_python('2022-06-08T12:13:14Z') == datetime(2022, 6, 8, 12, 13, 14, tzinfo=UTC)
 
     value = datetime.now()
     with pytest.raises(ValidationError, match='Input should have timezone info'):
@@ -470,7 +470,7 @@ def test_neg_7200():
     with pytest.raises(ValidationError, match='Input should have timezone info'):
         v.validate_python(value)
 
-    value = datetime.now(tz=timezone.utc)
+    value = datetime.now(tz=UTC)
     with pytest.raises(ValidationError, match='Timezone offset of -7200 required, got 0'):
         v.validate_python(value)
     with pytest.raises(ValidationError, match='Timezone offset of -7200 required, got 0'):
@@ -510,42 +510,42 @@ def test_tz_cmp() -> None:
     'val_temporal_unit, input_value, expected',
     [
         # 'seconds' mode: treat as seconds since epoch
-        ('seconds', 1654646400, datetime(2022, 6, 8, tzinfo=timezone.utc)),
-        ('seconds', '1654646400', datetime(2022, 6, 8, tzinfo=timezone.utc)),
-        ('seconds', 1654646400.123456, datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
-        ('seconds', 8640000000.0, datetime(2243, 10, 17, tzinfo=timezone.utc)),
-        ('seconds', 92534400000.0, datetime(4902, 4, 20, tzinfo=timezone.utc)),
+        ('seconds', 1654646400, datetime(2022, 6, 8, tzinfo=UTC)),
+        ('seconds', '1654646400', datetime(2022, 6, 8, tzinfo=UTC)),
+        ('seconds', 1654646400.123456, datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=UTC)),
+        ('seconds', 8640000000.0, datetime(2243, 10, 17, tzinfo=UTC)),
+        ('seconds', 92534400000.0, datetime(4902, 4, 20, tzinfo=UTC)),
         # 'milliseconds' mode: treat as milliseconds since epoch
-        ('milliseconds', 1654646400, datetime(1970, 1, 20, 3, 37, 26, 400000, tzinfo=timezone.utc)),
-        ('milliseconds', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
-        ('milliseconds', '1654646400123', datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
-        ('milliseconds', 8640000000.0, datetime(1970, 4, 11, tzinfo=timezone.utc)),
-        ('milliseconds', 92534400000.0, datetime(1972, 12, 7, tzinfo=timezone.utc)),
+        ('milliseconds', 1654646400, datetime(1970, 1, 20, 3, 37, 26, 400000, tzinfo=UTC)),
+        ('milliseconds', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=UTC)),
+        ('milliseconds', '1654646400123', datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=UTC)),
+        ('milliseconds', 8640000000.0, datetime(1970, 4, 11, tzinfo=UTC)),
+        ('milliseconds', 92534400000.0, datetime(1972, 12, 7, tzinfo=UTC)),
         (
             'milliseconds',
             1654646400123.456,
-            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=UTC),
         ),
         # 'infer' mode: large numbers are ms, small are s
-        ('infer', 1654646400, datetime(2022, 6, 8, tzinfo=timezone.utc)),
-        ('infer', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
+        ('infer', 1654646400, datetime(2022, 6, 8, tzinfo=UTC)),
+        ('infer', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=UTC)),
         (
             'infer',
             1654646400123.456,
-            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=UTC),
         ),
-        ('infer', 8640000000.0, datetime(2243, 10, 17, tzinfo=timezone.utc)),
-        ('infer', 92534400000.0, datetime(1972, 12, 7, tzinfo=timezone.utc)),
+        ('infer', 8640000000.0, datetime(2243, 10, 17, tzinfo=UTC)),
+        ('infer', 92534400000.0, datetime(1972, 12, 7, tzinfo=UTC)),
         # negative fractional timestamps:
-        ('seconds', -0.125, datetime(1969, 12, 31, 23, 59, 59, 875000, tzinfo=timezone.utc)),
-        ('seconds', '-0.125', datetime(1969, 12, 31, 23, 59, 59, 875000, tzinfo=timezone.utc)),
-        ('milliseconds', -125.5, datetime(1969, 12, 31, 23, 59, 59, 874500, tzinfo=timezone.utc)),
-        ('milliseconds', '-125.5', datetime(1969, 12, 31, 23, 59, 59, 874500, tzinfo=timezone.utc)),
-        ('infer', -1.125, datetime(1969, 12, 31, 23, 59, 58, 875000, tzinfo=timezone.utc)),
+        ('seconds', -0.125, datetime(1969, 12, 31, 23, 59, 59, 875000, tzinfo=UTC)),
+        ('seconds', '-0.125', datetime(1969, 12, 31, 23, 59, 59, 875000, tzinfo=UTC)),
+        ('milliseconds', -125.5, datetime(1969, 12, 31, 23, 59, 59, 874500, tzinfo=UTC)),
+        ('milliseconds', '-125.5', datetime(1969, 12, 31, 23, 59, 59, 874500, tzinfo=UTC)),
+        ('infer', -1.125, datetime(1969, 12, 31, 23, 59, 58, 875000, tzinfo=UTC)),
         # fractional timestamps as strings use the configured unit:
-        ('milliseconds', '125.5', datetime(1970, 1, 1, 0, 0, 0, 125500, tzinfo=timezone.utc)),
-        ('seconds', '20000000001.5', datetime(2603, 10, 11, 11, 33, 21, 500000, tzinfo=timezone.utc)),
-        ('infer', '30000000000000.5', datetime(2920, 8, 30, 5, 20, 0, 500, tzinfo=timezone.utc)),
+        ('milliseconds', '125.5', datetime(1970, 1, 1, 0, 0, 0, 125500, tzinfo=UTC)),
+        ('seconds', '20000000001.5', datetime(2603, 10, 11, 11, 33, 21, 500000, tzinfo=UTC)),
+        ('infer', '30000000000000.5', datetime(2920, 8, 30, 5, 20, 0, 500, tzinfo=UTC)),
     ],
 )
 def test_val_temporal_unit_datetime(val_temporal_unit, input_value, expected):
