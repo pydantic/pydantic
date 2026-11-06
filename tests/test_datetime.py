@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta, timezone
 from typing import Annotated, Any
 
 import pytest
@@ -120,9 +120,9 @@ def time_model_fixture():
         ('10:20:30.400', time(10, 20, 30, 400_000)),
         (b'10:20:30.400', time(10, 20, 30, 400_000)),
         (time(4, 8, 16), time(4, 8, 16)),
-        (3610, time(1, 0, 10, tzinfo=timezone.utc)),
-        (3600.5, time(1, 0, 0, 500000, tzinfo=timezone.utc)),
-        (86400 - 1, time(23, 59, 59, tzinfo=timezone.utc)),
+        (3610, time(1, 0, 10, tzinfo=UTC)),
+        (3600.5, time(1, 0, 0, 500000, tzinfo=UTC)),
+        (86400 - 1, time(23, 59, 59, tzinfo=UTC)),
         # Invalid inputs
         ('4:8:16', Err('Input should be in a valid time format, invalid character in hour [type=time_parsing,')),
         (86400, Err('Input should be in a valid time format, numeric times may not exceed 86,399 seconds')),
@@ -134,8 +134,8 @@ def time_model_fixture():
         # https://github.com/pydantic/speedate/issues/10
         ('11:05:00-05:30', time(11, 5, 0, tzinfo=create_tz(-330))),
         ('11:05:00-0530', time(11, 5, 0, tzinfo=create_tz(-330))),
-        ('11:05:00Z', time(11, 5, 0, tzinfo=timezone.utc)),
-        ('11:05:00+00:00', time(11, 5, 0, tzinfo=timezone.utc)),
+        ('11:05:00Z', time(11, 5, 0, tzinfo=UTC)),
+        ('11:05:00+00:00', time(11, 5, 0, tzinfo=UTC)),
         ('11:05-06:00', time(11, 5, 0, tzinfo=create_tz(-360))),
         ('11:05+06:00', time(11, 5, 0, tzinfo=create_tz(360))),
         ('11:05:00-25:00', Err('Input should be in a valid time format, timezone offset must be less than 24 hours')),
@@ -162,28 +162,28 @@ def datetime_model_fixture():
     [
         # Valid inputs
         # values in seconds
-        (1_494_012_444.883_309, datetime(2017, 5, 5, 19, 27, 24, 883_309, tzinfo=timezone.utc)),
-        (1_494_012_444, datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
+        (1_494_012_444.883_309, datetime(2017, 5, 5, 19, 27, 24, 883_309, tzinfo=UTC)),
+        (1_494_012_444, datetime(2017, 5, 5, 19, 27, 24, tzinfo=UTC)),
         # values in ms
-        (1_494_012_444_000, datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
+        (1_494_012_444_000, datetime(2017, 5, 5, 19, 27, 24, tzinfo=UTC)),
         ('2012-04-23T09:15:00', datetime(2012, 4, 23, 9, 15)),
-        ('2012-04-23T09:15:00Z', datetime(2012, 4, 23, 9, 15, 0, 0, timezone.utc)),
+        ('2012-04-23T09:15:00Z', datetime(2012, 4, 23, 9, 15, 0, 0, UTC)),
         ('2012-04-23T10:20:30.400+02:30', datetime(2012, 4, 23, 10, 20, 30, 400_000, create_tz(150))),
         ('2012-04-23T10:20:30.400+02:00', datetime(2012, 4, 23, 10, 20, 30, 400_000, create_tz(120))),
         ('2012-04-23T10:20:30.400-02:00', datetime(2012, 4, 23, 10, 20, 30, 400_000, create_tz(-120))),
         (b'2012-04-23T10:20:30.400-02:00', datetime(2012, 4, 23, 10, 20, 30, 400_000, create_tz(-120))),
         (datetime(2017, 5, 5), datetime(2017, 5, 5)),
-        (0, datetime(1970, 1, 1, 0, 0, 0, tzinfo=timezone.utc)),
+        (0, datetime(1970, 1, 1, 0, 0, 0, tzinfo=UTC)),
         # Numeric inputs as strings
-        ('1494012444.883309', datetime(2017, 5, 5, 19, 27, 24, 883309, tzinfo=timezone.utc)),
-        ('1494012444', datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
-        (b'1494012444', datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
-        ('1494012444000.883309', datetime(2017, 5, 5, 19, 27, 24, 883, tzinfo=timezone.utc)),
-        ('-1494012444000.883309', datetime(1922, 8, 29, 4, 32, 35, 999117, tzinfo=timezone.utc)),
-        (19_999_999_999, datetime(2603, 10, 11, 11, 33, 19, tzinfo=timezone.utc)),  # just before watershed
-        (20_000_000_001, datetime(1970, 8, 20, 11, 33, 20, 1000, tzinfo=timezone.utc)),  # just after watershed
-        (1_549_316_052, datetime(2019, 2, 4, 21, 34, 12, 0, tzinfo=timezone.utc)),  # nowish in s
-        (1_549_316_052_104, datetime(2019, 2, 4, 21, 34, 12, 104_000, tzinfo=timezone.utc)),  # nowish in ms
+        ('1494012444.883309', datetime(2017, 5, 5, 19, 27, 24, 883309, tzinfo=UTC)),
+        ('1494012444', datetime(2017, 5, 5, 19, 27, 24, tzinfo=UTC)),
+        (b'1494012444', datetime(2017, 5, 5, 19, 27, 24, tzinfo=UTC)),
+        ('1494012444000.883309', datetime(2017, 5, 5, 19, 27, 24, 883, tzinfo=UTC)),
+        ('-1494012444000.883309', datetime(1922, 8, 29, 4, 32, 35, 999117, tzinfo=UTC)),
+        (19_999_999_999, datetime(2603, 10, 11, 11, 33, 19, tzinfo=UTC)),  # just before watershed
+        (20_000_000_001, datetime(1970, 8, 20, 11, 33, 20, 1000, tzinfo=UTC)),  # just after watershed
+        (1_549_316_052, datetime(2019, 2, 4, 21, 34, 12, 0, tzinfo=UTC)),  # nowish in s
+        (1_549_316_052_104, datetime(2019, 2, 4, 21, 34, 12, 104_000, tzinfo=UTC)),  # nowish in ms
         # Invalid inputs
         (1_549_316_052_104_324, Err('Input should be a valid datetime, dates after 9999')),  # nowish in μs
         (1_549_316_052_104_324_096, Err('Input should be a valid datetime, dates after 9999')),  # nowish in ns
@@ -205,32 +205,32 @@ def test_datetime_parsing(DatetimeModel, value, result):
     'val_temporal_unit, input_value, expected',
     [
         # 'seconds' mode: treat as seconds since epoch
-        ('seconds', 1654646400, datetime(2022, 6, 8, tzinfo=timezone.utc)),
-        ('seconds', '1654646400', datetime(2022, 6, 8, tzinfo=timezone.utc)),
-        ('seconds', 1654646400.123456, datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
-        ('seconds', 8640000000.0, datetime(2243, 10, 17, tzinfo=timezone.utc)),
-        ('seconds', 92534400000.0, datetime(4902, 4, 20, tzinfo=timezone.utc)),
+        ('seconds', 1654646400, datetime(2022, 6, 8, tzinfo=UTC)),
+        ('seconds', '1654646400', datetime(2022, 6, 8, tzinfo=UTC)),
+        ('seconds', 1654646400.123456, datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=UTC)),
+        ('seconds', 8640000000.0, datetime(2243, 10, 17, tzinfo=UTC)),
+        ('seconds', 92534400000.0, datetime(4902, 4, 20, tzinfo=UTC)),
         # 'milliseconds' mode: treat as milliseconds since epoch
-        ('milliseconds', 1654646400, datetime(1970, 1, 20, 3, 37, 26, 400000, tzinfo=timezone.utc)),
-        ('milliseconds', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
-        ('milliseconds', '1654646400123', datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
-        ('milliseconds', 8640000000.0, datetime(1970, 4, 11, tzinfo=timezone.utc)),
-        ('milliseconds', 92534400000.0, datetime(1972, 12, 7, tzinfo=timezone.utc)),
+        ('milliseconds', 1654646400, datetime(1970, 1, 20, 3, 37, 26, 400000, tzinfo=UTC)),
+        ('milliseconds', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=UTC)),
+        ('milliseconds', '1654646400123', datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=UTC)),
+        ('milliseconds', 8640000000.0, datetime(1970, 4, 11, tzinfo=UTC)),
+        ('milliseconds', 92534400000.0, datetime(1972, 12, 7, tzinfo=UTC)),
         (
             'milliseconds',
             1654646400123.456,
-            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=UTC),
         ),
         # 'infer' mode: large numbers are ms, small are s
-        ('infer', 1654646400, datetime(2022, 6, 8, tzinfo=timezone.utc)),
-        ('infer', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
+        ('infer', 1654646400, datetime(2022, 6, 8, tzinfo=UTC)),
+        ('infer', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=UTC)),
         (
             'infer',
             1654646400123.456,
-            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=UTC),
         ),
-        ('infer', 8640000000.0, datetime(2243, 10, 17, tzinfo=timezone.utc)),
-        ('infer', 92534400000.0, datetime(1972, 12, 7, tzinfo=timezone.utc)),
+        ('infer', 8640000000.0, datetime(2243, 10, 17, tzinfo=UTC)),
+        ('infer', 92534400000.0, datetime(1972, 12, 7, tzinfo=UTC)),
     ],
 )
 def test_val_temporal_unit_datetime(val_temporal_unit, input_value, expected):
@@ -303,7 +303,7 @@ def test_aware_datetime_validation_success(aware_datetime_type):
     class Model(BaseModel):
         foo: aware_datetime_type
 
-    value = datetime.now(tz=timezone.utc)
+    value = datetime.now(tz=UTC)
 
     assert Model(foo=value).foo == value
 
@@ -340,7 +340,7 @@ def test_naive_datetime_validation_fails(naive_datetime_type):
     class Model(BaseModel):
         foo: naive_datetime_type
 
-    value = datetime.now(tz=timezone.utc)
+    value = datetime.now(tz=UTC)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)

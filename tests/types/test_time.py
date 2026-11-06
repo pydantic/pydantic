@@ -1,4 +1,4 @@
-from datetime import time, timezone
+from datetime import UTC, time, timezone
 from decimal import Decimal
 from typing import Annotated
 
@@ -13,9 +13,9 @@ from pydantic import Field, TypeAdapter, ValidationError
         (time(10, 10, 10), time(10, 10, 10)),
         ('10:10:10.0002', time(10, 10, 10, microsecond=200)),
         (b'10:10:10.0002', time(10, 10, 10, microsecond=200)),
-        (3720, time(1, 2, tzinfo=timezone.utc)),
-        (3720.0002, time(1, 2, microsecond=200, tzinfo=timezone.utc)),
-        (Decimal(3720.0002), time(1, 2, microsecond=200, tzinfo=timezone.utc)),
+        (3720, time(1, 2, tzinfo=UTC)),
+        (3720.0002, time(1, 2, microsecond=200, tzinfo=UTC)),
+        (Decimal(3720.0002), time(1, 2, microsecond=200, tzinfo=UTC)),
         pytest.param('1:1:1', ValidationError, id='1:1:1_str'),
         pytest.param(b'1:1:1', ValidationError, id='1:1:1_bytes'),
         (-1, ValidationError),

@@ -4,7 +4,7 @@ import pickle
 import re
 import sys
 from collections import UserDict
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from functools import partial
 from typing import Annotated, Any, Generic, Literal, Required, TypeVar
 
@@ -963,8 +963,8 @@ def test_validate_all():
     def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
         return dt
 
-    assert foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
-    assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
+    assert foo() == datetime(2000, 1, 1, tzinfo=UTC)
+    assert foo(0) == datetime(1970, 1, 1, tzinfo=UTC)
 
 
 def test_validate_all_positional(create_module):
@@ -980,8 +980,8 @@ def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
     return dt
 """
     )
-    assert module.foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
-    assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
+    assert module.foo() == datetime(2000, 1, 1, tzinfo=UTC)
+    assert module.foo(0) == datetime(1970, 1, 1, tzinfo=UTC)
 
 
 def test_partial():

@@ -2,7 +2,7 @@ import json
 import math
 import re
 from collections.abc import Generator
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -66,7 +66,7 @@ class MyModel(BaseModel):
         (IPv4Network, lambda: IPv4Network('192.168.0.0/24'), b'"192.168.0.0/24"'),
         (IPv6Network, lambda: IPv6Network('2001:db00::/120'), b'"2001:db00::/120"'),
         (datetime, lambda: datetime(2032, 1, 1, 1, 1), b'"2032-01-01T01:01:00"'),
-        (datetime, lambda: datetime(2032, 1, 1, 1, 1, tzinfo=timezone.utc), b'"2032-01-01T01:01:00Z"'),
+        (datetime, lambda: datetime(2032, 1, 1, 1, 1, tzinfo=UTC), b'"2032-01-01T01:01:00Z"'),
         (datetime, lambda: datetime(2032, 1, 1), b'"2032-01-01T00:00:00"'),
         (time, lambda: time(12, 34, 56), b'"12:34:56"'),
         (timedelta, lambda: timedelta(days=12, seconds=34, microseconds=56), b'"P12DT34.000056S"'),
@@ -251,8 +251,8 @@ def test_json_nested_encode_models():
     iphone = Phone(manufacturer='Apple', number=18002752273)
     galaxy = Phone(manufacturer='Samsung', number=18007267864)
 
-    timon = User(name='Timon', SSN=123, birthday=datetime(1993, 6, 1, tzinfo=timezone.utc), phone=iphone)
-    pumbaa = User(name='Pumbaa', SSN=234, birthday=datetime(1993, 5, 15, tzinfo=timezone.utc), phone=galaxy)
+    timon = User(name='Timon', SSN=123, birthday=datetime(1993, 6, 1, tzinfo=UTC), phone=iphone)
+    pumbaa = User(name='Pumbaa', SSN=234, birthday=datetime(1993, 5, 15, tzinfo=UTC), phone=galaxy)
 
     timon.friend = pumbaa
 
