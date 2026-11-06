@@ -16,6 +16,7 @@ from typing import (
     ClassVar,
     Generic,
     Literal,
+    Self,
     TypeAlias,
     TypeVar,
     Union,
@@ -24,7 +25,7 @@ from typing import (
 )
 
 from pydantic_core import PydanticUndefined, ValidationError
-from typing_extensions import Self, Sentinel, TypeForm, Unpack
+from typing_extensions import Sentinel, TypeForm, Unpack
 
 from . import PydanticDeprecatedSince211
 from ._internal import (

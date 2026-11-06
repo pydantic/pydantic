@@ -20,6 +20,7 @@ from typing import (
     Literal,
     NamedTuple,
     NewType,
+    NotRequired,
     TypedDict,
     TypeVar,
     Union,
@@ -31,7 +32,7 @@ from annotated_types import Interval
 from dirty_equals import HasRepr
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import NotRequired, TypeAliasType, TypedDict, Unpack, deprecated
+from typing_extensions import TypeAliasType, TypedDict, Unpack, deprecated
 
 import pydantic
 from pydantic import (

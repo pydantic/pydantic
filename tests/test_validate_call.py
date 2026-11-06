@@ -6,11 +6,11 @@ import sys
 from collections import UserDict
 from datetime import datetime, timezone
 from functools import partial
-from typing import Annotated, Any, Generic, Literal, TypeVar
+from typing import Annotated, Any, Generic, Literal, Required, TypeVar
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Required, TypedDict, Unpack
+from typing_extensions import TypedDict, Unpack
 
 from pydantic import (
     AfterValidator,

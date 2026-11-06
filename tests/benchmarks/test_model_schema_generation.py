@@ -5,13 +5,14 @@ from typing import (
     Any,
     Generic,
     Literal,
+    Self,
     TypeVar,
     Union,
     get_origin,
 )
 
 import pytest
-from typing_extensions import Self, TypedDict, type_repr
+from typing_extensions import TypedDict, type_repr
 
 from pydantic import (
     AfterValidator,

@@ -10,10 +10,10 @@ from dataclasses import dataclass, field
 from functools import cached_property, partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor
 from itertools import islice
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, Self, TypeAlias, TypeVar
 
 from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
-from typing_extensions import Self, TypeForm, is_typeddict
+from typing_extensions import TypeForm, is_typeddict
 
 from ..errors import PydanticUserError
 from . import _type_refs
