@@ -386,7 +386,7 @@ all_errors = [
         {'discriminator': 'bar', 'tag': 'foo', 'expected_tags': 'baz'},
     ),
     ('union_tag_not_found', 'Unable to extract tag using discriminator foo', {'discriminator': 'foo'}),
-    ('arguments_type', 'Arguments must be a tuple, list or a dictionary', None),
+    ('arguments_type', 'Arguments must be a dictionary', None),
     ('missing_argument', 'Missing required argument', None),
     ('unexpected_keyword_argument', 'Unexpected keyword argument', None),
     ('missing_keyword_only_argument', 'Missing required keyword only argument', None),

@@ -9,7 +9,7 @@ sensitive-data considerations.
 ## `arguments_type`
 
 This error is raised when an object that would be passed as arguments to a function during validation is not
-a `tuple`, `list`, or `dict`:
+a `dict`:
 
 ```python
 from pydantic import TypeAdapter, ValidationError

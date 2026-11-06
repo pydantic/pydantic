@@ -65,6 +65,11 @@ impl Parameter {
             ParameterMode::VarArgs | ParameterMode::VarKwargsUniform | ParameterMode::VarKwargsUnpackedTypedDict
         )
     }
+
+    /// The parameter name, exposed to validators as `ValidationInfo.field_name`.
+    fn field_name<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyString>> {
+        Some(self.name.as_py_str().bind(py).clone())
+    }
 }
 
 #[derive(Debug)]
@@ -258,6 +263,8 @@ impl ArgumentsV3Validator {
             };
 
         for parameter in &self.parameters {
+            let state = &mut state.scoped_set_field_name(parameter.field_name(py));
+
             // A value is present in the mapping:
             if let Some((lookup_path, dict_value)) = parameter
                 .lookup_path_collection
@@ -557,6 +564,8 @@ impl ArgumentsV3Validator {
                 kw_value = Some((lookup_path, value));
             }
 
+            let state = &mut state.scoped_set_field_name(parameter.field_name(py));
+
             match (pos_value, kw_value) {
                 (Some(_), Some((_, kw_value))) => {
                     errors.push(ValLineError::new_with_loc(
@@ -623,6 +632,7 @@ impl ArgumentsV3Validator {
             && args.len() > self.positional_params_count
         {
             if let Some(var_args_param) = self.parameters.iter().find(|p| p.mode == ParameterMode::VarArgs) {
+                let state = &mut state.scoped_set_field_name(var_args_param.field_name(py));
                 for (index, item) in args.iter().enumerate().skip(self.positional_params_count) {
                     match var_args_param.validator.validate(py, item.borrow_input(), state) {
                         Ok(value) => output_args.push(value),
@@ -689,6 +699,7 @@ impl ArgumentsV3Validator {
                         Some(var_kwargs_parameter) => {
                             match var_kwargs_parameter.mode {
                                 ParameterMode::VarKwargsUniform => {
+                                    let state = &mut state.scoped_set_field_name(var_kwargs_parameter.field_name(py));
                                     match var_kwargs_parameter.validator.validate(py, value.borrow_input(), state) {
                                         Ok(value) => {
                                             output_kwargs
@@ -723,6 +734,7 @@ impl ArgumentsV3Validator {
             .find(|p| p.mode == ParameterMode::VarKwargsUnpackedTypedDict);
 
         if let Some(var_kwargs_parameter) = maybe_var_kwargs_parameter {
+            let state = &mut state.scoped_set_field_name(var_kwargs_parameter.field_name(py));
             match var_kwargs_parameter
                 .validator
                 .validate(py, remaining_kwargs.as_any(), state)

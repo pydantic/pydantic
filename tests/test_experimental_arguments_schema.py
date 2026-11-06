@@ -97,6 +97,29 @@ def test_arguments_v3_kwargs_uniform() -> None:
     assert kwargs == {'extra': 1}
 
 
+@pytest.mark.parametrize(
+    ['input', 'json', 'msg'],
+    [
+        ([1, 2], False, 'Arguments must be a dictionary'),
+        ((1, 2), False, 'Arguments must be a dictionary'),
+        (1, False, 'Arguments must be a dictionary'),
+        ('[1, 2]', True, 'Arguments must be an object'),
+    ],
+)
+def test_arguments_v3_invalid_type(input: Any, json: bool, msg: str) -> None:
+    def func(a: int, b: int) -> None: ...
+
+    arguments_schema = generate_arguments_schema(func=func, schema_type='arguments-v3')
+    val = SchemaValidator(arguments_schema)
+
+    with pytest.raises(ValidationError) as exc_info:
+        val.validate_json(input) if json else val.validate_python(input)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'arguments_type', 'loc': (), 'msg': msg, 'input': [1, 2] if json else input},
+    ]
+
+
 class _Options(TypedDict):
     b: int
 
