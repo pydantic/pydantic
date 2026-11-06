@@ -238,6 +238,15 @@ impl ArgumentsV3Validator {
     ///
     /// valid_mapping = {'a': 1, 'b': 'test', 'kwargs': {'c': 1, 'd': 2}}
     /// ```
+    /// Whether `key` is the name of a parameter that can be passed by keyword. When validating from
+    /// a mapping, such keys can't be provided in the variadic keyword arguments, as the function
+    /// would receive them twice.
+    fn is_keyword_parameter_name(&self, key: &str) -> bool {
+        self.parameters.iter().any(|p| {
+            matches!(p.mode, ParameterMode::PositionalOrKeyword | ParameterMode::KeywordOnly) && &*p.name == key
+        })
+    }
+
     fn validate_from_mapping<'py>(
         &self,
         py: Python<'py>,
@@ -343,8 +352,8 @@ impl ArgumentsV3Validator {
                         Some(value) => {
                             for (dict_key, dict_value) in value {
                                 // Validate keys are strings:
-                                match dict_key.validate_str(true, false).map(ValidationMatch::into_inner) {
-                                    Ok(_) => (),
+                                let key = match dict_key.validate_str(true, false).map(ValidationMatch::into_inner) {
+                                    Ok(key) => key,
                                     Err(ValError::LineErrors(line_errors)) => {
                                         for err in line_errors {
                                             errors.push(
@@ -356,6 +365,18 @@ impl ArgumentsV3Validator {
                                         continue;
                                     }
                                     Err(err) => return Err(err),
+                                };
+                                if self.is_keyword_parameter_name(key.as_cow()?.as_ref()) {
+                                    let val_error = ValLineError::new(
+                                        ErrorTypeDefaults::MultipleArgumentValues,
+                                        dict_value.borrow_input(),
+                                    );
+                                    errors.push(lookup_path.apply_error_loc(
+                                        val_error.with_outer_location(dict_key.clone()),
+                                        self.loc_by_alias,
+                                        &parameter.name,
+                                    ));
+                                    continue;
                                 }
                                 // Validate values:
                                 match parameter.validator.validate(py, dict_value.borrow_input(), state) {
@@ -381,7 +402,23 @@ impl ArgumentsV3Validator {
                     ParameterMode::VarKwargsUnpackedTypedDict => {
                         match parameter.validator.validate(py, dict_value.borrow_input(), state) {
                             Ok(value) => {
-                                output_kwargs.update(value.cast_bound::<PyDict>(py).unwrap().as_mapping())?;
+                                // Typed dictionary fields can't overlap with parameters, but extra
+                                // items can (e.g. with `extra='allow'`):
+                                for (key, value) in value.cast_bound::<PyDict>(py).unwrap() {
+                                    if let Ok(key_str) = key.cast::<PyString>()
+                                        && self.is_keyword_parameter_name(&key_str.to_cow()?)
+                                    {
+                                        let val_error =
+                                            ValLineError::new(ErrorTypeDefaults::MultipleArgumentValues, &value);
+                                        errors.push(lookup_path.apply_error_loc(
+                                            val_error.with_outer_location(key_str.to_string()),
+                                            self.loc_by_alias,
+                                            &parameter.name,
+                                        ));
+                                    } else {
+                                        output_kwargs.set_item(key, value)?;
+                                    }
+                                }
                             }
                             Err(ValError::LineErrors(line_errors)) => {
                                 errors.extend(

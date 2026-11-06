@@ -120,6 +120,47 @@ def test_arguments_v3_invalid_type(input: Any, json: bool, msg: str) -> None:
     ]
 
 
+class _ExtraOptions(TypedDict, total=False, extra_items=Any):
+    m: int
+
+
+def _keyword_only(*, n: int, **kwargs: Any) -> None: ...
+
+
+def _positional_or_keyword(n: int, **kwargs: Any) -> None: ...
+
+
+def _unpacked_typed_dict(*, n: int, **kwargs: Unpack[_ExtraOptions]) -> None: ...
+
+
+@pytest.mark.parametrize('func', [_keyword_only, _positional_or_keyword, _unpacked_typed_dict])
+def test_arguments_v3_var_kwargs_overlapping_parameter(func: Any) -> None:
+    arguments_schema = generate_arguments_schema(func=func, schema_type='arguments-v3')
+    val = SchemaValidator(arguments_schema)
+
+    with pytest.raises(ValidationError) as exc_info:
+        val.validate_python({'n': 1, 'kwargs': {'n': 'not-an-int'}})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'multiple_argument_values',
+            'loc': ('kwargs', 'n'),
+            'msg': 'Got multiple values for argument',
+            'input': 'not-an-int',
+        },
+    ]
+
+
+def test_arguments_v3_var_kwargs_positional_only_name() -> None:
+    def func(n: int, /, **kwargs: Any) -> None: ...
+
+    arguments_schema = generate_arguments_schema(func=func, schema_type='arguments-v3')
+    val = SchemaValidator(arguments_schema)
+
+    # Like in Python, the name of a positional-only parameter can be used in variadic keyword arguments:
+    assert val.validate_python({'n': 1, 'kwargs': {'n': 'x'}}) == ((1,), {'n': 'x'})
+
+
 class _Options(TypedDict):
     b: int
 
