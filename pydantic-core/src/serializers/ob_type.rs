@@ -125,10 +125,14 @@ impl ObTypeLookup {
     pub fn is_type(&self, value: &Bound<'_, PyAny>, expected_ob_type: ObType) -> IsType {
         match self.ob_type_is_expected(Some(value), &value.get_type(), &expected_ob_type) {
             IsType::False => {
-                if expected_ob_type == self.fallback_isinstance(value) {
-                    IsType::Subclass
-                } else {
-                    IsType::False
+                // `fallback_isinstance` runs an ordered chain of `isinstance` checks; all we need
+                // to know here is whether the *first* matching entry is the expected type, so run
+                // the checks only up to the expected type's position in the chain: a match before
+                // it means the value's first matching type isn't the expected one, and a type that
+                // isn't in the chain at all (e.g. `None`) needs no check.
+                match fallback_chain_position(expected_ob_type) {
+                    Some(index) if self.fallback_isinstance_upto(value, index) == expected_ob_type => IsType::Subclass,
+                    _ => IsType::False,
                 }
             }
             is_type => is_type,
@@ -325,90 +329,162 @@ impl ObTypeLookup {
         }
     }
 
-    /// If our logic for finding types by recursively checking `tp_base` fails, we fallback to this which
-    /// uses `isinstance` thus supporting both mixins and classes that implement `__instancecheck__`.
-    /// We care about order here since:
-    /// 1. we pay a price for each `isinstance` call
-    /// 2. some types are subclasses of others, e.g. `bool` is a subclass of `int`
-    ///    hence we put common types first
-    ///
-    /// In addition, some types have inheritance set as a bitflag on the type object:
-    /// https://github.com/python/cpython/blob/v3.12.0rc1/Include/object.h#L546-L553
-    /// Hence they come first
+    /// If our logic for finding types by recursively checking `tp_base` fails, we fallback to
+    /// `FALLBACK_CHECKS` which uses `isinstance` thus supporting both mixins and classes that
+    /// implement `__instancecheck__`.
     fn fallback_isinstance(&self, value: &Bound<'_, PyAny>) -> ObType {
-        let py = value.py();
-        if value.is_instance_of::<PyInt>() {
-            ObType::IntSubclass
-        } else if value.is_instance_of::<PyString>() {
-            ObType::StrSubclass
-        } else if value.is_instance_of::<PyBytes>() {
-            ObType::Bytes
-        } else if value.is_instance_of::<PyList>() {
-            ObType::List
-        } else if value.is_instance_of::<PyTuple>() {
-            ObType::Tuple
-        } else if value.is_instance(self.ordered_dict_object.bind(py)).unwrap_or(false) {
-            // must come before the `dict` check, as `OrderedDict` is a `dict` subclass
-            ObType::OrderedDict
-        } else if value.is_instance(self.counter_object.bind(py)).unwrap_or(false) {
-            // must come before the `dict` check, as `Counter` is a `dict` subclass
-            ObType::Counter
-        } else if value.is_instance_of::<PyDict>() {
-            ObType::Dict
-        } else if as_frozendict(value).is_some() {
-            ObType::Frozendict
-        } else if value.is_instance_of::<PyBool>() {
-            ObType::Bool
-        } else if value.is_instance_of::<PyFloat>() {
-            ObType::FloatSubclass
-        } else if value.is_instance_of::<PyByteArray>() {
-            ObType::Bytearray
-        } else if value.is_instance_of::<PySet>() {
-            ObType::Set
-        } else if value.is_instance_of::<PyFrozenSet>() {
-            ObType::Frozenset
-        } else if value.is_instance(self.deque_object.bind(py)).unwrap_or(false) {
-            ObType::Deque
-        } else if value.is_instance_of::<PyDateTime>() {
-            ObType::Datetime
-        } else if value.is_instance_of::<PyDate>() {
-            ObType::Date
-        } else if value.is_instance_of::<PyTime>() {
-            ObType::Time
-        } else if value.is_instance_of::<PyDelta>() {
-            ObType::Timedelta
-        } else if value.is_instance_of::<PyUrl>() {
-            ObType::Url
-        } else if value.is_instance_of::<PyMultiHostUrl>() {
-            ObType::MultiHostUrl
-        } else if value.is_instance(self.decimal_object.bind(py)).unwrap_or(false) {
-            ObType::Decimal
-        } else if value.is_instance(self.fraction_object.bind(py)).unwrap_or(false) {
-            ObType::Fraction
-        } else if value.is_instance(self.uuid_object.bind(py)).unwrap_or(false) {
-            ObType::Uuid
-        } else if value.is_instance(self.enum_object.bind(py)).unwrap_or(false) {
-            ObType::Enum
-        } else if value.is_instance(self.generator_object.bind(py)).unwrap_or(false) {
-            ObType::Generator
-        } else if value.is_instance(self.path_object.bind(py)).unwrap_or(false) {
-            ObType::Path
-        } else if value.is_instance(self.pattern_object.bind(py)).unwrap_or(false) {
-            ObType::Pattern
-        } else if value.is_instance_of::<PyComplex>() {
-            ObType::Complex
-        } else if value.is_instance(self.ipv4_address.bind(py)).unwrap_or(false) {
-            ObType::Ipv4Address
-        } else if value.is_instance(self.ipv6_address.bind(py)).unwrap_or(false) {
-            ObType::Ipv6Address
-        } else if value.is_instance(self.ipv4_network.bind(py)).unwrap_or(false) {
-            ObType::Ipv4Network
-        } else if value.is_instance(self.ipv6_network.bind(py)).unwrap_or(false) {
-            ObType::Ipv6Network
-        } else {
-            ObType::Unknown
-        }
+        self.fallback_isinstance_upto(value, FALLBACK_CHECKS.len() - 1)
     }
+
+    /// Run `FALLBACK_CHECKS` up to and including `max_index`, returning the `ObType` the value
+    /// matches first, or `ObType::Unknown` if it matches none of them.
+    fn fallback_isinstance_upto(&self, value: &Bound<'_, PyAny>, max_index: usize) -> ObType {
+        for (index, (check, ob_type)) in FALLBACK_CHECKS.iter().enumerate() {
+            if index > max_index {
+                break;
+            }
+            if check(self, value) {
+                return *ob_type;
+            }
+        }
+        ObType::Unknown
+    }
+}
+
+/// A single `isinstance` check from the `ObTypeLookup::fallback_isinstance` chain.
+type FallbackCheck = fn(&ObTypeLookup, &Bound<'_, PyAny>) -> bool;
+
+/// The ordered chain of `isinstance` checks run by `ObTypeLookup::fallback_isinstance` when a
+/// value's type can't be matched by pointer; each entry pairs the check with the `ObType` it
+/// matches. We care about order here since:
+/// 1. we pay a price for each `isinstance` call
+/// 2. some types are subclasses of others, e.g. `bool` is a subclass of `int`
+///    hence we put common types first
+///
+/// In addition, some types have inheritance set as a bitflag on the type object:
+/// https://github.com/python/cpython/blob/v3.12.0rc1/Include/object.h#L546-L553
+/// Hence they come first
+const FALLBACK_CHECKS: &[(FallbackCheck, ObType)] = &[
+    (|_lookup, value| value.is_instance_of::<PyInt>(), ObType::IntSubclass),
+    (|_lookup, value| value.is_instance_of::<PyString>(), ObType::StrSubclass),
+    (|_lookup, value| value.is_instance_of::<PyBytes>(), ObType::Bytes),
+    (|_lookup, value| value.is_instance_of::<PyList>(), ObType::List),
+    (|_lookup, value| value.is_instance_of::<PyTuple>(), ObType::Tuple),
+    // `OrderedDict` must come before the `dict` check, as it is a `dict` subclass
+    (
+        |lookup, value| {
+            value
+                .is_instance(lookup.ordered_dict_object.bind(value.py()))
+                .unwrap_or(false)
+        },
+        ObType::OrderedDict,
+    ),
+    // `Counter` must come before the `dict` check, as it is a `dict` subclass
+    (
+        |lookup, value| {
+            value
+                .is_instance(lookup.counter_object.bind(value.py()))
+                .unwrap_or(false)
+        },
+        ObType::Counter,
+    ),
+    (|_lookup, value| value.is_instance_of::<PyDict>(), ObType::Dict),
+    (|_lookup, value| as_frozendict(value).is_some(), ObType::Frozendict),
+    (|_lookup, value| value.is_instance_of::<PyBool>(), ObType::Bool),
+    (
+        |_lookup, value| value.is_instance_of::<PyFloat>(),
+        ObType::FloatSubclass,
+    ),
+    (
+        |_lookup, value| value.is_instance_of::<PyByteArray>(),
+        ObType::Bytearray,
+    ),
+    (|_lookup, value| value.is_instance_of::<PySet>(), ObType::Set),
+    (
+        |_lookup, value| value.is_instance_of::<PyFrozenSet>(),
+        ObType::Frozenset,
+    ),
+    (
+        |lookup, value| value.is_instance(lookup.deque_object.bind(value.py())).unwrap_or(false),
+        ObType::Deque,
+    ),
+    (|_lookup, value| value.is_instance_of::<PyDateTime>(), ObType::Datetime),
+    (|_lookup, value| value.is_instance_of::<PyDate>(), ObType::Date),
+    (|_lookup, value| value.is_instance_of::<PyTime>(), ObType::Time),
+    (|_lookup, value| value.is_instance_of::<PyDelta>(), ObType::Timedelta),
+    (|_lookup, value| value.is_instance_of::<PyUrl>(), ObType::Url),
+    (
+        |_lookup, value| value.is_instance_of::<PyMultiHostUrl>(),
+        ObType::MultiHostUrl,
+    ),
+    (
+        |lookup, value| {
+            value
+                .is_instance(lookup.decimal_object.bind(value.py()))
+                .unwrap_or(false)
+        },
+        ObType::Decimal,
+    ),
+    (
+        |lookup, value| {
+            value
+                .is_instance(lookup.fraction_object.bind(value.py()))
+                .unwrap_or(false)
+        },
+        ObType::Fraction,
+    ),
+    (
+        |lookup, value| value.is_instance(lookup.uuid_object.bind(value.py())).unwrap_or(false),
+        ObType::Uuid,
+    ),
+    (
+        |lookup, value| value.is_instance(lookup.enum_object.bind(value.py())).unwrap_or(false),
+        ObType::Enum,
+    ),
+    (
+        |lookup, value| {
+            value
+                .is_instance(lookup.generator_object.bind(value.py()))
+                .unwrap_or(false)
+        },
+        ObType::Generator,
+    ),
+    (
+        |lookup, value| value.is_instance(lookup.path_object.bind(value.py())).unwrap_or(false),
+        ObType::Path,
+    ),
+    (
+        |lookup, value| {
+            value
+                .is_instance(lookup.pattern_object.bind(value.py()))
+                .unwrap_or(false)
+        },
+        ObType::Pattern,
+    ),
+    (|_lookup, value| value.is_instance_of::<PyComplex>(), ObType::Complex),
+    (
+        |lookup, value| value.is_instance(lookup.ipv4_address.bind(value.py())).unwrap_or(false),
+        ObType::Ipv4Address,
+    ),
+    (
+        |lookup, value| value.is_instance(lookup.ipv6_address.bind(value.py())).unwrap_or(false),
+        ObType::Ipv6Address,
+    ),
+    (
+        |lookup, value| value.is_instance(lookup.ipv4_network.bind(value.py())).unwrap_or(false),
+        ObType::Ipv4Network,
+    ),
+    (
+        |lookup, value| value.is_instance(lookup.ipv6_network.bind(value.py())).unwrap_or(false),
+        ObType::Ipv6Network,
+    ),
+];
+
+/// The index in `FALLBACK_CHECKS` of the entry matching `ob_type`, using the same equality
+/// `ObType` uses elsewhere (which treats e.g. `Str` and `StrSubclass` as equal), or `None` for
+/// types the chain never returns (e.g. `None`, `Dataclass`).
+fn fallback_chain_position(ob_type: ObType) -> Option<usize> {
+    FALLBACK_CHECKS.iter().position(|(_, candidate)| *candidate == ob_type)
 }
 
 fn is_dataclass(op_value: Option<&Bound<'_, PyAny>>) -> bool {

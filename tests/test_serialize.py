@@ -1253,6 +1253,38 @@ def test_nested_union_errors_formatted_lazily() -> None:
     assert str(pickle.loads(pickle.dumps(err))) == str(err)
 
 
+def test_union_serialization_stops_the_fallback_isinstance_chain_early() -> None:
+    """https://github.com/pydantic/pydantic/issues/14168"""
+
+    checks = 0
+
+    class Inner(BaseModel):
+        x: int = 1
+
+    class Probe(Inner):
+        @property
+        def __class__(self) -> Any:
+            # `ObTypeLookup.is_type()` falls back to a chain of `isinstance()` checks when the
+            # value's type can't be matched by pointer; for a value of an unknown type each of
+            # those checks ends up reading `__class__`, so counting accesses shows how much of
+            # the chain actually ran.
+            nonlocal checks
+            checks += 1
+            return object
+
+        @__class__.setter
+        def __class__(self, value: Any) -> None:
+            pass
+
+    ta = TypeAdapter(str | Inner)
+    # the union serializes via the `Inner` member, but only after the `str` member has run
+    # `is_type()` against the value (strict pass, then lax pass)
+    assert ta.dump_python(Probe(), warnings='error') == {'x': 1}
+    # `str` is the second entry of the fallback chain, so `is_type()` only needs to run the
+    # checks up to the expected type's position — not the whole chain twice.
+    assert checks <= 6
+
+
 def test_subclass_support_unions_with_forward_ref() -> None:
     class Bar(BaseModel):
         bar_id: int
