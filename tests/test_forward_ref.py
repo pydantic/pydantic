@@ -78,7 +78,6 @@ def test_forward_ref_auto_update_no_model(create_module):
     assert f.model_dump() == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason="ForwardRef doesn't support pipe unions")
 def test_basic_forward_ref(create_module):
     @create_module
     def module():
@@ -98,7 +97,6 @@ def test_basic_forward_ref(create_module):
     assert module.Bar(b={'a': '123'}).model_dump() == {'b': {'a': 123}}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason="ForwardRef doesn't support pipe unions")
 def test_self_forward_ref_module(create_module):
     @create_module
     def module():
@@ -191,7 +189,6 @@ def test_forward_ref_dataclass(create_module):
     assert dataclasses.asdict(dc) == {'a': 1, 'b': {'a': 2, 'b': {'a': 3, 'b': None}}}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason="ForwardRef doesn't support pipe unions")
 def test_forward_ref_sub_types(create_module):
     @create_module
     def module():
@@ -1136,18 +1133,6 @@ class Foo(Bar):
     assert module_2.Foo.__pydantic_core_schema__['schema']['extras_schema'] == {'type': 'int'}
 
 
-# TODO remove when we drop support for Python 3.10, in 3.11+ string annotations are properly evaluated
-# in PEP 585 generics.
-def test_pydantic_extra_forward_ref_evaluated_pep585() -> None:
-    class Bar(BaseModel, extra='allow'):
-        __pydantic_extra__: dict['str', int]
-
-    # This is a way to test that `'str'` is properly evaluated (for Python <3.11, see comments in
-    # `GenerateSchema._get_args_resolving_forward_refs()`) and as such `extra_keys_schema` isn't
-    # set because `str` is the default.
-    assert 'extras_keys_schema' not in Bar.__pydantic_core_schema__['schema']
-
-
 def test_lazy_local_namespace_len() -> None:
     namespace = LazyLocalNamespace({'a': int}, {'b': str, 'a': str})
 
@@ -1369,12 +1354,6 @@ SubChild()
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason=(
-        'Forward refs inside PEP 585 generics are not evaluated (see https://github.com/python/cpython/pull/30900).'
-    ),
-)
 def test_forward_ref_in_class_parameter() -> None:
     """https://github.com/pydantic/pydantic/issues/11854, https://github.com/pydantic/pydantic/issues/11920"""
     T = TypeVar('T')

@@ -285,8 +285,7 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
     if typing_objects.is_annotated(origin_type):
         annotated_type, *annotations = type_args
         annotated_type = replace_types(annotated_type, type_map)
-        # TODO remove parentheses when we drop support for Python 3.10:
-        return Annotated[(annotated_type, *annotations)]
+        return Annotated[annotated_type, *annotations]
 
     # Having type args is a good indicator that this is a typing special form
     # instance or a generic alias of some sort.

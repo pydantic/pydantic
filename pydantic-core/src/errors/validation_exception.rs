@@ -138,26 +138,11 @@ impl ValidationError {
                         line_error.location.to_string().trim()
                     ))
                 };
-
-                // Notes only support 3.11 upwards:
-                #[cfg(Py_3_11)]
-                {
-                    // Add the location context as a note, no direct c api for this,
-                    // fine performance wise, add_note() goes directly to C: "(PyCFunction)BaseException_add_note":
-                    // https://github.com/python/cpython/blob/main/Objects/exceptions.c
-                    if err.call_method1(py, "add_note", (format!("\n{note}"),)).is_ok() {
-                        user_py_errs.push(err.clone_ref(py));
-                    }
-                }
-
-                // Pre 3.11 notes support, use a UserWarning exception instead:
-                #[cfg(not(Py_3_11))]
-                {
-                    use pyo3::exceptions::PyUserWarning;
-
-                    let wrapped = PyUserWarning::new_err((note,));
-                    wrapped.set_cause(py, Some(PyErr::from_value(err.clone_ref(py).into_bound(py))));
-                    user_py_errs.push(wrapped);
+                // Add the location context as a note, no direct c api for this,
+                // fine performance wise, add_note() goes directly to C: "(PyCFunction)BaseException_add_note":
+                // https://github.com/python/cpython/blob/main/Objects/exceptions.c
+                if err.call_method1(py, "add_note", (format!("\n{note}"),)).is_ok() {
+                    user_py_errs.push(err.clone_ref(py));
                 }
             }
         }
@@ -166,29 +151,9 @@ impl ValidationError {
         if !user_py_errs.is_empty() {
             let title = "Pydantic User Code Exceptions";
 
-            // Native ExceptionGroup(s) only supported 3.11 and later:
-            #[cfg(Py_3_11)]
             let cause = {
                 use pyo3::exceptions::PyBaseExceptionGroup;
                 Some(PyBaseExceptionGroup::new_err((title, user_py_errs)).into_value(py))
-            };
-
-            // Pre 3.11 ExceptionGroup support, use the python backport instead:
-            // If something's gone wrong with the backport, just don't add the cause:
-            #[cfg(not(Py_3_11))]
-            let cause = {
-                use pyo3::exceptions::PyImportError;
-                match py.import("exceptiongroup") {
-                    Ok(py_mod) => match py_mod.getattr("ExceptionGroup") {
-                        Ok(group_cls) => group_cls.call1((title, user_py_errs)).ok(),
-                        Err(_) => None,
-                    },
-                    Err(_) => {
-                        return Some(PyImportError::new_err(
-                            "validation_error_cause flag requires the exceptiongroup module backport to be installed when used on Python <3.11.",
-                        ));
-                    }
-                }
             };
 
             // Set the cause to the ValidationError:

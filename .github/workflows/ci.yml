@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
+        python-version: ['3.11', '3.12', '3.13', '3.14', '3.15']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -102,19 +102,19 @@ jobs:
           - os: linux
             manylinux: auto
             target: armv7
-            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
+            interpreter: 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
           - os: linux
             manylinux: auto
             target: ppc64le
-            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
+            interpreter: 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
           - os: linux
             manylinux: auto
             target: riscv64gc-unknown-linux-gnu
-            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
+            interpreter: 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
           - os: linux
             manylinux: auto
             target: s390x
-            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
+            interpreter: 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
             # manylinux pypy and graalpy on major architectures:
           - os: linux
             manylinux: auto
@@ -148,7 +148,7 @@ jobs:
           # arm pypy and older pythons which can't be run on the arm hardware for PGO
           - os: macos
             target: x86_64
-            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11 graalpy3.12
+            interpreter: 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11 graalpy3.12
           - os: macos
             target: aarch64
             interpreter: pypy3.11 graalpy3.12 graalpy3.13
@@ -172,7 +172,7 @@ jobs:
           - os: windows
             target: i686
             python-architecture: x86
-            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
+            interpreter: 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t
           - os: windows
             target: aarch64
             runs-on: windows-11-arm
@@ -220,7 +220,7 @@ jobs:
           maturin-version: v1.16.0
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --locked --out dist --interpreter ${{ steps.pypy-pp80.outputs.interpreter || matrix.interpreter-path || matrix.interpreter || '3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11' }}
+          args: --release --locked --out dist --interpreter ${{ steps.pypy-pp80.outputs.interpreter || matrix.interpreter-path || matrix.interpreter || '3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
 
@@ -260,7 +260,7 @@ jobs:
             runs-on: windows-latest
           - os: macos
             runs-on: macos-latest
-        interpreter: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.14t', '3.15', '3.15t']
+        interpreter: ['3.11', '3.12', '3.13', '3.14', '3.14t', '3.15', '3.15t']
 
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
@@ -866,7 +866,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15', '3.15t', 'pypy3.11']
+        python-version: ['3.11', '3.12', '3.13', '3.14', '3.15', '3.15t', 'pypy3.11']
         include:
           # test macos intel just with latest python version
           - os: macos-15-intel
@@ -1080,7 +1080,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
+        python-version: ['3.11', '3.12', '3.13', '3.14', '3.15']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

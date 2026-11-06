@@ -459,10 +459,7 @@ def get_function_type_hints(
 ) -> dict[str, Any]:
     """Return type hints for a function.
 
-    This is similar to the `typing.get_type_hints` function, with a few differences:
-    - Support `functools.partial` by using the underlying `func` attribute.
-    - Do not wrap type annotation of a parameter with `Optional` if it has a default value of `None`
-      (related bug: https://github.com/python/cpython/issues/90353, only fixed in 3.11+).
+    This is similar to the `typing.get_type_hints()` function, but with `functools.partial` support.
     """
     if isinstance(function, partial):
         annotations = safe_get_annotations(function.func)

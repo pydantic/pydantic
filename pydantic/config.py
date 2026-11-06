@@ -986,9 +986,6 @@ class ConfigDict(TypedDict, total=False):
     If `True`, Python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to `False`.
 
     Note:
-        Python 3.10 and older don't support exception groups natively. <=3.10, backport must be installed: `pip install exceptiongroup`.
-
-    Note:
         The structure of validation errors are likely to change in future Pydantic versions. Pydantic offers no guarantees about their structure. Should be used for visual traceback debugging only.
 
     /// version-added | v2.5

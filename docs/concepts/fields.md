@@ -728,7 +728,7 @@ The [`@warnings.deprecated`][warnings.deprecated] decorator (or the
 
 <!-- TODO: tabs should be auto-generated if using Ruff (https://github.com/pydantic/pydantic/issues/10083) -->
 
-=== "Python 3.10 and above"
+=== "Python 3.11"
 
     ```python
     from typing import Annotated

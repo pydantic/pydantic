@@ -23,7 +23,7 @@ rebuild-lockfiles: .uv
 .PHONY: build-constraints  ## Generate the hashed constraints file for build dependencies
 build-constraints: .uv
 	uv run --no-project python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['build-system']['requires']))" \
-		| uv pip compile - --universal --python-version 3.10 --generate-hashes --upgrade \
+		| uv pip compile - --universal --python-version 3.11 --generate-hashes --upgrade \
 			--custom-compile-command 'make build-constraints' -o .github/build-constraints.txt
 
 .PHONY: .rust  # Check that Rust is installed

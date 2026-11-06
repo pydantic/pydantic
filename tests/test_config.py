@@ -1,7 +1,6 @@
 import copy
 import json
 import re
-import sys
 from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
@@ -399,7 +398,6 @@ def test_config_wrapper_match():
     )
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason='requires backport pre 3.11, fully tested in pydantic core')
 def test_config_validation_error_cause():
     class Foo(BaseModel):
         foo: int
