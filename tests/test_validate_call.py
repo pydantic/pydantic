@@ -18,7 +18,6 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     Field,
-    PydanticInvalidForJsonSchema,
     PydanticUserError,
     Strict,
     TypeAdapter,
@@ -648,10 +647,10 @@ def test_json_schema():
 
     assert foo(1, 2) == '1, 2'
     assert TypeAdapter(foo).json_schema() == {
-        'maxItems': 2,
-        'minItems': 2,
-        'prefixItems': [{'title': 'A', 'type': 'integer'}, {'title': 'B', 'type': 'integer'}],
-        'type': 'array',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'integer'}, 'b': {'title': 'B', 'type': 'integer'}},
+        'required': ['a', 'b'],
+        'additionalProperties': False,
     }
 
     @validate_call
@@ -659,20 +658,27 @@ def test_json_schema():
         return f'{a}, {b}, {c}'
 
     assert foo(1, b=2, c=3) == '1, 2, 3'
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match=(
-            'Unable to generate JSON schema for arguments validator with positional-only and keyword-only arguments'
-        ),
-    ):
-        TypeAdapter(foo).json_schema()
+    assert TypeAdapter(foo).json_schema() == {
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'title': 'B', 'type': 'integer'},
+            'c': {'title': 'C', 'type': 'integer'},
+        },
+        'required': ['a', 'b', 'c'],
+        'additionalProperties': False,
+    }
 
     @validate_call
     def foo(*numbers: int) -> int:
         return sum(numbers)
 
     assert foo(1, 2, 3) == 6
-    assert TypeAdapter(foo).json_schema() == {'items': {'type': 'integer'}, 'type': 'array'}
+    assert TypeAdapter(foo).json_schema() == {
+        'type': 'object',
+        'properties': {'numbers': {'items': {'type': 'integer'}, 'title': 'Numbers', 'type': 'array'}},
+        'additionalProperties': False,
+    }
 
     @validate_call
     def foo(a: int, *numbers: int) -> int:
@@ -680,10 +686,13 @@ def test_json_schema():
 
     assert foo(1, 2, 3) == 6
     assert TypeAdapter(foo).json_schema() == {
-        'items': {'type': 'integer'},
-        'prefixItems': [{'title': 'A', 'type': 'integer'}],
-        'minItems': 1,
-        'type': 'array',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'numbers': {'items': {'type': 'integer'}, 'title': 'Numbers', 'type': 'array'},
+        },
+        'required': ['a'],
+        'additionalProperties': False,
     }
 
     @validate_call
@@ -692,9 +701,11 @@ def test_json_schema():
 
     assert foo(a=1, b=2) == 'a=1, b=2'
     assert TypeAdapter(foo).json_schema() == {
-        'additionalProperties': {'type': 'integer'},
-        'properties': {},
         'type': 'object',
+        'properties': {
+            'scores': {'additionalProperties': {'type': 'integer'}, 'title': 'Scores', 'type': 'object'},
+        },
+        'additionalProperties': False,
     }
 
     @validate_call

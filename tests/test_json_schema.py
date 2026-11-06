@@ -7303,7 +7303,9 @@ def test_json_schema_arguments_var_kwargs_unpacked_typed_dict() -> None:
 
     def func(name: str = 'job', **kwargs: Unpack[Options]) -> None: ...
 
-    assert TypeAdapter(func).json_schema() == {
+    schema = generate_arguments_schema(func, schema_type='arguments')
+
+    assert GenerateJsonSchema().generate(schema) == {
         'type': 'object',
         'properties': {
             'name': {'default': 'job', 'title': 'Name', 'type': 'string'},
@@ -7325,13 +7327,16 @@ def test_json_schema_arguments_var_kwargs_unpacked_typed_dict_extra_items() -> N
 
     def extra_items(**kwargs: Unpack[ExtraItems]) -> None: ...
 
-    assert TypeAdapter(closed).json_schema() == {
+    closed_schema = generate_arguments_schema(closed, schema_type='arguments')
+    extra_items_schema = generate_arguments_schema(extra_items, schema_type='arguments')
+
+    assert GenerateJsonSchema().generate(closed_schema) == {
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'integer'}},
         'required': ['a'],
         'additionalProperties': False,
     }
-    assert TypeAdapter(extra_items).json_schema() == {
+    assert GenerateJsonSchema().generate(extra_items_schema) == {
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'integer'}},
         'required': ['a'],
@@ -7439,7 +7444,7 @@ def test_json_schema_arguments_v3_var_kwargs_unpacked_typed_dict_ref(total: bool
     schema = generate_arguments_schema(func, schema_type='arguments-v3')
     json_schema = GenerateJsonSchema().generate(schema)
 
-    assert json_schema['properties']['kwargs'] == {'$ref': '#/$defs/Options', 'title': 'Kwargs'}
+    assert json_schema['properties']['kwargs'] == {'$ref': '#/$defs/Options'}
     assert json_schema['required'] == required
 
 

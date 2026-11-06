@@ -2196,11 +2196,19 @@ class GenerateJsonSchema:
             name = self.get_argument_name(argument)
             argument_schema = self.generate_inner(argument['schema']).copy()
             if mode == 'var_args':
-                argument_schema = {'type': 'array', 'items': argument_schema}
+                argument_schema = {
+                    'type': 'array',
+                    'items': argument_schema,
+                    'title': self.get_title_from_name(name),
+                }
             elif mode == 'var_kwargs_uniform':
-                argument_schema = {'type': 'object', 'additionalProperties': argument_schema}
-
-            argument_schema.setdefault('title', self.get_title_from_name(name))
+                argument_schema = {
+                    'type': 'object',
+                    'additionalProperties': argument_schema,
+                    'title': self.get_title_from_name(name),
+                }
+            elif 'title' not in argument_schema and self.field_title_should_be_set(argument['schema']):
+                argument_schema['title'] = self.get_title_from_name(name)
             properties[name] = argument_schema
 
             if (
