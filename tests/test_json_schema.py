@@ -7364,6 +7364,7 @@ def test_json_schema_arguments_v3() -> None:
             'e': {'type': 'object', 'additionalProperties': {'type': 'integer'}, 'title': 'E'},
         },
         'required': ['a', 'b'],
+        'additionalProperties': False,
     }
 
 
@@ -7393,6 +7394,7 @@ def test_json_schema_arguments_v3_var_kwargs_unpacked_typed_dict_required() -> N
             },
         },
         'required': ['kwargs'],
+        'additionalProperties': False,
     }
 
 
@@ -7420,6 +7422,7 @@ def test_json_schema_arguments_v3_var_kwargs_unpacked_typed_dict_not_required() 
                 'title': 'Kwargs',
             },
         },
+        'additionalProperties': False,
     }
 
 
@@ -7440,6 +7443,27 @@ def test_json_schema_arguments_v3_var_kwargs_unpacked_typed_dict_ref(total: bool
     assert json_schema['required'] == required
 
 
+@pytest.mark.parametrize(
+    ['extra', 'additional_properties'],
+    [(None, False), ('forbid', False), ('ignore', None), ('allow', None)],
+)
+def test_json_schema_arguments_v3_extra(extra: ExtraValues | None, additional_properties: bool | None) -> None:
+    def func(a: int) -> None: ...
+
+    config = ConfigDict(extra=extra) if extra is not None else None
+    schema = generate_arguments_schema(func, schema_type='arguments-v3', config=config)
+
+    assert GenerateJsonSchema().generate(schema).get('additionalProperties') == additional_properties
+
+    # The validator should agree with the JSON Schema:
+    validator = SchemaValidator(schema)
+    if additional_properties is False:
+        with pytest.raises(ValidationError):
+            validator.validate_python({'a': 1, 'b': 2})
+    else:
+        assert validator.validate_python({'a': 1, 'b': 2}) == ((1,), {})
+
+
 def test_json_schema_arguments_v3_aliases() -> None:
     schema = core_schema.arguments_v3_schema(
         [
@@ -7455,6 +7479,7 @@ def test_json_schema_arguments_v3_aliases() -> None:
             'b': {'type': 'integer', 'title': 'B'},
         },
         'required': ['b'],
+        'additionalProperties': False,
     }
 
 

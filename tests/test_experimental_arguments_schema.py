@@ -4,7 +4,7 @@ import pytest
 from pydantic_core import ArgsKwargs, SchemaValidator
 from typing_extensions import TypedDict, Unpack
 
-from pydantic import AliasGenerator, Field, PydanticUserError, ValidationError
+from pydantic import AliasGenerator, BeforeValidator, Field, PydanticUserError, ValidationError, ValidationInfo
 from pydantic.experimental.arguments_schema import generate_arguments_schema
 
 
@@ -123,6 +123,36 @@ def test_arguments_v3_variadic_after_default(func: Any, input: Any, expected: An
     val = SchemaValidator(arguments_schema)
 
     assert val.validate_python(input) == expected
+
+
+@pytest.mark.parametrize(
+    ['input', 'expected_field_names'],
+    [
+        (
+            {'a': 1, 'b': 2, 'args': [3], 'c': 4, 'kwargs': {'d': 5}},
+            ['a', 'b', 'args', 'c', 'kwargs'],
+        ),
+        (
+            ArgsKwargs((1, 2, 3), {'c': 4, 'd': 5}),
+            ['a', 'b', 'c', 'args', 'kwargs'],
+        ),
+    ],
+)
+def test_arguments_v3_field_name(input: Any, expected_field_names: list[str]) -> None:
+    field_names: list[str | None] = []
+
+    def record_field_name(value: Any, info: ValidationInfo) -> Any:
+        field_names.append(info.field_name)
+        return value
+
+    RecordedInt = Annotated[int, BeforeValidator(record_field_name)]
+
+    def func(a: RecordedInt, /, b: RecordedInt, *args: RecordedInt, c: RecordedInt, **kwargs: RecordedInt) -> None: ...
+
+    arguments_schema = generate_arguments_schema(func=func, schema_type='arguments-v3')
+    SchemaValidator(arguments_schema).validate_python(input)
+
+    assert field_names == expected_field_names
 
 
 def test_unpacked_typed_dict_kwargs_invalid_type() -> None:

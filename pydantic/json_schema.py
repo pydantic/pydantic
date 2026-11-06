@@ -2216,6 +2216,9 @@ class GenerateJsonSchema:
         json_schema: JsonSchemaValue = {'type': 'object', 'properties': properties}
         if required:
             json_schema['required'] = required
+        # Unexpected arguments are rejected by default:
+        if schema.get('extra_behavior', 'forbid') == 'forbid':
+            json_schema['additionalProperties'] = False
         return json_schema
 
     def call_schema(self, schema: core_schema.CallSchema) -> JsonSchemaValue:
