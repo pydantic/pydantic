@@ -227,7 +227,7 @@ def test_default_validator():
 def fruit_enum_fixture():
     from enum import Enum
 
-    class FruitEnum(str, Enum):
+    class FruitEnum(str, Enum):  # noqa: UP042 (`str()` differs from the value, which must not be used)
         pear = 'pear'
         banana = 'banana'
 

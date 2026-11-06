@@ -1,6 +1,6 @@
 import re
 from collections.abc import Callable
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any
 
 import pytest
@@ -243,7 +243,7 @@ def test_enum_value():
 
 
 def test_str_enum_values():
-    class Foo(str, Enum):
+    class Foo(StrEnum):
         foo = 'foo_value'
         bar = 'bar_value'
 
@@ -366,7 +366,7 @@ def test_mix_int_enum_with_int(reverse: Callable[[list[Any]], list[Any]], err: A
     ],
 )
 def test_mix_str_enum_with_str(reverse: Callable[[list[Any]], list[Any]], err: Any):
-    class Foo(str, Enum):
+    class Foo(StrEnum):
         foo = 'foo_val'
 
     v = SchemaValidator(core_schema.literal_schema(reverse(['foo_val', Foo.foo])))
@@ -394,7 +394,7 @@ def test_big_int():
 
 
 def test_enum_for_str() -> None:
-    class S(str, Enum):
+    class S(StrEnum):
         a = 'a'
 
     val_enum = SchemaValidator(core_schema.literal_schema([S.a]))

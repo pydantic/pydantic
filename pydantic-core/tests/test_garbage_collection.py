@@ -1,7 +1,7 @@
 import gc
 import platform
 from collections.abc import Iterable
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from weakref import WeakValueDictionary
 
@@ -124,7 +124,7 @@ def test_gc_enum_serializer_class() -> None:
 
     for _ in range(10_000):
 
-        class MyEnum(EnumBase, str, Enum):
+        class MyEnum(EnumBase, StrEnum):
             FULL = 'full'
 
         MyEnum.__pydantic_serializer__ = SchemaSerializer(core_schema.enum_schema(MyEnum, list(MyEnum), sub_type='str'))
@@ -148,7 +148,7 @@ def test_gc_enum_validator_lookup() -> None:
 
     for _ in range(10_000):
 
-        class MyEnum(EnumBase, str, Enum):
+        class MyEnum(EnumBase, StrEnum):
             FULL = 'full'
 
         MyEnum.__pydantic_validator__ = SchemaValidator(core_schema.enum_schema(MyEnum, list(MyEnum), sub_type='str'))

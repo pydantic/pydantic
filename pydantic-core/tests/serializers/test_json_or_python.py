@@ -23,7 +23,7 @@ def test_json_or_python():
 
 def test_json_or_python_enum_dict_key():
     # See https://github.com/pydantic/pydantic/issues/6795
-    class MyEnum(str, Enum):
+    class MyEnum(str, Enum):  # noqa: UP042 (as reported in the issue)
         A = 'A'
         B = 'B'
 
