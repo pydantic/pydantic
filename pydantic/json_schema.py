@@ -2885,6 +2885,11 @@ def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | No
     if max_digits is None and decimal_places is None:
         return rf'^[+-]?(?:{number}(?:{exponent})?{non_finite})$'
 
+    if max_digits == 0:
+        # No finite decimal satisfies `max_digits=0` (even zero counts as one digit), so only the
+        # exponent alternative (accepted regardless of the constraints, see below) remains:
+        return rf'^[+-]?(?:{number}{exponent}{non_finite})$'
+
     alts: list[str] = []
     if max_digits is not None and decimal_places is not None:
         # If `decimal_places > max_digits`, no whole digits are allowed and `max_digits` bounds the decimal places:
@@ -2894,7 +2899,12 @@ def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | No
         opt_int_part = f'0*{_repeat("[0-9]", 0, whole)}'
         opt_frac_part = rf'\.{_repeat("[0-9]", 0, places)}0*'
         frac_part = rf'\.{_repeat("[0-9]", 1, places)}0*' if places else r'\.0+'
-        alts += [f'{int_part}(?:{opt_frac_part})?', f'{opt_int_part}{frac_part}']
+        if whole:
+            alts += [f'{int_part}(?:{opt_frac_part})?', f'{opt_int_part}{frac_part}']
+        else:
+            # No whole digits are allowed: a bare integer part (even `0`) counts as one whole digit,
+            # so only forms with a fractional part (which have zero whole digits) are valid:
+            alts.append(f'{opt_int_part}{frac_part}')
     elif max_digits is not None:
         # The whole part and decimal part must have at most `max_digits` digits in total,
         # so we enumerate the possible widths of the whole part:
@@ -2930,6 +2940,10 @@ def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int |
     def frac_part(places: int) -> str:
         return rf'\.{_repeat("[0-9]", 1, places)}0*' if places else r'\.0+'
 
+    if max_digits == 0:
+        # No finite decimal satisfies `max_digits=0` (even zero counts as one digit):
+        return r'^-?(?:Infinity|s?NaN[0-9]*)$' if allow_inf_nan else r'(?!)'
+
     alts: list[str] = []
 
     # Plain notation:
@@ -2937,7 +2951,12 @@ def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int |
         whole = max(0, max_digits - decimal_places)
         places = min(max_digits, decimal_places)
         int_part = f'(?:0|[1-9]{_repeat("[0-9]", 0, whole - 1)})' if whole else '0'
-        alts.append(f'{int_part}(?:{frac_part(places)})?')
+        if whole:
+            alts.append(f'{int_part}(?:{frac_part(places)})?')
+        else:
+            # No whole digits are allowed: a bare `0` counts as one whole digit, so a decimal
+            # satisfying the constraints is always serialized with a fractional part:
+            alts.append(f'{int_part}{frac_part(places)}')
     elif max_digits is not None:
         # The whole part and decimal part must have at most `max_digits` digits in total,
         # so we enumerate the possible widths of the whole part:
@@ -2951,8 +2970,13 @@ def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int |
     else:
         alts.append(r'(?:0|[1-9][0-9]*)(?:\.[0-9]+)?')
 
-    # Zero with an exponent (e.g. `'0E-10'`), which normalizes to zero and thus satisfies any constraint:
-    alts.append(r'0E[+-][1-9][0-9]*')
+    # Zero with an exponent (e.g. `'0E-10'`), which normalizes to zero and thus satisfies any constraint,
+    # unless no whole digits are allowed and the exponent is positive (such a zero counts as one
+    # whole digit, e.g. `0E+1` is rejected when `max_digits <= decimal_places`):
+    if max_digits is not None and decimal_places is not None and max_digits <= decimal_places:
+        alts.append(r'0E-[1-9][0-9]*')
+    else:
+        alts.append(r'0E[+-][1-9][0-9]*')
 
     # Scientific notation with a positive exponent `k` (e.g. `'1.5E+3'`): the value has `k + 1` whole digits
     # and no decimal places:
