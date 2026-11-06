@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from enum import Enum, IntEnum
+from enum import IntEnum, StrEnum
 from typing import Annotated, Any, ClassVar, Literal
 from uuid import UUID
 
@@ -299,7 +299,7 @@ def test_union_respects_local_strict() -> None:
 def test_union_respects_local_strict_for_enum() -> None:
     """https://github.com/pydantic/pydantic/issues/10546"""
 
-    class MyEnum(str, Enum):
+    class MyEnum(StrEnum):
         a = 'a'
         b = 'b'
 

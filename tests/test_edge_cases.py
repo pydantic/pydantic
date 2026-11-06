@@ -6,7 +6,7 @@ import typing
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Hashable, Sequence
 from decimal import Decimal
-from enum import Enum, auto
+from enum import Enum, StrEnum, auto
 from typing import (
     Annotated,
     Any,
@@ -531,16 +531,16 @@ def test_recursive_lists():
     assert Model.model_fields['v'].is_required()
 
 
-class StrEnum(str, Enum):
+class MyStrEnum(StrEnum):
     a = 'a10'
     b = 'b10'
 
 
 def test_str_enum():
     class Model(BaseModel):
-        v: StrEnum = ...
+        v: MyStrEnum = ...
 
-    assert Model(v='a10').v is StrEnum.a
+    assert Model(v='a10').v is MyStrEnum.a
 
     with pytest.raises(ValidationError):
         Model(v='different')
@@ -1041,7 +1041,7 @@ class CustomStr(str):
         ('a string', 'a string'),
         (b'some bytes', 'some bytes'),
         (bytearray('foobar', encoding='utf8'), 'foobar'),
-        (StrEnum.a, 'a10'),
+        (MyStrEnum.a, 'a10'),
         (CustomStr('whatever'), 'whatever'),
     ],
 )

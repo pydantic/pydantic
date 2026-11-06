@@ -8,7 +8,7 @@ from collections import deque
 from collections.abc import Callable, Iterable, Sequence
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from re import Pattern
@@ -341,7 +341,7 @@ def test_choices():
     FooEnum = Enum('FooEnum', {'foo': 'f', 'bar': 'b'})
     BarEnum = IntEnum('BarEnum', {'foo': 1, 'bar': 2})
 
-    class SpamEnum(str, Enum):
+    class SpamEnum(StrEnum):
         foo = 'f'
         bar = 'b'
 
@@ -369,7 +369,7 @@ def test_choices():
 
 
 def test_enum_modify_schema():
-    class SpamEnum(str, Enum):
+    class SpamEnum(StrEnum):
         """
         Spam enum.
         """
@@ -410,7 +410,7 @@ def test_enum_modify_schema():
 
 
 def test_enum_schema_custom_field():
-    class FooBarEnum(str, Enum):
+    class FooBarEnum(StrEnum):
         foo = 'foo'
         bar = 'bar'
 
@@ -443,7 +443,7 @@ def test_enum_schema_custom_field():
 
 
 def test_enum_and_model_have_same_behaviour():
-    class Names(str, Enum):
+    class Names(StrEnum):
         rick = 'Rick'
         morty = 'Morty'
         summer = 'Summer'
@@ -497,7 +497,7 @@ def test_enum_and_model_have_same_behaviour():
 
 
 def test_enum_includes_extra_without_other_params():
-    class Names(str, Enum):
+    class Names(StrEnum):
         rick = 'Rick'
         morty = 'Morty'
         summer = 'Summer'
@@ -537,7 +537,7 @@ def test_invalid_json_schema_extra():
 
 
 def test_list_enum_schema_extras():
-    class FoodChoice(str, Enum):
+    class FoodChoice(StrEnum):
         spam = 'spam'
         egg = 'egg'
         chips = 'chips'
@@ -568,7 +568,7 @@ def test_list_enum_schema_extras():
 
 
 def test_enum_schema_cleandoc():
-    class FooBar(str, Enum):
+    class FooBar(StrEnum):
         """
         This is docstring which needs to be cleaned up
         """
@@ -1885,7 +1885,7 @@ def test_list_default():
 
 
 def test_enum_str_default():
-    class MyEnum(str, Enum):
+    class MyEnum(StrEnum):
         FOO = 'foo'
 
     class UserModel(BaseModel):
@@ -1909,7 +1909,7 @@ def test_enum_int_default():
 
 
 def test_enum_dict():
-    class MyEnum(str, Enum):
+    class MyEnum(StrEnum):
         FOO = 'foo'
         BAR = 'bar'
 
@@ -2850,7 +2850,7 @@ def test_annotated_typealiastype() -> None:
 
 
 def test_literal_enum():
-    class MyEnum(str, Enum):
+    class MyEnum(StrEnum):
         FOO = 'foo'
         BAR = 'bar'
 
@@ -4562,7 +4562,7 @@ def test_discriminated_annotated_union_literal_enum():
         cat = 'cat'
         dog = 'dog'
 
-    class PetColor(str, Enum):
+    class PetColor(StrEnum):
         black = 'black'
         white = 'white'
 
@@ -6581,7 +6581,7 @@ def test_recursive_json_schema_build() -> None:
     since been reverted.
     """
 
-    class AllowedValues(str, Enum):
+    class AllowedValues(StrEnum):
         VAL1 = 'Val1'
         VAL2 = 'Val2'
 

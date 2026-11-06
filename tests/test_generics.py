@@ -9,7 +9,7 @@ import sys
 import weakref
 from collections import Counter, OrderedDict, defaultdict, deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from textwrap import dedent
 from typing import (
     TYPE_CHECKING,
@@ -2166,7 +2166,7 @@ def test_generic_enum():
     class SomeGenericModel(BaseModel, Generic[T]):
         some_field: T
 
-    class SomeStringEnum(str, Enum):
+    class SomeStringEnum(StrEnum):
         A = 'A'
         B = 'B'
 
@@ -2195,10 +2195,10 @@ def test_generic_enums():
     class GModel(BaseModel, Generic[T]):
         x: T
 
-    class EnumA(str, Enum):
+    class EnumA(StrEnum):
         a = 'a'
 
-    class EnumB(str, Enum):
+    class EnumB(StrEnum):
         b = 'b'
 
     class Model(BaseModel):
