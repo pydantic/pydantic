@@ -4,7 +4,7 @@ requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.15'",
     "python_full_version == '3.13.*' and implementation_name == 'cpython'",
-    "python_full_version == '3.12.*' or python_full_version == '3.14.*' or (python_full_version == '3.13.*' and implementation_name != 'cpython')",
+    "(python_full_version >= '3.12' and python_full_version < '3.15' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version == '3.14.*' and implementation_name == 'cpython')",
     "python_full_version == '3.11.*'",
     "python_full_version < '3.11'",
 ]
@@ -2033,7 +2033,7 @@ name = "numpy"
 version = "2.3.4"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version == '3.12.*' or python_full_version == '3.14.*' or (python_full_version == '3.13.*' and implementation_name != 'cpython')",
+    "(python_full_version >= '3.12' and python_full_version < '3.15' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version == '3.14.*' and implementation_name == 'cpython')",
     "python_full_version == '3.11.*'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b5/f4/098d2270d52b41f1bd7db9fc288aaa0400cb48c2a3e2af6fa365d9720947/numpy-2.3.4.tar.gz", hash = "sha256:a7d018bfedb375a8d979ac758b120ba846a7fe764911a64465fd87b8729f4a6a", size = 20582187, upload-time = "2025-10-15T16:18:11.77Z" }
@@ -2170,7 +2170,7 @@ source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15'",
     "python_full_version == '3.13.*' and implementation_name == 'cpython'",
-    "python_full_version == '3.12.*' or python_full_version == '3.14.*' or (python_full_version == '3.13.*' and implementation_name != 'cpython')",
+    "(python_full_version >= '3.12' and python_full_version < '3.15' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version == '3.14.*' and implementation_name == 'cpython')",
     "python_full_version == '3.11.*'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/58/e6/d0abbb256b44e6a05748c6942511ff67db8dbb068de0c35b24bf1b395b09/platformdirs-4.13.5.tar.gz", hash = "sha256:05831adf87d392760f4b5c3a0a95579ab5a10b18b9b9bd43680dcb47544788a0", size = 62362, upload-time = "2026-10-19T01:02:11.778Z" }
@@ -2568,6 +2568,24 @@ linting = [
     { name = "pyright" },
     { name = "ruff" },
 ]
+pgo = [
+    { name = "coverage" },
+    { name = "dirty-equals" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
+    { name = "hypothesis" },
+    { name = "inline-snapshot" },
+    { name = "maturin" },
+    { name = "pytest" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
+    { name = "pytest-mock" },
+    { name = "pytest-pretty" },
+    { name = "pytest-run-parallel" },
+    { name = "pytest-timeout" },
+    { name = "python-dateutil" },
+    { name = "typing-inspection" },
+    { name = "tzdata" },
+]
 testing-extra = [
     { name = "coverage" },
     { name = "dirty-equals" },
@@ -2607,6 +2625,24 @@ linting = [
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "ruff" },
+]
+pgo = [
+    { name = "coverage" },
+    { name = "dirty-equals" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
+    { name = "hypothesis" },
+    { name = "inline-snapshot" },
+    { name = "maturin", specifier = ">=1.16" },
+    { name = "pytest" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
+    { name = "pytest-mock" },
+    { name = "pytest-pretty" },
+    { name = "pytest-run-parallel" },
+    { name = "pytest-timeout" },
+    { name = "python-dateutil" },
+    { name = "typing-inspection", specifier = ">=0.4.1" },
+    { name = "tzdata" },
 ]
 testing-extra = [
     { name = "coverage" },
@@ -2728,7 +2764,7 @@ source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15'",
     "python_full_version == '3.13.*' and implementation_name == 'cpython'",
-    "python_full_version == '3.12.*' or python_full_version == '3.14.*' or (python_full_version == '3.13.*' and implementation_name != 'cpython')",
+    "(python_full_version >= '3.12' and python_full_version < '3.15' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version == '3.14.*' and implementation_name == 'cpython')",
 ]
 dependencies = [
     { name = "attrs" },
@@ -3372,7 +3408,7 @@ source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15'",
     "python_full_version == '3.13.*' and implementation_name == 'cpython'",
-    "python_full_version == '3.12.*' or python_full_version == '3.14.*' or (python_full_version == '3.13.*' and implementation_name != 'cpython')",
+    "(python_full_version >= '3.12' and python_full_version < '3.15' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version == '3.14.*' and implementation_name == 'cpython')",
     "python_full_version == '3.11.*'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/68/3bd46b8a5e01d3c2ebdf9c5e9497912e3fe0cde02bac21a7130ca866e403/rpds_py-2026.9.1.tar.gz", hash = "sha256:4793ef7f78268b124b73fa933440f01d258bbae01de9fa53e9080c9ab0425a12", size = 63948, upload-time = "2026-10-04T16:32:36.469Z" }
