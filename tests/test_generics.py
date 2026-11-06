@@ -2766,14 +2766,14 @@ def test_variadic_generic_init():
     ComponentVar = TypeVar('ComponentVar', bound=ComponentModel)
     NumberOfComponents = TypeVarTuple('NumberOfComponents')
 
-    class VariadicToolbox(BaseModel, Generic[ComponentVar, Unpack[NumberOfComponents]]):
+    class VariadicToolbox(BaseModel, Generic[ComponentVar, *NumberOfComponents]):
         main_component: ComponentVar
         left_component_pocket: list[ComponentVar] | None = Field(default_factory=list)
         right_component_pocket: list[ComponentVar] | None = Field(default_factory=list)
 
         @computed_field
         @property
-        def all_components(self) -> tuple[ComponentVar, Unpack[NumberOfComponents]]:
+        def all_components(self) -> tuple[ComponentVar, *NumberOfComponents]:
             return (self.main_component, *self.left_component_pocket, *self.right_component_pocket)
 
     sa, sb, w = Screwdriver(), Screwdriver(), Wrench()
@@ -2801,9 +2801,9 @@ def test_variadic_generic_with_variadic_fields():
     ComponentVar = TypeVar('ComponentVar', bound=ComponentModel)
     NumberOfComponents = TypeVarTuple('NumberOfComponents')
 
-    class VariadicToolbox(BaseModel, Generic[ComponentVar, Unpack[NumberOfComponents]]):
-        toolbelt_cm_size: tuple[Unpack[NumberOfComponents]] | None = Field(default_factory=tuple)
-        manual_toolset: tuple[ComponentVar, Unpack[NumberOfComponents]] | None = Field(default_factory=tuple)
+    class VariadicToolbox(BaseModel, Generic[ComponentVar, *NumberOfComponents]):
+        toolbelt_cm_size: tuple[*NumberOfComponents] | None = Field(default_factory=tuple)
+        manual_toolset: tuple[ComponentVar, *NumberOfComponents] | None = Field(default_factory=tuple)
 
     MyToolboxClass = VariadicToolbox[Screwdriver, Screwdriver, Wrench]
 
