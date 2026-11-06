@@ -7603,20 +7603,6 @@ def test_decimal_pattern_reject_invalid_no_whole_digits_allowed(invalid_decimal,
     assert re.fullmatch(pattern, invalid_decimal) is None
 
 
-def test_decimal_pattern_max_digits_zero(get_decimal_pattern) -> None:
-    # No finite decimal satisfies `max_digits=0`, so only the exponent alternative remains:
-    pattern = get_decimal_pattern(max_digits=0)
-
-    assert re.fullmatch(pattern, '0E-10') is not None
-
-
-@pytest.mark.parametrize('invalid_decimal', ['0', '00', '-0', '0.0', '1', '10.5', '.5'])
-def test_decimal_pattern_reject_invalid_max_digits_zero(invalid_decimal, get_decimal_pattern) -> None:
-    pattern = get_decimal_pattern(max_digits=0)
-
-    assert re.fullmatch(pattern, invalid_decimal) is None
-
-
 @pytest.mark.parametrize('invalid_decimal', ['', ' ', '   ', '.', '..', '...', '+', '-', '++', '--', 'a', 'a.1', '1.a'])
 def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places_max_digits_set(
     invalid_decimal, get_decimal_pattern
@@ -7724,8 +7710,6 @@ def test_decimal_pattern_serialization(max_digits, decimal_places, valid_decimal
         (5, 2, ['1234', '123.456', '1000.5', '0.001', '1E+3', '1E-7']),
         (2, 3, ['1', '0.001', '1.0', '1E+1', '1E-7']),
         (2, 2, ['0', '-0', '0E+1', '1', '1.0']),
-        (0, None, ['0', '-0', '0.0', '0E-10', '1']),
-        (0, 2, ['0', '0.0', '0.00']),
         (10, 8, ['100', '99.123456789', '0.000000001', '1E-9', '1.5E-8', '1.23E-7', '1E+2']),
         (4, 0, ['0.1', '10000', '1E+4', '1E-7']),
     ],

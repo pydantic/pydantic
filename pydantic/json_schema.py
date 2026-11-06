@@ -2885,11 +2885,6 @@ def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | No
     if max_digits is None and decimal_places is None:
         return rf'^[+-]?(?:{number}(?:{exponent})?{non_finite})$'
 
-    if max_digits == 0:
-        # No finite decimal satisfies `max_digits=0` (even zero counts as one digit), so only the
-        # exponent alternative (accepted regardless of the constraints, see below) remains:
-        return rf'^[+-]?(?:{number}{exponent}{non_finite})$'
-
     alts: list[str] = []
     if max_digits is not None and decimal_places is not None:
         # If `decimal_places > max_digits`, no whole digits are allowed and `max_digits` bounds the decimal places:
@@ -2939,10 +2934,6 @@ def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int |
 
     def frac_part(places: int) -> str:
         return rf'\.{_repeat("[0-9]", 1, places)}0*' if places else r'\.0+'
-
-    if max_digits == 0:
-        # No finite decimal satisfies `max_digits=0` (even zero counts as one digit):
-        return r'^-?(?:Infinity|s?NaN[0-9]*)$' if allow_inf_nan else r'(?!)'
 
     alts: list[str] = []
 
