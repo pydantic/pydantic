@@ -306,6 +306,7 @@ class GenerateJsonSchema:
         #  the reference) so instead of failing altogether if we can't build a definition we
         # store the error raised and re-throw it if we end up needing that def
         self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
+        self._core_defs_omitted: set[DefsRef] = set()
 
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
@@ -473,6 +474,8 @@ class GenerateJsonSchema:
         if 'ref' in schema:
             core_ref = CoreRef(schema['ref'])  # type: ignore[typeddict-item]
             core_mode_ref = (core_ref, self.mode)
+            if self.get_defs_ref(core_mode_ref) in self._core_defs_omitted:
+                raise PydanticOmit
             if core_mode_ref in self.core_to_defs_refs and self.core_to_defs_refs[core_mode_ref] in self.definitions:
                 return {'$ref': self.core_to_json_refs[core_mode_ref]}
 
@@ -487,6 +490,7 @@ class GenerateJsonSchema:
                 if json_schema.get('$ref', None) != json_ref:
                     self.definitions[defs_ref] = json_schema
                     self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+                    self._core_defs_omitted.discard(defs_ref)
                 json_schema = ref_json_schema
             return json_schema
 
@@ -2311,6 +2315,10 @@ class GenerateJsonSchema:
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue
+            except PydanticOmit:
+                core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
+                self._core_defs_omitted.add(self.get_defs_ref((core_ref, self.mode)))
+                continue
         return self.generate_inner(schema['schema'])
 
     def definition_ref_schema(self, schema: core_schema.DefinitionReferenceSchema) -> JsonSchemaValue:
@@ -2323,6 +2331,9 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         core_ref = CoreRef(schema['schema_ref'])
+        defs_ref = self.get_defs_ref((core_ref, self.mode))
+        if defs_ref in self._core_defs_omitted:
+            raise PydanticOmit
         _, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
         return ref_json_schema
 

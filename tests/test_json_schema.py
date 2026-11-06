@@ -5995,6 +5995,36 @@ def test_skip_json_schema_exclude_default():
     }
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Requires PEP 695 syntax')
+def test_skip_json_schema_shared_pep695_alias(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/14236"""
+    mod = create_module(
+        """
+import pydantic
+from pydantic.json_schema import SkipJsonSchema
+
+class R:
+    pass
+
+type Skip[X] = SkipJsonSchema[X]
+ANN = Skip[R | None]
+
+class Model(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
+    label: str = 'hello'
+    a: ANN = None
+    b: ANN = None
+"""
+    )
+    assert mod.Model.model_json_schema() == {
+        'properties': {
+            'label': {'default': 'hello', 'title': 'Label', 'type': 'string'},
+        },
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_typeddict_field_required_missing() -> None:
     """https://github.com/pydantic/pydantic/issues/6192"""
 
