@@ -20,6 +20,11 @@ from pydantic_core import (
 
 from .conftest import assert_gc
 
+pytestmark = [
+    pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898'),
+    pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy'),
+]
+
 GC_TEST_SCHEMA_INNER = core_schema.definitions_schema(
     core_schema.definition_reference_schema(schema_ref='model'),
     [
@@ -31,8 +36,6 @@ GC_TEST_SCHEMA_INNER = core_schema.definitions_schema(
 )
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
-@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_gc_schema_serializer() -> None:
     """https://github.com/pydantic/pydantic/issues/5136"""
 
@@ -58,8 +61,6 @@ def test_gc_schema_serializer() -> None:
     assert_gc(lambda: len(cache) == 0)
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
-@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_gc_schema_validator() -> None:
     """https://github.com/pydantic/pydantic/issues/5136"""
 
@@ -86,8 +87,6 @@ def test_gc_schema_validator() -> None:
     assert_gc(lambda: len(cache) == 0)
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
-@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_gc_validator_iterator() -> None:
     """https://github.com/pydantic/pydantic/issues/9243"""
 
@@ -121,8 +120,6 @@ def test_gc_validator_iterator() -> None:
     assert_gc(lambda: len(cache) == 0)
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
-@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_gc_enum_serializer_class() -> None:
     """https://github.com/pydantic/pydantic/issues/13621"""
 
@@ -145,8 +142,6 @@ def test_gc_enum_serializer_class() -> None:
     assert_gc(lambda: len(cache) == 0)
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
-@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_gc_enum_validator_lookup() -> None:
     """https://github.com/pydantic/pydantic/issues/13621"""
 
@@ -169,8 +164,6 @@ def test_gc_enum_validator_lookup() -> None:
     assert_gc(lambda: len(cache) == 0)
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
-@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_gc_field_exclude_if() -> None:
     """https://github.com/pydantic/pydantic/issues/13621"""
 
@@ -208,7 +201,6 @@ def test_gc_field_exclude_if() -> None:
     assert_gc(lambda: len(cache) == 0)
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
 @pytest.mark.skipif(
     platform.python_implementation() == 'GraalVM', reason='GC introspection is not supported on GraalPy'
 )
