@@ -389,7 +389,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             // and lists:
             let len = if let Ok(tuple) = self.cast::<PyTuple>() {
                 Some(tuple.len())
-            } else if let Ok(list) = self.cast_exact::<PyList>() {
+            } else if let Ok(list) = self.cast::<PyList>() {
                 Some(list.len())
             } else {
                 None

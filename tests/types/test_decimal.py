@@ -44,6 +44,10 @@ def test_decimal():
     assert isinstance(v, Decimal)
 
 
+class ListSubclass(list):
+    pass
+
+
 @pytest.mark.parametrize(
     'value',
     [
@@ -51,6 +55,7 @@ def test_decimal():
         pytest.param([0, [1, 4], -1], id='list'),
         pytest.param([0, (1, 4), -1], id='list_with_tuple_digits'),
         pytest.param(Decimal('1.4').as_tuple(), id='decimal_tuple'),
+        pytest.param(ListSubclass([0, [1, 4], -1]), id='list_subclass'),
     ],
 )
 def test_decimal_sign_digits_exponent_form(value) -> None:
