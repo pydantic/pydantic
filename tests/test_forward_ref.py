@@ -245,6 +245,13 @@ def test_forward_ref_nested_sub_types(create_module):
     assert isinstance(node.right[0], Node)
 
 
+def test_forward_ref_in_builtin_generic_is_evaluated() -> None:
+    class Model(BaseModel):
+        a: list['int']
+
+    assert Model.model_fields['a'].annotation == list[int]
+
+
 def test_self_reference_json_schema(create_module):
     @create_module
     def module():
