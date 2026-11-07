@@ -53,7 +53,6 @@ testing-extra = [
     { include-group = "dev" },
     'coverage',
     'dirty-equals',
-    'exceptiongroup',
     'hypothesis',
     'inline-snapshot',
     # numpy doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux

@@ -2,8 +2,8 @@ version = 1
 revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
-    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "python_full_version >= '3.15'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "python_full_version == '3.12.*' or python_full_version == '3.14.*' or (python_full_version == '3.13.*' and implementation_name != 'cpython')",
     "python_full_version < '3.12'",
 ]
@@ -805,15 +805,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/48/ce/13508a1ec3f8bb981ae4ca79ea40384becc868bfae97fd1c942bb3a001b1/email_validator-2.2.0.tar.gz", hash = "sha256:cb690f344c617a714f22e66ae771445a1ceb46821152df8e165c5f9a364582b7", size = 48967, upload-time = "2024-06-20T11:30:30.034Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/ee/bf0adb559ad3c786f12bcbc9296b3f5675f529199bef03e2df281fa1fadb/email_validator-2.2.0-py3-none-any.whl", hash = "sha256:561977c2d73ce3611850a06fa56b414621e0c8faa9d66f2611407d87465da631", size = 33521, upload-time = "2024-06-20T11:30:28.248Z" },
-]
-
-[[package]]
-name = "exceptiongroup"
-version = "1.2.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/09/35/2495c4ac46b980e4ca1f6ad6db102322ef3ad2410b79fdde159a4b0f3b92/exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc", size = 28883, upload-time = "2024-07-12T22:26:00.161Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/02/cc/b7e31358aac6ed1ef2bb790a9746ac2c69bcb3c8588b41616914eb106eaf/exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b", size = 16453, upload-time = "2024-07-12T22:25:58.476Z" },
 ]
 
 [[package]]
@@ -2333,7 +2324,6 @@ linting = [
 testing-extra = [
     { name = "coverage" },
     { name = "dirty-equals" },
-    { name = "exceptiongroup" },
     { name = "hypothesis" },
     { name = "inline-snapshot" },
     { name = "maturin" },
@@ -2372,7 +2362,6 @@ linting = [
 testing-extra = [
     { name = "coverage" },
     { name = "dirty-equals" },
-    { name = "exceptiongroup" },
     { name = "hypothesis" },
     { name = "inline-snapshot" },
     { name = "maturin", specifier = ">=1.16" },
@@ -2486,8 +2475,8 @@ name = "pyodide-build"
 version = "0.39.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "python_full_version >= '3.15'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "python_full_version == '3.12.*' or python_full_version == '3.14.*' or (python_full_version == '3.13.*' and implementation_name != 'cpython')",
 ]
 dependencies = [

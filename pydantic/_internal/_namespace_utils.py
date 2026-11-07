@@ -267,7 +267,8 @@ class NsResolver:
 
         # Adding `__type_params__` *before* `vars(typ)`, as the latter takes priority
         # (see https://github.com/python/cpython/pull/120272).
-        type_params = typ.__type_params__
+        # TODO `typ.__type_params__` when we drop support for Python 3.11:
+        type_params: tuple[_TypeVarLike, ...] = getattr(typ, '__type_params__', ())
         if type_params:
             # Adding `__type_params__` is mostly useful for generic classes defined using
             # PEP 695 syntax *and* using forward annotations (see the example in

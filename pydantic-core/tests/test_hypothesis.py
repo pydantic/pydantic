@@ -31,9 +31,7 @@ def test_datetime_int(datetime_schema, data):
     try:
         if abs(data) > 20_000_000_000:
             microsecond = (data % 1000) * 1000
-            expected = datetime.fromtimestamp(data // 1000, tz=UTC).replace(
-                tzinfo=None, microsecond=microsecond
-            )
+            expected = datetime.fromtimestamp(data // 1000, tz=UTC).replace(tzinfo=None, microsecond=microsecond)
         else:
             expected = datetime.fromtimestamp(data, tz=UTC).replace(tzinfo=None)
     except OverflowError:

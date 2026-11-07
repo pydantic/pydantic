@@ -2,6 +2,7 @@ import platform
 import re
 import sys
 from decimal import Decimal
+from enum import Enum
 from numbers import Number
 from typing import Any
 
@@ -225,7 +226,6 @@ def test_default_validator():
 
 @pytest.fixture(scope='session', name='FruitEnum')
 def fruit_enum_fixture():
-    from enum import Enum
 
     class FruitEnum(str, Enum):  # noqa: UP042 (`str()` differs from the value, which must not be used)
         pear = 'pear'
