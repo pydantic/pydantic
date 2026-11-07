@@ -5476,6 +5476,34 @@ def test_serialization_schema_with_exclude_exclude_if():
     }
 
 
+def test_serialization_schema_excludes_init_var():
+    @dataclass
+    class User:
+        name: str
+        password: dataclasses.InitVar[str]
+
+        def __post_init__(self, password: str) -> None:
+            pass
+
+    assert TypeAdapter(User).dump_python(User(name='a', password='b')) == {'name': 'a'}
+
+    assert TypeAdapter(User).json_schema(mode='serialization') == {
+        'properties': {'name': {'title': 'Name', 'type': 'string'}},
+        'required': ['name'],
+        'title': 'User',
+        'type': 'object',
+    }
+    assert TypeAdapter(User).json_schema(mode='validation') == {
+        'properties': {
+            'name': {'title': 'Name', 'type': 'string'},
+            'password': {'title': 'Password', 'type': 'string'},
+        },
+        'required': ['name', 'password'],
+        'title': 'User',
+        'type': 'object',
+    }
+
+
 def test_serialization_schema_with_computed_field_exclude_if():
     class Model(BaseModel):
         a: int

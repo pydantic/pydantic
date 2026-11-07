@@ -1891,7 +1891,8 @@ class GenerateJsonSchema:
         if self.mode == 'serialization':
             # If you still want to include the field in the generated JSON schema,
             # override this method and return True
-            return not field.get('serialization_exclude')
+            # (dataclass `InitVar` fields are only passed to `__post_init__` and never serialized)
+            return not field.get('serialization_exclude') and not field.get('init_only')
         elif self.mode == 'validation':
             return True
         else:
