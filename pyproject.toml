@@ -95,7 +95,6 @@ docs = [
     'mkdocs-material',
     'mkdocs-redirects',
     'mkdocstrings-python',
-    'tomli',
     'pyupgrade',
     'mike',
     'pydantic-settings',

@@ -207,12 +207,9 @@ def _type_convert(arg: Any) -> Any:
     if arg is None:
         return NoneType
     if isinstance(arg, str):
-        if sys.version_info[:3] == (3, 10, 0):
-            return ForwardRef(arg, is_argument=False)
-        else:
-            # Like `typing.get_type_hints()`, assume the arg can be in any context,
-            # hence the proper `is_argument` and `is_class` args:
-            return ForwardRef(arg, is_argument=False, is_class=True)
+        # Like `typing.get_type_hints()`, assume the arg can be in any context,
+        # hence the proper `is_argument` and `is_class` args:
+        return ForwardRef(arg, is_argument=False, is_class=True)
     return arg
 
 

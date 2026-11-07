@@ -678,7 +678,7 @@ def model_validator(
 
     Example usage:
     ```python
-    from typing_extensions import Self
+    from typing import Self
 
     from pydantic import BaseModel, ValidationError, model_validator
 

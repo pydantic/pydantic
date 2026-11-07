@@ -1,4 +1,3 @@
-import enum
 import os
 import pickle
 import re
@@ -9,7 +8,6 @@ from typing import Any
 
 import pytest
 from dirty_equals import HasRepr, IsInstance, IsJson, IsStr
-from pytest_mock import MockerFixture
 
 from pydantic_core import (
     CoreConfig,
@@ -619,54 +617,6 @@ def test_validation_error_cause_contents():
     assert repr(sub_cause) == repr(AssertionError('Wrong'))
     assert sub_cause.__cause__ is None
     assert sub_cause.__traceback__ is not None
-
-
-class CauseResult(enum.Enum):
-    CAUSE = enum.auto()
-    NO_CAUSE = enum.auto()
-    IMPORT_ERROR = enum.auto()
-
-
-@pytest.mark.parametrize(
-    'desc,config,expected_result',
-    [  # Without the backport should still work after 3.10 as not needed:
-        (
-            'Enabled',
-            CoreConfig(validation_error_cause=True),
-            CauseResult.CAUSE,
-        ),
-        ('Disabled specifically', CoreConfig(validation_error_cause=False), CauseResult.NO_CAUSE),
-        ('Disabled implicitly', {}, CauseResult.NO_CAUSE),
-    ],
-)
-def test_validation_error_cause_config_variants(
-    desc: str, config: CoreConfig, expected_result: CauseResult, mocker: MockerFixture
-):
-    # Simulate the package being missing:
-    mocker.patch.dict('sys.modules', {'exceptiongroup': None})
-
-    def singular_raise_py_error(v: Any) -> Any:
-        raise ValueError('Oh no!')
-
-    s = SchemaValidator(core_schema.no_info_plain_validator_function(singular_raise_py_error), config=config)
-
-    if expected_result is CauseResult.IMPORT_ERROR:
-        # Confirm error message contains "requires the exceptiongroup module" in the middle of the string:
-        with pytest.raises(ImportError, match='requires the exceptiongroup module'):
-            s.validate_python('anything')
-    elif expected_result is CauseResult.CAUSE:
-        with pytest.raises(ValidationError) as exc_info:
-            s.validate_python('anything')
-        assert exc_info.value.__cause__ is not None
-        assert hasattr(exc_info.value.__cause__, 'exceptions')
-        assert len(exc_info.value.__cause__.exceptions) == 1
-        assert repr(exc_info.value.__cause__.exceptions[0]) == repr(ValueError('Oh no!'))
-    elif expected_result is CauseResult.NO_CAUSE:
-        with pytest.raises(ValidationError) as exc_info:
-            s.validate_python('anything')
-        assert exc_info.value.__cause__ is None
-    else:
-        raise AssertionError(f'Unhandled result: {expected_result}')
 
 
 def test_validation_error_cause_traceback_preserved():

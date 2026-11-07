@@ -7,10 +7,8 @@ import functools
 import sys
 import types
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeGuard, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeGuard, TypeVar, dataclass_transform, overload
 from warnings import warn
-
-from typing_extensions import dataclass_transform
 
 from ._internal import _config, _decorators, _mock_val_ser, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses

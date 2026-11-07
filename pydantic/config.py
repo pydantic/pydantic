@@ -4,9 +4,9 @@ from __future__ import annotations as _annotations
 
 from collections.abc import Callable
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, Unpack, cast, overload
 
-from typing_extensions import TypedDict, Unpack
+from typing_extensions import TypedDict
 
 from .aliases import AliasGenerator
 from .errors import PydanticUserError

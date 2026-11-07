@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::{Display, Write};
 use std::str::from_utf8;
 
-use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyBaseExceptionGroup, PyKeyError, PyTypeError, PyValueError};
 use pyo3::ffi;
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -150,18 +150,12 @@ impl ValidationError {
         // Only add the cause if there are actually python user exceptions to show:
         if !user_py_errs.is_empty() {
             let title = "Pydantic User Code Exceptions";
-
-            let cause = {
-                use pyo3::exceptions::PyBaseExceptionGroup;
-                Some(PyBaseExceptionGroup::new_err((title, user_py_errs)).into_value(py))
-            };
+            let cause = PyBaseExceptionGroup::new_err((title, user_py_errs)).into_value(py);
 
             // Set the cause to the ValidationError:
-            if let Some(cause) = cause {
-                unsafe {
-                    // PyException_SetCause _steals_ a reference to cause, so must use .into_ptr()
-                    ffi::PyException_SetCause(self_.as_ptr(), cause.into_ptr());
-                }
+            unsafe {
+                // PyException_SetCause _steals_ a reference to cause, so must use .into_ptr()
+                ffi::PyException_SetCause(self_.as_ptr(), cause.into_ptr());
             }
         }
         None

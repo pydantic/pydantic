@@ -1503,8 +1503,7 @@ def test_typing_type_on_generic_alias() -> None:
     error_msg = 'Instead of using type[typing.List[int]], use type[list].'
 
     with pytest.raises(PydanticUserError, check=lambda e: error_msg in e.message):
-        # Note: this only works with typing.List, list behaves differently in Python 3.9 and sometimes 3.10,
-        # so thus we use typing.List here.
+        # `typing.List[int]` is a `typing._GenericAlias`, unlike `list[int]` (a `types.GenericAlias`) tested above:
         class Model(BaseModel):
             a: type[typing.List[int]]  # noqa: UP006
 

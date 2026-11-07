@@ -20,12 +20,13 @@ from typing import (
     TypeAlias,
     TypeVar,
     Union,
+    Unpack,
     cast,
     overload,
 )
 
 from pydantic_core import PydanticUndefined, ValidationError
-from typing_extensions import Sentinel, TypeForm, Unpack
+from typing_extensions import Sentinel, TypeForm
 
 from . import PydanticDeprecatedSince211
 from ._internal import (
