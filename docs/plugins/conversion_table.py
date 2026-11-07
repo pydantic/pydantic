@@ -1473,6 +1473,18 @@ table_rows: list[Row] = [
         condition='Decimal tuple form, e.g. `(0, (1, 4, 1), -2)`.',
     ),
     Row(
+        Decimal,
+        list,
+        python_input=True,
+        condition='Decimal tuple form, e.g. `[0, [1, 4, 1], -2]`.',
+    ),
+    Row(
+        Decimal,
+        'Array',
+        json_input=True,
+        condition='Decimal tuple form, e.g. `[0, [1, 4, 1], -2]`.',
+    ),
+    Row(
         Path,
         Path,
         strict=True,
