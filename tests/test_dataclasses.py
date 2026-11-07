@@ -2253,6 +2253,53 @@ def test_dataclass_config_validate_default():
     ]
 
 
+def test_specialized_stdlib_generic_dataclass():
+    """https://github.com/pydantic/pydantic/issues/10689"""
+    T = TypeVar('T')
+
+    @dataclasses.dataclass
+    class Base(Generic[T]):
+        value: T
+        count: int
+
+    @pydantic.dataclasses.dataclass
+    @dataclasses.dataclass
+    class Stacked(Base[int]):
+        pass
+
+    @dataclasses.dataclass
+    class Derived(Base[int]):
+        pass
+
+    Converted = pydantic.dataclasses.dataclass(Derived)
+    assert Converted is not Derived
+    assert issubclass(Converted, Derived)
+    assert Derived(value=1, count='2').count == '2'
+
+    @pydantic.dataclasses.dataclass
+    class Plain(Base[int]):
+        pass
+
+    for cls in (Stacked, Converted, Plain):
+        assert cls.__parameters__ == ()
+        assert cls(value=1, count='2').count == 2
+        with pytest.raises(
+            ValidationError,
+            check=lambda err: (
+                err.errors(include_url=False)
+                == [
+                    {
+                        'type': 'int_parsing',
+                        'loc': ('count',),
+                        'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                        'input': 'invalid',
+                    }
+                ]
+            ),
+        ):
+            cls(value=1, count='invalid')
+
+
 @pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators())
 def test_unparametrized_generic_dataclass(dataclass_decorator):
     T = TypeVar('T')
