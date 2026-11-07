@@ -2314,6 +2314,19 @@ def test_str_length_config() -> None:
     }
 
 
+def test_str_length_config_not_applied_to_decimal() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(str_min_length=3, str_max_length=5)
+
+        d: Decimal
+
+    assert Model.model_json_schema()['properties']['d'] == {
+        'title': 'D',
+        'anyOf': [{'type': 'number'}, {'type': 'string'}],
+    }
+    assert Model.model_json_schema(mode='serialization')['properties']['d'] == {'title': 'D', 'type': 'string'}
+
+
 def test_model_subclass_metadata():
     class A(BaseModel):
         """A Model docstring"""
