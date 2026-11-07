@@ -6,7 +6,7 @@ import typing
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Hashable, Sequence
 from decimal import Decimal
-from enum import Enum, auto
+from enum import Enum, StrEnum, auto
 from typing import (
     Annotated,
     Any,
@@ -531,16 +531,16 @@ def test_recursive_lists():
     assert Model.model_fields['v'].is_required()
 
 
-class StrEnum(str, Enum):
+class MyStrEnum(StrEnum):
     a = 'a10'
     b = 'b10'
 
 
 def test_str_enum():
     class Model(BaseModel):
-        v: StrEnum = ...
+        v: MyStrEnum = ...
 
-    assert Model(v='a10').v is StrEnum.a
+    assert Model(v='a10').v is MyStrEnum.a
 
     with pytest.raises(ValidationError):
         Model(v='different')
@@ -1041,7 +1041,7 @@ class CustomStr(str):
         ('a string', 'a string'),
         (b'some bytes', 'some bytes'),
         (bytearray('foobar', encoding='utf8'), 'foobar'),
-        (StrEnum.a, 'a10'),
+        (MyStrEnum.a, 'a10'),
         (CustomStr('whatever'), 'whatever'),
     ],
 )
@@ -1503,8 +1503,7 @@ def test_typing_type_on_generic_alias() -> None:
     error_msg = 'Instead of using type[typing.List[int]], use type[list].'
 
     with pytest.raises(PydanticUserError, check=lambda e: error_msg in e.message):
-        # Note: this only works with typing.List, list behaves differently in Python 3.9 and sometimes 3.10,
-        # so thus we use typing.List here.
+        # `typing.List[int]` is a `typing._GenericAlias`, unlike `list[int]` (a `types.GenericAlias`) tested above:
         class Model(BaseModel):
             a: type[typing.List[int]]  # noqa: UP006
 
@@ -2571,11 +2570,9 @@ def test_invalid_forward_ref_model():
     can cause problems, and to demonstrate a way to work around this.
     """
     # The problem:
-    if sys.version_info >= (3, 11):
-        # See PR #8243, this was a RecursionError raised by Python, but is now caught on the Pydantic side
-        error = errors.PydanticUserError
-    else:
-        error = TypeError
+    # See PR #8243, this was a RecursionError raised by Python, but is now caught on the Pydantic side
+    error = errors.PydanticUserError
+
     with pytest.raises(error):
 
         class M(BaseModel):

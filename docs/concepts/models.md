@@ -346,7 +346,7 @@ attributes.
 Rather than raising a [`RecursionError`][] while attempting to validate data with cyclic references, Pydantic is able
 to detect the cyclic reference and raise an appropriate [`ValidationError`][pydantic_core.ValidationError]:
 
-=== "Python 3.10 and above"
+=== "Python 3.11"
 
     ```python
     from pydantic import BaseModel, ValidationError
@@ -799,7 +799,7 @@ Here is an example using a generic Pydantic model to create an easily-reused HTT
 
 <!-- TODO: tabs should be auto-generated if using Ruff (https://github.com/pydantic/pydantic/issues/10083) -->
 
-=== "Python 3.10 and above"
+=== "Python 3.11"
 
     ```python {upgrade="skip"}
     from typing import Generic, TypeVar

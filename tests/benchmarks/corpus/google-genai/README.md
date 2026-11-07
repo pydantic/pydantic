@@ -22,8 +22,7 @@ disk imports and SDK startup are excluded. Process-wide caches can be warm.
 Never import these files directly: the importer restores any installed packages
 and prevents fallback to unvendored SDK modules.
 
-Includes all production types and nested `_gaos` models. Requires Python 3.11 or
-later, matching the pinned upstream distribution. Optional integration availability is frozen to the extraction environment.
+Includes all production types and nested `_gaos` models. Optional integration availability is frozen to the extraction environment.
 Pillow and aiohttp are absent. HTTPX client fields use opaque marker classes
 with the original names and module paths, preserving their arbitrary-type
 schema shapes without copying HTTP implementations. These markers are not

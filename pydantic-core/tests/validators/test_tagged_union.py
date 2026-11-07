@@ -198,7 +198,7 @@ def test_int_choice_keys(py_and_json: PyAndJson, input_value, expected):
 
 
 def test_enum_keys():
-    class FooEnum(str, Enum):
+    class FooEnum(str, Enum):  # noqa: UP042 (`str()` differs from the value, which shows in the error)
         APPLE = 'apple'
         BANANA = 'banana'
 

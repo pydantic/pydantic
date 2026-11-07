@@ -6,9 +6,9 @@ import decimal
 import json
 import platform
 import sys
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any
 from uuid import UUID
 
@@ -586,7 +586,7 @@ class TestBenchmarkDateTime:
     @pytest.fixture(scope='class')
     @classmethod
     def datetime_raw(cls):
-        return datetime.now(timezone.utc) + timedelta(days=1)
+        return datetime.now(UTC) + timedelta(days=1)
 
     @pytest.fixture(scope='class')
     @classmethod
@@ -1205,7 +1205,7 @@ def test_model_instance_abc(benchmark):
     benchmark(validator.validate_python, m1)
 
 
-class SomeStrEnum(str, Enum):
+class SomeStrEnum(StrEnum):
     foo = 'foo_val'
     bar = 'bar_val'
     baz = 'baz_val'
@@ -1465,7 +1465,7 @@ def test_enum_int_core(benchmark):
     benchmark(v.validate_python, 1)
 
 
-class FooStr(str, Enum):
+class FooStr(StrEnum):
     a = 'apple'
     b = 'banana'
     c = 'carrot'

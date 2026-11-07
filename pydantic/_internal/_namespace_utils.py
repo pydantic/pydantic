@@ -4,9 +4,9 @@ import sys
 from collections.abc import Callable, Generator, Iterator, Mapping
 from functools import cached_property
 from types import MappingProxyType
-from typing import Any, NamedTuple, TypeAlias, TypeVar
+from typing import Any, NamedTuple, ParamSpec, TypeAlias, TypeVar, TypeVarTuple
 
-from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple
+from typing_extensions import TypeAliasType
 
 from ._contextlib import contextmanager
 

@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -18,16 +18,16 @@ from pydantic import Field, TypeAdapter, ValidationError
             id='2017-05-05T10:10:10.0002_str',
         ),
         ('2017-05-05 10:10:10', datetime(2017, 5, 5, 10, 10, 10)),
-        ('2017-05-05 10:10:10+00:00', datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
+        ('2017-05-05 10:10:10+00:00', datetime(2017, 5, 5, 10, 10, 10, tzinfo=UTC)),
         pytest.param(
             b'2017-05-05T10:10:10.0002',
             datetime(2017, 5, 5, 10, 10, 10, microsecond=200),
             id='2017-05-05T10:10:10.0002_bytes',
         ),
-        (1493979010000, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        (1493979010, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        (1493979010000.0, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        (Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
+        (1493979010000, datetime(2017, 5, 5, 10, 10, 10, tzinfo=UTC)),
+        (1493979010, datetime(2017, 5, 5, 10, 10, 10, tzinfo=UTC)),
+        (1493979010000.0, datetime(2017, 5, 5, 10, 10, 10, tzinfo=UTC)),
+        (Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10, tzinfo=UTC)),
         pytest.param('2017-5-5T10:10:10', ValidationError, id='2017-5-5T10:10:10_str'),
         pytest.param(b'2017-5-5T10:10:10', ValidationError, id='2017-5-5T10:10:10_bytes'),
     ],

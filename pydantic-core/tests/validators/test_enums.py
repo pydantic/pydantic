@@ -1,7 +1,7 @@
 import re
 import sys
 from decimal import Decimal
-from enum import Enum, IntEnum, IntFlag
+from enum import Enum, IntEnum, IntFlag, StrEnum
 
 import pytest
 
@@ -91,7 +91,7 @@ def test_int_enum():
 
 
 def test_str_enum():
-    class MyEnum(str, Enum):
+    class MyEnum(StrEnum):
         a = 'x'
         b = 'y'
 
@@ -494,7 +494,7 @@ def test_support_custom_new_method() -> None:
 def test_strict_enum_wrap_json() -> None:
     """https://github.com/pydantic/pydantic/issues/11070"""
 
-    class Animal(str, Enum):
+    class Animal(StrEnum):
         CAT = 'cat'
         DOG = 'dog'
 

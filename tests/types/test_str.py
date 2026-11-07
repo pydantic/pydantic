@@ -1,6 +1,6 @@
 import re
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from numbers import Number
 from typing import Annotated
 
@@ -164,7 +164,7 @@ def test_string_too_short():
 
 
 def test_strict_str():
-    class FruitEnum(str, Enum):
+    class FruitEnum(StrEnum):
         """A subclass of a string"""
 
         pear = 'pear'

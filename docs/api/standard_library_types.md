@@ -758,12 +758,12 @@ their [value][enum.Enum.value].
 <h3>Example</h3>
 
 ```python
-from enum import Enum, IntEnum
+from enum import IntEnum, StrEnum
 
 from pydantic import BaseModel, ValidationError
 
 
-class FruitEnum(str, Enum):
+class FruitEnum(StrEnum):
     PEAR = 'pear'
     BANANA = 'banana'
 

@@ -29,7 +29,6 @@ classifiers = [
     'Programming Language :: Python :: Implementation :: GraalPy',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
@@ -44,7 +43,7 @@ classifiers = [
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Topic :: Internet',
 ]
-requires-python = '>=3.10'
+requires-python = '>=3.11'
 dependencies = [
     'typing-extensions>=4.16.0',
     'annotated-types>=0.6.0',
@@ -96,7 +95,6 @@ docs = [
     'mkdocs-material',
     'mkdocs-redirects',
     'mkdocstrings-python',
-    'tomli',
     'pyupgrade',
     'mike',
     'pydantic-settings',
@@ -224,7 +222,6 @@ unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
-target-version = 'py310'
 extend-exclude = ['tests/mypy', 'tests/pydantic_core', 'tests/benchmarks/corpus']
 
 [tool.ruff.lint]

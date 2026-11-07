@@ -51,7 +51,7 @@ Such behavior can also result in a permanent ban from the organization.
 
 You'll need the following prerequisites:
 
-* Any Python version between **Python 3.10 and 3.15**
+* Any Python version between **Python 3.11 and 3.15**
 * [**uv**](https://docs.astral.sh/uv/getting-started/installation/)
 * [**git**](https://git-scm.com/) - For version control
 * [**make**](https://www.gnu.org/software/make/) - For running development commands (or use `nmake` on Windows)

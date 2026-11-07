@@ -11,21 +11,14 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from fractions import Fraction
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal, Required, TypeAlias, Union
 
-from typing_extensions import TypeVar, deprecated
+from typing_extensions import Protocol, TypeVar, deprecated
 
 if sys.version_info < (3, 12):
     from typing_extensions import TypedDict
 else:
     from typing import TypedDict
-
-if sys.version_info < (3, 11):
-    from typing import TypeAlias
-
-    from typing_extensions import Protocol, Required
-else:
-    from typing import Protocol, Required, TypeAlias
 
 if TYPE_CHECKING:
     from pydantic_core import PydanticUndefined
@@ -73,7 +66,6 @@ class CoreConfig(TypedDict, total=False):
         val_json_bytes: The validation option for `bytes` values, complementing ser_json_bytes. Default is 'utf8'.
         hide_input_in_errors: Whether to hide input data from `ValidationError` representation.
         validation_error_cause: Whether to add user-python excs to the __cause__ of a ValidationError.
-            Requires exceptiongroup backport pre Python 3.11.
         coerce_numbers_to_str: Whether to enable coercion of any `Number` type to `str` (not applicable in `strict` mode).
         regex_engine: The regex engine to use for regex pattern validation. Default is 'rust-regex'. See `StringSchema`.
         cache_strings: Whether to cache strings. Default is `True`, `True` or `'all'` is required to cache strings

@@ -1,7 +1,6 @@
-from typing import Annotated, Union
+from typing import Annotated, Union, assert_type
 
 from pydantic_core import MISSING
-from typing_extensions import assert_type
 
 from pydantic import TypeAdapter
 

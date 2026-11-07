@@ -1,6 +1,5 @@
 import dataclasses
 import re
-import sys
 import typing
 from typing import Generic, TypeVar
 
@@ -12,15 +11,9 @@ from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, Validatio
 
 from .utils import dataclass_decorators
 
-self_types: list[TypeForm] = []
-ids: list[str] = []
-if sys.version_info >= (3, 11):
-    self_types.append(typing.Self)
-    ids.append('typing-self')
-    if typing.Self is not typing_extensions.Self:
-        self_types.append(typing_extensions.Self)
-        ids.append('typing-extensions-self')
-else:
+self_types: list[TypeForm] = [typing.Self]
+ids: list[str] = ['typing-self']
+if typing.Self is not typing_extensions.Self:
     self_types.append(typing_extensions.Self)
     ids.append('typing-extensions-self')
 

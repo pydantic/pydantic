@@ -207,12 +207,9 @@ def _type_convert(arg: Any) -> Any:
     if arg is None:
         return NoneType
     if isinstance(arg, str):
-        if sys.version_info[:3] == (3, 10, 0):
-            return ForwardRef(arg, is_argument=False)
-        else:
-            # Like `typing.get_type_hints()`, assume the arg can be in any context,
-            # hence the proper `is_argument` and `is_class` args:
-            return ForwardRef(arg, is_argument=False, is_class=True)
+        # Like `typing.get_type_hints()`, assume the arg can be in any context,
+        # hence the proper `is_argument` and `is_class` args:
+        return ForwardRef(arg, is_argument=False, is_class=True)
     return arg
 
 
@@ -389,22 +386,16 @@ def eval_type(
             message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
         else:
             message = f'Unable to evaluate type annotation {value!r}.'
-        if sys.version_info >= (3, 11):
-            e.add_note(message)
-            raise
-        else:
-            raise TypeError(message) from e
+        e.add_note(message)
+        raise
     except RecursionError as e:
         message = (
             "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
             'consider using PEP 695 type aliases instead. For more details, refer to the documentation: '
             f'https://pydantic.dev/docs/validation/{version_short()}/concepts/types/#named-recursive-types'
         )
-        if sys.version_info >= (3, 11):
-            e.add_note(message)
-            raise
-        else:
-            raise RecursionError(f'{e.args[0]}\n{message}')
+        e.add_note(message)
+        raise
 
 
 def _eval_type(
@@ -465,10 +456,7 @@ def get_function_type_hints(
 ) -> dict[str, Any]:
     """Return type hints for a function.
 
-    This is similar to the `typing.get_type_hints` function, with a few differences:
-    - Support `functools.partial` by using the underlying `func` attribute.
-    - Do not wrap type annotation of a parameter with `Optional` if it has a default value of `None`
-      (related bug: https://github.com/python/cpython/issues/90353, only fixed in 3.11+).
+    This is similar to the `typing.get_type_hints()` function, but with `functools.partial` support.
     """
     if isinstance(function, partial):
         annotations = safe_get_annotations(function.func)

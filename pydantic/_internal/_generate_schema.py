@@ -22,7 +22,7 @@ from inspect import Parameter, _ParameterKind
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import EllipsisType, FunctionType, GenericAlias, LambdaType, MethodType, NoneType
+from types import EllipsisType, FunctionType, LambdaType, MethodType, NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -538,7 +538,7 @@ class GenerateSchema:
             sub_type = 'int'
             value_ser_type: core_schema.SerSchema = core_schema.simple_ser_schema('int')
         elif issubclass(enum_type, str):
-            # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
+            # this handles `StrEnum`, and also `Foobar(str, Enum)`
             sub_type = 'str'
             value_ser_type = core_schema.simple_ser_schema('str')
         elif issubclass(enum_type, float):
@@ -1049,14 +1049,9 @@ class GenerateSchema:
     def _get_args_resolving_forward_refs(self, obj: Any) -> tuple[Any, ...] | None: ...
 
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
+        # TODO this `_get_args_resolving_forward_refs()` function is probably not necessary?
         args = get_args(obj)
         if args:
-            if isinstance(obj, GenericAlias):
-                # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
-                # This was fixed in https://github.com/python/cpython/pull/30900 (Python 3.11).
-                # TODO: this shouldn't be necessary (probably even this `_get_args_resolving_forward_refs()` function)
-                # once we drop support for Python 3.10 *or* if we implement our own `typing._eval_type()` implementation.
-                args = (ForwardRef(a) if isinstance(a, str) else a for a in args)
             args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
@@ -1734,8 +1729,6 @@ class GenerateSchema:
         if typevars_map and params:
             params = tuple(replace_types(param, typevars_map) for param in params)
 
-        # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
-        # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
         if not params:
             if tuple_type in TUPLE_TYPES:
                 return core_schema.tuple_schema([core_schema.any_schema()], variadic_item_index=0)
@@ -1748,10 +1741,6 @@ class GenerateSchema:
             else:
                 # TODO: something like https://github.com/pydantic/pydantic/issues/5952
                 raise ValueError('Variable tuples can only have one type')
-        elif len(params) == 1 and params[0] == ():
-            # special case for `tuple[()]` which means `tuple[]` - an empty tuple
-            # NOTE: This conditional can be removed when we drop support for Python 3.10.
-            return core_schema.tuple_schema([])
         else:
             return core_schema.tuple_schema([self.generate_schema(param) for param in params])
 

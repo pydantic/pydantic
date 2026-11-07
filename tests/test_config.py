@@ -1,7 +1,6 @@
 import copy
 import json
 import re
-import sys
 from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
@@ -399,7 +398,6 @@ def test_config_wrapper_match():
     )
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason='requires backport pre 3.11, fully tested in pydantic core')
 def test_config_validation_error_cause():
     class Foo(BaseModel):
         foo: int
@@ -419,7 +417,7 @@ def test_config_validation_error_cause():
         Foo(foo=4)
     # Confirm python error attached as a cause, and error location specified in a note:
     assert exc_info.value.__cause__ is not None
-    assert isinstance(exc_info.value.__cause__, ExceptionGroup)  # noqa: F821
+    assert isinstance(exc_info.value.__cause__, ExceptionGroup)
     assert len(exc_info.value.__cause__.exceptions) == 1
     src_exc = exc_info.value.__cause__.exceptions[0]
     assert repr(src_exc) == "AssertionError('Must be greater than 5\\nassert 4 > 5')"

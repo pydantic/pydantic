@@ -7,7 +7,7 @@ import copy
 import functools
 import pickle
 import sys
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import UTC, datetime, timedelta, timezone, tzinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import pytest
@@ -69,7 +69,7 @@ ZERO = timedelta(0).total_seconds()
 
 ACDT = TzInfo(timedelta(hours=9.5).total_seconds())
 EST = TzInfo(-timedelta(hours=5).total_seconds())
-UTC = TzInfo(timedelta(0).total_seconds())
+UTC_TZ = TzInfo(timedelta(0).total_seconds())
 DT = datetime(2010, 1, 1)
 
 
@@ -140,7 +140,7 @@ def test_fromutc(tz):
     utctime = DT.replace(tzinfo=tz)
     local = tz.fromutc(utctime)
     assert local - utctime == tz.utcoffset(local)
-    assert local == DT.replace(tzinfo=timezone.utc)
+    assert local == DT.replace(tzinfo=UTC)
 
 
 def test_comparison():
@@ -163,7 +163,7 @@ def test_comparison():
     assert tz >= SMALLEST
 
     # offset based comparison tests for tzinfo derived classes like datetime.timezone.
-    utcdatetime = DT.replace(tzinfo=timezone.utc)
+    utcdatetime = DT.replace(tzinfo=UTC)
     assert tz == utcdatetime.tzinfo
     estdatetime = DT.replace(tzinfo=timezone(-timedelta(hours=5)))
     assert EST == estdatetime.tzinfo
@@ -229,7 +229,7 @@ def test_no_args_constructor():
     assert str(tz) == 'UTC'
 
 
-@pytest.mark.parametrize('tz', [ACDT, EST, UTC])
+@pytest.mark.parametrize('tz', [ACDT, EST, UTC_TZ])
 @pytest.mark.parametrize(('pickler', 'unpickler', 'proto'), pickle_choices)
 def test_pickle(tz, pickler, unpickler, proto):
     # Test that TzInfo can be pickled and unpickled

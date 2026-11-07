@@ -1,4 +1,3 @@
-import enum
 import os
 import pickle
 import re
@@ -9,7 +8,6 @@ from typing import Any
 
 import pytest
 from dirty_equals import HasRepr, IsInstance, IsJson, IsStr
-from pytest_mock import MockerFixture
 
 from pydantic_core import (
     CoreConfig,
@@ -558,7 +556,6 @@ def test_all_errors():
         pytest.fail('core_schema.ErrorType needs to be updated')
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason='This is the modern version used post 3.10.')
 def test_validation_error_cause_contents():
     enabled_config: CoreConfig = CoreConfig(validation_error_cause=True)
 
@@ -573,7 +570,7 @@ def test_validation_error_cause_contents():
         s2.validate_python('anything')
 
     cause_group = exc_info.value.__cause__
-    assert isinstance(cause_group, BaseExceptionGroup)  # noqa: F821,RUF100  # gated on 3.11+ above
+    assert isinstance(cause_group, BaseExceptionGroup)
     assert len(cause_group.exceptions) == 1
 
     cause = cause_group.exceptions[0]
@@ -598,7 +595,7 @@ def test_validation_error_cause_contents():
     with pytest.raises(ValidationError) as exc_info:
         s3.validate_python('anything')
 
-    assert isinstance(exc_info.value.__cause__, BaseExceptionGroup)  # noqa: F821,RUF100  # gated on 3.11+ above
+    assert isinstance(exc_info.value.__cause__, BaseExceptionGroup)
     assert len(exc_info.value.__cause__.exceptions) == 1
     cause = exc_info.value.__cause__.exceptions[0]
     assert cause.__notes__ and cause.__notes__[-1].startswith('\nPydantic: ')
@@ -607,7 +604,7 @@ def test_validation_error_cause_contents():
     assert isinstance(subcause, ValidationError)
 
     cause_group = subcause.__cause__
-    assert isinstance(cause_group, BaseExceptionGroup)  # noqa: F821,RUF100  # gated on 3.11+ above
+    assert isinstance(cause_group, BaseExceptionGroup)
     assert len(cause_group.exceptions) == 1
 
     cause = cause_group.exceptions[0]
@@ -620,125 +617,6 @@ def test_validation_error_cause_contents():
     assert repr(sub_cause) == repr(AssertionError('Wrong'))
     assert sub_cause.__cause__ is None
     assert sub_cause.__traceback__ is not None
-
-
-@pytest.mark.skipif(sys.version_info >= (3, 11), reason='This is the backport/legacy version used pre 3.11 only.')
-def test_validation_error_cause_contents_legacy():
-    from exceptiongroup import BaseExceptionGroup
-
-    enabled_config: CoreConfig = CoreConfig(validation_error_cause=True)
-
-    def multi_raise_py_error(v: Any) -> Any:
-        try:
-            raise AssertionError('Wrong')
-        except AssertionError as e:
-            raise ValueError('Oh no!') from e
-
-    s2 = SchemaValidator(core_schema.no_info_plain_validator_function(multi_raise_py_error), config=enabled_config)
-    with pytest.raises(ValidationError) as exc_info:
-        s2.validate_python('anything')
-
-    cause_group = exc_info.value.__cause__
-    assert isinstance(cause_group, BaseExceptionGroup)
-    assert len(cause_group.exceptions) == 1
-
-    cause = cause_group.exceptions[0]
-    assert repr(cause).startswith("UserWarning('Pydantic: ")
-
-    assert cause.__cause__ is not None
-    cause = cause.__cause__
-    assert repr(cause) == repr(ValueError('Oh no!'))
-    assert cause.__traceback__ is not None
-
-    sub_cause = cause.__cause__
-    assert repr(sub_cause) == repr(AssertionError('Wrong'))
-    assert sub_cause.__cause__ is None
-    assert sub_cause.__traceback__ is not None
-
-    # Make sure a deep inner ValidationError(s) causing a validator failure doesn't cause any problems:
-    def outer_raise_py_error(v: Any) -> Any:
-        try:
-            s2.validate_python('anything')
-        except ValidationError as e:
-            raise ValueError('Sub val failure') from e
-
-    s3 = SchemaValidator(core_schema.no_info_plain_validator_function(outer_raise_py_error), config=enabled_config)
-    with pytest.raises(ValidationError) as exc_info:
-        s3.validate_python('anything')
-
-    assert isinstance(exc_info.value.__cause__, BaseExceptionGroup)
-    assert len(exc_info.value.__cause__.exceptions) == 1
-    cause = exc_info.value.__cause__.exceptions[0]
-    assert repr(cause).startswith("UserWarning('Pydantic: ")
-    assert cause.__cause__ is not None
-    cause = cause.__cause__
-    assert repr(cause) == repr(ValueError('Sub val failure'))
-    subcause = cause.__cause__
-    assert isinstance(subcause, ValidationError)
-
-    cause_group = subcause.__cause__
-    assert isinstance(cause_group, BaseExceptionGroup)
-    assert len(cause_group.exceptions) == 1
-
-    cause = cause_group.exceptions[0]
-    assert repr(cause).startswith("UserWarning('Pydantic: ")
-    assert cause.__cause__ is not None
-    cause = cause.__cause__
-    assert repr(cause) == repr(ValueError('Oh no!'))
-    assert cause.__traceback__ is not None
-
-    sub_cause = cause.__cause__
-    assert repr(sub_cause) == repr(AssertionError('Wrong'))
-    assert sub_cause.__cause__ is None
-    assert sub_cause.__traceback__ is not None
-
-
-class CauseResult(enum.Enum):
-    CAUSE = enum.auto()
-    NO_CAUSE = enum.auto()
-    IMPORT_ERROR = enum.auto()
-
-
-@pytest.mark.parametrize(
-    'desc,config,expected_result',
-    [  # Without the backport should still work after 3.10 as not needed:
-        (
-            'Enabled',
-            CoreConfig(validation_error_cause=True),
-            CauseResult.CAUSE if sys.version_info >= (3, 11) else CauseResult.IMPORT_ERROR,
-        ),
-        ('Disabled specifically', CoreConfig(validation_error_cause=False), CauseResult.NO_CAUSE),
-        ('Disabled implicitly', {}, CauseResult.NO_CAUSE),
-    ],
-)
-def test_validation_error_cause_config_variants(
-    desc: str, config: CoreConfig, expected_result: CauseResult, mocker: MockerFixture
-):
-    # Simulate the package being missing:
-    mocker.patch.dict('sys.modules', {'exceptiongroup': None})
-
-    def singular_raise_py_error(v: Any) -> Any:
-        raise ValueError('Oh no!')
-
-    s = SchemaValidator(core_schema.no_info_plain_validator_function(singular_raise_py_error), config=config)
-
-    if expected_result is CauseResult.IMPORT_ERROR:
-        # Confirm error message contains "requires the exceptiongroup module" in the middle of the string:
-        with pytest.raises(ImportError, match='requires the exceptiongroup module'):
-            s.validate_python('anything')
-    elif expected_result is CauseResult.CAUSE:
-        with pytest.raises(ValidationError) as exc_info:
-            s.validate_python('anything')
-        assert exc_info.value.__cause__ is not None
-        assert hasattr(exc_info.value.__cause__, 'exceptions')
-        assert len(exc_info.value.__cause__.exceptions) == 1
-        assert repr(exc_info.value.__cause__.exceptions[0]) == repr(ValueError('Oh no!'))
-    elif expected_result is CauseResult.NO_CAUSE:
-        with pytest.raises(ValidationError) as exc_info:
-            s.validate_python('anything')
-        assert exc_info.value.__cause__ is None
-    else:
-        raise AssertionError(f'Unhandled result: {expected_result}')
 
 
 def test_validation_error_cause_traceback_preserved():

@@ -3,7 +3,7 @@ from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime
-from enum import Enum
+from enum import StrEnum
 from functools import partial, partialmethod
 from typing import (
     Annotated,
@@ -1091,7 +1091,7 @@ def test_literal_validator():
 
 
 def test_literal_validator_str_enum():
-    class Bar(str, Enum):
+    class Bar(StrEnum):
         FIZ = 'fiz'
         FUZ = 'fuz'
 
