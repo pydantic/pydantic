@@ -1059,16 +1059,23 @@ def test_name_email_rejects_cr_lf(value: str) -> None:
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
-def test_name_email_serialization():
+@pytest.mark.parametrize(
+    'value,name',
+    [
+        ('"name@mailbox.com" <name@mailbox.com>', 'name@mailbox.com'),
+        ('"Doe, John" <john@example.com>', 'Doe, John'),
+    ],
+)
+def test_name_email_serialization(value: str, name: str):
     class Model(BaseModel):
         email: NameEmail
 
-    m = Model.model_validate({'email': '"name@mailbox.com" <name@mailbox.com>'})
-    assert m.email.name == 'name@mailbox.com'
-    assert str(m.email) == '"name@mailbox.com" <name@mailbox.com>'
+    m = Model.model_validate({'email': value})
+    assert m.email.name == name
+    assert str(m.email) == value
 
     obj = json.loads(m.model_dump_json())
-    Model(email=obj['email'])
+    assert Model(email=obj['email']).email == m.email
 
 
 def test_specialized_urls() -> None:
