@@ -1,5 +1,6 @@
 import gc
 import platform
+import weakref
 from collections.abc import Iterable
 from enum import StrEnum
 from typing import Any
@@ -7,7 +8,15 @@ from weakref import WeakValueDictionary
 
 import pytest
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import (
+    ArgsKwargs,
+    PydanticCustomError,
+    PydanticKnownError,
+    SchemaSerializer,
+    SchemaValidator,
+    ValidationError,
+    core_schema,
+)
 
 from .conftest import assert_gc
 
@@ -276,3 +285,56 @@ def test_wrap_serializer_handler_does_not_traverse_shared_serializer_tree() -> N
     iterator = s.to_python(iter([{'x': 1}]))
     assert gc.is_tracked(iterator)
     assert not any(r is field_serializer for r in gc.get_referents(iterator))
+
+
+def test_validation_error_traverses_inner_exception() -> None:
+    """https://github.com/pydantic/pydantic/issues/14237"""
+
+    class Marker:
+        pass
+
+    def validate(value):
+        raise ValueError(Marker())
+
+    v = SchemaValidator(core_schema.no_info_plain_validator_function(validate))
+    markers = []
+
+    def attempt():
+        try:
+            v.validate_python(1)
+        except ValidationError as error:
+            markers.append(weakref.ref(error.errors()[0]['ctx']['error'].args[0]))
+            # cycle: frame -> error -> inner `ValueError` -> traceback -> frame
+            saved = error
+            assert saved is error
+
+    for _ in range(10):
+        attempt()
+
+    gc.collect()
+    assert all(marker() is None for marker in markers)
+
+
+def _gc_reaches(obj: Any, target: Any, depth: int = 3) -> bool:
+    """Whether `target` is reachable from `obj` through `tp_traverse` edges only."""
+    if depth == 0:
+        return False
+    referents = gc.get_referents(obj)
+    return any(r is target for r in referents) or any(_gc_reaches(r, target, depth - 1) for r in referents)
+
+
+def test_exceptions_and_markers_report_python_references() -> None:
+    """https://github.com/pydantic/pydantic/issues/14237"""
+    marker = object()
+
+    custom_error = PydanticCustomError('my_error', 'message', {'value': marker})
+    assert gc.is_tracked(custom_error)
+    assert _gc_reaches(custom_error, marker)
+
+    known_error = PydanticKnownError('value_error', {'error': marker})
+    assert gc.is_tracked(known_error)
+    assert _gc_reaches(known_error, marker)
+
+    args_kwargs = ArgsKwargs((marker,), {'kw': marker})
+    assert gc.is_tracked(args_kwargs)
+    assert _gc_reaches(args_kwargs, marker)
