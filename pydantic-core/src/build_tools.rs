@@ -5,11 +5,12 @@ use std::str::FromStr;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{PyErrArguments, intern};
+use pyo3::{PyErrArguments, PyTraverseError, PyVisit, intern};
 
 use crate::ValidationError;
 use crate::errors::{PyLineError, ValError};
 use crate::input::InputType;
+use crate::py_gc::PyGcTraverse;
 use crate::tools::SchemaDict;
 
 pub fn schema_or_config<'py, T>(
@@ -122,6 +123,13 @@ impl SchemaError {
 
 #[pymethods]
 impl SchemaError {
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        match &self.0 {
+            SchemaErrorEnum::Message(_) => Ok(()),
+            SchemaErrorEnum::ValidationError(err) => err.py_gc_traverse(&visit),
+        }
+    }
+
     #[new]
     fn py_new(message: String) -> Self {
         Self(SchemaErrorEnum::Message(message))

@@ -10,6 +10,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
+use pyo3::{PyTraverseError, PyVisit};
 use serde::ser::{Error, SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
@@ -19,6 +20,7 @@ use crate::build_tools::py_schema_error_type;
 use crate::errors::LocItem;
 use crate::get_pydantic_version;
 use crate::input::InputType;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::{Extra, SerMode, SerializationConfig, SerializationState, WarningsMode};
 use crate::tools::{SchemaDict, safe_repr, write_truncated_to_limited_bytes};
 
@@ -37,6 +39,8 @@ pub struct ValidationError {
     input_type: InputType,
     hide_input: bool,
 }
+
+impl_py_gc_traverse!(ValidationError { line_errors, title });
 
 impl ValidationError {
     pub fn new(line_errors: Vec<PyLineError>, title: Py<PyAny>, input_type: InputType, hide_input: bool) -> Self {
@@ -195,6 +199,10 @@ impl ValidationError {
 
 #[pymethods]
 impl ValidationError {
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.py_gc_traverse(&visit)
+    }
+
     #[new]
     #[pyo3(signature = (title, line_errors, input_type="python", hide_input=false))]
     fn py_new(title: Py<PyAny>, line_errors: Vec<PyLineError>, input_type: &str, hide_input: bool) -> PyResult<Self> {
@@ -387,6 +395,11 @@ pub struct PyLineError {
     location: Location,
     input_value: Py<PyAny>,
 }
+
+impl_py_gc_traverse!(PyLineError {
+    error_type,
+    input_value
+});
 
 impl From<PyLineError> for ValLineError {
     /// Used to extract line errors from a validation error for wrap functions
