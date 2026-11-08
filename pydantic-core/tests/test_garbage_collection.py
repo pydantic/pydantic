@@ -315,6 +315,9 @@ def _gc_reaches(obj: Any, target: Any, depth: int = 3) -> bool:
     return any(r is target for r in referents) or any(_gc_reaches(r, target, depth - 1) for r in referents)
 
 
+@pytest.mark.xfail(
+    reason="'ArgsKwargs' uses a freelist, and GC is broken on reused objects from the freelist (https://github.com/PyO3/pyo3/pull/6442)"
+)
 def test_exceptions_and_markers_report_python_references() -> None:
     """https://github.com/pydantic/pydantic/issues/14237"""
     marker = object()
