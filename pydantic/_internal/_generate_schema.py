@@ -1388,8 +1388,45 @@ class GenerateSchema:
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)
                 assert schema['type'] != 'definitions'
+                schema = self._bake_ambient_regex_engine(schema)
                 schema['ref'] = ref  # type: ignore
             return self.defs.create_definition_reference_schema(schema)
+
+    def _bake_ambient_regex_engine(self, schema: CoreSchema) -> CoreSchema:
+        """Bake the ambient `regex_engine` into pattern schemas of a definition.
+
+        The definition emitted for a shared `TypeAliasType` lives outside the
+        config-carrying node it was generated under, so `pydantic-core` would
+        compile its patterns with the default engine instead of the engine
+        configured where the alias was used.
+        """
+        engine = self._config_wrapper.regex_engine
+        if engine == 'rust-regex':
+            return schema
+
+        def bake(node: Any) -> Any:
+            if isinstance(node, dict):
+                changed = False
+                new_node = {}
+                for key, value in node.items():
+                    new_value = bake(value)
+                    changed = changed or new_value is not value
+                    new_node[key] = new_value
+                if node.get('type') == 'str' and 'pattern' in node and 'regex_engine' not in node:
+                    new_node['regex_engine'] = engine
+                    changed = True
+                return new_node if changed else node
+            if isinstance(node, list):
+                new_list = []
+                changed = False
+                for value in node:
+                    new_value = bake(value)
+                    changed = changed or new_value is not value
+                    new_list.append(new_value)
+                return new_list if changed else node
+            return node
+
+        return bake(schema)
 
     def _literal_schema(self, literal_type: Any) -> CoreSchema:
         """Generate schema for a Literal."""

@@ -923,3 +923,29 @@ def test_config_not_mutated() -> None:
 
     func(1)
     assert config == {'populate_by_name': True}
+
+
+def test_typed_dict_with_config_shared_type_alias_type():
+    """A config applied to a `TypedDict` must reach a `TypeAliasType` alias shared by multiple fields.
+
+    The alias is emitted as a definition outside the config-carrying node, so
+    its pattern schemas need the ambient regex engine baked in; previously the
+    look-ahead pattern was compiled with the default Rust engine and raised a
+    `SchemaError` (issue #14243).
+    """
+    from typing import Annotated
+
+    from pydantic import Field, TypeAdapter, with_config
+    from typing_extensions import TypeAliasType
+
+    Alias = TypeAliasType('Alias', Annotated[str, Field(pattern=r'(?=a)')])
+
+    @with_config(ConfigDict(regex_engine='python-re'))
+    class Payload(TypedDict):
+        a: Alias
+        b: Alias
+
+    ta = TypeAdapter(Payload)
+    assert ta.validate_python({'a': 'a', 'b': 'a'}) == {'a': 'a', 'b': 'a'}
+    with pytest.raises(ValidationError):
+        ta.validate_python({'a': 'b', 'b': 'a'})
