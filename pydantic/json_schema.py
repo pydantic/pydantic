@@ -306,6 +306,7 @@ class GenerateJsonSchema:
         #  the reference) so instead of failing altogether if we can't build a definition we
         # store the error raised and re-throw it if we end up needing that def
         self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
+        self._core_defs_omitted: set[CoreModeRef] = set()
 
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
@@ -2317,6 +2318,10 @@ class GenerateJsonSchema:
         for definition in schema['definitions']:
             try:
                 self.generate_inner(definition)
+            except PydanticOmit:
+                core_ref = CoreRef(definition['ref'])  # type: ignore
+                self._core_defs_omitted.add((core_ref, self.mode))
+                continue
             except PydanticInvalidForJsonSchema as e:  # noqa: PERF203
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
@@ -2333,6 +2338,8 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         core_ref = CoreRef(schema['schema_ref'])
+        if (core_ref, self.mode) in self._core_defs_omitted:
+            raise PydanticOmit
         _, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
         return ref_json_schema
 
