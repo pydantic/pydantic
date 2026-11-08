@@ -733,11 +733,10 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        str_schema = core_schema.str_schema()
+        json_schema: JsonSchemaValue = {'type': 'string'}
         pattern = self.get_decimal_pattern(schema)
         if pattern is not None:
-            str_schema['pattern'] = pattern
-        json_schema = self.str_schema(str_schema)
+            json_schema['pattern'] = pattern
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')

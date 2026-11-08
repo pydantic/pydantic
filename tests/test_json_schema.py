@@ -2314,6 +2314,13 @@ def test_str_length_config() -> None:
     }
 
 
+def test_str_length_config_not_applied_to_decimal() -> None:
+    ta = TypeAdapter(Decimal, config=ConfigDict(str_min_length=3, str_max_length=5))
+
+    assert ta.json_schema() == {'anyOf': [{'type': 'number'}, {'type': 'string'}]}
+    assert ta.json_schema(mode='serialization') == {'type': 'string'}
+
+
 def test_model_subclass_metadata():
     class A(BaseModel):
         """A Model docstring"""
