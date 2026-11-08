@@ -733,7 +733,6 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        # Not using `str_schema()`, as the `str_min_length`/`str_max_length` config doesn't apply to decimals:
         json_schema: JsonSchemaValue = {'type': 'string'}
         pattern = self.get_decimal_pattern(schema)
         if pattern is not None:
