@@ -239,6 +239,21 @@ def test_pickle(tz, pickler, unpickler, proto):
     assert tz.utcoffset(None) == unpickled.utcoffset(None)
 
 
+def test_utc_instance_is_shared() -> None:
+    utc = TzInfo(0)
+    assert TzInfo(0) is utc
+    assert TzInfo() is utc
+    assert copy.copy(utc) is utc
+    assert copy.deepcopy(utc) is utc
+    assert pickle.loads(pickle.dumps(utc)) is utc
+
+    v = SchemaValidator(core_schema.datetime_schema())
+    assert v.validate_python('2015-10-21T15:28:00Z').tzinfo is utc
+    assert v.validate_python('2015-10-21T15:28:00+00:00').tzinfo is utc
+    assert v.validate_json('"2015-10-21T15:28:00Z"').tzinfo is utc
+    assert SchemaValidator(core_schema.time_schema()).validate_python('15:28:00Z').tzinfo is utc
+
+
 def test_tzinfo_could_be_reused():
     value = SchemaValidator(core_schema.datetime_schema()).validate_python('2015-10-21T15:28:00.000000+01:00')
 
