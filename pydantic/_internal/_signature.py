@@ -157,8 +157,8 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
             # else start from var_kw
             var_kw_name = var_kw.name
 
-        # generate a name that's definitely unique
-        while var_kw_name in fields:
+        # generate a name that's definitely unique (parameters can be named after an alias)
+        while var_kw_name in fields or var_kw_name in merged_params:
             var_kw_name += '_'
         merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
 

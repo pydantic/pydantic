@@ -217,6 +217,16 @@ def test_extra_allow_conflict_twice():
     assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
 
 
+def test_extra_allow_conflict_alias():
+    class Model(BaseModel):
+        x: str = Field(alias='extra_data')
+        y: int
+
+        model_config = ConfigDict(extra='allow')
+
+    assert _equals(str(signature(Model)), '(*, extra_data: str, y: int, **extra_data_: Any) -> None')
+
+
 def test_extra_allow_conflict_custom_signature():
     class Model(BaseModel):
         extra_data: int
