@@ -2321,6 +2321,26 @@ def test_str_length_config_not_applied_to_decimal() -> None:
     assert ta.json_schema(mode='serialization') == {'type': 'string'}
 
 
+def test_str_length_config_not_applied_to_serialization_only_values() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(str_min_length=3, str_max_length=5)
+
+        value: int
+
+        @computed_field
+        @property
+        def greeting(self) -> str:
+            return 'hello'
+
+        @field_serializer('value')
+        def serialize_value(self, value: int) -> str:
+            return str(value)
+
+    properties = Model.model_json_schema(mode='serialization')['properties']
+    assert properties['greeting'] == {'readOnly': True, 'title': 'Greeting', 'type': 'string'}
+    assert properties['value'] == {'title': 'Value', 'type': 'string'}
+
+
 def test_model_subclass_metadata():
     class A(BaseModel):
         """A Model docstring"""

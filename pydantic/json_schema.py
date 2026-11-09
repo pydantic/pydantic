@@ -19,7 +19,8 @@ import os
 import re
 import warnings
 from collections import Counter, defaultdict
-from collections.abc import Callable, Hashable, Iterable, Sequence
+from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence
+from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum
 from re import Pattern
@@ -310,10 +311,22 @@ class GenerateJsonSchema:
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
         self._used = False
+        # Serialization-only values (computed fields and serializer return values) are not
+        # constrained by validation config, so their schemas must not inherit those constraints.
+        self._unvalidated_output = False
 
     @property
     def _config(self) -> _config.ConfigWrapper:
         return self._config_wrapper_stack.tail
+
+    @contextmanager
+    def _set_unvalidated_output(self, value: bool) -> Iterator[None]:
+        previous = self._unvalidated_output
+        self._unvalidated_output = value
+        try:
+            yield
+        finally:
+            self._unvalidated_output = previous
 
     @property
     def mode(self) -> JsonSchemaMode:
@@ -458,7 +471,10 @@ class GenerateJsonSchema:
         if schema['type'] in ('model', 'dataclass', 'typed-dict'):
             # The class config (and in particular `json_schema_mode_override`) must be pushed *before*
             # the definitions cache lookup, so that the JSON Schema is cached under the mode it was generated with:
-            with self._config_wrapper_stack.push(_get_class_config(schema)):  # pyright: ignore[reportArgumentType]
+            with (
+                self._config_wrapper_stack.push(_get_class_config(schema)),  # pyright: ignore[reportArgumentType]
+                self._set_unvalidated_output(False),
+            ):
                 return self._generate_inner(schema)
         return self._generate_inner(schema)
 
@@ -828,10 +844,11 @@ class GenerateJsonSchema:
         """
         json_schema: JsonSchemaValue = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
-        if 'minLength' not in json_schema and self._config.str_min_length:
-            json_schema['minLength'] = self._config.str_min_length
-        if 'maxLength' not in json_schema and self._config.str_max_length is not None:
-            json_schema['maxLength'] = self._config.str_max_length
+        if not self._unvalidated_output:
+            if 'minLength' not in json_schema and self._config.str_min_length:
+                json_schema['minLength'] = self._config.str_min_length
+            if 'maxLength' not in json_schema and self._config.str_max_length is not None:
+                json_schema['maxLength'] = self._config.str_max_length
         if isinstance(json_schema.get('pattern'), Pattern):
             # TODO: should we add regex flags to the pattern?
             json_schema['pattern'] = json_schema.get('pattern').pattern  # type: ignore
@@ -1731,7 +1748,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return self.generate_inner(schema['return_schema'])
+        with self._set_unvalidated_output(True):
+            return self.generate_inner(schema['return_schema'])
 
     def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a model.
@@ -2352,10 +2370,12 @@ class GenerateJsonSchema:
                 # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
                 return_schema = schema.get('return_schema')
                 if return_schema is not None:
-                    return self.generate_inner(return_schema)
+                    with self._set_unvalidated_output(True):
+                        return self.generate_inner(return_schema)
             case {'type': 'format' | 'to-string'}:
                 # FormatSerSchema or ToStringSerSchema
-                return self.str_schema(core_schema.str_schema())
+                with self._set_unvalidated_output(True):
+                    return self.str_schema(core_schema.str_schema())
             case {'type': 'model'}:
                 # ModelSerSchema
                 return self.generate_inner(schema['schema'])
