@@ -641,11 +641,8 @@ This behavior can be configured in the following ways:
     When using [standard library dataclasses][dataclasses], polymorphic serialization is *not* supported,
     even if the dataclass is a subclass of a Pydantic dataclass. This may be fixed in a future Pydantic release.
 
-The example below defines a type `User` and a subclass of it, `UserLogin`. A second pair of types, `PolymorphicUser`
-and `PolymorphicUserLogin` are defined as equivalents with `polymorphic_serialization` enabled.
-
-We can then see the effect of serializing each of these types, and the interaction of this config with the runtime
-`polymorphic_serialization` setting:
+The example below defines a type `User` and a subclass of it, `UserLogin`. It shows how the runtime
+`polymorphic_serialization` setting affects a `UserLogin` value in a field annotated as `User`:
 
 ```python
 from pydantic import BaseModel
@@ -679,10 +676,8 @@ print(outer_model.model_dump(polymorphic_serialization=True))  # (3)!
 2. With polymorphic serialization disabled, `user` serializes as the base type.
 3. With polymorphic serialization enabled, `user` serializes as the actual runtime subclass.
 
-As seen in the example, by having polymorphic serialization enabled, the `User.model_dump()` method will by respect the value
-of the `UserLogin` subclass when it is provided instead of a `User` value, and serialize the full `UserLogin` type. This
-behavior can be globally overridden with the `polymorphic_serialization` runtime setting; in this case setting it to `False`
-causes the `UserLogin` value to serialize just as a `User` value, ignoring the subclass' `password` field.
+`outer_model.model_dump()` serializes `user` as a `User` value, excluding the subclass' `password` field.
+With `polymorphic_serialization=True`, it serializes the full `UserLogin` value instead.
 
 ## Serializing "as Any"
 
