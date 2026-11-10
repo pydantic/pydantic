@@ -97,7 +97,7 @@ When adding new tests, prefer adding them in `tests`, using the Pydantic Python 
 Make sure to look for the right place to add a test, read the existing test files first. Tests related to types must go in `tests/types/` (one file per type, e.g. `tests/types/test_uuid.py`)
 (create a file if it doesn't exist yet).
 
-When introcuding a test for a specific issue/feature request, mention the issue link as a docstring, e.g.:
+When introducing a test for a specific issue/feature request, mention the issue link as a docstring, e.g.:
 
 ```python
 def test_some_feature() -> None:
