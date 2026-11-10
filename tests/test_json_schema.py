@@ -6989,6 +6989,51 @@ def test_unless_none_serializer_on_wrapped_nullable_schema() -> None:
     }
 
 
+def test_unless_none_serializer_on_schema_that_can_be_none() -> None:
+    """https://github.com/pydantic/pydantic/issues/14263"""
+
+    class Model(BaseModel):
+        any_: Any = None
+        none_: None = None
+        literal_: Literal[1, None] = None
+        optional_: int | None = None
+        union_with_any: Any | int = None
+        required_any: Any
+        non_nullable: int = 0
+
+        @field_serializer(
+            'any_',
+            'none_',
+            'literal_',
+            'optional_',
+            'union_with_any',
+            'required_any',
+            'non_nullable',
+            when_used='unless-none',
+        )
+        def serialize(self, v: Any) -> str:
+            return str(v)
+
+    properties = Model.model_json_schema(mode='serialization')['properties']
+
+    # These fields can all hold `None`, in which case the serializer is skipped and `null` is output:
+    for field_name in ('any_', 'none_', 'literal_', 'optional_', 'union_with_any', 'required_any'):
+        assert properties[field_name]['anyOf'] == [{'type': 'null'}, {'type': 'string'}]
+
+    # A field that can never be `None` should not declare `null`:
+    assert properties['non_nullable'] == {'title': 'Non Nullable', 'type': 'string'}
+
+    assert Model(required_any=None).model_dump(mode='json') == {
+        'any_': None,
+        'none_': None,
+        'literal_': None,
+        'optional_': None,
+        'union_with_any': None,
+        'required_any': None,
+        'non_nullable': '0',
+    }
+
+
 @pytest.mark.parametrize(
     'wrap',
     [

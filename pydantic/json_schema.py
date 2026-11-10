@@ -512,7 +512,8 @@ class GenerateJsonSchema:
                 json_schema = self.ser_schema(ser_schema)
 
                 # It might be that the 'serialization'` is skipped depending on `when_used`.
-                # This is only relevant for `nullable` schemas though (possibly wrapped, e.g. when
+                # If it is skipped when the value is `None`, the `null` schema has to be included
+                # as long as the schema can represent `None` (possibly wrapped, e.g. when
                 # using a field serializer on a field with a default value), so we special case here.
                 if (
                     json_schema is not None
@@ -3259,12 +3260,23 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
 
 
 def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
-    """Whether the schema is a `'nullable'` schema, possibly wrapped in default, validator function, chain,
+    """Whether the schema can represent `None`, possibly wrapped in default, validator function, chain,
     lax-or-strict and JSON-or-Python schemas.
 
-    For the latter three, the same inner schema as the one used to generate the serialization JSON Schema
-    is checked (see the corresponding `GenerateJsonSchema` methods).
+    In addition to `'nullable'` schemas, `'any'`, `'none'`, `'literal'` (with `None` as an expected value)
+    and `'union'` schemas (with at least one such choice) can represent `None`.
+
+    For the latter wrapped schemas, the same inner schema as the one used to generate the serialization JSON
+    Schema is checked (see the corresponding `GenerateJsonSchema` methods).
     """
+    if schema['type'] in ('nullable', 'any', 'none'):
+        return True
+    if schema['type'] == 'literal':
+        return any(
+            (expected.value if isinstance(expected, Enum) else expected) is None for expected in schema['expected']
+        )
+    if schema['type'] == 'union':
+        return any(_is_nullable_schema(choice) for choice in core_schema.iter_union_choices(schema))
     if schema['type'] == 'default' or _core_utils.is_function_with_inner_schema(schema):
         return _is_nullable_schema(schema['schema'])
     if schema['type'] == 'chain':
@@ -3274,4 +3286,4 @@ def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
         return _is_nullable_schema(schema['strict_schema'] if schema.get('strict', False) else schema['lax_schema'])
     if schema['type'] == 'json-or-python':
         return _is_nullable_schema(schema['json_schema'])
-    return schema['type'] == 'nullable'
+    return False
