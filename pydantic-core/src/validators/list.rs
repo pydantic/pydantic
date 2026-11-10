@@ -21,6 +21,27 @@ pub struct ListValidator {
     fail_fast: bool,
 }
 
+/// What the streaming json path needs to know about a list. Everything, deliberately: an
+/// accessor that handed over only the item validator is how the root array path came to ignore
+/// length bounds entirely.
+pub(crate) struct StreamList<'a> {
+    pub items: &'a Arc<CombinedValidator>,
+    pub min_length: Option<usize>,
+    pub max_length: Option<usize>,
+    pub fail_fast: bool,
+}
+
+impl ListValidator {
+    pub(crate) fn stream_list(&self) -> Option<StreamList<'_>> {
+        Some(StreamList {
+            items: self.item_validator.as_ref()?,
+            min_length: self.min_length,
+            max_length: self.max_length,
+            fail_fast: self.fail_fast,
+        })
+    }
+}
+
 pub fn get_items_schema(
     schema: &Bound<'_, PyDict>,
     config: Option<&Bound<'_, PyDict>>,
