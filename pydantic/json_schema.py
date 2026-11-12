@@ -163,7 +163,8 @@ class _DefinitionsRemapping:
             # Deduplicate the schemas for each alternative; the idea is that we only want to remap to a new DefsRef
             # if it introduces no ambiguity, i.e., there is only one distinct schema for that DefsRef.
             for defs_ref in schemas_for_alternatives:
-                schemas_for_alternatives[defs_ref] = _deduplicate_schemas(schemas_for_alternatives[defs_ref])
+                if len(schemas_for_alternatives[defs_ref]) > 1:
+                    schemas_for_alternatives[defs_ref] = _deduplicate_schemas(schemas_for_alternatives[defs_ref])
 
             # Build the remapping
             defs_remapping: dict[DefsRef, DefsRef] = {}
