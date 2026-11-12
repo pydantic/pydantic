@@ -7923,3 +7923,45 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_unvalidated_output_does_not_inherit_str_length_config() -> None:
+    """https://github.com/pydantic/pydantic/issues/14258"""
+    from pydantic import ImportString, computed_field, field_serializer
+
+    class Inner(BaseModel):
+        model_config = ConfigDict(str_min_length=2)
+        inner_name: str
+
+    class Model(BaseModel):
+        model_config = ConfigDict(str_min_length=1, str_max_length=5)
+
+        name: str
+        count: int
+        imp: ImportString[Any]
+
+        @computed_field
+        @property
+        def greeting(self) -> str:
+            return f'Hello, {self.name}!'
+
+        @computed_field
+        @property
+        def nested(self) -> Inner:
+            return Inner(inner_name='ab')
+
+        @field_serializer('count')
+        def serialize_count(self, value: int) -> str:
+            return f'{value:,}'
+
+    schema = Model.model_json_schema(mode='serialization')
+    props = schema['properties']
+    assert props['name'] == {'maxLength': 5, 'minLength': 1, 'title': 'Name', 'type': 'string'}
+    assert props['count'] == {'title': 'Count', 'type': 'string'}
+    assert props['greeting'] == {'readOnly': True, 'title': 'Greeting', 'type': 'string'}
+    assert props['imp'] == {'title': 'Imp', 'type': 'string'}
+    assert schema['$defs']['Inner']['properties']['inner_name'] == {
+        'minLength': 2,
+        'title': 'Inner Name',
+        'type': 'string',
+    }

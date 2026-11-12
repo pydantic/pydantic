@@ -1006,7 +1006,7 @@ else:
 
         @classmethod
         def __get_pydantic_json_schema__(cls, cs: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            return handler(core_schema.str_schema())
+            return {'type': 'string'}
 
         @staticmethod
         def _serialize(v: Any) -> str:
