@@ -312,3 +312,50 @@ def test_ser_path_incorrect() -> None:
     ta = TypeAdapter(Path)
     with pytest.warns(UserWarning, match='serialized value may not be as expected.'):
         ta.dump_python(123)
+
+
+def test_path_ignores_str_config() -> None:
+    """https://github.com/pydantic/pydantic/issues/14270"""
+    ta = TypeAdapter(Path, config=ConfigDict(str_to_upper=True, str_strip_whitespace=True))
+
+    assert ta.validate_python(' /a/b ') == Path(' /a/b ')
+    assert ta.validate_json(json.dumps(' /a/b ')) == Path(' /a/b ')
+
+    ta = TypeAdapter(Path, config=ConfigDict(str_to_lower=True))
+    assert ta.validate_python('/A/B') == Path('/A/B')
+
+    ta = TypeAdapter(Path, config=ConfigDict(coerce_numbers_to_str=True))
+    with pytest.raises(ValidationError, match='path_type'):
+        ta.validate_json('1')
+
+
+def test_path_ignores_str_config_in_model() -> None:
+    """https://github.com/pydantic/pydantic/issues/14270"""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(str_to_upper=True, str_strip_whitespace=True)
+
+        p: Path
+        ps: list[Path]
+        op: Path | None = None
+        s: str
+
+    model = Model(p=' /a/b ', ps=[' /c/d '], op=' /e/f ', s=' a ')
+    assert model.p == Path(' /a/b ')
+    assert model.ps == [Path(' /c/d ')]
+    assert model.op == Path(' /e/f ')
+    # `str` fields are still affected by the config:
+    assert model.s == 'A'
+
+
+def test_path_str_length_config_still_applies() -> None:
+    """https://github.com/pydantic/pydantic/issues/14270"""
+    ta = TypeAdapter(Path, config=ConfigDict(str_min_length=5, str_max_length=10))
+
+    assert ta.validate_python('/abcd') == Path('/abcd')
+    with pytest.raises(ValidationError, match='path_type'):
+        ta.validate_python('/ab')
+    with pytest.raises(ValidationError, match='path_type'):
+        ta.validate_python('/abcdefghijkl')
+
+    assert ta.json_schema() == {'format': 'path', 'type': 'string', 'minLength': 5, 'maxLength': 10}
