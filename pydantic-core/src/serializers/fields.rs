@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::PyDict;
+use pyo3::types::{PyBool, PyDict, PyFloat, PyInt};
 
 use ahash::AHashMap;
 use smallvec::SmallVec;
@@ -88,8 +88,22 @@ fn exclude_default<'py>(
 ) -> PyResult<bool> {
     if extra.exclude_defaults
         && let Some(default) = serializer.get_default(value.py())?
-        && value.eq(default)?
+        && value.eq(&default)?
     {
+        let default = default.bind(value.py());
+        let is_builtin_number = |obj: &Bound<'_, PyAny>| {
+            obj.is_exact_instance_of::<PyBool>()
+                || obj.is_exact_instance_of::<PyInt>()
+                || obj.is_exact_instance_of::<PyFloat>()
+        };
+        if is_builtin_number(value) && is_builtin_number(default) {
+            if !value.get_type().is(&default.get_type()) {
+                return Ok(false);
+            }
+            if let (Ok(value), Ok(default)) = (value.cast_exact::<PyFloat>(), default.cast_exact::<PyFloat>()) {
+                return Ok(value.value().is_sign_negative() == default.value().is_sign_negative());
+            }
+        }
         return Ok(true);
     }
     Ok(false)

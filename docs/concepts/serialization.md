@@ -933,7 +933,9 @@ When using the [serialization methods](#serializing-data), it is possible to exc
 using the following parameters:
 
 * `exclude_defaults`: Exclude all fields whose value compares equal to the default value
-  (using the equality (`==`) comparison operator).
+  (using the equality (`==`) comparison operator). Built-in `bool`, `int`, and `float` values
+  must also have the same type as the default when both are built-in numbers. Floating-point zeros
+  must have the same sign.
 * `exclude_none`: Exclude all fields whose value is `None`.
 * `exclude_unset`: Pydantic keeps track of fields that were *explicitly* set during instantiation (using the
   [`model_fields_set`][pydantic.BaseModel.model_fields_set] property). Using `exclude_unset`, any field that

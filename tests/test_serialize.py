@@ -3,6 +3,7 @@ New tests for v2 of serialization logic.
 """
 
 import json
+import math
 import re
 import sys
 from collections.abc import Callable
@@ -1465,3 +1466,24 @@ def test_model_serializer_when_used_fallback_respects_include_exclude() -> None:
         assert m.model_dump(exclude={'b'}) == {'a': 1}
         assert m.model_dump(include={'a'}) == {'a': 1}
         assert m.model_dump(mode='json', exclude={'b'}) == {'ser': True}
+
+
+def test_exclude_defaults_preserves_numeric_type_and_signed_zero():
+    class Packet(BaseModel):
+        flag: bool | int = False
+        code: int | bool = 1
+        num: int | float = 0
+        z: float = 0.0
+
+    assert Packet().model_dump(exclude_defaults=True) == {}
+    assert Packet().model_dump_json(exclude_defaults=True) == '{}'
+
+    packet = Packet(flag=0, code=True, num=0.0, z=-0.0)
+    dumped = packet.model_dump(exclude_defaults=True)
+    restored = Packet.model_validate_json(packet.model_dump_json(exclude_defaults=True))
+
+    for values in (dumped, restored.model_dump()):
+        assert type(values['flag']) is int
+        assert type(values['code']) is bool
+        assert type(values['num']) is float
+        assert math.copysign(1, values['z']) == -1
