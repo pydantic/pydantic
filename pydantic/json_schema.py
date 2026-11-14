@@ -3274,4 +3274,8 @@ def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
         return _is_nullable_schema(schema['strict_schema'] if schema.get('strict', False) else schema['lax_schema'])
     if schema['type'] == 'json-or-python':
         return _is_nullable_schema(schema['json_schema'])
-    return schema['type'] == 'nullable'
+    if schema['type'] == 'literal':
+        return None in schema['expected']
+    if schema['type'] == 'union':
+        return any(_is_nullable_schema(choice) for choice in schema['choices'])
+    return schema['type'] in ('nullable', 'any', 'none')

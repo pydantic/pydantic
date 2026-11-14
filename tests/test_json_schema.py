@@ -6989,6 +6989,28 @@ def test_unless_none_serializer_on_wrapped_nullable_schema() -> None:
     }
 
 
+def test_unless_none_serializer_on_any_none_literal_schemas() -> None:
+    """Test that null is kept in serialization JSON Schema for fields with Any, None, or Literal containing None
+    when when_used is set to 'unless-none'."""
+
+    class Model(BaseModel):
+        a: Any = None
+        n: None = None
+        lit: Literal[1, None] = None
+        o: int | None = None
+
+        @field_serializer('a', 'n', 'lit', 'o', when_used='unless-none')
+        def ser(self, v: Any) -> str:
+            return f'<{v}>'
+
+    properties = Model.model_json_schema(mode='serialization')['properties']
+    assert properties['a']['anyOf'] == [{'type': 'null'}, {'type': 'string'}]
+    assert properties['n']['anyOf'] == [{'type': 'null'}, {'type': 'string'}]
+    assert properties['lit']['anyOf'] == [{'type': 'null'}, {'type': 'string'}]
+    assert properties['o']['anyOf'] == [{'type': 'null'}, {'type': 'string'}]
+    assert Model().model_dump(mode='json') == {'a': None, 'n': None, 'lit': None, 'o': None}
+
+
 @pytest.mark.parametrize(
     'wrap',
     [
