@@ -47,7 +47,7 @@ from pydantic import (
     with_config,
 )
 from pydantic._internal._mock_val_ser import MockValSer
-from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
+from pydantic.dataclasses import dataclass, is_pydantic_dataclass, rebuild_dataclass
 from pydantic.json_schema import model_json_schema
 
 from .utils import dataclass_decorators
@@ -3425,3 +3425,41 @@ def test_bare_final_field_type_inferred_from_dataclass_field(dataclass_decorator
         check=lambda e: [err['type'] for err in e.errors()] == ['int_parsing', 'dict_type'],
     ):
         ta.validate_python({'a': 'not an int', 'b': 'not a dict'})
+
+
+def test_model_inheriting_from_pydantic_dataclass_keeps_field_info():
+    """https://github.com/pydantic/pydantic/issues/12934
+
+    The field info (including the alias) of a pydantic dataclass should be inherited by a
+    `BaseModel` subclass, even though the dataclass leaves the default value in the class namespace.
+    """
+
+    @dataclass
+    class Base:
+        id: str | None = Field(alias='_id', default=None)
+
+        @field_validator('id')
+        @classmethod
+        def validate_id(cls, v: str) -> str:
+            if '5' not in v:
+                raise ValueError('Error in id')
+            return v
+
+        @field_serializer('id')
+        def serialize_id(self, value: str) -> str:
+            return f'{value} is the Id'
+
+    class BaseEntity(BaseModel, Base):
+        model_config = ConfigDict(populate_by_name=True)
+
+    assert BaseEntity.model_fields['id'].alias == '_id'
+
+    instance = BaseEntity(**{'_id': 'abc5'})
+    assert instance.id == 'abc5'
+    assert instance.model_dump() == {'id': 'abc5 is the Id'}
+
+    instance = BaseEntity(**{'id': 'abc5'})
+    assert instance.id == 'abc5'
+
+    with pytest.raises(ValidationError):
+        BaseEntity(**{'id': 'abc'})

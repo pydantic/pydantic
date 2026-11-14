@@ -405,33 +405,35 @@ def collect_model_fields(  # noqa: C901
                     stacklevel=4,
                 )
 
-        if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
-            if ann_name in cls_annotations or ann_name not in parent_fields_lookup:
-                # field is either:
-                # - present in the current model's annotations (and *not* from parent classes)
-                # - not found on any base classes; this seems to be caused by fields not getting
-                #   generated due to models not being fully defined while initializing recursive models.
-                #   Nothing stops us from just creating a `FieldInfo` for this type hint, so we do this.
-                field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
-                field_info._original_annotation = ann_type
-                if not evaluated:
-                    field_info._complete = False
-                    # Store the original annotation that should be used to rebuild
-                    # the field info later:
-            else:
-                # The field was present on one of the (possibly multiple) base classes, we make a copy directly from it.
-                parent_field_info = parent_fields_lookup[ann_name]._copy()
+        if ann_name not in cls_annotations and ann_name in parent_fields_lookup:
+            # The field is inherited from a parent field, without being re-annotated. Note that
+            # `assigned_value` may be a class attribute default (e.g. when inheriting from a pydantic
+            # dataclass, which leaves the default value in the class namespace): the parent field info
+            # takes precedence, as it carries the alias and any other relevant metadata.
+            parent_field_info = parent_fields_lookup[ann_name]._copy()
 
-                # The only case where substituting the type variables is relevant (i.e. when `typevars_map` is not empty)
-                # is when a generic class is parameterized (e.g. `MyGenericModel[int, str]`), which creates a new class object
-                # (unlike the stdlib genercis that create a generic alias). In this case, we are guaranteed to only have to copy
-                # from the origin/parent model (e.g. `MyGenericModel`).
-                if typevars_map:
-                    field_info = _recreate_field_info(
-                        parent_field_info, ns_resolver=ns_resolver, typevars_map=typevars_map, lenient=True
-                    )
-                else:
-                    field_info = parent_field_info
+            # The only case where substituting the type variables is relevant (i.e. when `typevars_map` is not empty)
+            # is when a generic class is parameterized (e.g. `MyGenericModel[int, str]`), which creates a new class object
+            # (unlike the stdlib genercis that create a generic alias). In this case, we are guaranteed to only have to copy
+            # from the origin/parent model (e.g. `MyGenericModel`).
+            if typevars_map:
+                field_info = _recreate_field_info(
+                    parent_field_info, ns_resolver=ns_resolver, typevars_map=typevars_map, lenient=True
+                )
+            else:
+                field_info = parent_field_info
+        elif assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
+            # The field is either:
+            # - present in the current model's annotations (and *not* from parent classes)
+            # - not found on any base classes; this seems to be caused by fields not getting
+            #   generated due to models not being fully defined while initializing recursive models.
+            #   Nothing stops us from just creating a `FieldInfo` for this type hint, so we do this.
+            field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
+            field_info._original_annotation = ann_type
+            if not evaluated:
+                field_info._complete = False
+                # Store the original annotation that should be used to rebuild
+                # the field info later:
 
         else:  # An assigned value is present (either the default value, or a `Field()` function)
             if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
