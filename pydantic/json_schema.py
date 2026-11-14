@@ -307,6 +307,10 @@ class GenerateJsonSchema:
         # store the error raised and re-throw it if we end up needing that def
         self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
 
+        # Definitions that were intentionally omitted during generation (e.g. when using `SkipJsonSchema`).
+        # Schemas referencing them (via a definition reference) should be omitted as well:
+        self._core_defs_omitted: set[CoreRef] = set()
+
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
         self._used = False
@@ -2317,6 +2321,11 @@ class GenerateJsonSchema:
         for definition in schema['definitions']:
             try:
                 self.generate_inner(definition)
+            except PydanticOmit:
+                # The definition is intentionally omitted (e.g. when using `SkipJsonSchema`);
+                # schemas referencing it will be omitted as well when their schemas are generated.
+                self._core_defs_omitted.add(CoreRef(definition['ref']))  # type: ignore
+                continue
             except PydanticInvalidForJsonSchema as e:  # noqa: PERF203
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
@@ -2333,6 +2342,10 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         core_ref = CoreRef(schema['schema_ref'])
+        if core_ref in self._core_defs_omitted:
+            # The referenced definition was intentionally omitted (e.g. when using `SkipJsonSchema`),
+            # so this schema should be omitted as well:
+            raise PydanticOmit
         _, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
         return ref_json_schema
 

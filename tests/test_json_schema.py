@@ -2856,6 +2856,49 @@ def test_annotated_typealiastype() -> None:
     }
 
 
+def test_shared_type_alias_of_skip_json_schema_is_omitted() -> None:
+    """https://github.com/pydantic/pydantic/issues/14236"""
+
+    class R:
+        pass
+
+    Skip = TypeAliasType('Skip', SkipJsonSchema[R | None])
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+        label: str = ''
+        a: Skip = None
+        b: Skip = None
+
+    assert Model.model_json_schema() == {
+        'properties': {'label': {'default': '', 'title': 'Label', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'label': {'default': '', 'title': 'Label', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_shared_skip_json_schema_plain_object_is_omitted() -> None:
+    """A shared plain `SkipJsonSchema[...]` object should behave the same way."""
+
+    class R:
+        pass
+
+    ANN = SkipJsonSchema[R | None]
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+        label: str = ''
+        a: ANN = None
+        b: ANN = None
+
+    assert list(Model.model_json_schema()['properties']) == ['label']
+
+
 def test_literal_enum():
     class MyEnum(StrEnum):
         FOO = 'foo'

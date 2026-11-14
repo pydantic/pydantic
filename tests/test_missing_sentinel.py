@@ -1,12 +1,12 @@
 import pickle
-from typing import Annotated, Literal, Union
+from typing import Annotated, Any, Literal, Union
 
 import pytest
 import typing_extensions
 from annotated_types import Ge
 from pydantic_core import PydanticSerializationUnexpectedValue
 
-from pydantic import MISSING, BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import MISSING, BaseModel, BeforeValidator, Field, TypeAdapter, ValidationError
 
 
 def test_missing_sentinel_model() -> None:
@@ -280,3 +280,25 @@ def test_missing_sentinel_nested_type() -> None:
             'input': 'not_an_int',
         },
     ]
+
+
+def test_missing_sentinel_shared_type_alias_json_schema() -> None:
+    """https://github.com/pydantic/pydantic/issues/12706"""
+
+    def _none_to_missing(v: Any) -> MISSING:
+        if v is MISSING or v is None:
+            return MISSING
+        raise ValueError('Value is not empty')
+
+    NoneToMissing = typing_extensions.TypeAliasType(
+        'NoneToMissing', Annotated[MISSING, BeforeValidator(_none_to_missing)]
+    )
+
+    class Model(BaseModel):
+        field1: Literal['a', 'b'] | NoneToMissing = MISSING
+        field2: Literal['x', 'y'] | NoneToMissing = MISSING
+
+    assert Model.model_json_schema()['properties'] == {
+        'field1': {'enum': ['a', 'b'], 'title': 'Field1', 'type': 'string'},
+        'field2': {'enum': ['x', 'y'], 'title': 'Field2', 'type': 'string'},
+    }
