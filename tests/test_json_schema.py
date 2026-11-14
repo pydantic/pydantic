@@ -148,8 +148,8 @@ def test_validate_by_alias_false_uses_the_field_name():
         my_field: str = Field(alias='myAlias')
 
     assert list(Model.model_json_schema()['properties']) == ['my_field']
-    # Serialization is governed by `serialize_by_alias`, which this leaves alone:
-    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['myAlias']
+    # Serialization is governed by `serialize_by_alias` (which defaults to `False`):
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['my_field']
 
     @pydantic.dataclasses.dataclass(config=ConfigDict(validate_by_alias=False, validate_by_name=True))
     class Dataclass:
@@ -157,6 +157,53 @@ def test_validate_by_alias_false_uses_the_field_name():
 
     adapter = TypeAdapter(Dataclass)
     assert list(adapter.json_schema()['properties']) == ['my_field']
+
+
+def test_serialize_by_alias_false_uses_the_field_name():
+    class Model(BaseModel):
+        my_field: str = Field(serialization_alias='myAlias')
+
+        @computed_field(alias='computedAlias')
+        @property
+        def computed(self) -> str:
+            return 'v'
+
+    instance = Model(my_field='foo')
+    # The serialization schema should use the same keys as `model_dump()`:
+    assert list(instance.model_dump()) == ['my_field', 'computed']
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['my_field', 'computed']
+    # Computed fields are only included in serialization schemas:
+    assert list(Model.model_json_schema()['properties']) == ['my_field']
+
+    assert list(instance.model_dump(by_alias=True)) == ['myAlias', 'computedAlias']
+    assert list(Model.model_json_schema(mode='serialization', by_alias=True)['properties']) == [
+        'myAlias',
+        'computedAlias',
+    ]
+
+
+def test_serialize_by_alias_true_uses_the_alias():
+    class Model(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=True)
+        my_field: str = Field(serialization_alias='myAlias')
+
+        @computed_field(alias='computedAlias')
+        @property
+        def computed(self) -> str:
+            return 'v'
+
+    instance = Model(my_field='foo')
+    assert list(instance.model_dump()) == ['myAlias', 'computedAlias']
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['myAlias', 'computedAlias']
+
+
+def test_explicit_by_alias_overrides_serialize_by_alias():
+    class Model(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=False)
+        my_field: str = Field(serialization_alias='myAlias')
+
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['my_field']
+    assert list(Model.model_json_schema(mode='serialization', by_alias=True)['properties']) == ['myAlias']
 
 
 def test_validate_by_alias_false_is_scoped_to_its_own_model():
@@ -3573,6 +3620,7 @@ def test_mode_name_causes_no_conflict():
 
     class Model(BaseModel):
         # Ensure the validation and serialization schemas are different:
+        model_config = ConfigDict(serialize_by_alias=True)
         x: Organization = Field(validation_alias='x_validation', serialization_alias='x_serialization')
         y: OrganizationInput
         z: OrganizationOutput

@@ -246,7 +246,8 @@ class GenerateJsonSchema:
     Args:
         by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
             aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
-            schemas). An explicit value takes precedence over the configuration.
+            schemas and `serialize_by_alias=False` for serialization schemas). An explicit value takes precedence
+            over the configuration.
         ref_template: The format string to use when generating reference names.
         union_format: The format to use when combining schemas from unions together. Can be one of:
 
@@ -1669,12 +1670,19 @@ class GenerateJsonSchema:
 
     def _get_alias_name(self, field: CoreSchemaField, name: str) -> str:
         if field['type'] == 'computed-field':
-            alias: Any = field.get('alias', name)
+            if self.mode == 'serialization':
+                use_alias = self._config.serialize_by_alias if self._by_alias is None else self._by_alias
+                alias: Any = field.get('alias', name) if use_alias else name
+            else:
+                alias = field.get('alias', name)
         elif self.mode == 'validation':
             use_alias = self._config.validate_by_alias if self._by_alias is None else self._by_alias
             alias = field.get('validation_alias', name) if use_alias else name
         else:
-            alias = field.get('serialization_alias', name)
+            # In serialization mode, respect the `serialize_by_alias` runtime setting so that the
+            # JSON schema keys match the keys emitted by `model_dump()`:
+            use_alias = self._config.serialize_by_alias if self._by_alias is None else self._by_alias
+            alias = field.get('serialization_alias', name) if use_alias else name
         if isinstance(alias, str):
             name = alias
         elif isinstance(alias, list):
@@ -2753,7 +2761,8 @@ def model_json_schema(
         cls: The model class to generate a JSON Schema for.
         by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
             aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
-            schemas). An explicit value takes precedence over the configuration.
+            schemas and `serialize_by_alias=False` for serialization schemas). An explicit value takes precedence
+            over the configuration.
         ref_template: The template to use for generating JSON Schema references.
         union_format: The format to use when combining schemas from unions together. Can be one of:
 
@@ -2804,7 +2813,8 @@ def models_json_schema(
         models: A sequence of tuples of the form (model, mode).
         by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
             aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
-            schemas). An explicit value takes precedence over the configuration.
+            schemas and `serialize_by_alias=False` for serialization schemas). An explicit value takes precedence
+            over the configuration.
         title: The title of the generated JSON Schema.
         description: The description of the generated JSON Schema.
         ref_template: The reference template to use for generating JSON Schema references.
