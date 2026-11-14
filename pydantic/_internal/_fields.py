@@ -274,9 +274,25 @@ def collect_model_fields(  # noqa: C901
 
     bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
-    for base in reversed(bases):
-        if model_fields := getattr(base, '__pydantic_fields__', None):
-            parent_fields_lookup.update(model_fields)
+    # Walk the MRO (most derived classes first) instead of only the direct bases, so that field
+    # inheritance respects the MRO: for each field name, the first class that declares it wins, and
+    # a base that merely inherits a field shouldn't shadow a closer declaration.
+    # See https://github.com/pydantic/pydantic/issues/13678.
+    # Classes created by parametrizing a generic model don't carry their own annotations but do
+    # carry the substituted fields, so they are treated as declaring all their fields:
+    for base in cls.__mro__[1:]:
+        model_fields = base.__dict__.get('__pydantic_fields__')
+        if not model_fields:
+            continue
+        generic_metadata = base.__dict__.get('__pydantic_generic_metadata__')
+        if generic_metadata is not None and generic_metadata['origin'] is not None:
+            for name, field_info in model_fields.items():
+                parent_fields_lookup.setdefault(name, field_info)
+            continue
+        base_annotations = _typing_extra.safe_get_annotations(base)
+        for name, field_info in model_fields.items():
+            if name in base_annotations:
+                parent_fields_lookup.setdefault(name, field_info)
 
     type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
 

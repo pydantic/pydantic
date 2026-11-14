@@ -510,6 +510,35 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
     return hash_func
 
 
+def _collect_mro_private_attributes(cls: type[BaseModel]) -> dict[str, ModelPrivateAttr]:
+    """Collect the private attributes inherited by `cls`, respecting the MRO.
+
+    For each private attribute name, the attribute of the closest *declaring* class in the MRO wins,
+    so that a base that merely inherits a private attribute doesn't shadow a declaration from a class
+    closer in the MRO (https://github.com/pydantic/pydantic/issues/13678).
+    """
+    mro_candidates: dict[str, list[ModelPrivateAttr]] = {}
+    for base in cls.__mro__[1:]:
+        base_private_attributes = base.__dict__.get('__private_attributes__')
+        if not base_private_attributes:
+            continue
+        for name, attr in base_private_attributes.items():
+            mro_candidates.setdefault(name, []).append(attr)
+
+    private_attributes: dict[str, ModelPrivateAttr] = {}
+    for name, candidates in mro_candidates.items():
+        # Declaring classes carry a distinct attribute instance, while classes that merely inherit
+        # a private attribute share the instance of their declaring ancestor. As such, the attribute
+        # of the closest class in the MRO that differs from *all* deeper classes is the winner:
+        for i, attr in enumerate(candidates):
+            if all(attr is not later_attr for later_attr in candidates[i + 1 :]):
+                private_attributes[name] = attr
+                break
+        else:
+            private_attributes[name] = candidates[-1]
+    return private_attributes
+
+
 def set_model_fields(
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
@@ -532,7 +561,12 @@ def set_model_fields(
     cls.__pydantic_fields__ = fields
     cls.__pydantic_extra_info__ = pydantic_extra_info
     cls.__class_vars__.update(class_vars)
-    cls.__private_attributes__.update(private_attributes)
+    own_private_attributes = namespace_info.private_attributes if namespace_info is not None else {}
+    cls.__private_attributes__ = {
+        **_collect_mro_private_attributes(cls),
+        **own_private_attributes,
+        **private_attributes,
+    }
 
     for k in class_vars:
         # Class vars should not be private attributes (this can happen when a class variable

@@ -996,6 +996,38 @@ def test_inheritance():
     assert Bar3().model_dump() == {'x': 12.3, 'a': 123.0}
 
 
+def test_fields_multiple_inheritance_respects_mro():
+    """https://github.com/pydantic/pydantic/issues/13678
+
+    A base that merely *inherits* a field (without re-declaring it) should not shadow a later
+    base's override, matching the plain Python attribute resolution semantics.
+    """
+
+    class Base(BaseModel):
+        f: str = 'base'
+        _knob: str = 'base'
+
+    class Override(Base):
+        f: str = 'override'
+        _knob: str = 'override'
+
+    class Plain(Base):
+        pass
+
+    class Swapped(Plain, Override):
+        pass
+
+    class Composed(Override, Plain):
+        pass
+
+    assert Swapped().f == 'override'
+    assert Swapped()._knob == 'override'
+    assert Composed().f == 'override'
+    assert Composed()._knob == 'override'
+    assert Swapped.model_fields['f'].default == 'override'
+    assert Composed.model_fields['f'].default == 'override'
+
+
 def test_inheritance_subclass_default():
     class MyStr(str):
         pass
