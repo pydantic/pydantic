@@ -464,7 +464,7 @@ Here are a couple additional notes about the decorator usage:
 Validation can also be performed on the entire model's data using the [`model_validator()`][pydantic.model_validator]
 decorator.
 
-**Three** different types of model validators can be used:
+**Four** different types of model validators can be used:
 
 * ***After* validators**: run after the whole model has been validated. As such, they are defined as
   *instance* methods and can be seen as post-initialization hooks. Important note: the validated instance
@@ -545,6 +545,37 @@ decorator.
                 logging.error('Model %s failed to validate with data %s', cls, data)
                 raise
     ```
+
+* ***Full-wrap* validators**: wrap the *entire* validation of the model, including all *before*, *wrap*, *after*
+  and field validators. They always run last, regardless of the order the decorators were declared in, so they
+  can catch a [`ValidationError`][pydantic_core.ValidationError] raised anywhere in the model's validation, or
+  profile the validation as a whole. They are defined as class methods taking the raw input and a handler:
+  {#model-full-wrap-validator}
+
+    ```python
+    import logging
+    from typing import Any
+
+    from typing_extensions import Self
+
+    from pydantic import BaseModel, ModelWrapValidatorHandler, ValidationError, model_validator
+
+
+    class UserModel(BaseModel):
+        username: str
+
+        @model_validator(mode='full_wrap')
+        @classmethod
+        def log_failed_validation(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+            try:
+                return handler(data)
+            except ValidationError:
+                logging.error('Model %s failed to validate with data %s', cls, data)
+                raise
+    ```
+
+    Unlike a *wrap* validator, a *full-wrap* validator cannot be placed inside the model's own validation by
+    declaration order: it is always the outermost model validator.
 
 !!! note "On inheritance"
     A model validator defined in a base class will be called during the validation of a subclass instance.

@@ -643,6 +643,15 @@ _AnyModelAfterValidator: TypeAlias = ModelAfterValidator[_ModelType] | ModelAfte
 @overload
 def model_validator(
     *,
+    mode: Literal['full_wrap'],
+) -> Callable[
+    [_AnyModelWrapValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+]: ...
+
+
+@overload
+def model_validator(
+    *,
     mode: Literal['wrap'],
 ) -> Callable[
     [_AnyModelWrapValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
@@ -669,7 +678,7 @@ def model_validator(
 
 def model_validator(
     *,
-    mode: Literal['wrap', 'before', 'after'],
+    mode: Literal['wrap', 'full_wrap', 'before', 'after'],
 ) -> Any:
     """!!! abstract "Usage Documentation"
         [Model Validators](../concepts/validators.md#model-validators)
@@ -716,7 +725,9 @@ def model_validator(
 
     Args:
         mode: A required string literal that specifies the validation mode.
-            It can be one of the following: 'wrap', 'before', or 'after'.
+            It can be one of the following: 'wrap', 'full_wrap', 'before', or 'after'.
+            ``'full_wrap'`` runs after every other model validator and wraps the
+            entire validation of the model (and of subclasses).
 
     Returns:
         A decorator that can be used to decorate a function to be used as a model validator.

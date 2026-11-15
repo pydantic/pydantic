@@ -2083,6 +2083,89 @@ def test_after_and_wrap_combo_called_once() -> None:
     assert my_model.nested.inner_value == 'after_prefix:wrap_prefix:foo'
 
 
+def test_full_wrap_model_validator_wraps_every_other_model_validator() -> None:
+    events: list[str] = []
+
+    class Model(BaseModel):
+        value: int
+
+        @model_validator(mode='full_wrap')
+        @classmethod
+        def full_wrap(cls, data: Any, handler: ValidatorFunctionWrapHandler) -> 'Model':
+            events.append('full-wrap-before')
+            try:
+                return handler(data)
+            except ValidationError as exc:
+                events.append('full-wrap-caught')
+                raise RuntimeError('validation failed') from exc
+
+        @model_validator(mode='after')
+        def after(self) -> 'Model':
+            events.append('after')
+            if self.value < 0:
+                raise ValueError('value must be non-negative')
+            return self
+
+    assert Model(value=1).value == 1
+    assert events == ['full-wrap-before', 'after']
+
+    events.clear()
+    with pytest.raises(RuntimeError, match='validation failed'):
+        Model(value=-1)
+    assert events == ['full-wrap-before', 'after', 'full-wrap-caught']
+
+
+def test_full_wrap_model_validator_applies_to_subclasses() -> None:
+    class Base(BaseModel):
+        value: int
+
+        @model_validator(mode='full_wrap')
+        @classmethod
+        def full_wrap(cls, data: Any, handler: ValidatorFunctionWrapHandler) -> 'Base':
+            try:
+                return handler(data)
+            except ValidationError as exc:
+                raise RuntimeError('subclass validation failed') from exc
+
+    class Child(Base):
+        other: int
+
+        @model_validator(mode='after')
+        def after(self) -> 'Child':
+            if self.other < 0:
+                raise ValueError('other must be non-negative')
+            return self
+
+    assert Child(value=1, other=1).other == 1
+    with pytest.raises(RuntimeError, match='subclass validation failed'):
+        Child(value=1, other=-1)
+
+
+def test_full_wrap_model_validator_accepts_validation_info() -> None:
+    class Model(BaseModel):
+        value: int
+
+        @model_validator(mode='full_wrap')
+        @classmethod
+        def full_wrap(cls, data: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> 'Model':
+            assert info.context == {'source': 'test'}
+            return handler(data)
+
+    assert Model.model_validate({'value': 1}, context={'source': 'test'}).value == 1
+
+
+def test_full_wrap_model_validator_accepts_a_plain_function() -> None:
+    class Model(BaseModel):
+        value: int
+
+        @model_validator(mode='full_wrap')
+        def full_wrap(data: Any, handler: ValidatorFunctionWrapHandler) -> 'Model':
+            assert data == {'value': 1}
+            return handler(data)
+
+    assert Model.model_validate({'value': 1}).value == 1
+
+
 @pytest.mark.xfail(
     reason="Bug: Nested 'after' model_validator is re-executed. See issue #8452.", raises=ValidationError
 )

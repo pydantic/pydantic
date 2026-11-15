@@ -103,7 +103,7 @@ class ModelValidatorDecoratorInfo:
     """
 
     decorator_repr: ClassVar[str] = '@model_validator'
-    mode: Literal['wrap', 'before', 'after']
+    mode: Literal['wrap', 'before', 'after', 'full_wrap']
 
 
 DecoratorInfo: TypeAlias = 'FieldValidatorDecoratorInfo | FieldSerializerDecoratorInfo | ModelSerializerDecoratorInfo | ModelValidatorDecoratorInfo | ComputedFieldInfo'
@@ -537,7 +537,7 @@ def inspect_validator(
         # In this case, we assume no info argument is present:
         return False
     n_positional = count_positional_required_params(sig)
-    if mode == 'wrap':
+    if mode in {'wrap', 'full_wrap'}:
         if n_positional == 3:
             return True
         elif n_positional == 2:

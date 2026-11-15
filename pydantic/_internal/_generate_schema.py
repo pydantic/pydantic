@@ -2589,6 +2589,9 @@ def apply_model_validators(
     If mode == 'outer', validators other than "before" are applied
     If mode == 'all', all validators are applied
 
+    ``full_wrap`` validators are applied last so that they wrap every other
+    model validator, regardless of the order the decorators were defined in.
+
     Args:
         schema: The schema to apply validators on.
         validators: An iterable of validators.
@@ -2598,13 +2601,16 @@ def apply_model_validators(
         The updated schema.
     """
     ref: str | None = schema.pop('ref', None)  # type: ignore
-    for validator in validators:
-        if mode == 'inner' and validator.info.mode != 'before':
-            continue
-        if mode == 'outer' and validator.info.mode == 'before':
-            continue
+    selected = [
+        validator
+        for validator in validators
+        if not (mode == 'inner' and validator.info.mode != 'before')
+        and not (mode == 'outer' and validator.info.mode == 'before')
+    ]
+    selected.sort(key=lambda validator: validator.info.mode == 'full_wrap')
+    for validator in selected:
         info_arg = inspect_validator(validator.func, mode=validator.info.mode, type='model')
-        if validator.info.mode == 'wrap':
+        if validator.info.mode in {'wrap', 'full_wrap'}:
             if info_arg:
                 schema = core_schema.with_info_wrap_validator_function(function=validator.func, schema=schema)
             else:
