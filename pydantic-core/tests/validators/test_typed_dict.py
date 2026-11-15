@@ -1207,9 +1207,7 @@ def test_extra_behavior_ignore(
     assert m == {'f': 'x'}
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
-)
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
 @pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_leak_typed_dict():
     def fn():
