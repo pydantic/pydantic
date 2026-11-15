@@ -7923,3 +7923,58 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_discriminator_serialization_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/14284"""
+
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='petType')
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='petType')
+        barks: float
+
+    class Household(BaseModel):
+        pet: Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+    ser_schema = Household.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['pet']['discriminator']['propertyName'] == 'petType'
+    assert set(ser_schema['properties']['pet']['discriminator']['mapping'].keys()) == {'cat', 'dog'}
+
+    ser_no_alias = Household.model_json_schema(mode='serialization', by_alias=False)
+    assert ser_no_alias['properties']['pet']['discriminator']['propertyName'] == 'pet_type'
+
+    val_schema = Household.model_json_schema(mode='validation')
+    assert val_schema['properties']['pet']['discriminator']['propertyName'] == 'pet_type'
+
+    class Circle(BaseModel):
+        shape_type: Literal['circle'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+        radius: float
+
+    class Square(BaseModel):
+        shape_type: Literal['square'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+        side: float
+
+    class Canvas(BaseModel):
+        shape: Annotated[Union[Circle, Square], Field(discriminator='shape_type')]
+
+    assert Canvas.model_json_schema(mode='validation')['properties']['shape']['discriminator']['propertyName'] == 'in_shape'
+    assert Canvas.model_json_schema(mode='serialization')['properties']['shape']['discriminator']['propertyName'] == 'out_shape'
+    assert (
+        Canvas.model_json_schema(mode='serialization', by_alias=False)['properties']['shape']['discriminator'][
+            'propertyName'
+        ]
+        == 'shape_type'
+    )
+
+    class PlainBird(BaseModel):
+        pet_type: Literal['bird']
+        tweets: int
+
+    class MixedHousehold(BaseModel):
+        pet: Annotated[Union[Cat, PlainBird], Field(discriminator='pet_type')]
+
+    mixed_ser = MixedHousehold.model_json_schema(mode='serialization')
+    assert 'discriminator' not in mixed_ser['properties']['pet']
