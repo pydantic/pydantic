@@ -1,0 +1,360 @@
+docs/concepts/types.md
+  s_d0c4b031e7a137::t_e90741f40be71d 221,311,350,386
+pydantic/_internal/_dataclasses.py
+  s_d0c4b031e7a137::t_e90741f40be71d 24
+tests/types/test_decimal.py
+  s_d0c4b031e7a137::t_e90741f40be71d 47-77,365
+pydantic-core/tests/serializers/test_model.py
+  s_d0c4b031e7a137::t_e90741f40be71d 78
+README.md
+  s_d0c4b031e7a137::t_e90741f40be71d 16
+pydantic/_internal/_generics.py
+  s_d0c4b031e7a137::t_e90741f40be71d 21,288
+pydantic/json_schema.py
+  s_d0c4b031e7a137::t_e90741f40be71d 34,736,739,1893,2048-2052,2064-2068,2074-2075,2099-2114,2198-2202,2204-2210,2214,2226-2228,2907-2912,2955-2960,2974-2980
+pydantic-core/src/argument_markers.rs
+  s_d0c4b031e7a137::t_e90741f40be71d 5,7,19-23
+pydantic/_internal/_decorators.py
+  s_d0c4b031e7a137::t_e90741f40be71d 13,16
+pydantic-core/src/errors/types.rs
+  s_d0c4b031e7a137::t_e90741f40be71d 16,145-156,158,617,673
+tests/test_json.py
+  s_d0c4b031e7a137::t_e90741f40be71d 6,70,255-256
+.github/build-constraints.txt
+  s_d0c4b031e7a137::t_e90741f40be71d 6-8,18-20,22-24
+pydantic/errors.py
+  s_d0c4b031e7a137::t_e90741f40be71d 5
+.github/workflows/ci.yml
+  s_d0c4b031e7a137::t_e90741f40be71d 26,105,109,113,117,151,175,223,263,873,1087
+pydantic/root_model.py
+  s_d0c4b031e7a137::t_e90741f40be71d 7,194-195
+pydantic-core/python/pydantic_core/_pydantic_core/__init__.pyi
+  s_d0c4b031e7a137::t_e90741f40be71d 4
+tests/test_json_schema.py
+  s_d0c4b031e7a137::t_e90741f40be71d 11,23,35,63,344,372,413,446,500,540,571,1888,1912,2317-2323,2860,4572,5486-5513,6619,7324-7325,7333-7382,7408,7438,7466,7470-7507,7523,7656-7671,7728,7778
+tests/test_private_attributes.py
+  s_d0c4b031e7a137::t_e90741f40be71d 2,628
+pydantic-core/tests/validators/test_arguments.py
+  s_d0c4b031e7a137::t_e90741f40be71d 14-16
+pydantic/_internal/_namespace_utils.py
+  s_d0c4b031e7a137::t_e90741f40be71d 7,9-11
+tests/test_pickle.py
+  s_d0c4b031e7a137::t_e90741f40be71d 18
+docs/index.md
+  s_d0c4b031e7a137::t_e90741f40be71d 15
+tests/mypy/configs/pyproject-plugin-strict.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 32
+tests/test_validate_call.py
+  s_d0c4b031e7a137::t_e90741f40be71d 7,9,13,650-653,661-670,677-681,689-695,705-708,966-967,983-984
+tests/test_pipeline.py
+  s_d0c4b031e7a137::t_e90741f40be71d 342,348,361
+pydantic-core/tests/validators/test_date.py
+  s_d0c4b031e7a137::t_e90741f40be71d 4,95,295
+tests/mypy/configs/pyproject-default.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 29
+tests/test_types_self.py
+  s_d0c4b031e7a137::t_e90741f40be71d 14-16
+docs/concepts/models.md
+  s_d0c4b031e7a137::t_e90741f40be71d 349,802
+pydantic-core/tests/test_custom_errors.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1,6
+tests/test_errors.py
+  s_d0c4b031e7a137::t_e90741f40be71d 4
+docs/errors/validation_errors.md
+  s_d0c4b031e7a137::t_e90741f40be71d 12
+tests/mypy/configs/mypy-default.ini
+  s_d0c4b031e7a137::t_e90741f40be71d 10
+pydantic-core/tests/test_hypothesis.py
+  s_d0c4b031e7a137::t_e90741f40be71d 4,34,36
+tests/test_validators.py
+  s_d0c4b031e7a137::t_e90741f40be71d 6,1094
+pydantic-core/tests/validators/test_time.py
+  s_d0c4b031e7a137::t_e90741f40be71d 2,27,29,34,38-41,61-64,224,226,242,252,254,287
+tests/mypy/configs/pyproject-plugin.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 32
+tests/types/test_scalar_schema_copy.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1-40
+tests/types/test_zoneinfo.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1,73
+pydantic/main.py
+  s_d0c4b031e7a137::t_e90741f40be71d 19,23,29
+pydantic-core/python/pydantic_core/core_schema.py
+  s_d0c4b031e7a137::t_e90741f40be71d 14,16,3863,3872,3874,3901,3915,3917,4036,4086,4089,4092,4100
+pydantic-core/python/pydantic_core/__init__.py
+  s_d0c4b031e7a137::t_e90741f40be71d 6
+pydantic-core/tests/serializers/test_any.py
+  s_d0c4b031e7a137::t_e90741f40be71d 8,429
+pydantic-core/tests/test_errors.py
+  s_d0c4b031e7a137::t_e90741f40be71d 387,573,598,607
+tests/test_generics.py
+  s_d0c4b031e7a137::t_e90741f40be71d 12,69,322,2161,2190,2193,2757,2764,2791-2793
+tests/types/unions/test_union.py
+  s_d0c4b031e7a137::t_e90741f40be71d 2,302
+docs/plugins/using_update.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1,29
+mkdocs.yml
+  s_d0c4b031e7a137::t_e90741f40be71d 235
+docs/concepts/fields.md
+  s_d0c4b031e7a137::t_e90741f40be71d 731
+pydantic/config.py
+  s_d0c4b031e7a137::t_e90741f40be71d 7,9
+tests/test_main.py
+  s_d0c4b031e7a137::t_e90741f40be71d 13,896
+pydantic-core/tests/serializers/test_enum.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1,57
+pydantic-core/tests/validators/test_with_default.py
+  s_d0c4b031e7a137::t_e90741f40be71d 54,75,640,789
+tests/mypy/configs/pyproject-plugin-no-strict-optional.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 32
+pydantic-core/tests/validators/test_string.py
+  s_d0c4b031e7a137::t_e90741f40be71d 5,230
+tests/test_model_signature.py
+  s_d0c4b031e7a137::t_e90741f40be71d 220-229
+tests/test_networks.py
+  s_d0c4b031e7a137::t_e90741f40be71d 988
+pydantic-core/tests/test_garbage_collection.py
+  s_d0c4b031e7a137::t_e90741f40be71d 3,5,11-19,23-27,133,155,280-335
+pydantic-core/src/validators/arguments_v3.rs
+  s_d0c4b031e7a137::t_e90741f40be71d 68-72,241-249,275-276,355-356,368-379,405-421,604-605,672,739,774
+pydantic-core/tests/validators/test_model_init.py
+  s_d0c4b031e7a137::t_e90741f40be71d 414
+tests/benchmarks/test_model_corpus.py
+  s_d0c4b031e7a137::t_e90741f40be71d 22
+.github/workflows/third-party.yml
+  s_d0c4b031e7a137::t_e90741f40be71d 41,79,165,207,254,475,519,621,659,699,761,800,885
+tests/mypy/configs/mypy-plugin-very-strict.ini
+  s_d0c4b031e7a137::t_e90741f40be71d 6
+pydantic/functional_validators.py
+  s_d0c4b031e7a137::t_e90741f40be71d 9,12,681
+tests/test_config.py
+  s_d0c4b031e7a137::t_e90741f40be71d 420
+tests/types/test_fixed_schema_handlers.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1-40
+tests/types/unions/test_discriminated_union.py
+  s_d0c4b031e7a137::t_e90741f40be71d 6,401,411,1808,2129,2472
+pydantic-core/tests/test_build.py
+  s_d0c4b031e7a137::t_e90741f40be71d 2,20-36
+pydantic-core/tests/validators/test_literal.py
+  s_d0c4b031e7a137::t_e90741f40be71d 3,141-143,156-158,246,369,397
+pydantic-core/tests/serializers/test_json_or_python.py
+  s_d0c4b031e7a137::t_e90741f40be71d 26
+tests/mypy/configs/mypy-plugin-unknown-param.ini
+  s_d0c4b031e7a137::t_e90741f40be71d 13
+tests/mypy/configs/pyproject-plugin-unknown-param.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 32
+pydantic-core/tests/benchmarks/test_micro_benchmarks.py
+  s_d0c4b031e7a137::t_e90741f40be71d 9,11,589,934,1208,1468
+pydantic-core/tests/validators/test_set.py
+  s_d0c4b031e7a137::t_e90741f40be71d 172
+docs/api/standard_library_types.md
+  s_d0c4b031e7a137::t_e90741f40be71d 232-239,289-290,303-305,760,765
+pydantic/_internal/_signature.py
+  s_d0c4b031e7a137::t_e90741f40be71d 160-161
+pydantic-core/src/errors/validation_exception.rs
+  s_d0c4b031e7a137::t_e90741f40be71d 7,13,23,43-44,145-149,157,160-162,202-205,399-402
+  s_d0c4b031e7a137::t_781308b850f4a4 403
+pydantic-core/src/build_tools.rs
+  s_d0c4b031e7a137::t_e90741f40be71d 8,13,126-132
+.github/workflows/upload-previews.yml
+  s_d0c4b031e7a137::t_e90741f40be71d 21
+docs/plugins/conversion_table.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1475-1486
+pydantic-core/tests/test_schema_functions.py
+  s_d0c4b031e7a137::t_e90741f40be71d 13-15,254-255,288,438-444
+tests/test_annotation_fast_path.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1-147
+pydantic-core/tests/validators/test_enums.py
+  s_d0c4b031e7a137::t_e90741f40be71d 4,94,497
+tests/mypy/configs/mypy-plugin-strict.ini
+  s_d0c4b031e7a137::t_e90741f40be71d 13
+pydantic-core/src/errors/value_exception.rs
+  s_d0c4b031e7a137::t_e90741f40be71d 5,8,69-72,175-178
+tests/test_edge_cases.py
+  s_d0c4b031e7a137::t_e90741f40be71d 9,534,541,543,1044,1390,1392,1506,2573-2575
+tests/test_experimental_arguments_schema.py
+  s_d0c4b031e7a137::t_e90741f40be71d 7,100-163,192-219
+  s_d0c4b031e7a137::t_8f957d50363541 220-221
+pydantic-core/src/input/datetime.rs
+  s_d0c4b031e7a137::t_e90741f40be71d 7,405,735-749,754-755,824
+tests/types/test_enum.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1,330,366
+pydantic/_internal/_repr.py
+  s_d0c4b031e7a137::t_e90741f40be71d 114,123-129
+pydantic-core/tests/validators/test_is_instance.py
+  s_d0c4b031e7a137::t_e90741f40be71d 25,182
+tests/types/unions/test_direct_schema.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1-174
+pydantic-core/tests/validators/test_typed_dict.py
+  s_d0c4b031e7a137::t_e90741f40be71d 155,501,534,560,1210
+pydantic/plugin/_loader.py
+  s_d0c4b031e7a137::t_e90741f40be71d 6,25-26,40-52
+pydantic/types.py
+  s_d0c4b031e7a137::t_e90741f40be71d 23
+tests/mypy/configs/mypy-plugin.ini
+  s_d0c4b031e7a137::t_e90741f40be71d 12
+tests/test_utils.py
+  s_d0c4b031e7a137::t_e90741f40be71d 77-79
+pydantic/_internal/_known_annotated_metadata.py
+  s_d0c4b031e7a137::t_e90741f40be71d 105-113,136
+tests/benchmarks/corpus/google-genai/README.md
+  s_d0c4b031e7a137::t_e90741f40be71d 25
+tests/typechecking/with_config_decorator.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1
+pydantic-core/tests/validators/test_nullable.py
+  s_d0c4b031e7a137::t_e90741f40be71d 42
+pydantic-core/tests/serializers/test_datetime.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1,51,201,203
+pydantic/_internal/_typing_extra.py
+  s_d0c4b031e7a137::t_e90741f40be71d 210-212,276-279,389-390,397-398,459
+pydantic-core/tests/validators/test_union.py
+  s_d0c4b031e7a137::t_e90741f40be71d 3,521
+pydantic-core/tests/validators/test_uuid.py
+  s_d0c4b031e7a137::t_e90741f40be71d 84
+pyproject.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 29,40,46
+pydantic/_internal/_config.py
+  s_d0c4b031e7a137::t_e90741f40be71d 9,18
+pydantic/_internal/_generate_schema.py
+  s_d0c4b031e7a137::t_e90741f40be71d 25,82,136-175,380-399,418,474,541,811-815,1052,1085,1320-1337,1345,2001,2162-2169,2173,2276-2278,2297-2305
+pydantic-core/src/input/input_python.rs
+  s_d0c4b031e7a137::t_e90741f40be71d 387-397
+tests/mypy/configs/pyproject-plugin-strict-equality.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 38
+tests/typechecking/decorators.py
+  s_d0c4b031e7a137::t_e90741f40be71d 6
+tests/types/test_complex.py
+  s_d0c4b031e7a137::t_e90741f40be71d 68-89
+tests/types/test_namedtuple.py
+  s_d0c4b031e7a137::t_e90741f40be71d 200
+pydantic-core/tests/test_tzinfo.py
+  s_d0c4b031e7a137::t_e90741f40be71d 10,72,143,166,232,242-254
+  s_d0c4b031e7a137::t_d22b024b10e3aa 255-256
+tests/typechecking/type_adapter.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1
+tests/test_root_model.py
+  s_d0c4b031e7a137::t_e90741f40be71d 115-122
+docs/contributing.md
+  s_d0c4b031e7a137::t_e90741f40be71d 54,100
+docs/integrations/aws_lambda.md
+  s_d0c4b031e7a137::t_e90741f40be71d 31
+docs/plugins/main.py
+  s_d0c4b031e7a137::t_e90741f40be71d 8,154-155,237,280,331
+tests/benchmarks/test_json_escapes.py
+  s_d0c4b031e7a137::t_e90741f40be71d 4,7,9,15,31-51
+tests/test_schema_gather.py
+  s_d0c4b031e7a137::t_e90741f40be71d 38-39
+pydantic/experimental/arguments_schema.py
+  s_d0c4b031e7a137::t_e90741f40be71d 5,42-47
+tests/plugin/pyproject.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 8
+Makefile
+  s_d0c4b031e7a137::t_e90741f40be71d 26
+tests/test_internal.py
+  s_d0c4b031e7a137::t_e90741f40be71d 156
+pydantic-core/Cargo.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 53
+pydantic-core/tests/validators/test_model_fields.py
+  s_d0c4b031e7a137::t_e90741f40be71d 175,633,664,688,986,1338
+tests/test_types_typeddict.py
+  s_d0c4b031e7a137::t_e90741f40be71d 7,13,940,943-945
+tests/benchmarks/test_model_schema_generation.py
+  s_d0c4b031e7a137::t_e90741f40be71d 7,14,25,361-366,368,371-376,378-397
+pydantic/dataclasses.py
+  s_d0c4b031e7a137::t_e90741f40be71d 10
+tests/types/test_time.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1,16-18
+pydantic/plugin/_schema_validator.py
+  s_d0c4b031e7a137::t_e90741f40be71d 7
+pydantic-core/tests/validators/test_datetime.py
+  s_d0c4b031e7a137::t_e90741f40be71d 6,39,41,44-49,52,72,84,145,154-155,181,328-329,346,371-372,389,410,412,428,438,440,473,513-517,519-523,527,530-531,535,537-538,540-544,546-548
+tests/mypy/configs/pyproject-plugin-bad-param.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 32
+pydantic/_internal/_contextlib.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1-84
+docs/concepts/serialization.md
+  s_d0c4b031e7a137::t_e90741f40be71d 644-645,679-680
+tests/test_datetime.py
+  s_d0c4b031e7a137::t_e90741f40be71d 3,123-125,137-138,165-166,168,170,176,178-186,208-212,214-218,222,225-226,230,232-233,306,343
+tests/test_forward_ref.py
+  s_d0c4b031e7a137::t_e90741f40be71d 13,248-254,1044,1052-1064
+tests/test_plugin_loader.py
+  s_d0c4b031e7a137::t_e90741f40be71d 29-30,32-35,55,110,125
+pydantic-core/tests/validators/test_dataclasses.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1539
+pydantic-core/tests/serializers/test_string.py
+  s_d0c4b031e7a137::t_e90741f40be71d 164
+pydantic/mypy.py
+  s_d0c4b031e7a137::t_e90741f40be71d 6,1396
+tests/types/test_str.py
+  s_d0c4b031e7a137::t_e90741f40be71d 3,167
+pydantic-core/tests/validators/test_call.py
+  s_d0c4b031e7a137::t_e90741f40be71d 13-15
+tests/typechecking/pyproject.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 3,11,19
+tests/types/test_datetime.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1,21,27-30
+docs/concepts/dataclasses.md
+  s_d0c4b031e7a137::t_e90741f40be71d 71
+pydantic-core/tests/validators/test_is_subclass.py
+  s_d0c4b031e7a137::t_e90741f40be71d 85-86
+tests/types/test_fraction.py
+  s_d0c4b031e7a137::t_e90741f40be71d 117,160
+tests/typechecking/base_model.py
+  s_d0c4b031e7a137::t_e90741f40be71d 5
+tests/typechecking/root_model.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1
+pydantic-core/pyproject.toml
+  s_d0c4b031e7a137::t_e90741f40be71d 8,28,39
+CITATION.cff
+  s_d0c4b031e7a137::t_e90741f40be71d 38
+pydantic-core/wasm-preview/run_tests.py
+  s_d0c4b031e7a137::t_e90741f40be71d 5
+docs/install.md
+  s_d0c4b031e7a137::t_e90741f40be71d 22
+tests/types/test_scalar_schema_fast_paths.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1-151
+docs/concepts/strict_mode.md
+  s_d0c4b031e7a137::t_e90741f40be71d 98-99,124-126
+docs/examples/dynamic_models.md
+  s_d0c4b031e7a137::t_e90741f40be71d 9-10,12,15-16,18-22,25-30,32-33,53-59,61-62,64-66,68-69,95
+tests/typechecking/validate_call.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1
+pydantic-core/src/validators/complex.rs
+  s_d0c4b031e7a137::t_e90741f40be71d 57
+tests/test_deprecated_fields.py
+  s_d0c4b031e7a137::t_e90741f40be71d 1,4
+.github/workflows/integration.yml
+  s_d0c4b031e7a137::t_e90741f40be71d 17,35
+pydantic/networks.py
+  s_d0c4b031e7a137::t_e90741f40be71d 43
+pydantic-core/tests/serializers/test_literal.py
+  s_d0c4b031e7a137::t_e90741f40be71d 2,81
+pydantic-core/tests/validators/test_tagged_union.py
+  s_d0c4b031e7a137::t_e90741f40be71d 201,516-524
+tests/mypy/configs/mypy-plugin-strict-no-any.ini
+  s_d0c4b031e7a137::t_e90741f40be71d 22
+docs/concepts/forward_annotations.md
+  s_d0c4b031e7a137::t_e90741f40be71d 65
+tests/test_types.py
+  s_d0c4b031e7a137::t_e90741f40be71d 12,854,914
+pydantic-core/Cargo.lock
+  s_d0c4b031e7a137::t_fc383496c73f25 315,317
+uv.lock
+  s_d0c4b031e7a137::t_d4a38636e3731a 3,8,386,781,783,785,1135,1562,1638,1871,1873,1875,1901,2326,2458,2485,2606,2612-2635,2898,3271,3420,3425,3427,3474
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8778531bb656b9a309c292d319bc1a9c8f681e92",
+  "prompts": {},
+  "sessions": {
+    "s_d0c4b031e7a137": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e3d0-3e95-7f10-a357-5f3d9e0ab3a8",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
