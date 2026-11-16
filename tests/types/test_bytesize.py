@@ -1,7 +1,7 @@
 import pytest
 from pydantic_core import PydanticCustomError
 
-from pydantic import BaseModel, ByteSize, ValidationError
+from pydantic import BaseModel, ByteSize, Field, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -34,7 +34,8 @@ def test_bytesize_human_readable_unit_boundary(size: int, decimal: bool, expecte
         ('1.5 MB', int(1.5e6), '1.4MiB', '1.5MB', '1.4 MiB'),
         ('1.5 M', int(1.5e6), '1.4MiB', '1.5MB', '1.4 MiB'),
         ('5.1kib', 5222, '5.1KiB', '5.2KB', '5.1 KiB'),
-        ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB', '6.2 EiB'),
+        # 6.2 * 2**60 == 7148113328562451251.2, truncated to whole bytes
+        ('6.2EiB', 7148113328562451251, '6.2EiB', '7.1EB', '6.2 EiB'),
         ('8bit', 1, '1B', '1B', '1 B'),
         ('1kbit', 125, '125B', '125B', '125 B'),
     ),
@@ -105,3 +106,31 @@ def test_bytesize_raises():
 
     with pytest.raises(PydanticCustomError, match='byte unit'):
         m.size.to('1ZiB')
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('1.005 KB', 1005),
+        ('1.003 KB', 1003),
+        ('9007199254740993 B', 9007199254740993),
+        ('1.9999 KB', 1999),
+    ],
+)
+def test_bytesize_conversion_is_exact(input_value: str, expected: int) -> None:
+    """https://github.com/pydantic/pydantic/issues/14297"""
+
+    class Model(BaseModel):
+        size: ByteSize
+
+    assert Model(size=input_value).size == expected
+
+
+def test_bytesize_exact_value_respects_constraints() -> None:
+    """https://github.com/pydantic/pydantic/issues/14297"""
+
+    class Model(BaseModel):
+        size: ByteSize = Field(le=1004)
+
+    with pytest.raises(ValidationError, match='less than or equal to 1004'):
+        Model(size='1.005 KB')

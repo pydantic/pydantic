@@ -10,6 +10,7 @@ import sys
 from collections.abc import Callable, Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
+from fractions import Fraction
 from pathlib import Path
 from re import Pattern
 from types import ModuleType
@@ -2036,9 +2037,15 @@ class ByteSize(int):
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
         try:
-            return cls(int(float(scalar) * unit_mult))
-        except OverflowError:
+            # Fraction keeps the decimal digits of `scalar` exact, so e.g. '1.005 KB' is
+            # 1005 bytes instead of 1004 (float('1.005') * 1000 == 1004.9999999999999).
+            exact = Fraction(scalar) * Fraction(unit_mult)
+            # Keep rejecting values outside the float range, as before.
+            float(exact)
+        except (OverflowError, ValueError, ZeroDivisionError):
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
+
+        return cls(int(exact))
 
     def human_readable(self, decimal: bool = False, separator: str = '') -> str:
         """Converts a byte size to a human readable string.
