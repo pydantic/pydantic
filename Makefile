@@ -94,7 +94,7 @@ testcov: test
 .PHONY: test-examples  ## Run only the tests from the documentation
 test-examples: .uv
 	@echo "running examples"
-	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'uv run python {} >/dev/null 2>&1 || (echo "{} failed")'
+	@uv run pytest tests/test_docs.py
 
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
 test-pydantic-settings: .uv
