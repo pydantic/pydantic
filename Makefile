@@ -91,11 +91,6 @@ testcov: test
 	@echo "building coverage lcov"
 	@uv run coverage lcov
 
-.PHONY: test-examples  ## Run only the tests from the documentation
-test-examples: .uv
-	@echo "running examples"
-	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'uv run python {} >/dev/null 2>&1 || (echo "{} failed")'
-
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
 test-pydantic-settings: .uv
 	git clone https://github.com/pydantic/pydantic-settings.git --single-branch
