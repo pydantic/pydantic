@@ -74,6 +74,9 @@ class LoggedVar(Generic[T]):
         (LoggedVar(), 'LoggedVar'),
         (LoggedVar[int], 'LoggedVar[int]'),
         (LoggedVar[dict[int, str]], 'LoggedVar[dict[int, str]]'),
+        (Callable[[int, str], bool], 'Callable[[int, str], bool]'),
+        (Callable[[], int], 'Callable[[], int]'),
+        (Callable[..., int], 'Callable[..., int]'),
     ],
 )
 def test_display_as_type(value, expected):
