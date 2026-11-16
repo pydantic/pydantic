@@ -152,8 +152,7 @@ def test_config(config: CoreConfig, input_value, expected):
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            val = v.validate_python(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
+            v.validate_python(input_value)
     else:
         output_dict = v.validate_python(input_value)
         assert output_dict == expected
@@ -499,8 +498,7 @@ def test_aliases_path_multiple(py_and_json: PyAndJson, input_value, expected):
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
-            val = v.validate_test(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
+            v.validate_test(input_value)
     else:
         output = v.validate_test(input_value)
         assert output == expected
@@ -533,8 +531,7 @@ def test_aliases_path_negative(input_value, expected):
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
-            val = v.validate_python(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
+            v.validate_python(input_value)
     else:
         output = v.validate_python(input_value)
         assert output == expected
@@ -560,8 +557,7 @@ def test_aliases_path_negative_json(py_and_json: PyAndJson, input_value, expecte
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
-            val = v.validate_test(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
+            v.validate_test(input_value)
     else:
         output = v.validate_test(input_value)
         assert output == expected
@@ -1211,9 +1207,7 @@ def test_extra_behavior_ignore(
     assert m == {'f': 'x'}
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
-)
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
 @pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_leak_typed_dict():
     def fn():

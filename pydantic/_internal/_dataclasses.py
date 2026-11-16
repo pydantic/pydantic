@@ -6,7 +6,6 @@ import copy
 import dataclasses
 import sys
 from collections.abc import Generator
-from contextlib import contextmanager
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, cast
 
@@ -22,6 +21,7 @@ from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
 from . import _config, _decorators
+from ._contextlib import contextmanager
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema, InvalidSchemaError
 from ._generics import get_standard_typevars_map

@@ -1,6 +1,4 @@
-from typing import TypedDict
-
-from typing_extensions import assert_type
+from typing import TypedDict, assert_type
 
 from pydantic import ConfigDict, with_config
 

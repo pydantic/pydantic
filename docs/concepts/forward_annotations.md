@@ -62,7 +62,7 @@ The internal logic to resolve forward annotations is described in detail in [thi
 
 Models with self-referencing fields are also supported. These annotations will be resolved during model creation.
 
-=== "Python 3.10 and above"
+=== "Python 3.11"
 
     ```python
     from pydantic import BaseModel

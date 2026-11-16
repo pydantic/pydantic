@@ -1,5 +1,5 @@
 import functools
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, ClassVar, Generic, TypeVar
 
 import pytest
@@ -625,7 +625,7 @@ def test_private_attribute_not_skipped_during_ns_inspection() -> None:
     # It is important for the enum name to start with the class name
     # (it previously caused issues as we were comparing qualnames without
     # taking this into account):
-    class Fullname(str, Enum):
+    class Fullname(StrEnum):
         pass
 
     class Full(BaseModel):

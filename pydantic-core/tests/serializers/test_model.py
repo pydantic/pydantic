@@ -75,6 +75,7 @@ class DataClass:
     frog: dataclasses.InitVar[int]
 
 
+@pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
 def test_dataclass():
     schema = core_schema.call_schema(
         core_schema.arguments_schema(

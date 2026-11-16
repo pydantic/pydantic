@@ -112,6 +112,14 @@ def test_root_model_repr():
     assert repr(SpecializedSubRootModel(1)) == 'SpecializedSubRootModel(root=1)'
 
 
+def test_root_model_repr_false():
+    class Token(RootModel[str]):
+        root: str = Field(repr=False)
+
+    assert repr(Token('secret')) == 'Token()'
+    assert str(Token('secret')) == ''
+
+
 def test_root_model_recursive():
     class A(RootModel[list['B']]):
         def my_a_method(self):

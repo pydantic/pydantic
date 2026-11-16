@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys as _sys
 from collections.abc import MutableSet
 from typing import Any as _Any
+from typing import NotRequired as _NotRequired
 
 from typing_extensions import Sentinel
 
@@ -31,11 +32,6 @@ from ._pydantic_core import (
     to_jsonable_python,
 )
 from .core_schema import CoreConfig, CoreSchema, CoreSchemaType, ErrorType
-
-if _sys.version_info < (3, 11):
-    from typing_extensions import NotRequired as _NotRequired
-else:
-    from typing import NotRequired as _NotRequired
 
 if _sys.version_info < (3, 12):
     from typing_extensions import TypedDict as _TypedDict

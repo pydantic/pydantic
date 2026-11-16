@@ -5,7 +5,7 @@ import platform
 import re
 import sys
 from collections import Counter, OrderedDict, deque, namedtuple
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from math import inf, isinf, isnan, nan
@@ -426,7 +426,7 @@ def test_base64():
     [
         # (lambda: UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
         (lambda: datetime(2032, 1, 1, 1, 1), {}, b'"2032-01-01T01:01:00"'),
-        (lambda: datetime(2032, 1, 1, 1, 1, tzinfo=timezone.utc), {}, b'"2032-01-01T01:01:00Z"'),
+        (lambda: datetime(2032, 1, 1, 1, 1, tzinfo=UTC), {}, b'"2032-01-01T01:01:00Z"'),
         (lambda: datetime(2032, 1, 1, 1, 1, tzinfo=timezone(timedelta(hours=2))), {}, b'"2032-01-01T01:01:00+02:00"'),
         (lambda: datetime(2032, 1, 1), {}, b'"2032-01-01T00:00:00"'),
         (lambda: time(12, 34, 56), {}, b'"12:34:56"'),

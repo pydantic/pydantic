@@ -1,6 +1,6 @@
 import re
 from collections.abc import Callable
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any
 
 import pytest
@@ -138,9 +138,9 @@ def test_literal_py_and_json(py_and_json: PyAndJson, kwarg_expected, input_value
                     {
                         'type': 'literal_error',
                         'loc': (),
-                        'msg': "Input should be 1 or '1'",
-                        'input': '2',
-                        'ctx': {'expected': "1 or '1'"},
+                        'msg': "Input should be b'bite'",
+                        'input': 'spoon',
+                        'ctx': {'expected': "b'bite'"},
                     }
                 ],
             ),
@@ -153,9 +153,9 @@ def test_literal_not_json(kwarg_expected, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
-            if expected.errors is not None:
-                # debug(exc_info.value.errors(include_url=False))
-                assert exc_info.value.errors(include_url=False) == expected.errors
+        if expected.errors is not None:
+            # debug(exc_info.value.errors(include_url=False))
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_python(input_value) == expected
 
@@ -243,7 +243,7 @@ def test_enum_value():
 
 
 def test_str_enum_values():
-    class Foo(str, Enum):
+    class Foo(StrEnum):
         foo = 'foo_value'
         bar = 'bar_value'
 
@@ -366,7 +366,7 @@ def test_mix_int_enum_with_int(reverse: Callable[[list[Any]], list[Any]], err: A
     ],
 )
 def test_mix_str_enum_with_str(reverse: Callable[[list[Any]], list[Any]], err: Any):
-    class Foo(str, Enum):
+    class Foo(StrEnum):
         foo = 'foo_val'
 
     v = SchemaValidator(core_schema.literal_schema(reverse(['foo_val', Foo.foo])))
@@ -394,7 +394,7 @@ def test_big_int():
 
 
 def test_enum_for_str() -> None:
-    class S(str, Enum):
+    class S(StrEnum):
         a = 'a'
 
     val_enum = SchemaValidator(core_schema.literal_schema([S.a]))

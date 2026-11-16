@@ -2,8 +2,10 @@ use pyo3::exceptions::{PyException, PyValueError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString, PyTuple};
+use pyo3::{PyTraverseError, PyVisit};
 
 use crate::input::InputType;
+use crate::py_gc::PyGcTraverse;
 
 use super::line_error::ToErrorValue;
 use super::{ErrorType, ValError};
@@ -64,6 +66,10 @@ pub struct PydanticCustomError {
 
 #[pymethods]
 impl PydanticCustomError {
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.context.py_gc_traverse(&visit)
+    }
+
     #[new]
     #[pyo3(signature = (error_type, message_template, context = None, /))]
     pub fn py_new(error_type: String, message_template: String, context: Option<Bound<'_, PyDict>>) -> Self {
@@ -166,6 +172,10 @@ pub struct PydanticKnownError {
 
 #[pymethods]
 impl PydanticKnownError {
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.error_type.py_gc_traverse(&visit)
+    }
+
     #[new]
     #[pyo3(signature = (error_type, context=None, /))]
     pub fn py_new(py: Python, error_type: &str, context: Option<Bound<'_, PyDict>>) -> PyResult<Self> {

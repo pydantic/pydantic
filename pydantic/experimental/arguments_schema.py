@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -38,7 +39,12 @@ def generate_arguments_schema(
     )
 
     if schema_type == 'arguments':
-        schema = generate_schema._arguments_schema(func, parameters_callback)  # pyright: ignore[reportArgumentType]
+        with warnings.catch_warnings():
+            # Don't emit the deprecation warnings from the `pydantic_core.core_schema` functions:
+            warnings.filterwarnings(
+                'ignore', message=r'`arguments_(schema|parameter)\(\)` is deprecated', category=DeprecationWarning
+            )
+            schema = generate_schema._arguments_schema(func, parameters_callback)  # pyright: ignore[reportArgumentType]
     else:
         schema = generate_schema._arguments_v3_schema(func, parameters_callback)  # pyright: ignore[reportArgumentType]
     return generate_schema.clean_schema(schema)

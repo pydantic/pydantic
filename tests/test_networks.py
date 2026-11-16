@@ -985,7 +985,7 @@ def test_email_validator_not_installed(mocker):
     m = mocker.patch('pydantic.networks.import_email_validator', side_effect=ImportError)
     with pytest.raises(ImportError):
         validate_email('s@muelcolvin.com')
-        m.assert_called_once()
+    m.assert_called_once()
 
 
 def test_import_email_validator_not_installed(mocker):

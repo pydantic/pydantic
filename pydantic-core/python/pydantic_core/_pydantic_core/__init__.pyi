@@ -1,10 +1,9 @@
 import datetime
 from collections.abc import Callable, Iterable, Iterator, Mapping, MutableSet
 from collections.abc import Set as AbstractSet
-from typing import Any, ClassVar, Generic, Literal, TypeAlias, TypeVar, final, overload
+from typing import Any, ClassVar, Generic, Literal, LiteralString, Self, TypeAlias, TypeVar, final, overload
 
 from _typeshed import SupportsAllComparisons
-from typing_extensions import LiteralString, Self
 
 from pydantic_core import ErrorDetails, ErrorTypeInfo, InitErrorDetails, MultiHostHost
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType, ExtraBehavior

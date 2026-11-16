@@ -20,6 +20,7 @@ from typing import (
     ClassVar,
     Generic,
     Literal,
+    Protocol,
     TypeAlias,
     TypeVar,
     cast,
@@ -30,7 +31,6 @@ import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
 from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
-    Protocol,
     TypeAliasType,
     get_args,
     get_origin,

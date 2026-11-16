@@ -1,5 +1,5 @@
 import re
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -24,21 +24,21 @@ def test_constraints_schema_validation_error(constraint: str) -> None:
     [
         pytest.param(time(12, 13, 14), time(12, 13, 14), id='time'),
         pytest.param(time(12, 13, 14, 123), time(12, 13, 14, 123), id='time-micro'),
-        pytest.param(time(12, 13, 14, tzinfo=timezone.utc), time(12, 13, 14, tzinfo=timezone.utc), id='time-tz'),
+        pytest.param(time(12, 13, 14, tzinfo=UTC), time(12, 13, 14, tzinfo=UTC), id='time-tz'),
         pytest.param('12:13:14', time(12, 13, 14), id='str'),
-        pytest.param('12:13:14Z', time(12, 13, 14, tzinfo=timezone.utc), id='str-tz'),
+        pytest.param('12:13:14Z', time(12, 13, 14, tzinfo=UTC), id='str-tz'),
         pytest.param(b'12:13:14', time(12, 13, 14), id='bytes'),
         pytest.param((1,), Err('Input should be a valid time [type=time_type'), id='tuple'),
         pytest.param(date(2022, 6, 8), Err('Input should be a valid time [type=time_type'), id='date'),
         pytest.param(datetime(2022, 6, 8), Err('Input should be a valid time [type=time_type'), id='datetime'),
-        pytest.param(123, time(0, 2, 3, tzinfo=timezone.utc), id='int'),
+        pytest.param(123, time(0, 2, 3, tzinfo=UTC), id='int'),
         pytest.param(float('nan'), Err('valid time format, NaN values not permitted [type=time_parsing,'), id='nan'),
         pytest.param(float('inf'), Err('valid time format, numeric times may not exceed 86,399 seconds'), id='inf'),
         pytest.param(float('-inf'), Err('valid time format, time in seconds should be positive'), id='-inf'),
-        pytest.param(Decimal(123), time(0, 2, 3, tzinfo=timezone.utc), id='decimal'),
-        pytest.param(Decimal('123.123456'), time(0, 2, 3, 123456, tzinfo=timezone.utc), id='decimal-6dig'),
-        pytest.param(Decimal('123.1234562'), time(0, 2, 3, 123456, tzinfo=timezone.utc), id='decimal-7dig-up'),
-        pytest.param(Decimal('123.1234568'), time(0, 2, 3, 123457, tzinfo=timezone.utc), id='decimal-7dig-down'),
+        pytest.param(Decimal(123), time(0, 2, 3, tzinfo=UTC), id='decimal'),
+        pytest.param(Decimal('123.123456'), time(0, 2, 3, 123456, tzinfo=UTC), id='decimal-6dig'),
+        pytest.param(Decimal('123.1234562'), time(0, 2, 3, 123456, tzinfo=UTC), id='decimal-7dig-up'),
+        pytest.param(Decimal('123.1234568'), time(0, 2, 3, 123457, tzinfo=UTC), id='decimal-7dig-down'),
     ],
 )
 def test_time(input_value, expected):
@@ -58,10 +58,10 @@ def test_time(input_value, expected):
         pytest.param('12:13:14.123', time(12, 13, 14, 123_000), id='str-micro'),
         pytest.param('12:13:14.123456', time(12, 13, 14, 123_456), id='str-micro-6dig'),
         pytest.param('12:13:14.1234561', time(12, 13, 14, 123_456), id='str-micro-7dig'),
-        pytest.param(123, time(0, 2, 3, tzinfo=timezone.utc), id='int'),
-        pytest.param(123.4, time(0, 2, 3, 400_000, tzinfo=timezone.utc), id='float'),
-        pytest.param(123.0, time(0, 2, 3, tzinfo=timezone.utc), id='float.0'),
-        pytest.param(0, time(0, tzinfo=timezone.utc), id='int-zero'),
+        pytest.param(123, time(0, 2, 3, tzinfo=UTC), id='int'),
+        pytest.param(123.4, time(0, 2, 3, 400_000, tzinfo=UTC), id='float'),
+        pytest.param(123.0, time(0, 2, 3, tzinfo=UTC), id='float.0'),
+        pytest.param(0, time(0, tzinfo=UTC), id='int-zero'),
         pytest.param(
             86400,
             Err(
@@ -221,9 +221,9 @@ def test_union():
 
 def test_aware():
     v = SchemaValidator(core_schema.time_schema(tz_constraint='aware'))
-    value = time(12, 13, 15, tzinfo=timezone.utc)
+    value = time(12, 13, 15, tzinfo=UTC)
     assert value is v.validate_python(value)
-    assert v.validate_python('12:13:14Z') == time(12, 13, 14, tzinfo=timezone.utc)
+    assert v.validate_python('12:13:14Z') == time(12, 13, 14, tzinfo=UTC)
 
     value = time(12, 13, 15)
     with pytest.raises(ValidationError, match=r'Input should have timezone info'):
@@ -239,7 +239,7 @@ def test_naive():
     assert value is v.validate_python(value)
     assert v.validate_python('12:13:14') == time(12, 13, 14)
 
-    value = time(12, 13, 15, tzinfo=timezone.utc)
+    value = time(12, 13, 15, tzinfo=UTC)
     with pytest.raises(ValidationError, match=r'Input should not have timezone info'):
         v.validate_python(value)
 
@@ -249,9 +249,9 @@ def test_naive():
 
 def test_aware_specific():
     v = SchemaValidator(core_schema.time_schema(tz_constraint=0))
-    value = time(12, 13, 15, tzinfo=timezone.utc)
+    value = time(12, 13, 15, tzinfo=UTC)
     assert value is v.validate_python(value)
-    assert v.validate_python('12:13:14Z') == time(12, 13, 14, tzinfo=timezone.utc)
+    assert v.validate_python('12:13:14Z') == time(12, 13, 14, tzinfo=UTC)
 
     value = time(12, 13, 14)
     with pytest.raises(ValidationError, match='Input should have timezone info'):
@@ -284,7 +284,7 @@ def test_neg_7200():
     with pytest.raises(ValidationError, match='Input should have timezone info'):
         v.validate_python(value)
 
-    value = time(12, 13, 15, tzinfo=timezone.utc)
+    value = time(12, 13, 15, tzinfo=UTC)
     with pytest.raises(ValidationError, match='Timezone offset of -7200 required, got 0'):
         v.validate_python(value)
     with pytest.raises(ValidationError, match='Timezone offset of -7200 required, got 0'):

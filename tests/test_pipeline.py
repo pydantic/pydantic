@@ -339,15 +339,13 @@ def test_timezone_constraint_else_block() -> None:
         Annotated[
             datetime.datetime,
             validate_as(str)
-            .transform(
-                lambda x: datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f').replace(tzinfo=datetime.timezone.utc)
-            )
+            .transform(lambda x: datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f').replace(tzinfo=datetime.UTC))
             .datetime_tz_aware(),
         ]
     )
 
     assert ta_tz_aware.validate_python('2032-06-04T11:15:30.400000') == datetime.datetime(
-        2032, 6, 4, 11, 15, 30, 400000, tzinfo=datetime.timezone.utc
+        2032, 6, 4, 11, 15, 30, 400000, tzinfo=datetime.UTC
     )
 
     ta_tz_aware_success = TypeAdapter[datetime.datetime](
@@ -360,7 +358,7 @@ def test_timezone_constraint_else_block() -> None:
     )
 
     result = ta_tz_aware_success.validate_python('2032-06-04T11:15:30.400000+00:00')
-    assert result == datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, tzinfo=datetime.timezone.utc)
+    assert result == datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, tzinfo=datetime.UTC)
     assert result.tzinfo is not None
 
     ta_tz_naive = TypeAdapter[datetime.datetime](

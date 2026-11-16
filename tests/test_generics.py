@@ -9,7 +9,7 @@ import sys
 import weakref
 from collections import Counter, OrderedDict, defaultdict, deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from textwrap import dedent
 from typing import (
     TYPE_CHECKING,
@@ -34,7 +34,6 @@ from typing_extensions import (  # noqa: UP035 (for `get_args`)
     TypeAliasType,
     TypedDict,
     TypeVarTuple,
-    Unpack,
     get_args,
 )
 from typing_extensions import (
@@ -67,7 +66,7 @@ from pydantic._internal._generics import (
 )
 from pydantic.warnings import GenericBeforeBaseModelWarning
 
-IS_PYPY = sys.implementation.name == 'pypy' and sys.version_info >= (3, 11)
+IS_PYPY = sys.implementation.name == 'pypy'
 
 if TYPE_CHECKING:
     import cloudpickle
@@ -320,15 +319,8 @@ def test_parameter_count():
         x: T
         y: S
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(TypeError, match=f'Too many arguments for {repr(Model)}; actual 3, expected 2'):
         Model[int, int, int]
-
-    # This error message, which comes from `typing`, changed 'parameters' to 'arguments' in 3.11
-    error_message = str(exc_info.value)
-    assert error_message.startswith(('Too many parameters', 'Too many arguments'))
-    assert error_message.endswith(
-        " for <class 'tests.test_generics.test_parameter_count.<locals>.Model'>; actual 3, expected 2"
-    )
 
 
 def test_arguments_count_validation() -> None:
@@ -2166,7 +2158,7 @@ def test_generic_enum():
     class SomeGenericModel(BaseModel, Generic[T]):
         some_field: T
 
-    class SomeStringEnum(str, Enum):
+    class SomeStringEnum(StrEnum):
         A = 'A'
         B = 'B'
 
@@ -2195,10 +2187,10 @@ def test_generic_enums():
     class GModel(BaseModel, Generic[T]):
         x: T
 
-    class EnumA(str, Enum):
+    class EnumA(StrEnum):
         a = 'a'
 
-    class EnumB(str, Enum):
+    class EnumB(StrEnum):
         b = 'b'
 
     class Model(BaseModel):
@@ -2494,9 +2486,6 @@ def test_generics_memory_use():
             pass
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11), reason='list implementation is inconsistent between python versions here'
-)
 @pytest.mark.xfail(reason='Generic models are not type aliases', raises=TypeError)
 def test_generic_model_as_parameter_to_generic_type_alias() -> None:
     T = TypeVar('T')
@@ -2748,7 +2737,6 @@ def test_generic_intenum_bound():
     }
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason='requires python 3.11 or higher')
 @pytest.mark.xfail(
     reason='TODO: Variadic generic parametrization is not supported yet;'
     ' Issue: https://github.com/pydantic/pydantic/issues/5804'
@@ -2766,14 +2754,14 @@ def test_variadic_generic_init():
     ComponentVar = TypeVar('ComponentVar', bound=ComponentModel)
     NumberOfComponents = TypeVarTuple('NumberOfComponents')
 
-    class VariadicToolbox(BaseModel, Generic[ComponentVar, Unpack[NumberOfComponents]]):
+    class VariadicToolbox(BaseModel, Generic[ComponentVar, *NumberOfComponents]):
         main_component: ComponentVar
         left_component_pocket: list[ComponentVar] | None = Field(default_factory=list)
         right_component_pocket: list[ComponentVar] | None = Field(default_factory=list)
 
         @computed_field
         @property
-        def all_components(self) -> tuple[ComponentVar, Unpack[NumberOfComponents]]:
+        def all_components(self) -> tuple[ComponentVar, *NumberOfComponents]:
             return (self.main_component, *self.left_component_pocket, *self.right_component_pocket)
 
     sa, sb, w = Screwdriver(), Screwdriver(), Wrench()
@@ -2784,7 +2772,6 @@ def test_variadic_generic_init():
     assert my_toolbox.all_components == [sa, w, sb]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason='requires python 3.11 or higher')
 @pytest.mark.xfail(
     reason='TODO: Variadic fields are not supported yet; Issue: https://github.com/pydantic/pydantic/issues/5804'
 )
@@ -2801,9 +2788,9 @@ def test_variadic_generic_with_variadic_fields():
     ComponentVar = TypeVar('ComponentVar', bound=ComponentModel)
     NumberOfComponents = TypeVarTuple('NumberOfComponents')
 
-    class VariadicToolbox(BaseModel, Generic[ComponentVar, Unpack[NumberOfComponents]]):
-        toolbelt_cm_size: tuple[Unpack[NumberOfComponents]] | None = Field(default_factory=tuple)
-        manual_toolset: tuple[ComponentVar, Unpack[NumberOfComponents]] | None = Field(default_factory=tuple)
+    class VariadicToolbox(BaseModel, Generic[ComponentVar, *NumberOfComponents]):
+        toolbelt_cm_size: tuple[*NumberOfComponents] | None = Field(default_factory=tuple)
+        manual_toolset: tuple[ComponentVar, *NumberOfComponents] | None = Field(default_factory=tuple)
 
     MyToolboxClass = VariadicToolbox[Screwdriver, Screwdriver, Wrench]
 
@@ -2815,13 +2802,6 @@ def test_variadic_generic_with_variadic_fields():
         MyToolboxClass(manual_toolset=(sa, sb, 5))
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason=(
-        'Multiple inheritance with NamedTuple and the corresponding type annotations'
-        " aren't supported before Python 3.11"
-    ),
-)
 def test_generic_namedtuple():
     T = TypeVar('T')
 

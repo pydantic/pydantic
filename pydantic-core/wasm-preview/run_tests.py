@@ -2,13 +2,13 @@ import importlib
 import os
 import stat
 import sys
+import tomllib
 import traceback
 from pathlib import Path
 from zipfile import ZipFile
 
 import micropip
 import pyodide
-import tomllib
 
 
 def extract_repo(zip_path: str) -> None:

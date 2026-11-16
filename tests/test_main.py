@@ -10,7 +10,7 @@ from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from functools import cache, cached_property, partial
 from typing import (
     Annotated,
@@ -893,7 +893,7 @@ def test_literal_enum_values():
     ]
 
 
-class StrFoo(str, Enum):
+class StrFoo(StrEnum):
     FOO = 'foo'
     BAR = 'bar'
 

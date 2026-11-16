@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import tomllib
 from collections.abc import Callable, Iterator
 from configparser import ConfigParser
 from typing import Any
@@ -1391,16 +1392,5 @@ def parse_toml(config_file: str) -> dict[str, Any] | None:
     if not config_file.endswith('.toml'):
         return None
 
-    if sys.version_info >= (3, 11):
-        import tomllib as toml_
-    else:
-        try:
-            import tomli as toml_
-        except ImportError:  # pragma: no cover
-            import warnings
-
-            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.', stacklevel=2)
-            return None
-
     with open(config_file, 'rb') as rf:
-        return toml_.load(rf)
+        return tomllib.load(rf)

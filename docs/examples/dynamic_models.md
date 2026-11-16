@@ -6,61 +6,31 @@ we will make use of the [`model_fields`][pydantic.main.BaseModel.model_fields] m
 from the field definitions to be passed to the [`create_model()`][pydantic.create_model] factory. Of course, this example can apply
 to any use case where you need to derive a new model from another (remove default values, add aliases, etc).
 
-=== "Python 3.10"
+```python {lint="skip" linenums="1"}
+from typing import Annotated
 
-    ```python {lint="skip" linenums="1"}
-    from typing import Annotated
-
-    from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, create_model
 
 
-    def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
-        new_fields = {}
+def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
+    new_fields = {}
 
-        for f_name, f_info in model_cls.model_fields.items():
-            f_dct = f_info.asdict()
-            new_fields[f_name] = (
-                Annotated[(f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes']))],
-                None,
-            )
-
-        return create_model(
-            f'{model_cls.__name__}Optional',
-            __base__=model_cls,  # (1)!
-            **new_fields,
+    for f_name, f_info in model_cls.model_fields.items():
+        f_dct = f_info.asdict()
+        new_fields[f_name] = (
+            Annotated[f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes'])],
+            None,
         )
-    ```
 
-    1. Using the original model as a base will inherit the [validators](../concepts/validators.md), [computed fields](../concepts/fields.md#the-computed_field-decorator), etc.
-    The parent fields are overridden by the ones we define.
+    return create_model(
+        f'{model_cls.__name__}Optional',
+        __base__=model_cls,  # (1)!
+        **new_fields,
+    )
+```
 
-=== "Python 3.11 and above"
-
-    ```python {lint="skip" requires="3.11" linenums="1"}
-    from typing import Annotated
-
-    from pydantic import BaseModel, Field, create_model
-
-
-    def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
-        new_fields = {}
-
-        for f_name, f_info in model_cls.model_fields.items():
-            f_dct = f_info.asdict()
-            new_fields[f_name] = (
-                Annotated[f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes'])],
-                None,
-            )
-
-        return create_model(
-            f'{model_cls.__name__}Optional',
-            __base__=model_cls,  # (1)!
-            **new_fields,
-        )
-    ```
-
-    1. Using the original model as a base will inherit the [validators](../concepts/validators.md), [computed fields](../concepts/fields.md#the-computed_field-decorator), etc.
-    The parent fields are overridden by the ones we define.
+1. Using the original model as a base will inherit the [validators](../concepts/validators.md), [computed fields](../concepts/fields.md#the-computed_field-decorator), etc.
+The parent fields are overridden by the ones we define.
 
 For each field, we generate a dictionary representation of the [`FieldInfo`][pydantic.fields.FieldInfo] instance
 using the [`asdict()`][pydantic.fields.FieldInfo.asdict] method, containing the annotation, metadata and attributes.
@@ -80,45 +50,23 @@ The [`FieldInfo`][pydantic.fields.FieldInfo] instance of `f` will have three ite
 
 With that in mind, we can recreate an annotation that "simulates" the one from the original model:
 
-=== "Python 3.10 and above"
+```python {lint="skip" test="skip"}
+new_annotation = Annotated[
+    f_dct['annotation'] | None,  # (1)!
+    *f_dct['metadata'],  # (2)!
+    Field(**f_dct['attributes']),  # (3)!
+]
+```
 
-    ```python {lint="skip" test="skip"}
-    new_annotation = Annotated[(
-        f_dct['annotation'] | None,  # (1)!
-        *f_dct['metadata'],  # (2)!
-        Field(**f_dct['attributes']),  # (3)!
-    )]
-    ```
+1. We create a new annotation from the existing one, but adding `None` as an allowed value
+    (in our previous example, this is equivalent to `int | None`).
 
-    1. We create a new annotation from the existing one, but adding `None` as an allowed value
-       (in our previous example, this is equivalent to `int | None`).
+2. We unpack the metadata to be reused (in our previous example, this is equivalent to
+    specifying `Field(gt=1)` and `WithJsonSchema({'extra': 'data'})` as [`Annotated`][typing.Annotated]
+    metadata).
 
-    2. We unpack the metadata to be reused (in our previous example, this is equivalent to
-       specifying `Field(gt=1)` and `WithJsonSchema({'extra': 'data'})` as [`Annotated`][typing.Annotated]
-       metadata).
-
-    3. We specify the field-specific attributes by using the [`Field()`][pydantic.Field] function
-       (in our previous example, this is equivalent to `Field(title='F')`).
-
-=== "Python 3.11 and above"
-
-    ```python {lint="skip" test="skip"}
-    new_annotation = Annotated[
-        f_dct['annotation'] | None,  # (1)!
-        *f_dct['metadata'],  # (2)!
-        Field(**f_dct['attributes']),  # (3)!
-    ]
-    ```
-
-    1. We create a new annotation from the existing one, but adding `None` as an allowed value
-       (in our previous example, this is equivalent to `int | None`).
-
-    2. We unpack the metadata to be reused (in our previous example, this is equivalent to
-       specifying `Field(gt=1)` and `WithJsonSchema({'extra': 'data'})` as [`Annotated`][typing.Annotated]
-       metadata).
-
-    3. We specify the field-specific attributes by using the [`Field()`][pydantic.Field] function
-       (in our previous example, this is equivalent to `Field(title='F')`).
+3. We specify the field-specific attributes by using the [`Field()`][pydantic.Field] function
+    (in our previous example, this is equivalent to `Field(title='F')`).
 
 and specify `None` as a default value (the second element of the tuple for the field definition accepted by [`create_model()`][pydantic.create_model]).
 
@@ -144,7 +92,7 @@ A couple notes on the implementation:
 * Our `make_fields_optional()` function is defined as returning an arbitrary Pydantic model class (`-> type[BaseModel]`).
   An alternative solution can be to use a type variable to preserve the input class:
 
-    === "Python 3.10 and above"
+    === "Python 3.11"
 
         ```python {lint="skip" test="skip"}
         ModelTypeT = TypeVar('ModelTypeT', bound=type[BaseModel])

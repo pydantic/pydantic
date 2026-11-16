@@ -51,6 +51,7 @@ def test_typed_dict_omit():
     assert v.validate_python({'x': 'x', 'y': 42}) == {'x': 'x'}
 
 
+@pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
 def test_arguments():
     v = SchemaValidator(
         core_schema.arguments_schema(
@@ -71,6 +72,7 @@ def test_arguments():
     assert v.validate_python(()) == ((), {'a': 1})
 
 
+@pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
 def test_arguments_omit():
     with pytest.raises(SchemaError, match="Parameter 'a': omit_on_error cannot be used with arguments"):
         SchemaValidator(
@@ -635,9 +637,7 @@ def test_use_default_error() -> None:
         validator.validate_python('')
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
-)
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
 @pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_leak_with_default():
     def fn():
@@ -786,7 +786,7 @@ def test_validate_default_raises(
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(input_value)
-        assert exc_info.value.errors(include_url=False, include_context=False) == expected
+    assert exc_info.value.errors(include_url=False, include_context=False) == expected
 
 
 @pytest.mark.parametrize('input_value,expected', validate_default_raises_examples)

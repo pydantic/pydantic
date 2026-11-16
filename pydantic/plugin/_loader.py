@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import importlib.metadata as importlib_metadata
 import os
 import warnings
 from collections.abc import Iterable
+from importlib.metadata import entry_points
 from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
@@ -22,7 +22,8 @@ _loading_plugins: bool = False
 def get_plugins() -> Iterable[PydanticPluginProtocol]:
     """Load plugins for Pydantic.
 
-    Inspired by: https://github.com/pytest-dev/pluggy/blob/1.3.0/src/pluggy/_manager.py#L376-L402
+    Plugins are discovered using the `pydantic` entry point group, as documented in
+    https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/#using-package-metadata.
     """
     disabled_plugins = os.getenv('PYDANTIC_DISABLE_PLUGINS')
     global _plugins, _loading_plugins
@@ -36,22 +37,19 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
         # set _loading_plugins so any plugins that use pydantic don't themselves use plugins
         _loading_plugins = True
         try:
-            for dist in importlib_metadata.distributions():
-                for entry_point in dist.entry_points:
-                    if entry_point.group != PYDANTIC_ENTRY_POINT_GROUP:
-                        continue
-                    if entry_point.value in _plugins:
-                        continue
-                    if disabled_plugins is not None and entry_point.name in disabled_plugins.split(','):
-                        continue
-                    try:
-                        _plugins[entry_point.value] = entry_point.load()
-                    except (ImportError, AttributeError) as e:
-                        warnings.warn(
-                            f'{e.__class__.__name__} while loading the `{entry_point.name}` Pydantic plugin, '
-                            f'this plugin will not be installed.\n\n{e!r}',
-                            stacklevel=2,
-                        )
+            for entry_point in entry_points(group=PYDANTIC_ENTRY_POINT_GROUP):
+                if entry_point.value in _plugins:
+                    continue
+                if disabled_plugins is not None and entry_point.name in disabled_plugins.split(','):
+                    continue
+                try:
+                    _plugins[entry_point.value] = entry_point.load()
+                except (ImportError, AttributeError) as e:
+                    warnings.warn(
+                        f'{e.__class__.__name__} while loading the `{entry_point.name}` Pydantic plugin, '
+                        f'this plugin will not be installed.\n\n{e!r}',
+                        stacklevel=2,
+                    )
         finally:
             _loading_plugins = False
 

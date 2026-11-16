@@ -65,3 +65,25 @@ def test_strict_complex():
         ta.validate_python(1.0)
     with pytest.raises(ValidationError):
         ta.validate_python(5)
+
+
+def test_strict_complex_runtime() -> None:
+    ta = TypeAdapter(complex)
+
+    assert ta.validate_python(5) == complex(5, 0)
+    assert ta.validate_python(complex(1, 2), strict=True) == complex(1, 2)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(5, strict=True)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_instance_of',
+            'loc': (),
+            'msg': 'Input should be an instance of complex',
+            'input': 5,
+            'ctx': {'class': 'complex'},
+        }
+    ]
+
+    with pytest.raises(ValidationError):
+        ta.validate_json('5', strict=True)

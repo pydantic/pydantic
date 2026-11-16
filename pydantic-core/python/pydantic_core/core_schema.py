@@ -11,21 +11,14 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from fractions import Fraction
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal, Required, TypeAlias, Union
 
-from typing_extensions import TypeVar
+from typing_extensions import Protocol, TypeVar, deprecated
 
 if sys.version_info < (3, 12):
     from typing_extensions import TypedDict
 else:
     from typing import TypedDict
-
-if sys.version_info < (3, 11):
-    from typing import TypeAlias
-
-    from typing_extensions import Protocol, Required
-else:
-    from typing import Protocol, Required, TypeAlias
 
 if TYPE_CHECKING:
     from pydantic_core import PydanticUndefined
@@ -73,7 +66,6 @@ class CoreConfig(TypedDict, total=False):
         val_json_bytes: The validation option for `bytes` values, complementing ser_json_bytes. Default is 'utf8'.
         hide_input_in_errors: Whether to hide input data from `ValidationError` representation.
         validation_error_cause: Whether to add user-python excs to the __cause__ of a ValidationError.
-            Requires exceptiongroup backport pre Python 3.11.
         coerce_numbers_to_str: Whether to enable coercion of any `Number` type to `str` (not applicable in `strict` mode).
         regex_engine: The regex engine to use for regex pattern validation. Default is 'rust-regex'. See `StringSchema`.
         cache_strings: Whether to cache strings. Default is `True`, `True` or `'all'` is required to cache strings
@@ -3868,6 +3860,7 @@ class ArgumentsParameter(TypedDict, total=False):
     alias: str | list[str | int] | list[list[str | int]]
 
 
+@deprecated('`arguments_parameter()` is deprecated, use `arguments_v3_parameter()` instead.')
 def arguments_parameter(
     name: str,
     schema: CoreSchema,
@@ -3876,18 +3869,9 @@ def arguments_parameter(
     alias: str | list[str | int] | list[list[str | int]] | None = None,
 ) -> ArgumentsParameter:
     """
-    Returns a schema that matches an argument parameter, e.g.:
+    Returns a schema that matches an argument parameter.
 
-    ```py
-    from pydantic_core import SchemaValidator, core_schema
-
-    param = core_schema.arguments_parameter(
-        name='a', schema=core_schema.str_schema(), mode='positional_only'
-    )
-    schema = core_schema.arguments_schema([param])
-    v = SchemaValidator(schema)
-    assert v.validate_python(('hello',)) == (('hello',), {})
-    ```
+    Deprecated: use [`arguments_v3_parameter()`][pydantic_core.core_schema.arguments_v3_parameter] instead.
 
     Args:
         name: The name to use for the argument parameter
@@ -3914,6 +3898,7 @@ class ArgumentsSchema(TypedDict, total=False):
     serialization: SerSchema
 
 
+@deprecated('`arguments_schema()` is deprecated, use `arguments_v3_schema()` instead.')
 def arguments_schema(
     arguments: list[ArgumentsParameter],
     *,
@@ -3927,21 +3912,9 @@ def arguments_schema(
     serialization: SerSchema | None = None,
 ) -> ArgumentsSchema:
     """
-    Returns a schema that matches an arguments schema, e.g.:
+    Returns a schema that matches an arguments schema.
 
-    ```py
-    from pydantic_core import SchemaValidator, core_schema
-
-    param_a = core_schema.arguments_parameter(
-        name='a', schema=core_schema.str_schema(), mode='positional_only'
-    )
-    param_b = core_schema.arguments_parameter(
-        name='b', schema=core_schema.bool_schema(), mode='positional_only'
-    )
-    schema = core_schema.arguments_schema([param_a, param_b])
-    v = SchemaValidator(schema)
-    assert v.validate_python(('hello', True)) == (('hello', True), {})
-    ```
+    Deprecated: use [`arguments_v3_schema()`][pydantic_core.core_schema.arguments_v3_schema] instead.
 
     Args:
         arguments: The arguments to use for the arguments schema
@@ -4060,8 +4033,7 @@ def arguments_v3_schema(
     assert v.validate_python({'a': 'hi', 'kwargs': {'b': True}}) == (('hi',), {'b': True})
     ```
 
-    This schema is currently not used by other Pydantic components. In V3, it will most likely
-    become the default arguments schema for the `'call'` schema.
+    Pydantic uses this schema as the arguments schema of [`call_schema()`][pydantic_core.core_schema.call_schema].
 
     Args:
         arguments: The arguments to use for the arguments schema.
@@ -4111,13 +4083,13 @@ def call_schema(
     ```py
     from pydantic_core import SchemaValidator, core_schema
 
-    param_a = core_schema.arguments_parameter(
+    param_a = core_schema.arguments_v3_parameter(
         name='a', schema=core_schema.str_schema(), mode='positional_only'
     )
-    param_b = core_schema.arguments_parameter(
+    param_b = core_schema.arguments_v3_parameter(
         name='b', schema=core_schema.bool_schema(), mode='positional_only'
     )
-    args_schema = core_schema.arguments_schema([param_a, param_b])
+    args_schema = core_schema.arguments_v3_schema([param_a, param_b])
 
     schema = core_schema.call_schema(
         arguments=args_schema,
@@ -4125,7 +4097,7 @@ def call_schema(
         return_schema=core_schema.str_schema(),
     )
     v = SchemaValidator(schema)
-    assert v.validate_python(('hello', True)) == 'helloFalse'
+    assert v.validate_python({'a': 'hello', 'b': True}) == 'helloFalse'
     ```
 
     Args:

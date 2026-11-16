@@ -4,12 +4,13 @@ use std::fmt;
 use std::fmt::{Display, Write};
 use std::str::from_utf8;
 
-use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyBaseExceptionGroup, PyKeyError, PyTypeError, PyValueError};
 use pyo3::ffi;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
+use pyo3::{PyTraverseError, PyVisit};
 use serde::ser::{Error, SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
@@ -19,6 +20,7 @@ use crate::build_tools::py_schema_error_type;
 use crate::errors::LocItem;
 use crate::get_pydantic_version;
 use crate::input::InputType;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::{Extra, SerMode, SerializationConfig, SerializationState, WarningsMode};
 use crate::tools::{SchemaDict, safe_repr, write_truncated_to_limited_bytes};
 
@@ -37,6 +39,8 @@ pub struct ValidationError {
     input_type: InputType,
     hide_input: bool,
 }
+
+impl_py_gc_traverse!(ValidationError { line_errors, title });
 
 impl ValidationError {
     pub fn new(line_errors: Vec<PyLineError>, title: Py<PyAny>, input_type: InputType, hide_input: bool) -> Self {
@@ -138,26 +142,11 @@ impl ValidationError {
                         line_error.location.to_string().trim()
                     ))
                 };
-
-                // Notes only support 3.11 upwards:
-                #[cfg(Py_3_11)]
-                {
-                    // Add the location context as a note, no direct c api for this,
-                    // fine performance wise, add_note() goes directly to C: "(PyCFunction)BaseException_add_note":
-                    // https://github.com/python/cpython/blob/main/Objects/exceptions.c
-                    if err.call_method1(py, "add_note", (format!("\n{note}"),)).is_ok() {
-                        user_py_errs.push(err.clone_ref(py));
-                    }
-                }
-
-                // Pre 3.11 notes support, use a UserWarning exception instead:
-                #[cfg(not(Py_3_11))]
-                {
-                    use pyo3::exceptions::PyUserWarning;
-
-                    let wrapped = PyUserWarning::new_err((note,));
-                    wrapped.set_cause(py, Some(PyErr::from_value(err.clone_ref(py).into_bound(py))));
-                    user_py_errs.push(wrapped);
+                // Add the location context as a note, no direct c api for this,
+                // fine performance wise, add_note() goes directly to C: "(PyCFunction)BaseException_add_note":
+                // https://github.com/python/cpython/blob/main/Objects/exceptions.c
+                if err.call_method1(py, "add_note", (format!("\n{note}"),)).is_ok() {
+                    user_py_errs.push(err.clone_ref(py));
                 }
             }
         }
@@ -165,38 +154,12 @@ impl ValidationError {
         // Only add the cause if there are actually python user exceptions to show:
         if !user_py_errs.is_empty() {
             let title = "Pydantic User Code Exceptions";
-
-            // Native ExceptionGroup(s) only supported 3.11 and later:
-            #[cfg(Py_3_11)]
-            let cause = {
-                use pyo3::exceptions::PyBaseExceptionGroup;
-                Some(PyBaseExceptionGroup::new_err((title, user_py_errs)).into_value(py))
-            };
-
-            // Pre 3.11 ExceptionGroup support, use the python backport instead:
-            // If something's gone wrong with the backport, just don't add the cause:
-            #[cfg(not(Py_3_11))]
-            let cause = {
-                use pyo3::exceptions::PyImportError;
-                match py.import("exceptiongroup") {
-                    Ok(py_mod) => match py_mod.getattr("ExceptionGroup") {
-                        Ok(group_cls) => group_cls.call1((title, user_py_errs)).ok(),
-                        Err(_) => None,
-                    },
-                    Err(_) => {
-                        return Some(PyImportError::new_err(
-                            "validation_error_cause flag requires the exceptiongroup module backport to be installed when used on Python <3.11.",
-                        ));
-                    }
-                }
-            };
+            let cause = PyBaseExceptionGroup::new_err((title, user_py_errs)).into_value(py);
 
             // Set the cause to the ValidationError:
-            if let Some(cause) = cause {
-                unsafe {
-                    // PyException_SetCause _steals_ a reference to cause, so must use .into_ptr()
-                    ffi::PyException_SetCause(self_.as_ptr(), cause.into_ptr());
-                }
+            unsafe {
+                // PyException_SetCause _steals_ a reference to cause, so must use .into_ptr()
+                ffi::PyException_SetCause(self_.as_ptr(), cause.into_ptr());
             }
         }
         None
@@ -236,6 +199,10 @@ impl ValidationError {
 
 #[pymethods]
 impl ValidationError {
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.py_gc_traverse(&visit)
+    }
+
     #[new]
     #[pyo3(signature = (title, line_errors, input_type="python", hide_input=false))]
     fn py_new(title: Py<PyAny>, line_errors: Vec<PyLineError>, input_type: &str, hide_input: bool) -> PyResult<Self> {
@@ -428,6 +395,11 @@ pub struct PyLineError {
     location: Location,
     input_value: Py<PyAny>,
 }
+
+impl_py_gc_traverse!(PyLineError {
+    error_type,
+    input_value
+});
 
 impl From<PyLineError> for ValLineError {
     /// Used to extract line errors from a validation error for wrap functions

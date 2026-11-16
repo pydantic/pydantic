@@ -9,7 +9,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import (
     Annotated,
     Any,
@@ -851,7 +851,7 @@ class SecretDate(Secret[date]):
         return '****/**/**'
 
 
-class SampleEnum(str, Enum):
+class SampleEnum(StrEnum):
     foo = 'foo'
     bar = 'bar'
 
@@ -911,7 +911,7 @@ def test_secretdate_json_serializable():
 
 
 def test_secretenum_json_serializable():
-    class SampleEnum(str, Enum):
+    class SampleEnum(StrEnum):
         foo = 'foo'
         bar = 'bar'
 

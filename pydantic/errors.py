@@ -2,9 +2,8 @@
 
 from __future__ import annotations as _annotations
 
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, Self
 
-from typing_extensions import Self
 from typing_inspection.introspection import Qualifier
 
 from pydantic._internal import _repr

@@ -1,21 +1,21 @@
 from __future__ import annotations as _annotations
 
 from collections.abc import Callable
-from contextlib import contextmanager
 from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     cast,
 )
 
 from pydantic_core import core_schema
-from typing_extensions import Self
 
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
+from ._contextlib import contextmanager
 
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo

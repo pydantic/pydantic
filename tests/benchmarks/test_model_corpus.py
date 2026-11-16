@@ -19,7 +19,7 @@ LIBRARIES = [
     'mcp',
     'openai',
     'anthropic',
-    pytest.param('google-genai', marks=pytest.mark.skipif(sys.version_info < (3, 11), reason='Requires Python 3.11+')),
+    'google-genai',
 ]
 
 

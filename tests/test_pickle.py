@@ -15,7 +15,7 @@ from pydantic import BaseModel, PositiveFloat, ValidationError
 from pydantic._internal._model_construction import _PydanticWeakRef
 from pydantic.config import ConfigDict
 
-IS_PYPY = sys.implementation.name == 'pypy' and sys.version_info >= (3, 11)
+IS_PYPY = sys.implementation.name == 'pypy'
 
 if TYPE_CHECKING:
     import cloudpickle

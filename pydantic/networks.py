@@ -40,7 +40,7 @@ from dataclasses import fields
 from functools import lru_cache
 from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, TypeAlias, overload
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Self, TypeAlias, overload
 
 from pydantic_core import (
     MultiHostHost,
@@ -51,7 +51,6 @@ from pydantic_core import (
 )
 from pydantic_core import MultiHostUrl as _CoreMultiHostUrl
 from pydantic_core import Url as _CoreUrl
-from typing_extensions import Self
 
 from pydantic.errors import PydanticUserError
 

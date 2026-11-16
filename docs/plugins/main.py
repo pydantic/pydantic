@@ -5,13 +5,13 @@ import logging
 import os
 import re
 import textwrap
+import tomllib
 from pathlib import Path
 from textwrap import indent
 
 import autoflake
 import pyupgrade._main as pyupgrade_main  # type: ignore
 import requests
-import tomli
 import yaml
 from build.__main__ import (
     build_package,
@@ -151,8 +151,8 @@ def add_mkdocs_run_deps(site_url: str) -> None:
     path.write_text(html)
 
 
-MIN_MINOR_VERSION = 9
-MAX_MINOR_VERSION = 13
+MIN_MINOR_VERSION = 11
+MAX_MINOR_VERSION = 15
 
 
 def upgrade_python(markdown: str) -> str:
@@ -234,7 +234,7 @@ def insert_json_output(markdown: str) -> str:
 
 def get_orgs_data() -> list[dict[str, str]]:
     with (THIS_DIR / 'orgs.toml').open('rb') as f:
-        orgs_data = tomli.load(f)
+        orgs_data = tomllib.load(f)
     return orgs_data['orgs']
 
 
@@ -277,7 +277,7 @@ def render_why(markdown: str, page: Page) -> str | None:
         return None
 
     with (THIS_DIR / 'using.toml').open('rb') as f:
-        using = tomli.load(f)['libs']
+        using = tomllib.load(f)['libs']
 
     libraries = '\n'.join('* [`{repo}`](https://github.com/{repo}) {stars:,} stars'.format(**lib) for lib in using)
     markdown = re.sub(r'{{ *libraries *}}', libraries, markdown)
@@ -328,7 +328,7 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
     table_text = _generate_table_heading(col_names)
 
     with (THIS_DIR / 'schema_mappings.toml').open('rb') as f:
-        table = tomli.load(f)
+        table = tomllib.load(f)
 
     for t in table.values():
         py_type = t['py_type']

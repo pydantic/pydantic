@@ -1,10 +1,9 @@
 import re
-import sys
 import warnings
 from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from types import SimpleNamespace
 from typing import Annotated, Any, ClassVar, Generic, Literal, TypeVar, Union
 
@@ -399,7 +398,7 @@ class FooIntEnum(int, Enum):
     pass
 
 
-class FooStrEnum(str, Enum):
+class FooStrEnum(str, Enum):  # noqa: UP042 (subclassing `str` and `Enum` is explicitly tested)
     pass
 
 
@@ -409,11 +408,8 @@ ENUM_TEST_CASES = [
     (FooIntEnum, {'a': 1, 'b': 2}),
     (IntEnum, {'a': 1, 'b': 2}),
     (FooStrEnum, {'a': 'v_a', 'b': 'v_b'}),
+    (StrEnum, {'a': 'v_a', 'b': 'v_b'}),
 ]
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-
-    ENUM_TEST_CASES.append((StrEnum, {'a': 'v_a', 'b': 'v_b'}))
 
 
 @pytest.mark.parametrize('base_class,choices', ENUM_TEST_CASES)
@@ -1809,7 +1805,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
     reason='Issue not yet fixed, see: https://github.com/pydantic/pydantic/issues/8271. At the moment, JSON schema gen warns with a PydanticJsonSchemaWarning.'
 )
 def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_definitions() -> None:
-    class ItemType(str, Enum):
+    class ItemType(StrEnum):
         ITEM1 = 'item1'
         ITEM2 = 'item2'
 
@@ -2130,7 +2126,7 @@ def test_discriminated_union_with_unsubstituted_type_var() -> None:
 
 
 def test_discriminated_union_model_dump_with_nested_class() -> None:
-    class SomeEnum(str, Enum):
+    class SomeEnum(StrEnum):
         CAT = 'cat'
         DOG = 'dog'
 
@@ -2473,7 +2469,7 @@ def test_tagged_union_no_fallback_on_matched_discriminator():
     to trying all other union members.
     """
 
-    class MyEnum(str, Enum):
+    class MyEnum(StrEnum):
         ENABLED = 'enabled'
         DISABLED = 'disabled'
 

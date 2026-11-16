@@ -10,6 +10,9 @@ from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_a
 
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, ValidationError, core_schema
 
+# The deprecated `arguments` schema functions are still tested:
+pytestmark = pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
+
 
 def val_function(x, *args: Any):
     return x
@@ -248,8 +251,8 @@ all_schema_functions = [
         core_schema.arguments_schema,
         args(
             [
-                core_schema.arguments_parameter('foo', {'type': 'int'}),
-                core_schema.arguments_parameter('bar', {'type': 'str'}),
+                {'name': 'foo', 'schema': {'type': 'int'}},
+                {'name': 'bar', 'schema': {'type': 'str'}},
             ],
             serialization=core_schema.format_ser_schema('d'),
         ),
@@ -282,7 +285,7 @@ all_schema_functions = [
     ),
     (
         core_schema.call_schema,
-        args(core_schema.arguments_schema([core_schema.arguments_parameter('foo', {'type': 'int'})]), val_function),
+        args({'type': 'arguments', 'arguments_schema': [{'name': 'foo', 'schema': {'type': 'int'}}]}, val_function),
         {
             'type': 'call',
             'function': val_function,
@@ -432,3 +435,10 @@ def test_expected_serialization_types(return_schema):
 def test_err_on_invalid() -> None:
     with pytest.raises(SchemaError, match='Cannot construct schema with `InvalidSchema` member.'):
         SchemaValidator(core_schema.invalid_schema())
+
+
+def test_arguments_schema_deprecated() -> None:
+    with pytest.warns(DeprecationWarning, match=r'`arguments_parameter\(\)` is deprecated'):
+        parameter = core_schema.arguments_parameter('a', core_schema.int_schema())
+    with pytest.warns(DeprecationWarning, match=r'`arguments_schema\(\)` is deprecated'):
+        core_schema.arguments_schema([parameter])

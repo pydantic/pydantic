@@ -6,7 +6,6 @@ import types
 import typing
 from collections import ChainMap
 from collections.abc import Generator, Mapping
-from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import reduce
 from itertools import zip_longest
@@ -19,6 +18,7 @@ from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
 from . import _type_refs, _typing_extra
+from ._contextlib import contextmanager
 from ._forward_ref import PydanticRecursiveRef
 from ._utils import all_identical, is_model_class
 
@@ -285,8 +285,7 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
     if typing_objects.is_annotated(origin_type):
         annotated_type, *annotations = type_args
         annotated_type = replace_types(annotated_type, type_map)
-        # TODO remove parentheses when we drop support for Python 3.10:
-        return Annotated[(annotated_type, *annotations)]
+        return Annotated[annotated_type, *annotations]
 
     # Having type args is a good indicator that this is a typing special form
     # instance or a generic alias of some sort.
