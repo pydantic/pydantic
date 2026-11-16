@@ -4794,6 +4794,66 @@ def test_alias_same():
     }
 
 
+def test_discriminator_serialization_alias():
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field('cat', serialization_alias='petType')
+        meow: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field('dog', serialization_alias='petType')
+        bark: str
+
+    class Model(BaseModel):
+        pet: Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    # In validation mode:
+    # by_alias=True (default) should use 'pet_type' (since no validation_alias is defined)
+    val_schema = Model.model_json_schema(mode='validation')
+    assert val_schema['properties']['pet']['discriminator']['propertyName'] == 'pet_type'
+    assert 'pet_type' in val_schema['$defs']['Cat']['properties']
+    assert 'pet_type' in val_schema['$defs']['Dog']['properties']
+
+    # In serialization mode:
+    # by_alias=True (default) should use 'petType' to match serialized choices
+    ser_schema = Model.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['pet']['discriminator']['propertyName'] == 'petType'
+    assert 'petType' in ser_schema['$defs']['Cat']['properties']
+    assert 'petType' in ser_schema['$defs']['Dog']['properties']
+
+    # by_alias=False in serialization mode should use 'pet_type'
+    ser_schema_no_alias = Model.model_json_schema(mode='serialization', by_alias=False)
+    assert ser_schema_no_alias['properties']['pet']['discriminator']['propertyName'] == 'pet_type'
+    assert 'pet_type' in ser_schema_no_alias['$defs']['Cat']['properties']
+    assert 'pet_type' in ser_schema_no_alias['$defs']['Dog']['properties']
+
+
+def test_discriminator_validation_and_serialization_alias():
+    class ShapeA(BaseModel):
+        shape_type: Literal['a'] = Field('a', validation_alias='in_shape', serialization_alias='out_shape')
+
+    class ShapeB(BaseModel):
+        shape_type: Literal['b'] = Field('b', validation_alias='in_shape', serialization_alias='out_shape')
+
+    class ShapeModel(BaseModel):
+        shape: Annotated[ShapeA | ShapeB, Field(discriminator='shape_type')]
+
+    # Validation mode with by_alias=True
+    val_schema = ShapeModel.model_json_schema(mode='validation', by_alias=True)
+    assert val_schema['properties']['shape']['discriminator']['propertyName'] == 'in_shape'
+
+    # Validation mode with by_alias=False
+    val_schema_no_alias = ShapeModel.model_json_schema(mode='validation', by_alias=False)
+    assert val_schema_no_alias['properties']['shape']['discriminator']['propertyName'] == 'shape_type'
+
+    # Serialization mode with by_alias=True
+    ser_schema = ShapeModel.model_json_schema(mode='serialization', by_alias=True)
+    assert ser_schema['properties']['shape']['discriminator']['propertyName'] == 'out_shape'
+
+    # Serialization mode with by_alias=False
+    ser_schema_no_alias = ShapeModel.model_json_schema(mode='serialization', by_alias=False)
+    assert ser_schema_no_alias['properties']['shape']['discriminator']['propertyName'] == 'shape_type'
+
+
 def test_nested_python_dataclasses():
     """
     Test schema generation for nested python dataclasses
