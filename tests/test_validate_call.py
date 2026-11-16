@@ -384,6 +384,45 @@ def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
     assert exc.value.errors()[0]['loc'] == ('in',)
 
 
+def test_unpacked_typed_dict_kwargs_extra_forbidden() -> None:
+    """https://github.com/pydantic/pydantic/issues/14203"""
+
+    class TD(TypedDict):
+        a: int
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        return kwargs
+
+    with pytest.raises(ValidationError) as exc:
+        foo(a=1, b=2)
+
+    assert exc.value.errors()[0]['type'] == 'extra_forbidden'
+    assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+@pytest.mark.parametrize('extra', ['ignore', 'allow'])
+def test_unpacked_typed_dict_kwargs_extra_config(extra: str) -> None:
+    class TD(TypedDict):
+        a: int
+
+    @validate_call(config={'extra': extra})
+    def foo(**kwargs: Unpack[TD]):
+        return kwargs
+
+    @with_config({'extra': extra})
+    class TDWithConfig(TypedDict):
+        a: int
+
+    @validate_call
+    def bar(**kwargs: Unpack[TDWithConfig]):
+        return kwargs
+
+    expected = {'a': 1} if extra == 'ignore' else {'a': 1, 'b': 2}
+    assert foo(a=1, b=2) == expected
+    assert bar(a=1, b=2) == expected
+
+
 def test_unpacked_typed_dict_kwargs_closed() -> None:
     class TD(TypedDict, closed=True):
         a: int

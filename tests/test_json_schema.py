@@ -7349,6 +7349,7 @@ def test_json_schema_arguments_var_kwargs_unpacked_typed_dict() -> None:
             'label': {'title': 'Label', 'type': 'string'},
         },
         'required': ['timeout'],
+        'additionalProperties': False,
     }
 
 

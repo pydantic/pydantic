@@ -54,7 +54,7 @@ def model_type_ref(type_: type[BaseModel], args_override: tuple[Any, ...] | None
     return f'{module_name}.{origin.__qualname__}:{id(origin)}{_args_ref(args)}'
 
 
-def class_type_ref(type_: Any, origin: type[Any] | None) -> str:
+def class_type_ref(type_: Any, origin: type[Any] | None, *, id_suffix: str = '') -> str:
     """Produce a reference for an arbitrary class (dataclasses, typed dictionaries, named tuples)."""
     tp: type[Any] = origin if origin is not None else type_
 
@@ -63,7 +63,7 @@ def class_type_ref(type_: Any, origin: type[Any] | None) -> str:
     if module_name is None:
         module_name = '<No __module__>'
 
-    return f'{module_name}.{tp.__qualname__}:{id(tp)}{_args_ref(get_args(type_))}'
+    return f'{module_name}.{tp.__qualname__}:{id(tp)}{id_suffix}{_args_ref(get_args(type_))}'
 
 
 _NOT_PROVIDED = Sentinel('_NOT_PROVIDED')

@@ -1404,7 +1404,7 @@ class GenerateSchema:
 
         return schema
 
-    def _typed_dict_schema(self, typed_dict_cls: Any, origin: Any) -> core_schema.CoreSchema:
+    def _typed_dict_schema(self, typed_dict_cls: Any, origin: Any, *, unpacked: bool = False) -> core_schema.CoreSchema:
         """Generate a core schema for a `TypedDict` class.
 
         To be able to build a `DecoratorInfos` instance for the `TypedDict` class (which will include
@@ -1413,10 +1413,16 @@ class GenerateSchema:
         However, the `__orig_bases__` attribute was only added in 3.12 (https://github.com/python/cpython/pull/103698).
 
         For this reason, we require Python 3.12 (or using the `typing_extensions` backport).
+
+        If `unpacked` is `True`, the `TypedDict` class is used to annotate variadic keyword parameters
+        (with `**kwargs: Unpack[TD]`). In this case, extra items are forbidden by default (as per
+        the [typing specification](https://typing.python.org/en/latest/spec/callables.html#extra-items)),
+        unless the `TypedDict` class allows extra items or the `'extra'` configuration value is set.
         """
         FieldInfo = import_cached_field_info()
 
-        typed_dict_ref = _type_refs.class_type_ref(typed_dict_cls, origin)
+        # When unpacked, the core schema differs from the one used when the `TypedDict` class is used as a type:
+        typed_dict_ref = _type_refs.class_type_ref(typed_dict_cls, origin, id_suffix='-unpacked' if unpacked else '')
         with (
             self.model_type_stack.push(typed_dict_cls),
             self.defs.get_definition_ref_schema(ref=typed_dict_ref) as maybe_schema,
@@ -1495,7 +1501,7 @@ class GenerateSchema:
                         UserWarning,
                     )
 
-                extra_behavior: core_schema.ExtraBehavior = 'ignore'
+                extra_behavior: core_schema.ExtraBehavior = 'forbid' if unpacked else 'ignore'
                 extras_schema: CoreSchema | None = None  # For 'allow', equivalent to `Any` - no validation performed.
 
                 is_closed, extra_items, extra_items_readonly = _get_typed_dict_extra_items(typed_dict_cls)
@@ -1513,7 +1519,15 @@ class GenerateSchema:
                         UserWarning,
                     )
 
-                if (config_extra := self._config_wrapper.extra) in ('allow', 'forbid'):
+                config_extra = self._config_wrapper.extra
+                if (
+                    config_extra == 'ignore'
+                    and unpacked
+                    and not is_closed
+                    and typing_objects.is_noextraitems(extra_items)
+                ):
+                    extra_behavior = 'ignore'
+                elif config_extra in ('allow', 'forbid'):
                     if is_closed and config_extra == 'allow':
                         warnings.warn(
                             f"TypedDict class {typed_dict_cls.__qualname__!r} is closed, but 'extra' configuration "
@@ -2082,7 +2096,7 @@ class GenerateSchema:
                         )
 
                     var_kwargs_mode = 'unpacked-typed-dict'
-                    var_kwargs_schema = self._typed_dict_schema(unpack_type, get_origin(unpack_type))
+                    var_kwargs_schema = self._typed_dict_schema(unpack_type, get_origin(unpack_type), unpacked=True)
                 else:
                     var_kwargs_mode = 'uniform'
                     var_kwargs_schema = self.generate_schema(annotation)
@@ -2148,8 +2162,16 @@ class GenerateSchema:
                             f'{", ".join(repr(p) for p in sorted(overlapping_params))}',
                             code='overlapping-unpack-typed-dict',
                         )
-                    parameter_mode = 'var_kwargs_unpacked_typed_dict'
-                    annotation = unpack_type
+                    with self.field_name_stack.push(name):
+                        typed_dict_schema = self._typed_dict_schema(unpack_type, get_origin(unpack_type), unpacked=True)
+                    parameters_list.append(
+                        core_schema.arguments_v3_parameter(
+                            name=name,
+                            schema=typed_dict_schema,
+                            mode='var_kwargs_unpacked_typed_dict',
+                        )
+                    )
+                    continue
                 else:
                     parameter_mode = 'var_kwargs_uniform'
 
