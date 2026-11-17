@@ -34,7 +34,8 @@ def test_bytesize_human_readable_unit_boundary(size: int, decimal: bool, expecte
         ('1.5 MB', int(1.5e6), '1.4MiB', '1.5MB', '1.4 MiB'),
         ('1.5 M', int(1.5e6), '1.4MiB', '1.5MB', '1.4 MiB'),
         ('5.1kib', 5222, '5.1KiB', '5.2KB', '5.1 KiB'),
-        ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB', '6.2 EiB'),
+        # Exact decimal arithmetic, rather than the float-rounded 7148113328562451456 (#14297).
+        ('6.2EiB', 7148113328562451251, '6.2EiB', '7.1EB', '6.2 EiB'),
         ('8bit', 1, '1B', '1B', '1 B'),
         ('1kbit', 125, '125B', '125B', '125 B'),
     ),
@@ -50,6 +51,37 @@ def test_bytesize_conversions(input_value, output, human_bin, human_dec, human_s
     assert m.size.human_readable() == human_bin
     assert m.size.human_readable(decimal=True) == human_dec
     assert m.size.human_readable(separator=' ') == human_sep
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('1.005 KB', 1005),
+        ('1.003 KB', 1003),
+        ('9007199254740993 KB', 9007199254740993000),
+    ],
+)
+def test_bytesize_keeps_exact_byte_counts(input_value: str, expected: int) -> None:
+    """https://github.com/pydantic/pydantic/issues/14297"""
+
+    class Model(BaseModel):
+        size: ByteSize
+
+    assert Model(size=input_value).size == expected
+
+
+def test_bytesize_exact_count_respects_field_bounds() -> None:
+    from pydantic import Field
+
+    class Lower(BaseModel):
+        size: ByteSize = Field(ge=1005)
+
+    class Upper(BaseModel):
+        size: ByteSize = Field(le=1004)
+
+    assert Lower(size='1.005 KB').size == 1005
+    with pytest.raises(ValidationError):
+        Upper(size='1.005 KB')
 
 
 def test_bytesize_to():

@@ -2036,8 +2036,13 @@ class ByteSize(int):
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
         try:
-            return cls(int(float(scalar) * unit_mult))
-        except OverflowError:
+            # Decimal keeps the decimal input exact: float() would turn e.g. 1.005 KB into 1004 bytes.
+            num = Decimal(scalar) * Decimal(str(unit_mult))
+            # Keep the old rejection of values beyond the float range; Decimal itself has no such limit.
+            if num > Decimal(sys.float_info.max):
+                raise OverflowError
+            return cls(int(num))
+        except (OverflowError, ValueError, ArithmeticError):
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
     def human_readable(self, decimal: bool = False, separator: str = '') -> str:
