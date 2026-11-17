@@ -640,6 +640,34 @@ _AnyModelBeforeValidator: TypeAlias = (
 _AnyModelAfterValidator: TypeAlias = ModelAfterValidator[_ModelType] | ModelAfterValidatorWithoutInfo[_ModelType]
 
 
+class _BoundModelAfterValidator(Protocol[_ModelTypeCo]):
+    """A `@model_validator(mode='after')` method bound to a model instance."""
+
+    @overload
+    def __call__(self) -> _ModelTypeCo: ...
+
+    @overload
+    def __call__(self, info: core_schema.ValidationInfo[Any]) -> _ModelTypeCo: ...
+
+    def __call__(self, info: core_schema.ValidationInfo[Any] | None = None) -> _ModelTypeCo: ...
+
+
+class _ModelAfterValidatorDescriptor(Protocol[_ModelTypeCo]):
+    """The type of an instance method decorated with `@model_validator(mode='after')`.
+
+    At runtime the method is wrapped in a [`PydanticDescriptorProxy`][pydantic._internal._decorators.PydanticDescriptorProxy],
+    but exposing that type to type checkers makes the decorated method look non-callable (e.g. when using
+    `super().method()` from a subclass). This descriptor protocol keeps the method callable while still
+    allowing the decorated attribute to act as a descriptor.
+    """
+
+    def __get__(
+        self, instance: object, owner: type[object] | None = None, /
+    ) -> _BoundModelAfterValidator[_ModelTypeCo]: ...
+
+    def __call__(self, *args: Any, **kwargs: Any) -> _ModelTypeCo: ...
+
+
 @overload
 def model_validator(
     *,
@@ -662,9 +690,7 @@ def model_validator(
 def model_validator(
     *,
     mode: Literal['after'],
-) -> Callable[
-    [_AnyModelAfterValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
-]: ...
+) -> Callable[[_AnyModelAfterValidator[_ModelType]], _ModelAfterValidatorDescriptor[_ModelType]]: ...
 
 
 def model_validator(

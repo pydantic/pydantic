@@ -106,6 +106,20 @@ class AfterModelValidator(BaseModel):
     def valid_method_info(self, info: ValidationInfo[int]) -> Self: ...
 
 
+class AfterModelValidatorSubclass(AfterModelValidator):
+    """Calling a parent `mode='after'` validator through `super()` must type check (see #14266)."""
+
+    @model_validator(mode='after')
+    def valid_method_no_info(self) -> Self:
+        super().valid_method_no_info()
+        return self
+
+    @model_validator(mode='after')
+    def valid_method_info(self, info: ValidationInfo[int]) -> Self:
+        super().valid_method_info(info)
+        return self
+
+
 class BeforeFieldValidator(BaseModel):
     """Same tests should apply to `mode='plain'`."""
 
