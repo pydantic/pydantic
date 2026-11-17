@@ -7923,3 +7923,47 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+def test_discriminator_uses_serialization_alias():
+    """https://github.com/pydantic/pydantic/issues/14284"""
+
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='petType')
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='petType')
+        barks: float
+
+    class Household(BaseModel):
+        pet: Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    validation = Household.model_json_schema(mode='validation')
+    serialization = Household.model_json_schema(mode='serialization')
+    assert validation['properties']['pet']['discriminator']['propertyName'] == 'pet_type'
+    assert serialization['properties']['pet']['discriminator']['propertyName'] == 'petType'
+    assert 'petType' in serialization['$defs']['Cat']['properties']
+
+
+def test_discriminator_kept_with_validation_and_serialization_alias():
+    """https://github.com/pydantic/pydantic/issues/14284"""
+
+    class Circle(BaseModel):
+        shape: Literal['circle'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+        radius: float
+
+    class Square(BaseModel):
+        shape: Literal['square'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+        side: float
+
+    class Canvas(BaseModel):
+        shape: Annotated[Circle | Square, Field(discriminator='shape')]
+
+    validation = Canvas.model_json_schema(mode='validation')
+    serialization = Canvas.model_json_schema(mode='serialization')
+    assert validation['properties']['shape']['discriminator']['propertyName'] == 'in_shape'
+    assert serialization['properties']['shape']['discriminator']['propertyName'] == 'out_shape'
+    assert serialization['properties']['shape']['discriminator']['mapping'] == {
+        'circle': '#/$defs/Circle',
+        'square': '#/$defs/Square',
+    }

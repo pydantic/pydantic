@@ -1495,14 +1495,15 @@ class GenerateJsonSchema:
         """Extract a compatible OpenAPI discriminator from the schema and one_of choices that end up in the final
         schema."""
         openapi_discriminator: str | None = None
+        field_name: str | None = None
 
         if isinstance(schema['discriminator'], str):
-            return schema['discriminator']
+            field_name = openapi_discriminator = schema['discriminator']
 
         if isinstance(schema['discriminator'], list):
             # If the discriminator is a single item list containing a string, that is equivalent to the string case
             if len(schema['discriminator']) == 1 and isinstance(schema['discriminator'][0], str):
-                return schema['discriminator'][0]
+                field_name = openapi_discriminator = schema['discriminator'][0]
             # When an alias is used that is different from the field name, the discriminator will be a list of single
             # str lists, one for the attribute and one for the actual alias. The logic here will work even if there is
             # more than one possible attribute, and looks for whether a single alias choice is present as a documented
@@ -1515,6 +1516,8 @@ class GenerateJsonSchema:
                 alias = alias_path[0]
                 if not isinstance(alias, str):
                     continue  # this means that the "alias" does not represent a field
+                if field_name is None:
+                    field_name = alias  # the first path is the field name, before any alias
                 alias_is_present_on_all_choices = True
                 for choice in one_of_choices:
                     try:
@@ -1532,7 +1535,45 @@ class GenerateJsonSchema:
                 if alias_is_present_on_all_choices:
                     openapi_discriminator = alias
                     break
+
+        # The core schema's discriminator paths describe the validation side. In serialization mode the
+        # generated properties use serialization aliases, so pick the alias from the choice schemas when
+        # it is present on every choice (#14284).
+        if self.mode == 'serialization' and field_name is not None:
+            alias = self._serialization_alias(field_name, schema)
+            if alias is not None and self._discriminator_in_choices(alias, one_of_choices):
+                return alias
+
         return openapi_discriminator
+
+    @staticmethod
+    def _serialization_alias(field_name: str, schema: core_schema.TaggedUnionSchema) -> str | None:
+        """The serialization alias of the discriminator field, if every tagged choice declares the same one."""
+        aliases: set[str] = set()
+        for choice in schema['choices'].values():
+            if not isinstance(choice, dict) or choice.get('type') != 'model':
+                return None
+            try:
+                field = choice['schema']['fields'][field_name]
+            except (KeyError, TypeError):
+                return None
+            alias = field.get('serialization_alias')
+            if not isinstance(alias, str):
+                return None
+            aliases.add(alias)
+        return aliases.pop() if len(aliases) == 1 else None
+
+    def _discriminator_in_choices(self, alias: str, one_of_choices: list[JsonDict]) -> bool:
+        for choice in one_of_choices:
+            try:
+                choice = self.resolve_ref_schema(choice)
+            except RuntimeError as exc:
+                self.emit_warning('skipped-discriminator', str(exc))
+                choice = {}
+            properties = choice.get('properties', {})
+            if not isinstance(properties, dict) or alias not in properties:
+                return False
+        return True
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a core_schema.ChainSchema.
