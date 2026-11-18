@@ -485,6 +485,7 @@ def test_deque():
 
 def test_deque_negative_indices_without_length():
     """https://github.com/pydantic/pydantic/issues/14304"""
+
     def serialize_deque(value, serializer):
         return [serializer(item, index) for index, item in enumerate(value)]
 
