@@ -167,7 +167,7 @@ combined_serializer! {
 }
 
 impl CombinedSerializer {
-    fn _build(
+    fn build_inner(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
@@ -350,7 +350,7 @@ impl BuildSerializer for CombinedSerializer {
         // Read use_prebuilt from the definitions builder - this ensures all nested
         // serializers respect the same setting as the top-level build
         let use_prebuilt = definitions.use_prebuilt();
-        let serializer = Self::_build(schema, config, definitions, use_prebuilt)?;
+        let serializer = Self::build_inner(schema, config, definitions, use_prebuilt)?;
         Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
     }
 }
