@@ -326,6 +326,8 @@ class _BaseUrl:
         Returns:
             An instance of URL
         """
+        if path is not None:
+            path = path.removeprefix('/')
         return cls(
             _CoreUrl.build(
                 scheme=scheme,
@@ -543,6 +545,8 @@ class _BaseMultiHostUrl:
         Returns:
             An instance of `MultiHostUrl`
         """
+        if path is not None:
+            path = path.removeprefix('/')
         return cls(
             _CoreMultiHostUrl.build(  # pyright: ignore[reportCallIssue]
                 scheme=scheme,

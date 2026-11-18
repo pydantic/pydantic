@@ -1370,3 +1370,32 @@ def test_multi_url_build_hosts_with_none_values() -> None:
     )
     assert str(url) == 'mongodb://user:pass@host-1.com:27017,host-2.com:27017/db?replicaSet=xxx&authSource=admin'
     assert url.hosts() == hosts
+
+
+def test_url_build_path_leading_slash() -> None:
+    """https://github.com/pydantic/pydantic/issues/9176"""
+    url = HttpUrl('https://example.com/api/v1')
+    rebuilt_url = HttpUrl.build(scheme=url.scheme, host=url.host, path=url.path)
+    assert rebuilt_url == url
+    assert str(rebuilt_url) == 'https://example.com/api/v1'
+    assert rebuilt_url.path == '/api/v1'
+
+    rebuilt_no_leading_slash = HttpUrl.build(scheme='https', host='example.com', path='api/v1')
+    assert rebuilt_no_leading_slash == url
+    assert str(rebuilt_no_leading_slash) == 'https://example.com/api/v1'
+    assert rebuilt_no_leading_slash.path == '/api/v1'
+
+    rebuilt_root_path = HttpUrl.build(scheme='https', host='example.com', path='/')
+    assert str(rebuilt_root_path) == 'https://example.com/'
+    assert rebuilt_root_path.path == '/'
+
+    dsn = PostgresDsn('postgres://user:pass@localhost:5432/app')
+    rebuilt_dsn = PostgresDsn.build(scheme=dsn.scheme, hosts=dsn.hosts(), path=dsn.path)
+    assert rebuilt_dsn == dsn
+    assert str(rebuilt_dsn) == 'postgres://user:pass@localhost:5432/app'
+    assert rebuilt_dsn.path == '/app'
+
+    rebuilt_dsn_no_leading_slash = PostgresDsn.build(scheme=dsn.scheme, hosts=dsn.hosts(), path='app')
+    assert rebuilt_dsn_no_leading_slash == dsn
+    assert str(rebuilt_dsn_no_leading_slash) == 'postgres://user:pass@localhost:5432/app'
+    assert rebuilt_dsn_no_leading_slash.path == '/app'
