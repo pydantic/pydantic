@@ -452,9 +452,10 @@ def test_function_wrap_fallback():
 def test_deque():
     def serialize_deque(value, serializer, info: core_schema.SerializationInfo):
         items = []
+        seq_len = len(value)
         for index, item in enumerate(value):
             try:
-                v = serializer(item, index)
+                v = serializer(item, index, seq_len)
             except PydanticOmit:
                 pass
             else:
@@ -473,11 +474,30 @@ def test_deque():
     )
     assert s.to_python(deque([1, 2, 3])) == deque([1, 2, 3])
     assert s.to_python(deque([1, 2, 3]), exclude={2}) == deque([1, 2])
+    assert s.to_python(deque([1, 2, 3]), exclude={-1}) == deque([1, 2])
     assert s.to_python(deque([1, 2, 3]), include={0}) == deque([1])
+    assert s.to_python(deque([1, 2, 3]), include={-1}) == deque([3])
     assert s.to_python(deque([1, 2, 3]), mode='json') == [1, 2, 3]
     assert s.to_python(deque([1, 2, 3]), mode='json', exclude={2}) == [1, 2]
     assert s.to_json(deque([1, 2, 3])) == b'[1,2,3]'
     assert s.to_json(deque([1, 2, 3]), exclude={2}) == b'[1,2]'
+
+
+def test_deque_negative_indices_without_length():
+    """https://github.com/pydantic/pydantic/issues/14304"""
+    def serialize_deque(value, serializer):
+        return [serializer(item, index) for index, item in enumerate(value)]
+
+    s = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                serialize_deque, schema=core_schema.any_schema()
+            )
+        )
+    )
+
+    with pytest.raises(PydanticSerializationError, match='Negative indices cannot be used to exclude items'):
+        s.to_python(deque([1, 2, 3]), exclude={-1})
 
 
 def test_custom_mapping():
