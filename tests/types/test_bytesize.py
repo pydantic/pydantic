@@ -1,7 +1,10 @@
+from fractions import Fraction
+from typing import Annotated
+
 import pytest
 from pydantic_core import PydanticCustomError
 
-from pydantic import BaseModel, ByteSize, ValidationError
+from pydantic import BaseModel, ByteSize, Field, TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -34,7 +37,7 @@ def test_bytesize_human_readable_unit_boundary(size: int, decimal: bool, expecte
         ('1.5 MB', int(1.5e6), '1.4MiB', '1.5MB', '1.4 MiB'),
         ('1.5 M', int(1.5e6), '1.4MiB', '1.5MB', '1.4 MiB'),
         ('5.1kib', 5222, '5.1KiB', '5.2KB', '5.1 KiB'),
-        ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB', '6.2 EiB'),
+        ('6.2EiB', 7148113328562451251, '6.2EiB', '7.1EB', '6.2 EiB'),
         ('8bit', 1, '1B', '1B', '1 B'),
         ('1kbit', 125, '125B', '125B', '125 B'),
     ),
@@ -81,7 +84,7 @@ def test_bytesize_raises():
     ]
 
     with pytest.raises(ValidationError, match='parse value') as exc_info:
-        Model(size='1' * 310 + 'KB')
+        Model(size='1' * 5000 + 'KB')
 
     with pytest.raises(ValidationError, match='byte unit') as exc_info:
         Model(size='1LiB')
@@ -105,3 +108,42 @@ def test_bytesize_raises():
 
     with pytest.raises(PydanticCustomError, match='byte unit'):
         m.size.to('1ZiB')
+
+
+@pytest.mark.parametrize(
+    'input_value,output',
+    [
+        ('1.005 KB', 1005),
+        ('1.003 KB', 1003),
+        ('1.0049 KB', 1004),
+        ('9007199254740993 B', 9007199254740993),
+        ('9007199254740993 KB', 9007199254740993000),
+        ('1.5 kbit', 187),
+        ('1' * 310 + 'KB', int('1' * 310) * 1000),
+    ],
+)
+def test_bytesize_exact_conversion(input_value: str, output: int) -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/14297."""
+    ta = TypeAdapter(ByteSize)
+
+    assert ta.validate_python(input_value) == output
+    assert ta.validate_json(f'"{input_value}"') == output
+
+
+def test_bytesize_exact_conversion_constraints() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/14297."""
+    with pytest.raises(ValidationError):
+        TypeAdapter(Annotated[ByteSize, Field(le=1004)]).validate_python('1.005 KB')
+    assert TypeAdapter(Annotated[ByteSize, Field(ge=1005)]).validate_python('1.005 KB') == 1005
+
+
+def test_bytesize_byte_sizes_exact() -> None:
+    """The unit multipliers must be exactly representable, for `ByteSize` validation to be exact."""
+    expected = {'b': Fraction(1), 'bit': Fraction(1, 8)}
+    for i, prefix in enumerate('kmgtpe', start=1):
+        expected[f'{prefix}b'] = expected[prefix] = Fraction(10 ** (3 * i))
+        expected[f'{prefix}bit'] = Fraction(10 ** (3 * i), 8)
+        expected[f'{prefix}ib'] = Fraction(2 ** (10 * i))
+        expected[f'{prefix}ibit'] = Fraction(2 ** (10 * i), 8)
+
+    assert {unit: Fraction(mult) for unit, mult in ByteSize.byte_sizes.items()} == expected
