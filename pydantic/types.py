@@ -2036,15 +2036,15 @@ class ByteSize(int):
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
-        try:
-            # `Fraction` keeps the computation exact (using `float(scalar)` would turn `'1.005 KB'` into 1004 bytes).
-            # All the `unit_mult` are exactly representable as floats, so `Fraction(unit_mult)` is exact as well
-            # (see https://docs.python.org/3/tutorial/floatingpoint.html#representation-error).
-            scaled = Fraction(scalar) * Fraction(unit_mult)
-        except ValueError:
-            # Scalars exceeding the integer string conversion length limit:
+        # Matches the default `default_max_str_digits` value (https://docs.python.org/3/library/sys.html#sys.int_info.default_max_str_digits)
+        # to avoid potential DoS issues from the `Fraction()` constructor:
+        if len(scalar) > 4300:
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
-        return cls(int(scaled))
+
+        # `Fraction` keeps the computation exact (using `float(scalar)` would turn `'1.005 KB'` into 1004 bytes).
+        # All the `unit_mult` are exactly representable as floats, so `Fraction(unit_mult)` is exact as well
+        # (see https://docs.python.org/3/tutorial/floatingpoint.html#representation-error).
+        return cls(int(Fraction(scalar) * Fraction(unit_mult)))
 
     def human_readable(self, decimal: bool = False, separator: str = '') -> str:
         """Converts a byte size to a human readable string.
