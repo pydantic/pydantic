@@ -42,9 +42,10 @@ def serialize_sequence_via_list(
         # we shouldn't hit this branch, should probably add a serialization error or something
         return v
 
-    for index, item in enumerate(v):
+    seq_len = len(v) if isinstance(v, collections.abc.Sized) else None
+    for index, item in enumerate(typing.cast(typing.Iterable[Any], v)):
         try:
-            item_v = handler(item, index)
+            item_v = handler(item, index, seq_len)
         except PydanticOmit:  # noqa: PERF203
             pass
         else:
