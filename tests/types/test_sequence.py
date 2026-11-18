@@ -1,8 +1,9 @@
 from collections import deque, namedtuple
-from collections.abc import Sequence
+from collections.abc import Iterable, MutableSequence, Sequence
 from typing import Any
 
 import pytest
+from pydantic_core import PydanticSerializationError
 
 from pydantic import BaseModel, PydanticSchemaGenerationError, TypeAdapter, ValidationError
 
@@ -201,6 +202,69 @@ def test_sequence_with_nested_type(sequence_type: type) -> None:
 
     models = sequence_type([Model(a=1), Model(a=2)])
     assert ta.dump_python(ta.validate_python(models)) == sequence_type([{'a': 1}, {'a': 2}])
+
+
+@pytest.mark.parametrize('sequence_type', [list, tuple, deque])
+def test_sequence_serialization_negative_indices(sequence_type: type) -> None:
+    """https://github.com/pydantic/pydantic/issues/14304"""
+
+    class Item(BaseModel):
+        a: int
+        b: int
+
+    class Model(BaseModel):
+        items: Sequence[Item]
+
+    model = Model(items=sequence_type(Item(a=i, b=i) for i in range(4)))
+
+    assert model.model_dump(exclude={'items': {-1}}) == {
+        'items': sequence_type([{'a': 0, 'b': 0}, {'a': 1, 'b': 1}, {'a': 2, 'b': 2}])
+    }
+    assert model.model_dump(include={'items': {-1, -2}}) == {
+        'items': sequence_type([{'a': 2, 'b': 2}, {'a': 3, 'b': 3}])
+    }
+    assert model.model_dump(exclude={'items': {-1: {'a'}}}) == {
+        'items': sequence_type([{'a': 0, 'b': 0}, {'a': 1, 'b': 1}, {'a': 2, 'b': 2}, {'b': 3}])
+    }
+    assert model.model_dump_json(exclude={'items': {-1}}) == '{"items":[{"a":0,"b":0},{"a":1,"b":1},{"a":2,"b":2}]}'
+    assert model.model_dump_json(include={'items': {-1, -2}}) == '{"items":[{"a":2,"b":2},{"a":3,"b":3}]}'
+
+
+def test_mutable_sequence_serialization_negative_indices() -> None:
+    """https://github.com/pydantic/pydantic/issues/14304"""
+
+    class Item(BaseModel):
+        a: int
+
+    class Model(BaseModel):
+        items: MutableSequence[Item]
+
+    model = Model(items=[Item(a=1), Item(a=2)])
+
+    assert model.model_dump(exclude={'items': {-1}}) == {'items': [{'a': 1}]}
+    assert model.model_dump_json(include={'items': {-1}}) == '{"items":[{"a":2}]}'
+
+
+def test_sequence_type_adapter_serialization_negative_indices() -> None:
+    """https://github.com/pydantic/pydantic/issues/14304"""
+
+    class Item(BaseModel):
+        a: int
+
+    ta = TypeAdapter(Sequence[Item])
+    items = deque([Item(a=1), Item(a=2)])
+
+    assert ta.dump_python(items, exclude={-1}) == deque([{'a': 1}])
+    assert ta.dump_json(items, include={-1}) == b'[{"a":2}]'
+
+
+def test_iterable_serialization_negative_indices_remain_unsized() -> None:
+    """https://github.com/pydantic/pydantic/issues/14304"""
+
+    ta = TypeAdapter(Iterable[int])
+
+    with pytest.raises(PydanticSerializationError, match='Negative indices cannot be used to exclude items'):
+        ta.dump_json((i for i in range(2)), exclude={-1})
 
 
 def test_sequence_named_tuple() -> None:
