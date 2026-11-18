@@ -350,7 +350,7 @@ def plain_serializer_function_ser_schema(
 
 
 class SerializerFunctionWrapHandler(Protocol):  # pragma: no cover
-    def __call__(self, input_value: Any, index_key: int | str | None = None, /) -> Any: ...
+    def __call__(self, input_value: Any, index_key: int | str | None = None, seq_len: int | None = None, /) -> Any: ...
 
 
 # (input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
