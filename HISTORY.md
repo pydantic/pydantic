@@ -2,6 +2,42 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.14.4 (2026-11-19)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.4)
+
+### What's Changed
+
+#### Packaging
+
+* Bump jiter to v0.19.0 by @Viicos in [#14247](https://github.com/pydantic/pydantic/pull/14247).
+  This addresses memory issues introduced by the previous jiter release.
+
+#### Changes
+
+* Don't mark subclasses of `@deprecated` classes as deprecated in JSON Schema by @Viicos in [#14325](https://github.com/pydantic/pydantic/pull/14325)
+
+#### Performance
+
+* Cache UTC `TzInfo` instance by @Viicos in [#14256](https://github.com/pydantic/pydantic/pull/14256)
+* Skip schema deduplication for alternatives with a single schema by @fredheir in [#14274](https://github.com/pydantic/pydantic/pull/14274)
+
+#### Fixes
+
+* Exclude `InitVar` fields from the serialization JSON schema by @Alvi-Rahman in [#14223](https://github.com/pydantic/pydantic/pull/14223)
+* Fix more issues about GC tracking in `pydantic-core` by @Viicos in [#14253](https://github.com/pydantic/pydantic/pull/14253)
+* Fix validation constraints leaking into the `Decimal` JSON Schema by @aidxhxr in [#14254](https://github.com/pydantic/pydantic/pull/14254)
+* Fix model signature when a field alias is the name used for extra kwargs by @aidxhxr in [#14255](https://github.com/pydantic/pydantic/pull/14255)
+* Fix display of `Callable` parameters in type representations by @aidxhxr in [#14261](https://github.com/pydantic/pydantic/pull/14261)
+* Respect validation-time `strict=True` for `complex` by @Viicos in [#14293](https://github.com/pydantic/pydantic/pull/14293)
+* Fill missing type alias arguments from type parameter defaults by @Viicos in [#14324](https://github.com/pydantic/pydantic/pull/14324)
+
+### New Contributors
+
+* @Alvi-Rahman made their first contribution in [#14223](https://github.com/pydantic/pydantic/pull/14223)
+* @aidxhxr made their first contribution in [#14254](https://github.com/pydantic/pydantic/pull/14254)
+* @fredheir made their first contribution in [#14274](https://github.com/pydantic/pydantic/pull/14274)
+
 ## v2.14.3 (2026-11-04)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.3)
