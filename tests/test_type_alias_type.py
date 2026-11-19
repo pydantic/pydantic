@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Annotated, Generic, Literal, TypeVar, Union
 
 import pytest
+import typing_extensions
 from annotated_types import MaxLen
 from typing_extensions import TypeAliasType
 
@@ -488,3 +489,20 @@ def test_type_alias_type_with_metadata() -> None:
 
     ta = TypeAdapter(B)
     assert ta.json_schema() == {'type': 'int', 'extra': 1}
+
+
+def test_generic_type_alias_type_param_defaults() -> None:
+    """https://github.com/pydantic/pydantic/issues/14310"""
+
+    A = typing_extensions.TypeVar('A')
+    B = typing_extensions.TypeVar('B', default=int)
+    C = typing_extensions.TypeVar('C', default=A)
+
+    Alias = TypeAliasType('Alias', tuple[A, B, C], type_params=(A, B, C))
+
+    assert TypeAdapter(Alias[str]).validate_python(('a', '1', 'b')) == ('a', 1, 'b')
+    assert TypeAdapter(Alias[str, str]).validate_python(('a', 'b', 'c')) == ('a', 'b', 'c')
+
+    with pytest.raises(ValidationError):
+        # `C` defaults to `A`, which is parameterized with `str`:
+        TypeAdapter(Alias[str]).validate_python(('a', 1, 1))
