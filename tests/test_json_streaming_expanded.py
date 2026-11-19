@@ -132,3 +132,23 @@ def test_expanded_streaming_plan_budget_handles_reused_model_dag() -> None:
     assert not model.__pydantic_validator__._expanded_stream_plan_accepted
     with pytest.raises(ValidationError, check=lambda error: len(error.errors()) == 5):
         model.model_validate_json('{}')
+
+
+@pytest.mark.parametrize('strict', [False, True])
+def test_expanded_streaming_big_integer_precision(strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/14332"""
+    import json
+
+    values = [-(10**100), -(2**63) - 1, -(2**63), 2**63 - 1, 2**63, 10**100]
+    adapter = TypeAdapter(list[int])
+    result = adapter.validate_json(json.dumps(values), strict=strict)
+    assert result == values
+    assert all(type(value) is int for value in result)
+
+    class Model(BaseModel):
+        value: int
+        values: list[int]
+        mapped: dict[str, int]
+
+    document = {'value': values[0], 'values': values, 'mapped': {'positive': values[-1], 'negative': values[0]}}
+    assert Model.model_validate_json(json.dumps(document), strict=strict).model_dump() == document

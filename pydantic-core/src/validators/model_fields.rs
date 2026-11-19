@@ -780,6 +780,9 @@ fn take_peeked<'py>(
                 (Fast::Int(_), jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
                     Taken::Ready(i.into_pyobject(py)?.into_any())
                 }
+                (Fast::Int(_), jiter::NumberAny::Int(jiter::NumberInt::BigInt(i))) => {
+                    Taken::Ready(i.into_pyobject(py)?.into_any())
+                }
                 (Fast::Float(_), jiter::NumberAny::Float(f)) if f.is_finite() => {
                     Taken::Ready(f.into_pyobject(py)?.into_any())
                 }
