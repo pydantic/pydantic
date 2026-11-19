@@ -1,5 +1,7 @@
 use std::sync::{Arc, OnceLock};
 
+use smallvec::SmallVec;
+
 use pyo3::types::PyDict;
 use pyo3::{IntoPyObjectExt, prelude::*};
 
@@ -197,7 +199,7 @@ impl Validator for ListValidator {
         input.with_container(|input| {
             // Ordinary validation owns error aggregation, locations and exact lengths.
             // An optimistic failure retries that path instead of duplicating its policy.
-            let mut output = Vec::new();
+            let mut output: SmallVec<[Bound<'py, PyAny>; 8]> = SmallVec::new();
             let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
             while next.is_some() {
                 let result = match &self.item_validator {
@@ -205,7 +207,7 @@ impl Validator for ListValidator {
                     None => input.take_value()?.into_py_any(py).map_err(ValError::from),
                 };
                 match result {
-                    Ok(value) => output.push(value),
+                    Ok(value) => output.push(value.into_bound(py)),
                     Err(ValError::Omit) => (),
                     Err(error) => return Err(error),
                 }
