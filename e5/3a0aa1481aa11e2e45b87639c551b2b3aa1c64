@@ -1,0 +1,48 @@
+pydantic-core/src/validators/list.rs
+  s_d4a691b07897c1::t_9a447cb4e569ec 24-44
+pydantic-core/src/validators/mod.rs
+  s_d4a691b07897c1::t_ee519cbd045414 1105-1111
+  s_d4a691b07897c1::t_9a447cb4e569ec 142-150,493-511,530-607,621-651,1077-1104,1112-1163
+  s_d4a691b07897c1::t_f8d118652cde59 1164
+pydantic-core/src/validators/nullable.rs
+  s_d4a691b07897c1::t_9a447cb4e569ec 37-43
+pydantic-core/src/validators/dict.rs
+  s_d4a691b07897c1::t_9a447cb4e569ec 30-40
+pydantic-core/tests/test_streaming_json.py
+  s_d4a691b07897c1::t_9a447cb4e569ec 2-3,6-113,118-223,228-303,307-331
+  s_d4a691b07897c1::t_0a532f12530506 1,4-5
+  s_d4a691b07897c1::t_15719f15453b05 114-117,224-227,304-306
+pydantic-core/src/validators/model.rs
+  s_d4a691b07897c1::t_9a447cb4e569ec 68-81,381,400
+pydantic-core/src/validators/prebuilt.rs
+  s_d4a691b07897c1::t_9a447cb4e569ec 43-49
+pydantic-core/src/validators/model_fields.rs
+  s_d4a691b07897c1::t_ee519cbd045414 476-481,1030
+  s_d4a691b07897c1::t_0a532f12530506 1038-1042
+  s_d4a691b07897c1::t_9a447cb4e569ec 8,14-15,33,37-38,277-475,482-685,889-946,951-962,964-965,967-968,970-976,978-1018,1023-1029,1031-1037,1043-1057,1382-1431
+  s_d4a691b07897c1::t_3b2c786e12dbb5 31,947-950,963,966,969,977,1019-1022
+  s_d4a691b07897c1::t_e29a96a9fb030b 16,25,28
+pydantic-core/src/lookup_key.rs
+  s_d4a691b07897c1::t_9a447cb4e569ec 59-65
+pydantic-core/src/validators/with_default.rs
+  s_d4a691b07897c1::t_9a447cb4e569ec 150-158
+pydantic-core/src/validators/shared/lookup_tree.rs
+  s_d4a691b07897c1::t_9a447cb4e569ec 159-168,397-445
+  s_d4a691b07897c1::t_b015f028eefe70 446
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e53a0aa1481aa11e2e45b87639c551b2b3aa1c64",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
