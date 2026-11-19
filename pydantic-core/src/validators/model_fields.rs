@@ -856,6 +856,108 @@ fn validate_scalar<'py>(
     }
 }
 
+/// Append one field's iterative container instructions, returning its root node.
+fn append_stream_field_plan(
+    nodes: &mut Vec<FieldPlan>,
+    validator: &Arc<CombinedValidator>,
+    model_depth: u8,
+    narrow_eligible: &mut bool,
+) -> Option<usize> {
+    let root = nodes.len();
+    let mut validator = Arc::clone(validator);
+    let mut reference_count = 0;
+    loop {
+        let mut nullable = false;
+        loop {
+            match validator.as_ref() {
+                CombinedValidator::Prebuilt(inner) => validator = Arc::clone(inner.stream_inner()),
+                CombinedValidator::Nullable(inner) => {
+                    nullable = true;
+                    validator = Arc::clone(inner.stream_inner());
+                }
+                CombinedValidator::WithDefault(inner) => {
+                    *narrow_eligible = false;
+                    validator = Arc::clone(inner.stream_inner()?);
+                }
+                CombinedValidator::DefinitionRef(inner) => {
+                    reference_count += 1;
+                    if reference_count > 64 {
+                        return None;
+                    }
+                    *narrow_eligible = false;
+                    validator = inner.stream_inner()?;
+                }
+                _ => break,
+            }
+        }
+        let (fast, next) = match unwrap_prebuilt(&validator) {
+            CombinedValidator::Str(_) => (Fast::Str(Arc::clone(&validator)), None),
+            CombinedValidator::Bool(_) => (Fast::Bool(Arc::clone(&validator)), None),
+            CombinedValidator::Int(_) => (Fast::Int(Arc::clone(&validator)), None),
+            CombinedValidator::Float(_) => (Fast::Float(Arc::clone(&validator)), None),
+            CombinedValidator::List(list) => {
+                let list = list.stream_list()?;
+                let container = ContainerPlan {
+                    element: nodes.len() + 1,
+                    min_length: list.min_length,
+                    max_length: list.max_length,
+                };
+                (Fast::List(Box::new(container)), Some(list.items))
+            }
+            CombinedValidator::Dict(dict) => {
+                let (values, min_length, max_length) = dict.stream_str_values()?;
+                let container = ContainerPlan {
+                    element: nodes.len() + 1,
+                    min_length,
+                    max_length,
+                };
+                (Fast::Dict(Box::new(container)), Some(values))
+            }
+            CombinedValidator::Model(model) => {
+                let plan = model.stream_fields()?.stream_plan(model_depth + 1)?;
+                *narrow_eligible &= model_depth == 0 && plan.narrow_eligible;
+                (
+                    Fast::Model(Box::new(NestedModelPlan {
+                        validator: Arc::clone(&validator),
+                        plan,
+                    })),
+                    None,
+                )
+            }
+            CombinedValidator::Literal(_)
+            | CombinedValidator::StrConstrained(_)
+            | CombinedValidator::ConstrainedInt(_)
+            | CombinedValidator::ConstrainedFloat(_)
+            | CombinedValidator::Date(_)
+            | CombinedValidator::Time(_)
+            | CombinedValidator::Datetime(_)
+            | CombinedValidator::Timedelta(_)
+            | CombinedValidator::Uuid(_)
+            | CombinedValidator::Decimal(_)
+            | CombinedValidator::Fraction(_)
+            | CombinedValidator::Complex(_)
+            | CombinedValidator::Bytes(_)
+            | CombinedValidator::ConstrainedBytes(_)
+            | CombinedValidator::None(_)
+            | CombinedValidator::IntEnum(_)
+            | CombinedValidator::StrEnum(_)
+            | CombinedValidator::FloatEnum(_)
+            | CombinedValidator::PlainEnum(_)
+            | CombinedValidator::Any(_) => {
+                *narrow_eligible = false;
+                (Fast::Validate(Arc::clone(&validator)), None)
+            }
+            _ => return None,
+        };
+        nodes.push(FieldPlan { fast, nullable });
+        match next {
+            Some(next) => validator = Arc::clone(next),
+            None => break,
+        }
+    }
+    Some(root)
+}
+
 pub(crate) type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, ModelFieldsSet);
 
 impl ModelFieldsValidator {
@@ -1075,98 +1177,7 @@ impl ModelFieldsValidator {
             if !field.lookup_path_collection.by_alias.is_empty() {
                 return None;
             }
-            let root = nodes.len();
-            let mut validator = Arc::clone(&field.validator);
-            let mut reference_count = 0;
-            loop {
-                let mut nullable = false;
-                loop {
-                    match validator.as_ref() {
-                        CombinedValidator::Prebuilt(inner) => validator = Arc::clone(inner.stream_inner()),
-                        CombinedValidator::Nullable(inner) => {
-                            nullable = true;
-                            validator = Arc::clone(inner.stream_inner());
-                        }
-                        CombinedValidator::WithDefault(inner) => {
-                            narrow_eligible = false;
-                            validator = Arc::clone(inner.stream_inner()?);
-                        }
-                        CombinedValidator::DefinitionRef(inner) => {
-                            reference_count += 1;
-                            if reference_count > 64 {
-                                return None;
-                            }
-                            narrow_eligible = false;
-                            validator = inner.stream_inner()?;
-                        }
-                        _ => break,
-                    }
-                }
-                let (fast, next) = match unwrap_prebuilt(&validator) {
-                    CombinedValidator::Str(_) => (Fast::Str(Arc::clone(&validator)), None),
-                    CombinedValidator::Bool(_) => (Fast::Bool(Arc::clone(&validator)), None),
-                    CombinedValidator::Int(_) => (Fast::Int(Arc::clone(&validator)), None),
-                    CombinedValidator::Float(_) => (Fast::Float(Arc::clone(&validator)), None),
-                    CombinedValidator::List(list) => {
-                        let list = list.stream_list()?;
-                        let container = ContainerPlan {
-                            element: nodes.len() + 1,
-                            min_length: list.min_length,
-                            max_length: list.max_length,
-                        };
-                        (Fast::List(Box::new(container)), Some(list.items))
-                    }
-                    CombinedValidator::Dict(dict) => {
-                        let (values, min_length, max_length) = dict.stream_str_values()?;
-                        let container = ContainerPlan {
-                            element: nodes.len() + 1,
-                            min_length,
-                            max_length,
-                        };
-                        (Fast::Dict(Box::new(container)), Some(values))
-                    }
-                    CombinedValidator::Model(model) => {
-                        let plan = model.stream_fields()?.stream_plan(model_depth + 1)?;
-                        narrow_eligible &= model_depth == 0 && plan.narrow_eligible;
-                        (
-                            Fast::Model(Box::new(NestedModelPlan {
-                                validator: Arc::clone(&validator),
-                                plan,
-                            })),
-                            None,
-                        )
-                    }
-                    CombinedValidator::Literal(_)
-                    | CombinedValidator::StrConstrained(_)
-                    | CombinedValidator::ConstrainedInt(_)
-                    | CombinedValidator::ConstrainedFloat(_)
-                    | CombinedValidator::Date(_)
-                    | CombinedValidator::Time(_)
-                    | CombinedValidator::Datetime(_)
-                    | CombinedValidator::Timedelta(_)
-                    | CombinedValidator::Uuid(_)
-                    | CombinedValidator::Decimal(_)
-                    | CombinedValidator::Fraction(_)
-                    | CombinedValidator::Complex(_)
-                    | CombinedValidator::Bytes(_)
-                    | CombinedValidator::ConstrainedBytes(_)
-                    | CombinedValidator::None(_)
-                    | CombinedValidator::IntEnum(_)
-                    | CombinedValidator::StrEnum(_)
-                    | CombinedValidator::FloatEnum(_)
-                    | CombinedValidator::PlainEnum(_)
-                    | CombinedValidator::Any(_) => {
-                        narrow_eligible = false;
-                        (Fast::Validate(Arc::clone(&validator)), None)
-                    }
-                    _ => return None,
-                };
-                nodes.push(FieldPlan { fast, nullable });
-                match next {
-                    Some(next) => validator = Arc::clone(next),
-                    None => break,
-                }
-            }
+            let root = append_stream_field_plan(&mut nodes, &field.validator, model_depth, &mut narrow_eligible)?;
             if fields.is_empty() {
                 fields.reserve_exact(self.fields.len());
             }
