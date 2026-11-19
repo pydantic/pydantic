@@ -207,26 +207,11 @@ impl RecursionStack {
             Self::Array { data, len } => {
                 *len = len.checked_sub(1).expect("remove from empty recursion guard");
                 // Safety: this is reading what was the back of the initialized array
-                let removed = unsafe { data.get_unchecked_mut(*len) };
+                let removed = unsafe { data.get_unchecked(*len) };
                 assert!(unsafe { removed.assume_init_ref() } == v, "remove did not match insert");
-                // this should compile away to a noop
-                unsafe { std::ptr::drop_in_place(removed.as_mut_ptr()) }
             }
             Self::Set(set) => {
                 set.remove(v);
-            }
-        }
-    }
-}
-
-impl Drop for RecursionStack {
-    fn drop(&mut self) {
-        // This should compile away to a noop as Recursion>Key doesn't implement Drop, but it seemed
-        // desirable to leave this in for safety in case that should change in the future
-        if let Self::Array { data, len } = self {
-            for value in data.iter_mut().take(*len) {
-                // Safety: reading values within bounds
-                unsafe { std::ptr::drop_in_place(value.as_mut_ptr()) };
             }
         }
     }

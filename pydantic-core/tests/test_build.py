@@ -1,4 +1,5 @@
 import pickle
+import platform
 import sys
 
 import pytest
@@ -16,7 +17,23 @@ def test_frozendict_schema_old_python() -> None:
         SchemaSerializer(cs.frozendict_schema())
 
 
-@pytest.mark.parametrize('pickle_protocol', range(1, pickle.HIGHEST_PROTOCOL + 1))
+@pytest.mark.parametrize(
+    'pickle_protocol',
+    # TODO replace by range(1, pickle.HIGHEST_PROTOCOL + 1) when graalpy bug fixed:
+    [
+        pytest.param(
+            1,
+            marks=pytest.mark.xfail(
+                platform.python_implementation() == 'GraalVM' and sys.version_info[:2] == (3, 13),
+                reason='https://github.com/oracle/graalpython/issues/1313',
+            ),
+        ),
+        2,
+        3,
+        4,
+        5,
+    ],
+)
 def test_pickle(pickle_protocol: int) -> None:
     v1 = SchemaValidator(cs.bool_schema())
     assert v1.validate_python('tRuE') is True
