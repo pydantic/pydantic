@@ -538,7 +538,7 @@ pub(crate) fn take_root<'py>(
         eager_models: plan.can_construct_during_parse(py)?,
     };
     if let Some(index) = plan.root_value {
-        return match take_fast(py, jiter, execution, &plan.nodes[index], state, 0)? {
+        return match take_fast(py, jiter, &execution, &plan.nodes[index], state, 0)? {
             Taken::Ready(value) => {
                 jiter.finish()?;
                 let constructed = if !execution.eager_models && contains_nested_model(plan, index) {
@@ -558,7 +558,8 @@ pub(crate) fn take_root<'py>(
         return Ok(None);
     }
     state.floor_exactness(Exactness::Strict);
-    let Some((model_dict, _extra, fields_set)) = fields.validate_json_streaming(py, jiter, execution, state, 0)? else {
+    let Some((model_dict, _extra, fields_set)) = fields.validate_json_streaming(py, jiter, &execution, state, 0)?
+    else {
         return Ok(None);
     };
     jiter.finish()?;
@@ -670,7 +671,7 @@ fn materialize_nested<'py>(
 fn take_list<'j, 'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'j>,
-    execution: StreamExecution<'_>,
+    execution: &StreamExecution<'_>,
     plan: &ContainerPlan,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
@@ -711,7 +712,7 @@ fn take_list<'j, 'py>(
 fn take_dict<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    execution: StreamExecution<'_>,
+    execution: &StreamExecution<'_>,
     plan: &ContainerPlan,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
@@ -825,7 +826,7 @@ fn check_skipped_utf8(jiter: &Jiter<'_>, start: usize) -> Result<(), StreamStop>
 fn take_fast<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    execution: StreamExecution<'_>,
+    execution: &StreamExecution<'_>,
     field: &FieldPlan,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
@@ -839,7 +840,7 @@ fn take_fast<'py>(
 fn take_peeked<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    execution: StreamExecution<'_>,
+    execution: &StreamExecution<'_>,
     field: &FieldPlan,
     peek: Peek,
     state: &mut ValidationState<'_, 'py>,
@@ -906,9 +907,9 @@ fn take_peeked<'py>(
             match fields.validate_json_streaming(
                 py,
                 jiter,
-                StreamExecution {
+                &StreamExecution {
                     plan: &nested.plan,
-                    ..execution
+                    ..*execution
                 },
                 state,
                 depth,
@@ -1321,7 +1322,7 @@ impl ModelFieldsValidator {
         &self,
         py: Python<'py>,
         jiter: &mut Jiter<'j>,
-        execution: StreamExecution<'_>,
+        execution: &StreamExecution<'_>,
         state: &mut ValidationState<'_, 'py>,
         depth: usize,
     ) -> Result<Option<ValidatedModelFields<'py>>, StreamStop> {
