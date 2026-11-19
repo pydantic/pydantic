@@ -1,0 +1,23 @@
+pydantic-core/src/recursion_guard.rs
+  s_d4a691b07897c1::t_429356dc18fe4d 205,224
+pydantic-core/src/serializers/shared.rs
+  s_d4a691b07897c1::t_429356dc18fe4d 353
+pydantic-core/src/validators/mod.rs
+  s_d4a691b07897c1::t_429356dc18fe4d 145-146,151-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "44b898c81a9177b585a4534cead8b50260830d60",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
