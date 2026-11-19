@@ -970,8 +970,9 @@ impl ModelFieldsValidator {
         let mut fields_set = ModelFieldsSet::empty(Arc::clone(&self.field_names));
         let mut fields_set_count: usize = 0;
         let state = &mut state.scoped_set_data(Some(model_dict.clone()));
-        for (index, (field, slot)) in std::iter::zip(&self.fields, slots).enumerate() {
-            let value = match slot {
+        // Borrow the inline buffer rather than moving all 16 slots into an owning iterator.
+        for (index, (field, slot)) in std::iter::zip(&self.fields, slots.iter_mut()).enumerate() {
+            let value = match slot.take() {
                 Some(Taken::Ready(value)) => {
                     fields_set.insert_field(index);
                     fields_set_count += 1;
