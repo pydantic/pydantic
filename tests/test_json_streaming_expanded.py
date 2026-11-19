@@ -117,3 +117,18 @@ def test_expanded_streaming_root_dictionary_constructs_models() -> None:
         adapter.validate_json('{"a":{"value":"invalid"}}')
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'too_short'):
         adapter.validate_json('{}')
+
+
+def test_expanded_streaming_plan_budget_handles_reused_model_dag() -> None:
+    """https://github.com/pydantic/pydantic/pull/14123"""
+    from pydantic import create_model
+
+    model: type[BaseModel] = create_model('BudgetLeaf', value=(int, ...))
+    for depth in range(6):
+        child = model
+        model = create_model(f'BudgetLevel{depth}', **{f'item{i}': (child, ...) for i in range(5)})
+        if depth == 2:
+            assert model.__pydantic_validator__._expanded_stream_plan_accepted
+    assert not model.__pydantic_validator__._expanded_stream_plan_accepted
+    with pytest.raises(ValidationError, check=lambda error: len(error.errors()) == 5):
+        model.model_validate_json('{}')

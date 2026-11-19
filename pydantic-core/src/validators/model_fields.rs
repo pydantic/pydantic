@@ -346,6 +346,10 @@ impl ContainerPlan {
 /// that recurses only as deep as the plan allows.
 const SLOTS_ON_STACK: usize = 16;
 
+// Reused definitions form a DAG; owned nested plans can otherwise expand exponentially.
+// This is a construction budget only. Exhaustion leaves ordinary validation in charge.
+const PLAN_BUILD_BUDGET: usize = 65_536;
+
 /// One model's plan.
 #[derive(Debug)]
 pub(crate) struct ModelPlan {
@@ -380,8 +384,9 @@ pub(crate) fn unwrap_prebuilt(validator: &CombinedValidator) -> &CombinedValidat
 
 /// Build one cached plan for a model, scalar, or supported container root.
 pub(crate) fn root_plan(validator: &Arc<CombinedValidator>) -> Option<ModelPlan> {
+    let mut work_budget = PLAN_BUILD_BUDGET;
     if let CombinedValidator::Model(model) = unwrap_prebuilt(validator) {
-        return model.stream_fields()?.stream_plan(0);
+        return model.stream_fields()?.stream_plan(0, &mut work_budget);
     }
     // Retain the original getter's narrow meaning without constructing another plan.
     let mut narrow_eligible = match unwrap_prebuilt(validator) {
@@ -391,7 +396,7 @@ pub(crate) fn root_plan(validator: &Arc<CombinedValidator>) -> Option<ModelPlan>
         _ => false,
     };
     let mut nodes = Vec::new();
-    let root = append_stream_field_plan(&mut nodes, validator, 0, &mut narrow_eligible)?;
+    let root = append_stream_field_plan(&mut nodes, validator, 0, &mut narrow_eligible, &mut work_budget)?;
     Some(ModelPlan {
         narrow_eligible,
         root_value: Some(root),
@@ -866,13 +871,16 @@ fn append_stream_field_plan(
     validator: &Arc<CombinedValidator>,
     model_depth: u8,
     narrow_eligible: &mut bool,
+    work_budget: &mut usize,
 ) -> Option<usize> {
     let root = nodes.len();
     let mut validator = Arc::clone(validator);
     let mut reference_count = 0;
     loop {
+        *work_budget = work_budget.checked_sub(1)?;
         let mut nullable = false;
         loop {
+            *work_budget = work_budget.checked_sub(1)?;
             match validator.as_ref() {
                 CombinedValidator::Prebuilt(inner) => validator = Arc::clone(inner.stream_inner()),
                 CombinedValidator::Nullable(inner) => {
@@ -918,7 +926,7 @@ fn append_stream_field_plan(
                 (Fast::Dict(Box::new(container)), Some(values))
             }
             CombinedValidator::Model(model) => {
-                let plan = model.stream_fields()?.stream_plan(model_depth + 1)?;
+                let plan = model.stream_fields()?.stream_plan(model_depth + 1, work_budget)?;
                 *narrow_eligible &= model_depth == 0 && plan.narrow_eligible;
                 (
                     Fast::Model(Box::new(NestedModelPlan {
@@ -1166,7 +1174,7 @@ impl ModelFieldsValidator {
     }
 
     /// Build owned instructions without recursing through nested container schemas.
-    fn stream_plan(&self, model_depth: u8) -> Option<ModelPlan> {
+    fn stream_plan(&self, model_depth: u8, work_budget: &mut usize) -> Option<ModelPlan> {
         // Bound recursive model-plan construction and cleanup; container nodes remain flat.
         if model_depth > 16 {
             return None;
@@ -1181,7 +1189,13 @@ impl ModelFieldsValidator {
             if !field.lookup_path_collection.by_alias.is_empty() {
                 return None;
             }
-            let root = append_stream_field_plan(&mut nodes, &field.validator, model_depth, &mut narrow_eligible)?;
+            let root = append_stream_field_plan(
+                &mut nodes,
+                &field.validator,
+                model_depth,
+                &mut narrow_eligible,
+                work_budget,
+            )?;
             if fields.is_empty() {
                 fields.reserve_exact(self.fields.len());
             }
