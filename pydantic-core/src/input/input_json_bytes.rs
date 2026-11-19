@@ -1,0 +1,416 @@
+//! A byte-backed JSON input for the existing validator graph.
+//!
+//! JSON syntax is checked before constructing this input. Scalars and less common
+//! operations use the existing JsonValue implementation, while objects retain
+//! field spans and lists materialize one element at a time.
+
+use std::cell::OnceCell;
+
+use jiter::{Jiter, JsonArray, JsonValue};
+use pyo3::prelude::*;
+use pyo3::types::{PyDict, PyList};
+use speedate::MicrosecondsPrecisionOverflowBehavior;
+
+use super::datetime::{EitherDate, EitherDateTime, EitherTime};
+use super::input_abstract::ValMatch;
+use super::input_json::JsonArgs;
+use super::return_enums::EitherComplex;
+use super::{
+    BorrowInput, ConsumeIterator, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator,
+    Input, ValidatedDict, ValidatedList, ValidationMatch,
+};
+use crate::errors::{ErrorTypeDefaults, InputValue, ValError, ValResult};
+use crate::lookup_key::LookupPath;
+use crate::validators::{TemporalUnitMode, ValBytesMode};
+
+#[derive(Debug)]
+pub(crate) struct JsonBytesInput<'data> {
+    data: &'data [u8],
+    value: OnceCell<JsonValue<'data>>,
+    fields: OnceCell<Vec<(String, &'data [u8])>>,
+}
+
+impl<'data> JsonBytesInput<'data> {
+    /// The caller must have checked the complete document, including UTF-8.
+    pub fn new(data: &'data [u8]) -> Self {
+        Self {
+            data: data.trim_ascii_start(),
+            value: OnceCell::new(),
+            fields: OnceCell::new(),
+        }
+    }
+
+    fn parsed(value: JsonValue<'data>) -> Self {
+        Self {
+            data: &[],
+            value: OnceCell::from(value),
+            fields: OnceCell::new(),
+        }
+    }
+
+    fn value(&self) -> &JsonValue<'data> {
+        self.value
+            .get_or_init(|| JsonValue::parse(self.data, true).expect("previously checked JSON"))
+    }
+
+    fn object(&self, deduplicate: bool) -> ValResult<JsonObjectInput<'_, 'data>> {
+        if self.data.first() == Some(&b'{') || matches!(self.value.get(), Some(JsonValue::Object(_))) {
+            Ok(JsonObjectInput {
+                input: self,
+                deduplicate,
+            })
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::DictType, self))
+        }
+    }
+
+    fn fields(&self) -> &[(String, &'data [u8])] {
+        self.fields.get_or_init(|| {
+            let mut cursor = Jiter::new(self.data).with_allow_inf_nan();
+            let mut fields = Vec::new();
+            let mut key = cursor.next_object().expect("checked object");
+            while let Some(name) = key {
+                let name = name.to_owned();
+                cursor.peek().expect("checked value");
+                let start = cursor.current_index();
+                cursor.next_skip().expect("checked value");
+                fields.push((name, cursor.slice_to_current(start)));
+                key = cursor.next_key().expect("checked key");
+            }
+            fields
+        })
+    }
+
+    fn list(&self) -> ValResult<JsonListInput<'_, 'data>> {
+        if self.data.first() == Some(&b'[') {
+            let mut cursor = Jiter::new(self.data).with_allow_inf_nan();
+            let mut count = 0;
+            let mut peek = cursor.next_array().expect("checked array");
+            while let Some(p) = peek {
+                cursor.known_skip(p).expect("checked value");
+                count += 1;
+                peek = cursor.array_step().expect("checked array");
+            }
+            Ok(JsonListInput::Bytes(self.data, count))
+        } else if let JsonValue::Array(array) = self.value() {
+            Ok(JsonListInput::Parsed(array))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::ListType, self))
+        }
+    }
+}
+
+impl BorrowInput<'_> for JsonBytesInput<'_> {
+    type Input = Self;
+    fn borrow_input(&self) -> &Self {
+        self
+    }
+}
+
+pub(crate) struct JsonObjectInput<'a, 'data> {
+    input: &'a JsonBytesInput<'data>,
+    deduplicate: bool,
+}
+
+impl<'data> ValidatedDict<'_> for JsonObjectInput<'_, 'data> {
+    type Key<'a>
+        = String
+    where
+        Self: 'a;
+    type Item<'a>
+        = JsonBytesInput<'data>
+    where
+        Self: 'a;
+
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
+        if self.input.data.is_empty() || !key.rest().is_empty() {
+            let JsonValue::Object(object) = self.input.value() else {
+                unreachable!()
+            };
+            return key.json_get(object).map(|v| v.cloned().map(JsonBytesInput::parsed));
+        }
+        Ok(self
+            .input
+            .fields()
+            .iter()
+            .rev()
+            .find(|(name, _)| name == key.first_key())
+            .map(|(_, data)| JsonBytesInput::new(data)))
+    }
+
+    fn iterate<'a, R>(
+        &'a self,
+        consumer: impl ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
+    ) -> ValResult<R> {
+        if self.input.data.is_empty() {
+            let JsonValue::Object(object) = self.input.value() else {
+                unreachable!()
+            };
+            return Ok(consumer.consume_iterator(
+                object
+                    .iter()
+                    .map(|(key, value)| Ok((key.to_string(), JsonBytesInput::parsed(value.clone())))),
+            ));
+        }
+        let fields = self.input.fields();
+        let mut unique = indexmap::IndexMap::new();
+        if self.deduplicate {
+            for (name, data) in fields {
+                unique.insert(name, data);
+            }
+        }
+        let iter: Box<dyn Iterator<Item = (&String, &&'data [u8])>> = if self.deduplicate {
+            Box::new(unique.into_iter())
+        } else {
+            Box::new(fields.iter().map(|(name, data)| (name, data)))
+        };
+        Ok(consumer.consume_iterator(iter.map(|(name, data)| Ok((name.clone(), JsonBytesInput::new(data))))))
+    }
+
+    fn last_key(&self) -> Option<Self::Key<'_>> {
+        if self.input.data.is_empty() {
+            let JsonValue::Object(object) = self.input.value() else {
+                unreachable!()
+            };
+            object.last().map(|(name, _)| name.to_string())
+        } else {
+            self.input.fields().last().map(|(name, _)| name.clone())
+        }
+    }
+}
+
+pub(crate) enum JsonListInput<'a, 'data> {
+    Bytes(&'data [u8], usize),
+    Parsed(&'a JsonArray<'data>),
+}
+
+impl<'py, 'data> ValidatedList<'py> for JsonListInput<'_, 'data> {
+    type Item = JsonBytesInput<'data>;
+    fn len(&self) -> Option<usize> {
+        Some(match self {
+            Self::Bytes(_, len) => *len,
+            Self::Parsed(array) => Vec::len(array),
+        })
+    }
+    fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
+        None
+    }
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
+        match self {
+            Self::Parsed(array) => {
+                Ok(consumer.consume_iterator(array.iter().cloned().map(|v| Ok(JsonBytesInput::parsed(v)))))
+            }
+            Self::Bytes(data, _) => {
+                let mut cursor = Jiter::new(data).with_allow_inf_nan();
+                let mut peek = cursor.next_array().expect("checked array");
+                Ok(consumer.consume_iterator(std::iter::from_fn(move || {
+                    let p = peek?;
+                    let value = cursor.known_value(p).expect("checked value");
+                    peek = cursor.array_step().expect("checked array");
+                    Some(Ok(JsonBytesInput::parsed(value)))
+                })))
+            }
+        }
+    }
+}
+
+impl<'py, 'data> Input<'py> for JsonBytesInput<'data> {
+    fn as_json(&self) -> Option<&JsonValue<'_>> {
+        self.value.get()
+    }
+
+    fn identity(&self) -> Option<usize> {
+        None
+    }
+
+    #[inline]
+    fn py_converter(&self) -> impl IntoPyObject<'py> + '_ {
+        self.value()
+    }
+
+    fn as_error_value(&self) -> InputValue {
+        self.value().as_error_value()
+    }
+
+    fn is_none(&self) -> bool {
+        self.value
+            .get()
+            .map_or_else(|| self.data.first() == Some(&b'n'), Input::is_none)
+    }
+
+    fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>> {
+        self.value().as_kwargs(py)
+    }
+
+    type Arguments<'a>
+        = JsonArgs<'a, 'data>
+    where
+        Self: 'a;
+
+    fn validate_args(&self) -> ValResult<JsonArgs<'_, 'data>> {
+        self.value().validate_args()
+    }
+
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn validate_args_v3(&self) -> ValResult<Self::Arguments<'_>> {
+        self.value().validate_args_v3()
+    }
+
+    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<JsonArgs<'a, 'data>> {
+        self.value().validate_dataclass_args(class_name)
+    }
+
+    fn validate_str(
+        &self,
+        strict: bool,
+        coerce_numbers_to_str: bool,
+    ) -> ValResult<ValidationMatch<EitherString<'_, 'py>>> {
+        self.value().validate_str(strict, coerce_numbers_to_str)
+    }
+
+    fn validate_bytes<'a>(
+        &'a self,
+        _strict: bool,
+        mode: ValBytesMode,
+    ) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
+        self.value().validate_bytes(_strict, mode)
+    }
+
+    fn validate_bool(&self, strict: bool) -> ValResult<ValidationMatch<bool>> {
+        self.value().validate_bool(strict)
+    }
+
+    fn validate_int(&self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'_>>> {
+        self.value().validate_int(strict)
+    }
+
+    fn exact_str(&self) -> ValResult<EitherString<'_, 'py>> {
+        self.value().exact_str()
+    }
+
+    fn validate_float(&self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'_>>> {
+        self.value().validate_float(strict)
+    }
+
+    fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+        self.value().validate_decimal(strict, py)
+    }
+
+    fn validate_fraction(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+        self.value().validate_fraction(_strict, py)
+    }
+
+    type Dict<'a>
+        = JsonObjectInput<'a, 'data>
+    where
+        Self: 'a;
+
+    fn validate_dict(&self, _strict: bool) -> ValResult<Self::Dict<'_>> {
+        self.object(false)
+    }
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn strict_dict(&self) -> ValResult<Self::Dict<'_>> {
+        self.object(false)
+    }
+
+    fn strict_frozendict(&self) -> ValMatch<Self::Dict<'_>> {
+        self.value().strict_frozendict()?;
+        Ok(ValidationMatch::strict(JsonObjectInput {
+            input: self,
+            deduplicate: false,
+        }))
+    }
+
+    fn strict_ordered_dict(&self) -> ValMatch<Self::Dict<'_>> {
+        self.value().strict_ordered_dict()?;
+        Ok(ValidationMatch::strict(JsonObjectInput {
+            input: self,
+            deduplicate: false,
+        }))
+    }
+
+    fn strict_counter(&self) -> ValMatch<Self::Dict<'_>> {
+        self.value().strict_counter()?;
+        Ok(ValidationMatch::strict(JsonObjectInput {
+            input: self,
+            deduplicate: false,
+        }))
+    }
+
+    fn validate_model_fields(&self, _strict: bool, _from_attributes: bool) -> ValResult<Self::Dict<'_>> {
+        self.object(true)
+    }
+
+    type List<'a>
+        = JsonListInput<'a, 'data>
+    where
+        Self: 'a;
+
+    fn validate_list(&self, _strict: bool) -> ValMatch<Self::List<'_>> {
+        self.list().map(ValidationMatch::exact)
+    }
+
+    fn validate_deque(&self, _strict: bool) -> ValMatch<(Self::List<'_>, Option<usize>)> {
+        self.value().validate_deque(false)?;
+        self.list().map(|list| ValidationMatch::strict((list, None)))
+    }
+
+    type Tuple<'a>
+        = &'a JsonArray<'data>
+    where
+        Self: 'a;
+
+    fn validate_tuple(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
+        self.value().validate_tuple(_strict)
+    }
+
+    type Set<'a>
+        = &'a JsonArray<'data>
+    where
+        Self: 'a;
+
+    fn validate_set(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
+        self.value().validate_set(_strict)
+    }
+
+    fn validate_frozenset(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
+        self.value().validate_frozenset(_strict)
+    }
+
+    fn validate_iter(&self) -> ValResult<GenericIterator<'static>> {
+        self.value().validate_iter()
+    }
+
+    fn validate_date(&self, _strict: bool, mode: TemporalUnitMode) -> ValResult<ValidationMatch<EitherDate<'py>>> {
+        self.value().validate_date(_strict, mode)
+    }
+    fn validate_time(
+        &self,
+        strict: bool,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<ValidationMatch<EitherTime<'py>>> {
+        self.value().validate_time(strict, microseconds_overflow_behavior)
+    }
+
+    fn validate_datetime(
+        &self,
+        strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+        mode: TemporalUnitMode,
+    ) -> ValResult<ValidationMatch<EitherDateTime<'py>>> {
+        self.value()
+            .validate_datetime(strict, microseconds_overflow_behavior, mode)
+    }
+
+    fn validate_timedelta(
+        &self,
+        strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<ValidationMatch<EitherTimedelta<'py>>> {
+        self.value().validate_timedelta(strict, microseconds_overflow_behavior)
+    }
+
+    fn validate_complex(&self, strict: bool, py: Python<'py>) -> ValResult<ValidationMatch<EitherComplex<'py>>> {
+        self.value().validate_complex(strict, py)
+    }
+}

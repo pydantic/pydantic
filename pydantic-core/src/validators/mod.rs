@@ -481,6 +481,31 @@ impl SchemaValidator {
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> ValResult<Py<PyAny>> {
+        // Prototype byte-backed input; partial parsing retains its existing representation.
+        static DISABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        if !allow_partial.is_active()
+            && !*DISABLED.get_or_init(|| std::env::var_os("PYDANTIC_DISABLE_JSON_BYTES").is_some())
+        {
+            let mut cursor = jiter::Jiter::new(json_data).with_allow_inf_nan();
+            // next_skip checks JSON syntax but deliberately omits raw-string UTF-8.
+            if std::str::from_utf8(json_data).is_ok() && cursor.next_skip().is_ok() && cursor.finish().is_ok() {
+                #[allow(clippy::used_underscore_items)]
+                return self._validate(
+                    py,
+                    &crate::input::JsonBytesInput::new(json_data),
+                    InputType::Json,
+                    strict,
+                    extra_behavior,
+                    None,
+                    context,
+                    self_instance,
+                    allow_partial,
+                    by_alias,
+                    by_name,
+                );
+            }
+            // Use the ordinary parser for its precise syntax error; no validators have run.
+        }
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
         #[allow(clippy::used_underscore_items)]
