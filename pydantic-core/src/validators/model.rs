@@ -15,7 +15,7 @@ use super::{
 use crate::PydanticUndefinedType;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
-use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ToErrorValue, ValError, ValResult};
 use crate::fields_set::FieldsSet;
 use crate::input::{Input, input_as_python_instance, py_error_on_minusone};
 use crate::tools::{ROOT_FIELD, SchemaDict, py_err, root_field_py_str};
@@ -267,15 +267,17 @@ impl Validator for ModelValidator {
         };
         state.floor_exactness(Exactness::Strict);
         let (model_dict, model_extra, fields_set) = fields.validate_cursor_fields(py, input, state)?;
-        let fields_set = Bound::new(py, fields_set)?;
-        let instance = create_class(self.class.bind(py))?;
-        let extra = model_extra.map_or_else(|| py.None().into_bound(py), Bound::into_any);
-        set_model_attrs(&instance, &model_dict, &extra, &fields_set)?;
-        if self.post_init.is_some() {
-            self.call_post_init(py, instance, input.value_for_context(), state.extra())
-        } else {
-            Ok(instance.into())
-        }
+        self.construct_from_fields(
+            py,
+            &*input,
+            (
+                model_dict.into_any(),
+                model_extra.map_or_else(|| py.None().into_bound(py), Bound::into_any),
+                Bound::new(py, fields_set)?.into_any(),
+            ),
+            None,
+            state.extra(),
+        )
     }
 
     fn get_name(&self) -> &str {
@@ -375,20 +377,37 @@ impl ModelValidator {
             force_setattr(py, &instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
             force_setattr(py, &instance, root_field, output)?;
         } else {
-            let (model_dict, model_extra, val_fields_set) = self.validate_inner_fields(py, input, state)?;
-            instance = create_class(self.class.bind(py))?;
-
-            let fields_set = existing_fields_set.unwrap_or(&val_fields_set);
-            set_model_attrs(&instance, &model_dict, &model_extra, fields_set)?;
+            let fields = self.validate_inner_fields(py, input, state)?;
+            return self.construct_from_fields(py, input, fields, existing_fields_set, state.extra());
         }
         self.call_post_init(py, instance, input, state.extra())
+    }
+
+    /// Complete ordinary and cursor model validation through the same construction path.
+    fn construct_from_fields<'py>(
+        &self,
+        py: Python<'py>,
+        input: impl ToErrorValue,
+        fields: (Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>),
+        existing_fields_set: Option<&Bound<'_, PyAny>>,
+        extra: &Extra<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        let (model_dict, model_extra, fields_set) = fields;
+        let instance = create_class(self.class.bind(py))?;
+        set_model_attrs(
+            &instance,
+            &model_dict,
+            &model_extra,
+            existing_fields_set.unwrap_or(&fields_set),
+        )?;
+        self.call_post_init(py, instance, input, extra)
     }
 
     fn call_post_init<'py>(
         &self,
         py: Python<'py>,
         instance: Bound<'_, PyAny>,
-        input: &(impl Input<'py> + ?Sized),
+        input: impl ToErrorValue,
         extra: &Extra<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         if let Some(ref post_init) = self.post_init {

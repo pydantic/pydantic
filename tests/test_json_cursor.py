@@ -4,7 +4,16 @@ from typing import Annotated
 
 import pytest
 
-from pydantic import BaseModel, BeforeValidator, Field, TypeAdapter, ValidationError, ValidationInfo, field_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    Field,
+    PrivateAttr,
+    TypeAdapter,
+    ValidationError,
+    ValidationInfo,
+    field_validator,
+)
 
 
 def test_cursor_mixed_model_defaults_and_field_order() -> None:
@@ -155,3 +164,22 @@ def test_cursor_integer_primitives_reuse_coercion_and_errors(strict: bool) -> No
             assert caught.value.json(include_url=False) == error.json(include_url=False)
         else:
             assert adapter.validate_json(document, strict=strict) == expected
+
+
+def test_cursor_model_construction_runs_post_init_after_fields() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    calls: list[list[int]] = []
+
+    class Model(BaseModel):
+        numbers: list[int]
+        _total: int = PrivateAttr(default=0)
+
+        def model_post_init(self, context: object) -> None:
+            assert context is calls
+            self._total = sum(self.numbers)
+            calls.append(self.numbers)
+
+    model = Model.model_validate_json('{"numbers":[1,"2",3]}', context=calls)
+    assert model._total == 6
+    assert calls == [[1, 2, 3]]
+    assert model.model_fields_set == {'numbers'}

@@ -904,7 +904,7 @@ pub trait Validator: Send + Sync + Debug {
         false
     }
 
-    /// Validate the next value in a syntax-checked JSON document.
+    /// Optimistically validate the next JSON value; the entry point retries failures.
     /// Unoptimized nodes materialize only their value and use ordinary validation.
     fn validate_json_cursor<'py>(
         &self,
