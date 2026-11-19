@@ -6778,6 +6778,35 @@ def test_deprecated_subclasses_json_schema(cls):
 
 
 @pytest.mark.parametrize('cls', _generate_deprecated_classes())
+def test_deprecated_class_inheritance_json_schema(cls) -> None:
+    """https://github.com/pydantic/pydantic/issues/14322"""
+
+    if issubclass(cls, dict):
+        pytest.skip('TypedDict subclasses do not inherit `__deprecated__`')
+
+    with pytest.warns(DeprecationWarning):
+
+        class Sub(cls):
+            pass
+
+    assert 'deprecated' not in TypeAdapter(Sub).json_schema()
+
+
+def test_deprecated_class_json_schema_extra_override() -> None:
+    @deprecated('Old is deprecated')
+    class Old(BaseModel):
+        model_config = ConfigDict(json_schema_extra={'deprecated': False})
+
+    with pytest.warns(DeprecationWarning):
+
+        class Sub(Old):
+            model_config = ConfigDict(json_schema_extra={'deprecated': True})
+
+    assert Old.model_json_schema()['deprecated'] is False
+    assert Sub.model_json_schema()['deprecated'] is True
+
+
+@pytest.mark.parametrize('cls', _generate_deprecated_classes())
 def test_deprecated_class_usage_warns(cls):
     if issubclass(cls, dict):
         pytest.skip('TypedDict does not generate a DeprecationWarning on usage')
