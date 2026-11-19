@@ -1026,7 +1026,7 @@ Standard library type: [`collections.deque`][] (deprecated alias: [`typing.Deque
 
 <h4>Validation</h4>
 
-Any iterable (except strings, bytes and mappings) is accepted and converted to a [`deque`][collections.deque],
+Any iterable (except strings, bytes, bytearrays and mappings) is accepted and converted to a [`deque`][collections.deque],
 with each item validated against the parameter type. If the input is already a `deque` instance, its
 [`maxlen`][collections.deque.maxlen] attribute is preserved.
 
@@ -1082,7 +1082,7 @@ will apply. The [`Sequence`][collections.abc.Sequence] type can be used when you
 
 <h4>Validation</h4>
 
-Any [`collections.abc.Sequence`][] instance (expect strings and bytes) is accepted. It is converted to a list using the [`list()`][list]
+Any [`collections.abc.Sequence`][] instance (except strings, bytes and bytearrays) is accepted. It is converted to a list using the [`list()`][list]
 constructor, and then converted back to the original input type.
 
 !!! warning "Strings aren't treated as sequences"
