@@ -1,5 +1,7 @@
 use std::sync::{Arc, OnceLock};
 
+use smallvec::SmallVec;
+
 use pyo3::types::PyDict;
 use pyo3::{IntoPyObjectExt, prelude::*};
 
@@ -140,6 +142,43 @@ impl BuildValidator for ListValidator {
 
 impl_py_gc_traverse!(ListValidator { item_validator });
 
+impl ListValidator {
+    fn validate_json_cursor_items<'data, 's, 'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'data>,
+        state: &mut ValidationState<'s, 'py>,
+        mut validate: impl FnMut(
+            &mut super::JsonCursor<'data>,
+            jiter::Peek,
+            &mut ValidationState<'s, 'py>,
+        ) -> ValResult<Py<PyAny>>,
+    ) -> ValResult<Py<PyAny>> {
+        input.with_container(|input| {
+            // Ordinary validation owns error aggregation, locations and exact lengths.
+            // An optimistic failure retries that path instead of duplicating its policy.
+            let mut output: SmallVec<[Bound<'py, PyAny>; 8]> = SmallVec::new();
+            let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
+            while let Some(peek) = next {
+                let result = validate(input, peek, state);
+                match result {
+                    Ok(value) => output.push(value.into_bound(py)),
+                    Err(ValError::Omit) => (),
+                    Err(error) => return Err(error),
+                }
+                if self.max_length.is_some_and(|maximum| output.len() > maximum) {
+                    return Err(super::JsonCursor::parse_error(()));
+                }
+                next = input.jiter.array_step().map_err(super::JsonCursor::parse_error)?;
+            }
+            if self.min_length.is_some_and(|minimum| output.len() < minimum) {
+                return Err(super::JsonCursor::parse_error(()));
+            }
+            Ok(output.into_py_any(py)?)
+        })
+    }
+}
+
 impl Validator for ListValidator {
     fn validate<'py>(
         &self,
@@ -194,31 +233,21 @@ impl Validator for ListValidator {
         if !matches!(input.jiter.peek(), Ok(jiter::Peek::Array)) {
             return self.validate(py, &input.take_value()?, state);
         }
-        input.with_container(|input| {
-            // Ordinary validation owns error aggregation, locations and exact lengths.
-            // An optimistic failure retries that path instead of duplicating its policy.
-            let mut output = Vec::new();
-            let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
-            while next.is_some() {
-                let result = match &self.item_validator {
-                    Some(validator) => validator.validate_json_cursor(py, input, state),
-                    None => input.take_value()?.into_py_any(py).map_err(ValError::from),
-                };
-                match result {
-                    Ok(value) => output.push(value),
-                    Err(ValError::Omit) => (),
-                    Err(error) => return Err(error),
-                }
-                if self.max_length.is_some_and(|maximum| output.len() > maximum) {
-                    return Err(super::JsonCursor::parse_error(()));
-                }
-                next = input.jiter.array_step().map_err(super::JsonCursor::parse_error)?;
+        match self.item_validator.as_deref() {
+            // Select the integer validator once per list and reuse the parser's
+            // existing element peek; conversion/coercion policy stays shared.
+            Some(CombinedValidator::Int(validator)) => {
+                self.validate_json_cursor_items(py, input, state, |input, peek, state| {
+                    validator.validate_json_cursor_peeked(py, input, peek, state)
+                })
             }
-            if self.min_length.is_some_and(|minimum| output.len() < minimum) {
-                return Err(super::JsonCursor::parse_error(()));
-            }
-            Ok(output.into_py_any(py)?)
-        })
+            Some(validator) => self.validate_json_cursor_items(py, input, state, |input, _, state| {
+                validator.validate_json_cursor(py, input, state)
+            }),
+            None => self.validate_json_cursor_items(py, input, state, |input, _, _| {
+                input.take_value()?.into_py_any(py).map_err(ValError::from)
+            }),
+        }
     }
 
     fn get_name(&self) -> &str {

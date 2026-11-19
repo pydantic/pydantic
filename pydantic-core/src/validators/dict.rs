@@ -89,6 +89,53 @@ impl Validator for DictValidator {
         })?
     }
 
+    fn supports_json_cursor(&self) -> bool {
+        true
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        if !matches!(input.jiter.peek(), Ok(jiter::Peek::Object)) {
+            return self.validate(py, &input.take_value()?, state);
+        }
+        input.with_container(|input| {
+            let output = PyDict::new(py);
+            let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
+            while let Some(name) = key {
+                // `str` implements the existing JSON-key Input semantics, including
+                // strict numeric-key coercion. JsonValue::Str is a different input.
+                let output_key = match self.key_validator.validate(py, name, state) {
+                    Ok(key) => key,
+                    Err(ValError::Omit) => {
+                        input.take_value()?;
+                        key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
+                        continue;
+                    }
+                    Err(error) => return Err(error),
+                };
+                match self.value_validator.validate_json_cursor(py, input, state) {
+                    Ok(value) => {
+                        output.set_item(output_key, value)?;
+                        if self.max_length.is_some_and(|maximum| output.len() > maximum) {
+                            return Err(super::JsonCursor::parse_error(()));
+                        }
+                    }
+                    Err(ValError::Omit) => (),
+                    Err(error) => return Err(error),
+                }
+                key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
+            }
+            if self.min_length.is_some_and(|minimum| output.len() < minimum) {
+                return Err(super::JsonCursor::parse_error(()));
+            }
+            Ok(output.into_any().unbind())
+        })
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }

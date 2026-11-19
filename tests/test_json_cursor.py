@@ -2,7 +2,7 @@
 
 import json
 from itertools import permutations
-from typing import Annotated
+from typing import Annotated, Literal
 
 import pytest
 from pydantic_core import PydanticOmit
@@ -11,6 +11,7 @@ from pydantic import (
     AfterValidator,
     BaseModel,
     BeforeValidator,
+    ConfigDict,
     Field,
     PrivateAttr,
     TypeAdapter,
@@ -255,10 +256,12 @@ def test_cursor_float_tokens_preserve_bits_coercion_and_finite_policy(strict: bo
     ordinary = TypeAdapter(Annotated[values, AfterValidator(lambda value: value)])
     for document in (
         '[0.0,-0.0,1.125,5e-324,1.7976931348623157e308]',
+        '[0,-0,9007199254740993,9223372036854775807,18446744073709551617]',
         '[1,123456789012345678901234567890]',
         '[1.12345678901234567890123456789]',
         '[true,false,null,{},[],"1.25"]',
         '[NaN,Infinity,-Infinity,1e309]',
+        '[' + '9' * 4301 + ']',
     ):
         try:
             expected = ordinary.validate_json(document, strict=strict)
@@ -269,3 +272,90 @@ def test_cursor_float_tokens_preserve_bits_coercion_and_finite_policy(strict: bo
         else:
             actual = adapter.validate_json(document, strict=strict)
             assert [value.hex() for value in actual] == [value.hex() for value in expected]
+
+
+@pytest.mark.parametrize('cache_mode', ['all', 'keys', 'none'])
+@pytest.mark.parametrize('strict', [True, False])
+@pytest.mark.parametrize('coerce_numbers', [True, False])
+def test_cursor_string_decoding_cache_and_coercion(
+    cache_mode: Literal['all', 'keys', 'none'], strict: bool, coerce_numbers: bool
+) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    config = ConfigDict(cache_strings=cache_mode, coerce_numbers_to_str=coerce_numbers)
+    adapter = TypeAdapter(list[str], config=config)
+    ordinary = TypeAdapter(Annotated[list[str], AfterValidator(lambda value: value)], config=config)
+    for document in (
+        json.dumps(['repeated-value', 'repeated-value', 'escaped\n\0"\\', '中文 😀'], ensure_ascii=False),
+        '[1,1.5]',
+        '[true,null,{},[]]',
+    ):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            actual = adapter.validate_json(document, strict=strict)
+            assert actual == expected
+            if cache_mode == 'all' and actual[:2] == ['repeated-value', 'repeated-value']:
+                assert actual[0] is actual[1]
+
+
+def test_cursor_dict_json_keys_duplicates_and_omissions() -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    assert TypeAdapter(dict[int, int]).validate_json('{"1":2,"3":4}', strict=True) == {1: 2, 3: 4}
+    assert TypeAdapter(dict[float, str]).validate_json('{"1.5":"value"}', strict=True) == {1.5: 'value'}
+    calls: list[int] = []
+
+    def record(value: int) -> int:
+        calls.append(value)
+        if value == 0:
+            raise PydanticOmit
+        return value
+
+    adapter = TypeAdapter(dict[str, Annotated[int, AfterValidator(record)]])
+    assert adapter.validate_json('{"a":1,"a":2,"b":0,"c":3}') == {'a': 2, 'c': 3}
+    assert calls == [1, 2, 0, 3]
+
+    def omit_key(value: str) -> str:
+        if value == 'skip':
+            raise PydanticOmit
+        return value
+
+    calls.clear()
+    adapter = TypeAdapter(dict[Annotated[str, AfterValidator(omit_key)], Annotated[int, AfterValidator(record)]])
+    assert adapter.validate_json('{"skip":{"nested":[1,2]},"keep":3}') == {'keep': 3}
+    assert calls == [3]
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_cursor_bool_tokens_and_ordinary_coercion(strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    adapter = TypeAdapter(list[bool])
+    ordinary = TypeAdapter(Annotated[list[bool], AfterValidator(lambda value: value)])
+    for document in ('[true,false,true]', '[0,1,"yes","off"]', '[2,{},[],null]'):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            assert adapter.validate_json(document, strict=strict) == expected
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_cursor_integer_list_dispatch_preserves_local_coercion(strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    adapter = TypeAdapter(list[int])
+    ordinary = TypeAdapter(Annotated[list[int], AfterValidator(lambda value: value)])
+    for document in ('[0,-0,9223372036854775808]', '[1,"2",3.0,true]', '[1,1.5,{}]'):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            assert adapter.validate_json(document, strict=strict) == expected
