@@ -49,6 +49,12 @@ pub struct DefinitionRefValidator {
 }
 
 impl DefinitionRefValidator {
+    // A method pointer does not satisfy the higher-ranked lifetime required by read().
+    #[allow(clippy::redundant_closure_for_method_calls)]
+    pub(crate) fn stream_inner(&self) -> Option<Arc<CombinedValidator>> {
+        self.definition.read(|validator| validator.cloned())
+    }
+
     pub fn new(definition: DefinitionRef<Arc<CombinedValidator>>) -> Self {
         Self { definition }
     }
