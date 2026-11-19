@@ -342,8 +342,7 @@ const SLOTS_ON_STACK: usize = 16;
 
 /// One model's plan.
 pub(crate) struct ModelPlan<'v> {
-    // Small models avoid a separate field-plan allocation on every validation call.
-    fields: SmallVec<[FieldPlan<'v>; 8]>,
+    fields: Vec<FieldPlan<'v>>,
     /// no field has an alias, so every key belongs to at most one field and the alias priority
     /// rule cannot come into it
     names_only: bool,
