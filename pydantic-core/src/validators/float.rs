@@ -8,8 +8,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, schema_or_config_same};
-use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::Input;
+use crate::errors::{ErrorType, ErrorTypeDefaults, ToErrorValue, ValError, ValResult};
+use crate::input::{EitherFloat, Input};
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
@@ -47,6 +47,15 @@ pub struct FloatValidator {
     allow_inf_nan: bool,
 }
 
+impl FloatValidator {
+    fn finish(&self, py: Python<'_>, either_float: EitherFloat<'_>, input: impl ToErrorValue) -> ValResult<Py<PyAny>> {
+        if !self.allow_inf_nan && !either_float.as_f64().is_finite() {
+            return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));
+        }
+        Ok(either_float.into_py_any(py)?)
+    }
+}
+
 impl BuildValidator for FloatValidator {
     const EXPECTED_TYPE: &'static str = "float";
 
@@ -74,10 +83,29 @@ impl Validator for FloatValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let either_float = input.validate_float(state.strict_or(self.strict))?.unpack(state);
-        if !self.allow_inf_nan && !either_float.as_f64().is_finite() {
-            return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));
+        self.finish(py, either_float, input)
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        let peek = input.jiter.peek().map_err(super::JsonCursor::parse_error)?;
+        if peek.is_num() {
+            let value = match input.jiter.known_number(peek).map_err(super::JsonCursor::parse_error)? {
+                // Float tokens are exact matches. Integers retain the ordinary
+                // conversion and exactness policy, including arbitrary precision.
+                jiter::NumberAny::Float(value) => {
+                    return self.finish(py, EitherFloat::F64(value), jiter::JsonValue::Float(value));
+                }
+                jiter::NumberAny::Int(jiter::NumberInt::Int(value)) => jiter::JsonValue::Int(value),
+                jiter::NumberAny::Int(jiter::NumberInt::BigInt(value)) => jiter::JsonValue::BigInt(value),
+            };
+            return self.validate(py, &value, state);
         }
-        Ok(either_float.into_py_any(py)?)
+        self.validate(py, &input.take_value()?, state)
     }
 
     fn get_name(&self) -> &str {

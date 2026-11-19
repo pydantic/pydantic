@@ -8,6 +8,7 @@ import pytest
 from pydantic_core import PydanticOmit
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     BeforeValidator,
     Field,
@@ -241,3 +242,30 @@ def test_cursor_validates_utf8_in_all_skipped_spans(data: bytes) -> None:
 
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
         Model.model_validate_json(data)
+
+
+@pytest.mark.parametrize('strict', [True, False])
+@pytest.mark.parametrize('allow_inf_nan', [True, False])
+def test_cursor_float_tokens_preserve_bits_coercion_and_finite_policy(strict: bool, allow_inf_nan: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    values = list[Annotated[float, Field(allow_inf_nan=allow_inf_nan)]]
+    adapter = TypeAdapter(values)
+    # After-validation forces ordinary JSON validation without converting its
+    # input to Python first, preserving the exact JSON conversion semantics.
+    ordinary = TypeAdapter(Annotated[values, AfterValidator(lambda value: value)])
+    for document in (
+        '[0.0,-0.0,1.125,5e-324,1.7976931348623157e308]',
+        '[1,123456789012345678901234567890]',
+        '[1.12345678901234567890123456789]',
+        '[true,false,null,{},[],"1.25"]',
+        '[NaN,Infinity,-Infinity,1e309]',
+    ):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            actual = adapter.validate_json(document, strict=strict)
+            assert [value.hex() for value in actual] == [value.hex() for value in expected]
