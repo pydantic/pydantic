@@ -1,6 +1,7 @@
 """Coverage for the expanded optional JSON cursor plan."""
 
 from datetime import UTC
+from typing import Any
 
 import pytest
 
@@ -73,3 +74,46 @@ def test_expanded_streaming_constant_defaults_and_local_scalars() -> None:
     assert other.tags == []
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['loc'] == ('positive',)):
         Model.model_validate_json(data.replace('"positive":2', '"positive":0'))
+
+
+@pytest.mark.parametrize(
+    ('annotation', 'document', 'expected'),
+    [
+        (int, '123', 123),
+        (int, '1234567890123456789012345678901234567890', 1234567890123456789012345678901234567890),
+        (float, '1.25', 1.25),
+        (str, '"hello"', 'hello'),
+        (bool, 'true', True),
+        (type(None), 'null', None),
+        (list[int], '[1,"2",3]', [1, 2, 3]),
+        (list[float | None], '[1,null,2.5]', [1.0, None, 2.5]),
+        (dict[str, list[int]], '{"x":[1,"2"],"x":[3]}', {'x': [3]}),
+    ],
+)
+def test_expanded_streaming_scalar_and_container_roots(annotation: Any, document: str, expected: Any) -> None:
+    """https://github.com/pydantic/pydantic/pull/14123"""
+    adapter = TypeAdapter(annotation)
+    assert not adapter.validator._stream_plan_accepted
+    assert adapter.validator._expanded_stream_plan_accepted
+    assert adapter.validate_json(document) == expected
+
+
+def test_expanded_streaming_root_dictionary_constructs_models() -> None:
+    """https://github.com/pydantic/pydantic/pull/14123"""
+    from typing import Annotated
+
+    from pydantic import Field
+
+    class Model(BaseModel):
+        value: int
+
+    adapter = TypeAdapter(Annotated[dict[str, Model], Field(min_length=1, max_length=2)])
+    assert not adapter.validator._stream_plan_accepted
+    assert adapter.validator._expanded_stream_plan_accepted
+    result = adapter.validate_json('{"a":{"value":1},"b":{"value":"2"}}')
+    assert all(isinstance(value, Model) for value in result.values())
+    assert {key: value.model_dump() for key, value in result.items()} == {'a': {'value': 1}, 'b': {'value': 2}}
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['loc'] == ('a', 'value')):
+        adapter.validate_json('{"a":{"value":"invalid"}}')
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'too_short'):
+        adapter.validate_json('{}')

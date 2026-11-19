@@ -587,7 +587,11 @@ impl SchemaValidator {
         }
 
         let plan = self.stream_plan.as_deref()?;
-        let (class, fields) = model_fields::root_parts(&self.validator)?;
+        let model = if plan.is_model_root() {
+            Some(model_fields::root_parts(&self.validator)?)
+        } else {
+            None
+        };
 
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
@@ -607,7 +611,7 @@ impl SchemaValidator {
             self_instance,
         );
         let mut jiter = jiter::Jiter::new(json_data);
-        match model_fields::take_root(py, &mut jiter, class, fields, plan, &mut state) {
+        match model_fields::take_root(py, &mut jiter, model, plan, &mut state) {
             // trailing content is an error the ordinary path reports
             Ok(Some(value)) if jiter.finish().is_ok() => Some(Ok(value.unbind())),
             Err(model_fields::StreamStop::Py(err)) => Some(Err(err.into())),
