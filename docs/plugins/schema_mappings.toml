@@ -326,11 +326,13 @@ format = "duration"
 [Json]
 py_type = "Json"
 json_type = "string"
-defined_in = "Pydantic standard \"format\" extension"
-notes = ""
+defined_in = "JSON Schema Validation"
+notes = "`contentSchema` is the schema of the wrapped type, e.g. `{\"type\": \"integer\"}` for `Json[int]`."
 
 [Json.additional]
-format = "json-string"
+contentMediaType = "application/json"
+
+[Json.additional.contentSchema]
 
 [IPv4Address]
 py_type = "IPv4Address"
