@@ -313,3 +313,19 @@ def test_cursor_dict_json_keys_duplicates_and_omissions() -> None:
     adapter = TypeAdapter(dict[Annotated[str, AfterValidator(omit_key)], Annotated[int, AfterValidator(record)]])
     assert adapter.validate_json('{"skip":{"nested":[1,2]},"keep":3}') == {'keep': 3}
     assert calls == [3]
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_cursor_bool_tokens_and_ordinary_coercion(strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    adapter = TypeAdapter(list[bool])
+    ordinary = TypeAdapter(Annotated[list[bool], AfterValidator(lambda value: value)])
+    for document in ('[true,false,true]', '[0,1,"yes","off"]', '[2,{},[],null]'):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            assert adapter.validate_json(document, strict=strict) == expected
