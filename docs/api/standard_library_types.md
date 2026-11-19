@@ -427,8 +427,8 @@ Standard library type: [`fractions.Fraction`][].
 <h4>Validation</h4>
 
 * [`Fraction`][fractions.Fraction] instances are validated as is.
-* Floats, strings and [`decimal.Decimal`][] instances are validated using the [`Fraction()`][fractions.Fraction]
-  constructor.
+* Integers, floats, strings and [`decimal.Decimal`][] instances are validated using the
+  [`Fraction()`][fractions.Fraction] constructor.
 
 <h4>Strictness</h4>
 
