@@ -2,13 +2,13 @@
 //!
 //! JSON syntax is checked before constructing this input. Scalars and less common
 //! operations use the existing JsonValue implementation, while objects retain
-//! field spans and lists materialize one element at a time.
+//! field spans and arrays materialize locally before ordinary list validation.
 
 use std::cell::OnceCell;
 
 use jiter::{Jiter, JsonArray, JsonValue};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::PyDict;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime};
@@ -17,7 +17,7 @@ use super::input_json::JsonArgs;
 use super::return_enums::EitherComplex;
 use super::{
     BorrowInput, ConsumeIterator, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator,
-    Input, ValidatedDict, ValidatedList, ValidationMatch,
+    Input, ValidatedDict, ValidationMatch,
 };
 use crate::errors::{ErrorTypeDefaults, InputValue, ValError, ValResult};
 use crate::lookup_key::LookupPath;
@@ -79,24 +79,6 @@ impl<'data> JsonBytesInput<'data> {
             }
             fields
         })
-    }
-
-    fn list(&self) -> ValResult<JsonListInput<'_, 'data>> {
-        if self.data.first() == Some(&b'[') {
-            let mut cursor = Jiter::new(self.data).with_allow_inf_nan();
-            let mut count = 0;
-            let mut peek = cursor.next_array().expect("checked array");
-            while let Some(p) = peek {
-                cursor.known_skip(p).expect("checked value");
-                count += 1;
-                peek = cursor.array_step().expect("checked array");
-            }
-            Ok(JsonListInput::Bytes(self.data, count))
-        } else if let JsonValue::Array(array) = self.value() {
-            Ok(JsonListInput::Parsed(array))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::ListType, self))
-        }
     }
 }
 
@@ -175,41 +157,6 @@ impl<'data> ValidatedDict<'_> for JsonObjectInput<'_, 'data> {
             object.last().map(|(name, _)| name.to_string())
         } else {
             self.input.fields().last().map(|(name, _)| name.clone())
-        }
-    }
-}
-
-pub(crate) enum JsonListInput<'a, 'data> {
-    Bytes(&'data [u8], usize),
-    Parsed(&'a JsonArray<'data>),
-}
-
-impl<'py, 'data> ValidatedList<'py> for JsonListInput<'_, 'data> {
-    type Item = JsonBytesInput<'data>;
-    fn len(&self) -> Option<usize> {
-        Some(match self {
-            Self::Bytes(_, len) => *len,
-            Self::Parsed(array) => Vec::len(array),
-        })
-    }
-    fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
-        None
-    }
-    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
-        match self {
-            Self::Parsed(array) => {
-                Ok(consumer.consume_iterator(array.iter().cloned().map(|v| Ok(JsonBytesInput::parsed(v)))))
-            }
-            Self::Bytes(data, _) => {
-                let mut cursor = Jiter::new(data).with_allow_inf_nan();
-                let mut peek = cursor.next_array().expect("checked array");
-                Ok(consumer.consume_iterator(std::iter::from_fn(move || {
-                    let p = peek?;
-                    let value = cursor.known_value(p).expect("checked value");
-                    peek = cursor.array_step().expect("checked array");
-                    Some(Ok(JsonBytesInput::parsed(value)))
-                })))
-            }
         }
     }
 }
@@ -342,17 +289,16 @@ impl<'py, 'data> Input<'py> for JsonBytesInput<'data> {
     }
 
     type List<'a>
-        = JsonListInput<'a, 'data>
+        = &'a JsonArray<'data>
     where
         Self: 'a;
 
     fn validate_list(&self, _strict: bool) -> ValMatch<Self::List<'_>> {
-        self.list().map(ValidationMatch::exact)
+        self.value().validate_list(_strict)
     }
 
     fn validate_deque(&self, _strict: bool) -> ValMatch<(Self::List<'_>, Option<usize>)> {
-        self.value().validate_deque(false)?;
-        self.list().map(|list| ValidationMatch::strict((list, None)))
+        self.value().validate_deque(_strict)
     }
 
     type Tuple<'a>
