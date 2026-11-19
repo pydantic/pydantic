@@ -236,7 +236,30 @@ def get_standard_typevars_map(cls: Any) -> dict[TypeVar, Any] | None:
     # So it is safe to access cls.__args__ and origin.__parameters__
     args: tuple[Any, ...] = cls.__args__  # type: ignore
     parameters: tuple[TypeVar, ...] = origin.__parameters__
-    return dict(zip(parameters, args, strict=True))
+    if len(args) == len(parameters):
+        return dict(zip(parameters, args, strict=True))
+
+    typevars_map: dict[TypeVar, Any] = {}
+    _missing = object()
+    for parameter, argument in zip_longest(parameters, args, fillvalue=_missing):
+        if parameter is _missing:
+            return dict(zip(parameters, args, strict=True))
+
+        param = cast(TypeVar, parameter)
+        if argument is _missing:
+            try:
+                has_default = param.has_default()  # pyright: ignore[reportAttributeAccessIssue]
+            except AttributeError:
+                # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
+                has_default = False
+            if has_default:
+                typevars_map[param] = replace_types(param.__default__, typevars_map)  # pyright: ignore[reportAttributeAccessIssue]
+            else:
+                return dict(zip(parameters, args, strict=True))
+        else:
+            typevars_map[param] = argument
+
+    return typevars_map
 
 
 def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any]:

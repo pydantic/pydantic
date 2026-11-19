@@ -488,3 +488,54 @@ def test_type_alias_type_with_metadata() -> None:
 
     ta = TypeAdapter(B)
     assert ta.json_schema() == {'type': 'int', 'extra': 1}
+
+
+def test_type_alias_type_with_type_param_defaults() -> None:
+    """Test that generic TypeAliasType with type parameter defaults can be partially parameterized (issue #14310)."""
+    import sys
+    from typing import Any
+
+    import typing_extensions
+
+    A = typing_extensions.TypeVar('A')
+    B = typing_extensions.TypeVar('B', default=int)
+    Pair = typing_extensions.TypeAliasType('Pair', tuple[A, B], type_params=(A, B))
+
+    ta_full = TypeAdapter(Pair[str, float])
+    assert ta_full.validate_python(('a', 1.5)) == ('a', 1.5)
+
+    ta_partial = TypeAdapter(Pair[str])
+    assert ta_partial.validate_python(('a', 1)) == ('a', 1)
+
+    class Model(BaseModel):
+        value: Pair[str]
+
+    m = Model(value=('hello', 42))
+    assert m.value == ('hello', 42)
+
+    # Dependent defaults:
+    C = typing_extensions.TypeVar('C', default=list[A])
+    Triple = typing_extensions.TypeAliasType('Triple', tuple[A, B, C], type_params=(A, B, C))
+
+    ta_triple = TypeAdapter(Triple[str])
+    assert ta_triple.validate_python(('hello', 42, ['x', 'y'])) == ('hello', 42, ['x', 'y'])
+
+    # Missing argument for parameter without default raises ValueError:
+    NoDef = typing_extensions.TypeVar('NoDef')
+    PairNoDef = typing_extensions.TypeAliasType('PairNoDef', tuple[A, NoDef], type_params=(A, NoDef))
+    with pytest.raises(ValueError, match='zip.*shorter'):
+        TypeAdapter(PairNoDef[str])
+
+    # PEP 695 syntax with defaults on Python 3.13+:
+    if sys.version_info >= (3, 13):
+        ns: dict[str, Any] = {}
+        exec(
+            """
+type Pep695Pair[X, Y = int] = tuple[X, Y]
+ns['Pep695Pair'] = Pep695Pair
+""",
+            {'ns': ns},
+        )
+        Pep695Pair = ns['Pep695Pair']
+        ta_pep695 = TypeAdapter(Pep695Pair[str])
+        assert ta_pep695.validate_python(('a', 1)) == ('a', 1)
