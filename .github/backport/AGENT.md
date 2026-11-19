@@ -18,14 +18,14 @@ the PR is done after you exit.
 
 ## Rules
 
-- The backport must only contain the change of the original PR. Do not refactor, do not fix unrelated issues,
+* The backport must only contain the change of the original PR. Do not refactor, do not fix unrelated issues,
   do not reformat code that wasn't touched by the PR.
-- Never resolve a conflict by dropping the fix itself. If a test added by the PR can't be backported, adapt it
+* Never resolve a conflict by dropping the fix itself. If a test added by the PR can't be backported, adapt it
   to `$TARGET_BRANCH` rather than deleting it, and explain why in the report.
-- If the change depends on other commits of `main` that are not on `$TARGET_BRANCH` (e.g. it uses a function
+* If the change depends on other commits of `main` that are not on `$TARGET_BRANCH` (e.g. it uses a function
   introduced by an earlier PR), do not backport these other commits. Mark the backport as unresolved and list
   the missing PRs in the report: a maintainer will decide whether to backport them first.
-- If you are not confident in a resolution, leave the conflict markers in place, mark the backport as unresolved
+* If you are not confident in a resolution, leave the conflict markers in place, mark the backport as unresolved
   and explain the remaining conflicts. A wrong resolution is worse than an unresolved one.
 
 ## Common conflicts
@@ -33,17 +33,17 @@ the PR is done after you exit.
 `main` is the development branch of the next major version (Pydantic V3), while `$TARGET_BRANCH` is a V2
 maintenance branch. Code may have been moved, renamed or removed on `main`.
 
-- `HISTORY.md`: never backport changelog changes, keep the `$TARGET_BRANCH` version of the file.
-- Version numbers (`pydantic/version.py`, `pyproject.toml`, `pydantic-core/Cargo.toml`, ...): always keep the
+* `HISTORY.md`: never backport changelog changes, keep the `$TARGET_BRANCH` version of the file.
+* Version numbers (`pydantic/version.py`, `pyproject.toml`, `pydantic-core/Cargo.toml`, ...): always keep the
   `$TARGET_BRANCH` versions.
-- Lock files (`uv.lock`, `pydantic-core/Cargo.lock`): never edit by hand. Keep the `$TARGET_BRANCH` version, and if
+* Lock files (`uv.lock`, `pydantic-core/Cargo.lock`): never edit by hand. Keep the `$TARGET_BRANCH` version, and if
   the PR changes dependencies, mention it in the report (dependency changes usually shouldn't be backported).
-- CI and tooling configuration (`.github/`, `.pre-commit-config.yaml`, `Makefile`): keep the `$TARGET_BRANCH` version,
+* CI and tooling configuration (`.github/`, `.pre-commit-config.yaml`, `Makefile`): keep the `$TARGET_BRANCH` version,
   unless the PR is specifically about CI or tooling.
-- Deprecated APIs: V3 removes APIs that are deprecated in V2. If the fix touches code next to a deprecated code
+* Deprecated APIs: V3 removes APIs that are deprecated in V2. If the fix touches code next to a deprecated code
   path that no longer exists on `main`, keep the deprecated code path on `$TARGET_BRANCH`, and apply the fix to it
   as well if relevant.
-- Tests: the test suite may have been reorganized on `main`. Add the PR tests to the equivalent test module on
+* Tests: the test suite may have been reorganized on `main`. Add the PR tests to the equivalent test module on
   `$TARGET_BRANCH`, and adapt them to V2 behavior and APIs.
 
 ## Running tests
