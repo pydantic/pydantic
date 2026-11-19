@@ -284,3 +284,30 @@ def test_cursor_string_decoding_cache_and_coercion(
             assert actual == expected
             if cache_mode == 'all' and actual[:2] == ['repeated-value', 'repeated-value']:
                 assert actual[0] is actual[1]
+
+
+def test_cursor_dict_json_keys_duplicates_and_omissions() -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    assert TypeAdapter(dict[int, int]).validate_json('{"1":2,"3":4}', strict=True) == {1: 2, 3: 4}
+    assert TypeAdapter(dict[float, str]).validate_json('{"1.5":"value"}', strict=True) == {1.5: 'value'}
+    calls: list[int] = []
+
+    def record(value: int) -> int:
+        calls.append(value)
+        if value == 0:
+            raise PydanticOmit
+        return value
+
+    adapter = TypeAdapter(dict[str, Annotated[int, AfterValidator(record)]])
+    assert adapter.validate_json('{"a":1,"a":2,"b":0,"c":3}') == {'a': 2, 'c': 3}
+    assert calls == [1, 2, 0, 3]
+
+    def omit_key(value: str) -> str:
+        if value == 'skip':
+            raise PydanticOmit
+        return value
+
+    calls.clear()
+    adapter = TypeAdapter(dict[Annotated[str, AfterValidator(omit_key)], Annotated[int, AfterValidator(record)]])
+    assert adapter.validate_json('{"skip":{"nested":[1,2]},"keep":3}') == {'keep': 3}
+    assert calls == [3]
