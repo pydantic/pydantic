@@ -1850,8 +1850,10 @@ class GenerateJsonSchema:
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
             )
 
-        if hasattr(cls, '__deprecated__'):
-            json_schema['deprecated'] = True
+        # Only the class decorated with `@deprecated` is deprecated, not its subclasses (the attribute is
+        # inherited, but the runtime only warns on instantiation of the decorated class).
+        if '__deprecated__' in cls.__dict__:
+            json_schema.setdefault('deprecated', True)
 
     def resolve_ref_schema(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
         """Resolve a JsonSchemaValue to the non-ref schema if it is a $ref schema.
