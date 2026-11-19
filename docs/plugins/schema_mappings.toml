@@ -208,10 +208,12 @@ format = "binary"
 
 [Decimal]
 py_type = "Decimal"
-json_type = "number"
-additional = ""
+json_type = "anyOf"
 defined_in = "JSON Schema Core"
-notes = ""
+notes = "Numbers and strings are both accepted when validating. In serialization mode, the schema is `{\"type\": \"string\"}`, as decimals are serialized as strings."
+
+[Decimal.additional]
+anyOf = [{ type = "number" }, { type = "string" }]
 
 [UUID1]
 py_type = "UUID1"
