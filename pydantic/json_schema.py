@@ -1498,42 +1498,126 @@ class GenerateJsonSchema:
         openapi_discriminator: str | None = None
 
         if isinstance(schema['discriminator'], str):
-            return schema['discriminator']
+            openapi_discriminator = schema['discriminator']
 
-        if isinstance(schema['discriminator'], list):
+        elif isinstance(schema['discriminator'], list):
             # If the discriminator is a single item list containing a string, that is equivalent to the string case
             if len(schema['discriminator']) == 1 and isinstance(schema['discriminator'][0], str):
-                return schema['discriminator'][0]
-            # When an alias is used that is different from the field name, the discriminator will be a list of single
-            # str lists, one for the attribute and one for the actual alias. The logic here will work even if there is
-            # more than one possible attribute, and looks for whether a single alias choice is present as a documented
-            # property on all choices. If so, that property will be used as the OpenAPI discriminator.
-            for alias_path in schema['discriminator']:
-                if not isinstance(alias_path, list):
-                    break  # this means that the discriminator is not a list of alias paths
-                if len(alias_path) != 1:
-                    continue  # this means that the "alias" does not represent a single field
-                alias = alias_path[0]
-                if not isinstance(alias, str):
-                    continue  # this means that the "alias" does not represent a field
-                alias_is_present_on_all_choices = True
-                for choice in one_of_choices:
-                    try:
-                        choice = self.resolve_ref_schema(choice)
-                    except RuntimeError as exc:
-                        # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
-                        # for tagged union choices at this point in the schema gen process, we might need to do
-                        # another pass at the end like we do for core schemas
-                        self.emit_warning('skipped-discriminator', str(exc))
-                        choice = {}
-                    properties = choice.get('properties', {})
-                    if not isinstance(properties, dict) or alias not in properties:
-                        alias_is_present_on_all_choices = False
+                openapi_discriminator = schema['discriminator'][0]
+            else:
+                # When an alias is used that is different from the field name, the discriminator will be a list of single
+                # str lists, one for the attribute and one for the actual alias. The logic here will work even if there is
+                # more than one possible attribute, and looks for whether a single alias choice is present as a documented
+                # property on all choices. If so, that property will be used as the OpenAPI discriminator.
+                for alias_path in schema['discriminator']:
+                    if not isinstance(alias_path, list):
+                        break  # this means that the discriminator is not a list of alias paths
+                    if len(alias_path) != 1:
+                        continue  # this means that the "alias" does not represent a single field
+                    alias = alias_path[0]
+                    if not isinstance(alias, str):
+                        continue  # this means that the "alias" does not represent a field
+                    alias_is_present_on_all_choices = True
+                    for choice in one_of_choices:
+                        try:
+                            choice = self.resolve_ref_schema(choice)
+                        except RuntimeError as exc:
+                            # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
+                            # for tagged union choices at this point in the schema gen process, we might need to do
+                            # another pass at the end like we do for core schemas
+                            self.emit_warning('skipped-discriminator', str(exc))
+                            choice = {}
+                        properties = choice.get('properties', {})
+                        if not isinstance(properties, dict) or alias not in properties:
+                            alias_is_present_on_all_choices = False
+                            break
+                    if alias_is_present_on_all_choices:
+                        openapi_discriminator = alias
                         break
-                if alias_is_present_on_all_choices:
-                    openapi_discriminator = alias
-                    break
+
+        # In serialization mode, the discriminator property name in the generated JSON schema
+        # may differ from schema['discriminator'] due to serialization_alias. Verify the candidate
+        # is present in all choices; if not, search the choices for the correct property name.
+        if self.mode == 'serialization' and not self._discriminator_in_all_choices(openapi_discriminator, one_of_choices):
+            openapi_discriminator = self._find_discriminator_in_choices(one_of_choices) or openapi_discriminator
+
         return openapi_discriminator
+
+    def _discriminator_in_all_choices(self, discriminator: str | None, one_of_choices: list[JsonDict]) -> bool:
+        """Return True if ``discriminator`` is a property key in every resolved choice schema.
+
+        Returns True (do not trigger fallback) when refs cannot be resolved yet, to avoid
+        spuriously replacing a correct discriminator with a fallback scan result.
+        """
+        if discriminator is None:
+            return False
+        for choice in one_of_choices:
+            try:
+                choice = self.resolve_ref_schema(choice)
+            except RuntimeError:
+                return True  # unresolvable ref – assume the candidate is correct
+            properties = choice.get('properties', {})
+            if not isinstance(properties, dict) or discriminator not in properties:
+                return False
+        return True
+
+    def _find_discriminator_in_choices(self, one_of_choices: list[JsonDict]) -> str | None:
+        """Search choice schemas for a property whose ``const``/``enum`` values differ across choices.
+
+        This is used as a fallback in serialization mode when the discriminator field carries a
+        ``serialization_alias`` that differs from the Python attribute name or ``validation_alias``
+        stored in the core schema's ``discriminator`` field.  The discriminator property is the
+        unique property that (a) appears in every choice and (b) takes a different constant value
+        in each choice variant.
+        """
+        if len(one_of_choices) < 2:
+            return None
+
+        all_props: list[dict[str, Any]] = []
+        for choice in one_of_choices:
+            try:
+                choice = self.resolve_ref_schema(choice)
+            except RuntimeError:
+                return None
+            properties = choice.get('properties', {})
+            if not isinstance(properties, dict):
+                return None
+            all_props.append(properties)
+
+        if len(all_props) < 2:
+            return None
+
+        common_props = set(all_props[0].keys())
+        for props in all_props[1:]:
+            common_props &= set(props.keys())
+
+        candidates: list[str] = []
+        for prop in sorted(common_props):
+            value_sets: list[frozenset[Any]] = []
+            all_have_const_or_enum = True
+            for props in all_props:
+                prop_schema = props[prop]
+                if 'const' in prop_schema:
+                    value_sets.append(frozenset([prop_schema['const']]))
+                elif 'enum' in prop_schema:
+                    value_sets.append(frozenset(prop_schema['enum']))
+                else:
+                    all_have_const_or_enum = False
+                    break
+            if not all_have_const_or_enum:
+                continue
+            # A true discriminator has pairwise-disjoint value sets: every choice contributes
+            # values that appear in no other choice.  A shared Enum field whose members happen
+            # to differ between variants would satisfy `len(all_values) > 1` but its value sets
+            # would overlap or not partition cleanly, so we require the total count of unique
+            # values to equal the sum of per-choice set sizes (i.e. all sets are disjoint).
+            all_values: set[Any] = set()
+            for vs in value_sets:
+                all_values |= vs
+            if len(all_values) > 1 and len(all_values) == sum(len(vs) for vs in value_sets):
+                candidates.append(prop)
+
+        return candidates[0] if len(candidates) == 1 else None
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a core_schema.ChainSchema.

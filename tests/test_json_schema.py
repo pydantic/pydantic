@@ -4794,6 +4794,146 @@ def test_alias_same():
     }
 
 
+def test_discriminator_serialization_alias_only() -> None:
+    """https://github.com/pydantic/pydantic/issues/14284"""
+
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='petType')
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='petType')
+        barks: float
+
+    Pet = Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    class Household(BaseModel):
+        pet: Pet
+
+    # Serialization mode with by_alias=True (default): propertyName should use serialization_alias
+    ser_schema = Household.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['pet']['discriminator'] == {
+        'propertyName': 'petType',
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+    }
+    assert 'petType' in ser_schema['$defs']['Cat']['properties']
+    assert 'petType' in ser_schema['$defs']['Dog']['properties']
+
+    # Serialization mode with by_alias=False: propertyName should use Python field name
+    ser_no_alias = Household.model_json_schema(mode='serialization', by_alias=False)
+    assert ser_no_alias['properties']['pet']['discriminator']['propertyName'] == 'pet_type'
+
+    # Validation mode: propertyName should still be the Python field name (no regression)
+    val_schema = Household.model_json_schema()
+    assert val_schema['properties']['pet']['discriminator']['propertyName'] == 'pet_type'
+
+
+def test_discriminator_separate_validation_and_serialization_aliases() -> None:
+    """https://github.com/pydantic/pydantic/issues/14284"""
+
+    class Circle(BaseModel):
+        shape_type: Literal['circle'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+        radius: float
+
+    class Square(BaseModel):
+        shape_type: Literal['square'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+        side: float
+
+    Shape = Annotated[Circle | Square, Field(discriminator='shape_type')]
+
+    class Canvas(BaseModel):
+        shape: Shape
+
+    # Serialization mode: propertyName and $defs properties should use serialization_alias
+    ser_schema = Canvas.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['shape']['discriminator'] == {
+        'propertyName': 'out_shape',
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+    }
+    assert 'out_shape' in ser_schema['$defs']['Circle']['properties']
+    assert 'out_shape' in ser_schema['$defs']['Square']['properties']
+
+    # Validation mode: propertyName should use validation_alias (no regression)
+    val_schema = Canvas.model_json_schema()
+    assert val_schema['properties']['shape']['discriminator']['propertyName'] == 'in_shape'
+
+    # Serialization mode with by_alias=False: propertyName should use Python field name
+    ser_no_alias = Canvas.model_json_schema(mode='serialization', by_alias=False)
+    assert ser_no_alias['properties']['shape']['discriminator']['propertyName'] == 'shape_type'
+
+
+def test_discriminator_serialization_alias_unaffected_by_shared_enum_field() -> None:
+    """https://github.com/pydantic/pydantic/issues/14284
+
+    A multi-value Literal field shared identically across all union members must not be treated
+    as a competing discriminator candidate.  Its value sets are not pairwise disjoint
+    (len(union) != sum(len(per_choice_set))), so the fallback scan skips it.
+    """
+
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='petType')
+        tier: Literal['bronze', 'gold']  # same multi-value enum in every variant
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='petType')
+        tier: Literal['bronze', 'gold']
+        barks: float
+
+    Pet = Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    class Household(BaseModel):
+        pet: Pet
+
+    ser_schema = Household.model_json_schema(mode='serialization')
+    # 'tier' has the same values in every choice → not pairwise disjoint → not a candidate.
+    # 'petType' is single-value and disjoint → the unique discriminator.
+    assert ser_schema['properties']['pet']['discriminator'] == {
+        'propertyName': 'petType',
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+    }
+
+
+def test_discriminator_alias_generator_serialization() -> None:
+    """https://github.com/pydantic/pydantic/issues/14284
+
+    When an alias_generator is configured, the generated alias is used as both the
+    validation alias and the serialization alias.  The discriminator property name must
+    match in both schema modes, with and without a shared multi-value Literal field.
+    """
+    from pydantic.alias_generators import to_camel
+
+    class Cat(BaseModel):
+        model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+        pet_type: Literal['cat']
+        tier: Literal['bronze', 'gold']  # shared Literal that alias_generator renames too
+        meows: int
+
+    class Dog(BaseModel):
+        model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+        pet_type: Literal['dog']
+        tier: Literal['bronze', 'gold']
+        barks: float
+
+    Pet = Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    class Household(BaseModel):
+        pet: Pet
+
+    # Validation mode: alias_generator renames pet_type → petType
+    val_schema = Household.model_json_schema()
+    assert val_schema['properties']['pet']['discriminator']['propertyName'] == 'petType'
+    assert 'petType' in val_schema['$defs']['Cat']['properties']
+
+    # Serialization mode: same alias applies
+    ser_schema = Household.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['pet']['discriminator'] == {
+        'propertyName': 'petType',
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+    }
+    assert 'petType' in ser_schema['$defs']['Cat']['properties']
+
+
 def test_nested_python_dataclasses():
     """
     Test schema generation for nested python dataclasses
