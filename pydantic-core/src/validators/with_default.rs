@@ -224,6 +224,11 @@ impl Validator for WithDefaultValidator {
 }
 
 impl WithDefaultValidator {
+    /// Constant defaults can use the inner cursor plan when a value is present.
+    pub(crate) fn stream_inner(&self) -> Option<&Arc<CombinedValidator>> {
+        matches!(self.default, DefaultType::Default(_)).then_some(&self.validator)
+    }
+
     pub fn has_default(&self) -> bool {
         !matches!(self.default, DefaultType::None)
     }

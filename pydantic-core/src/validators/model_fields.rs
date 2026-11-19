@@ -302,6 +302,8 @@ pub(crate) enum Fast {
     Bool(Arc<CombinedValidator>),
     Int(Arc<CombinedValidator>),
     Float(Arc<CombinedValidator>),
+    /// A scalar handled by its ordinary validator without materializing sibling fields.
+    Validate(Arc<CombinedValidator>),
     /// an array whose elements all come off the cursor the same way, to any depth
     List(Box<ContainerPlan>),
     /// an object with string keys whose values all come off the cursor the same way
@@ -526,6 +528,10 @@ fn materialize_nested<'py>(
             let CombinedValidator::Model(model) = unwrap_prebuilt(&nested.validator) else {
                 unreachable!("a model plan holds a model validator");
             };
+            // Missing constant defaults are already ordinary validated model instances.
+            if !value.is_instance_of::<PyTuple>() {
+                return Ok(None);
+            }
             let class = model.stream_class();
             let pending = value.cast::<PyTuple>()?;
             let model_dict = pending.get_item(0)?;
@@ -784,6 +790,9 @@ fn take_peeked<'py>(
         (Fast::Str(validator) | Fast::Bool(validator) | Fast::Int(validator) | Fast::Float(validator), _)
             if !matches!(peek, Peek::Array | Peek::Object) =>
         {
+            coerce_scalar(py, jiter, validator, peek, state)?
+        }
+        (Fast::Validate(validator), _) if !matches!(peek, Peek::Array | Peek::Object) => {
             coerce_scalar(py, jiter, validator, peek, state)?
         }
         (Fast::Model(nested), Peek::Object) => {
@@ -1078,6 +1087,10 @@ impl ModelFieldsValidator {
                             nullable = true;
                             validator = Arc::clone(inner.stream_inner());
                         }
+                        CombinedValidator::WithDefault(inner) => {
+                            narrow_eligible = false;
+                            validator = Arc::clone(inner.stream_inner()?);
+                        }
                         CombinedValidator::DefinitionRef(inner) => {
                             reference_count += 1;
                             if reference_count > 64 {
@@ -1122,6 +1135,29 @@ impl ModelFieldsValidator {
                             })),
                             None,
                         )
+                    }
+                    CombinedValidator::Literal(_)
+                    | CombinedValidator::StrConstrained(_)
+                    | CombinedValidator::ConstrainedInt(_)
+                    | CombinedValidator::ConstrainedFloat(_)
+                    | CombinedValidator::Date(_)
+                    | CombinedValidator::Time(_)
+                    | CombinedValidator::Datetime(_)
+                    | CombinedValidator::Timedelta(_)
+                    | CombinedValidator::Uuid(_)
+                    | CombinedValidator::Decimal(_)
+                    | CombinedValidator::Fraction(_)
+                    | CombinedValidator::Complex(_)
+                    | CombinedValidator::Bytes(_)
+                    | CombinedValidator::ConstrainedBytes(_)
+                    | CombinedValidator::None(_)
+                    | CombinedValidator::IntEnum(_)
+                    | CombinedValidator::StrEnum(_)
+                    | CombinedValidator::FloatEnum(_)
+                    | CombinedValidator::PlainEnum(_)
+                    | CombinedValidator::Any(_) => {
+                        narrow_eligible = false;
+                        (Fast::Validate(Arc::clone(&validator)), None)
                     }
                     _ => return None,
                 };
@@ -1197,9 +1233,16 @@ impl ModelFieldsValidator {
                     fields_set_count += 1;
                     value.unbind()
                 }
-                // Field validation may run callbacks. Leave it to the ordinary path rather
-                // than running user code before this object and its document are committed.
-                Some(Taken::Raw) | None => return Ok(None),
+                Some(Taken::Raw) => return Ok(None),
+                None => {
+                    let state = &mut state.scoped_set_data(Some(model_dict.clone()));
+                    let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
+                    match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                        Ok(Some(value)) => value,
+                        Err(ValError::InternalErr(err)) => return Err(StreamStop::Py(err)),
+                        Ok(None) | Err(_) => return Ok(None),
+                    }
+                }
             };
             // Streaming does not account for custom hashing on str subclasses used as field
             // names. Their __hash__ can run before the full document has passed JSON parsing.
