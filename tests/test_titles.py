@@ -482,8 +482,6 @@ def test_field_title_generator_returns_invalid_type(invalid_return_value, TypedD
         class MyDataclass:
             field_a: Any = Field(field_title_generator=lambda f, _: invalid_return_value)
 
-        model_json_schema(MyDataclass)
-
     with pytest.raises(
         TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):

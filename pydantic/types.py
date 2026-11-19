@@ -10,6 +10,7 @@ import sys
 from collections.abc import Callable, Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
+from fractions import Fraction
 from pathlib import Path
 from re import Pattern
 from types import ModuleType
@@ -1965,7 +1966,7 @@ class ByteSize(int):
     ```
     """
 
-    byte_sizes: dict[str, float] = {
+    byte_sizes: ClassVar[dict[str, float]] = {
         'b': 1,
         'kb': 10**3,
         'mb': 10**6,
@@ -1995,8 +1996,8 @@ class ByteSize(int):
     }
     byte_sizes.update({k.lower()[0]: v for k, v in byte_sizes.items() if 'i' not in k})
 
-    byte_string_pattern = r'^\s*(\d*\.?\d+)\s*(\w+)?'
-    byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
+    byte_string_pattern: ClassVar[str] = r'^\s*(\d*\.?\d+)\s*(\w+)?'
+    byte_string_re: ClassVar[Pattern[str]] = re.compile(byte_string_pattern, re.IGNORECASE)
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -2035,10 +2036,15 @@ class ByteSize(int):
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
-        try:
-            return cls(int(float(scalar) * unit_mult))
-        except OverflowError:
+        # Matches the default `default_max_str_digits` value (https://docs.python.org/3/library/sys.html#sys.int_info.default_max_str_digits)
+        # to avoid potential DoS issues from the `Fraction()` constructor:
+        if len(scalar) > 4300:
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
+
+        # `Fraction` keeps the computation exact (using `float(scalar)` would turn `'1.005 KB'` into 1004 bytes).
+        # All the `unit_mult` are exactly representable as floats, so `Fraction(unit_mult)` is exact as well
+        # (see https://docs.python.org/3/tutorial/floatingpoint.html#representation-error).
+        return cls(int(Fraction(scalar) * Fraction(unit_mult)))
 
     def human_readable(self, decimal: bool = False, separator: str = '') -> str:
         """Converts a byte size to a human readable string.
