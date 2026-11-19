@@ -145,7 +145,7 @@ impl SchemaValidator {
     #[getter(_stream_plan_accepted)]
     fn stream_plan_accepted(&self) -> bool {
         let root = model_fields::unwrap_prebuilt(&self.validator);
-        stream_array_of_models(root).is_some() || model_fields::root_plan(root).is_some()
+        model_fields::root_plan(root).is_some()
     }
 
     #[new]
@@ -531,9 +531,8 @@ impl SchemaValidator {
     /// into a `JsonValue` tree. `None` means the schema or the document is not one this handles
     /// and the caller should take the tree path.
     ///
-    /// Handles a model at the top level and an array of them. Any element the fast path cannot
-    /// finish is re-read from its own bytes and validated the ordinary way, so errors and their
-    /// locations come out exactly as they always did.
+    /// Every supported root uses the same reader. Failed attempts use ordinary document
+    /// validation, including whole-list retry when a model element cannot be finished.
     #[allow(clippy::too_many_arguments)]
     fn _validate_json_streaming(
         &self,
@@ -557,14 +556,7 @@ impl SchemaValidator {
         }
 
         let root = model_fields::unwrap_prebuilt(&self.validator);
-
-        let models = stream_array_of_models(root);
-
-        // anything else the plan understands, taken as a single value
-        let value_plan = match models {
-            Some(_) => None,
-            None => Some(model_fields::root_plan(root)?),
-        };
+        let plan = model_fields::root_plan(root)?;
 
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
@@ -583,19 +575,6 @@ impl SchemaValidator {
             None,
             self_instance,
         );
-        if let Some((class, item, mf, plan)) = models {
-            return Streamer {
-                py,
-                json_data,
-                class: class.bind(py),
-                item,
-                mf,
-                plan: &plan,
-            }
-            .array(&mut state);
-        }
-
-        let plan = value_plan?;
         let mut jiter = jiter::Jiter::new(json_data);
         match model_fields::take_root(py, &mut jiter, &plan, &mut state) {
             // trailing content is an error the ordinary path reports
@@ -616,37 +595,6 @@ impl SchemaValidator {
             self.validation_error_cause,
         )
     }
-}
-
-/// An array of models, the one shape that replays a failed element on its own rather than
-/// replaying the whole document. Every other shape, a single model included, goes through the
-/// plan like any other value.
-type StreamArrayOfModels<'a> = (
-    &'a Py<PyType>,
-    &'a CombinedValidator,
-    &'a model_fields::ModelFieldsValidator,
-    model_fields::ModelPlan<'a>,
-);
-
-fn stream_array_of_models(root: &CombinedValidator) -> Option<StreamArrayOfModels<'_>> {
-    let CombinedValidator::List(list) = root else {
-        return None;
-    };
-    let list = list.stream_list()?;
-    // this path builds the list itself, so it cannot honour a bound or `fail_fast`; such a list
-    // is left to the ordinary plan, whose reader does check the length
-    if list.min_length.is_some() || list.max_length.is_some() || list.fail_fast {
-        return None;
-    }
-    let item = model_fields::unwrap_prebuilt(list.items);
-    let CombinedValidator::Model(model_v) = item else {
-        return None;
-    };
-    let (class, inner) = model_v.stream_parts()?;
-    let CombinedValidator::ModelFields(mf) = &**inner else {
-        return None;
-    };
-    Some((class, item, mf, mf.stream_plan()?))
 }
 
 pub trait BuildValidator: Sized {
@@ -1071,94 +1019,6 @@ impl<T: Validator> Validator for Box<T> {
 
     fn get_name(&self) -> &str {
         (**self).get_name()
-    }
-}
-
-/// The pieces the streaming path above needs to read one document.
-struct Streamer<'a, 'py> {
-    py: Python<'py>,
-    json_data: &'a [u8],
-    class: &'a Bound<'py, PyType>,
-    item: &'a CombinedValidator,
-    mf: &'a model_fields::ModelFieldsValidator,
-    plan: &'a model_fields::ModelPlan<'a>,
-}
-
-impl<'py> Streamer<'_, 'py> {
-    /// One object from the cursor as a finished model instance, or `None` if the fast path could
-    /// not finish it. Either way the object has been consumed.
-    fn object(
-        &self,
-        jiter: &mut jiter::Jiter<'_>,
-        state: &mut ValidationState<'_, 'py>,
-    ) -> Option<ValResult<Bound<'py, PyAny>>> {
-        let fields = match self.mf.validate_json_streaming(self.py, jiter, self.plan, state) {
-            Ok(Some(fields)) => fields,
-            // the object could not be finished, or the cursor hit something it will not read:
-            // either way the caller takes the ordinary path
-            Ok(None) | Err(model_fields::StreamStop::Cursor) => return None,
-            Err(model_fields::StreamStop::Py(err)) => return Some(Err(err.into())),
-        };
-        let (model_dict, _extra, fields_set) = fields;
-        let none = self.py.None();
-        let built = model::create_class(self.class).and_then(|instance| {
-            model::set_model_attrs(
-                &instance,
-                &model_dict,
-                none.bind(self.py),
-                Bound::new(self.py, fields_set)?.as_any(),
-            )
-            .map(|()| instance)
-        });
-        Some(built.map_err(Into::into))
-    }
-
-    /// The same object again, validated the ordinary way from its own bytes, so that errors and
-    /// their locations are whatever the tree path would have produced.
-    fn replay(&self, span: &[u8], state: &mut ValidationState<'_, 'py>) -> Option<ValResult<Py<PyAny>>> {
-        let value = jiter::JsonValue::parse(span, true).ok()?;
-        Some(self.item.validate(self.py, &value, state))
-    }
-
-    fn array(&self, state: &mut ValidationState<'_, 'py>) -> Option<ValResult<Py<PyAny>>> {
-        let mut jiter = jiter::Jiter::new(self.json_data);
-        if !matches!(jiter.peek().ok()?, jiter::Peek::Array) {
-            return None;
-        }
-        let list = pyo3::types::PyList::empty(self.py);
-        let mut errors: Vec<crate::errors::ValLineError> = Vec::new();
-        let mut index = 0usize;
-
-        let mut peek = jiter.known_array().ok()?;
-        while let Some(p) = peek {
-            let start = jiter.current_index();
-            let built = if matches!(p, jiter::Peek::Object) {
-                self.object(&mut jiter, state)
-            } else {
-                jiter.known_skip(p).ok()?;
-                None
-            };
-            match built {
-                Some(Ok(instance)) => list.append(instance).ok()?,
-                Some(Err(err)) => return Some(Err(err)),
-                None => match self.replay(&self.json_data[start..jiter.current_index()], state)? {
-                    Ok(validated) => list.append(validated).ok()?,
-                    Err(ValError::LineErrors(line_errors)) => {
-                        errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
-                    }
-                    Err(err) => return Some(Err(err)),
-                },
-            }
-            index += 1;
-            peek = jiter.array_step().ok()?;
-        }
-        if jiter.finish().is_err() {
-            return None;
-        }
-        if !errors.is_empty() {
-            return Some(Err(ValError::LineErrors(errors)));
-        }
-        Some(Ok(list.into_any().unbind()))
     }
 }
 

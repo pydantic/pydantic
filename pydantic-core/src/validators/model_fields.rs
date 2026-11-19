@@ -904,10 +904,6 @@ impl ModelFieldsValidator {
     /// Worked out once per document rather than once per record: with no aliases anywhere the name
     /// path is the only one that can match, whatever the caller configures, so there is no alias
     /// priority to resolve and a key can be handled the moment it is read.
-    pub(crate) fn stream_plan(&self) -> Option<ModelPlan<'_>> {
-        self.stream_plan_at(0)
-    }
-
     fn stream_plan_at(&self, depth: u8) -> Option<ModelPlan<'_>> {
         let streamable = matches!(self.extra_behavior, ExtraBehavior::Ignore | ExtraBehavior::Forbid)
             && self.extras_validator.is_none()
