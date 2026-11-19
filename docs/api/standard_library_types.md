@@ -17,7 +17,7 @@ Built-in type: [`bool`][]
 <h3>Validation</h3>
 
 * A valid [`bool`][] instance, i.e. `True` or `False`.
-* The integers `0` or `1`.
+* The integers `0` or `1`, as well as floats and [`Decimal`][decimal.Decimal] instances equal to `0` or `1` (e.g. `1.0`).
 * A string, which when converted to lowercase is one of `'0'`, `'off'`, `'f'`, `'false'`, `'n'`, `'no'`, `'1'`, `'on'` `'t'`, `'true'`, `'y'`, `'yes'`.
 * [`bytes`][] objects that are valid per the previous rule when decoded to a string.
 
