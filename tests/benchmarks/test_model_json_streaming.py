@@ -7,7 +7,7 @@ Keep the input shape fixed so CodSpeed can compare changes to that path.
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, PrivateAttr, ValidationError
 
 
 class ScalarModel(BaseModel):
@@ -63,3 +63,17 @@ def test_model_json_streaming(benchmark: BenchmarkFixture, case: str) -> None:
         else:
             assert result.numbers == list(range(10000))
         benchmark(model.model_validate_json, data)
+
+
+@pytest.mark.benchmark(group='model_json_streaming')
+def test_model_json_streaming_private_attributes(benchmark: BenchmarkFixture) -> None:
+    """Private attributes invoke post-init without requiring input materialization."""
+
+    class PrivateNumbersModel(NumbersModel):
+        _cached: int = PrivateAttr(default=0)
+
+    data = b'{"numbers":[' + b','.join(str(i).encode() for i in range(10000)) + b']}'
+    model = PrivateNumbersModel.model_validate_json(data)
+    assert model.numbers == list(range(10000))
+    assert model._cached == 0
+    benchmark(PrivateNumbersModel.model_validate_json, data)
