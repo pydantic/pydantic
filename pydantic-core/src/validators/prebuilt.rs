@@ -40,6 +40,13 @@ impl PrebuiltValidator {
     }
 }
 
+impl PrebuiltValidator {
+    /// The validator this one delegates to, which is all this wrapper does.
+    pub(crate) fn stream_inner(&self) -> &CombinedValidator {
+        self.schema_validator.get().validator.as_ref()
+    }
+}
+
 impl_py_gc_traverse!(PrebuiltValidator { schema_validator });
 
 impl Validator for PrebuiltValidator {
