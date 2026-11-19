@@ -152,3 +152,36 @@ def test_expanded_streaming_big_integer_precision(strict: bool) -> None:
 
     document = {'value': values[0], 'values': values, 'mapped': {'positive': values[-1], 'negative': values[0]}}
     assert Model.model_validate_json(json.dumps(document), strict=strict).model_dump() == document
+
+
+def test_expanded_streaming_nested_models_observe_late_class_hooks() -> None:
+    """https://github.com/pydantic/pydantic/pull/14332"""
+    calls: list[str] = []
+
+    class Child(BaseModel):
+        value: int
+
+    class DefaultChild(BaseModel):
+        value: int
+
+    class Parent(BaseModel):
+        children: list[Child]
+        default: DefaultChild = DefaultChild(value=7)
+
+    document = '{"children":[{"value":1},{"value":2}]}'
+    first = Parent.model_validate_json(document)
+    assert [child.value for child in first.children] == [1, 2]
+    assert first.default.value == 7
+    assert first.children[0].model_fields_set == {'value'}
+
+    def allocate(cls: type[Child]) -> Child:
+        calls.append('allocated')
+        return object.__new__(cls)
+
+    Child.__new__ = allocate  # type: ignore[method-assign]
+    with pytest.raises(ValidationError, match='trailing characters'):
+        Parent.model_validate_json(document + ' trailing')
+    assert calls == []
+    second = Parent.model_validate_json(document)
+    assert [child.value for child in second.children] == [1, 2]
+    assert calls == ['allocated', 'allocated']

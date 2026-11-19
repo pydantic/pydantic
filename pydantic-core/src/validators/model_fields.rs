@@ -435,6 +435,88 @@ impl ModelPlan {
     }
 }
 
+/// A per-document choice so class mutation after schema construction is observed.
+#[derive(Clone, Copy)]
+struct StreamExecution<'a> {
+    plan: &'a ModelPlan,
+    eager_models: bool,
+}
+
+impl ModelPlan {
+    fn can_construct_during_parse(&self, py: Python<'_>) -> PyResult<bool> {
+        for field in &self.nodes {
+            if let Fast::Model(nested) = &field.fast {
+                let CombinedValidator::Model(model) = unwrap_prebuilt(&nested.validator) else {
+                    unreachable!("a model plan holds a model validator");
+                };
+                if !native_model_storage(model.stream_class().bind(py))?
+                    || !nested.plan.can_construct_during_parse(py)?
+                {
+                    return Ok(false);
+                }
+            }
+        }
+        Ok(true)
+    }
+}
+
+// Other interpreters and free-threaded builds retain the deferred path. The native-layout
+// inspection below relies on CPython's GIL protecting type slots and MRO dictionaries.
+#[cfg(any(PyPy, GraalPy, Py_GIL_DISABLED))]
+fn native_model_storage(_class: &Bound<'_, PyType>) -> PyResult<bool> {
+    Ok(false)
+}
+
+/// Check native allocation and storage without invoking Python descriptors.
+#[cfg(not(any(PyPy, GraalPy, Py_GIL_DISABLED)))]
+fn native_model_storage(class: &Bound<'_, PyType>) -> PyResult<bool> {
+    use pyo3::ffi;
+    // SAFETY: both pointers refer to live type objects under the GIL.
+    let native_allocation = unsafe {
+        let ty = &*class.as_type_ptr();
+        match (ty.tp_new, (*std::ptr::addr_of!(ffi::PyBaseObject_Type)).tp_new) {
+            (Some(new), Some(object_new)) => std::ptr::fn_addr_eq(new, object_new) && ty.tp_finalize.is_none(),
+            _ => false,
+        }
+    };
+    if !native_allocation {
+        return Ok(false);
+    }
+    let py = class.py();
+    let mro = class.mro();
+    for (name, allow_getset) in [
+        (intern!(py, "__dict__"), true),
+        (intern!(py, "__pydantic_extra__"), false),
+        (intern!(py, "__pydantic_private__"), false),
+        (intern!(py, "__pydantic_fields_set__"), false),
+    ] {
+        let mut found = false;
+        for base in mro.iter() {
+            let base = base.cast::<PyType>()?;
+            // SAFETY: MRO entries are initialized type objects with dictionary namespaces.
+            let dict =
+                unsafe { Bound::from_borrowed_ptr(py, (*base.as_type_ptr()).tp_dict).cast_into_unchecked::<PyDict>() };
+            if let Some(descriptor) = dict.get_item(name)? {
+                // SAFETY: the descriptor type objects are initialized interpreter globals.
+                let native_descriptor = unsafe {
+                    let descriptor_type = ffi::Py_TYPE(descriptor.as_ptr());
+                    descriptor_type == std::ptr::addr_of_mut!(ffi::PyMemberDescr_Type)
+                        || (allow_getset && descriptor_type == std::ptr::addr_of_mut!(ffi::PyGetSetDescr_Type))
+                };
+                if !native_descriptor {
+                    return Ok(false);
+                }
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
 /// What came off the cursor for one field.
 pub(crate) enum Taken<'py> {
     /// the value has been validated, so this is already the answer
@@ -451,11 +533,15 @@ pub(crate) fn take_root<'py>(
     plan: &ModelPlan,
     state: &mut ValidationState<'_, 'py>,
 ) -> Result<Option<Bound<'py, PyAny>>, StreamStop> {
+    let execution = StreamExecution {
+        plan,
+        eager_models: plan.can_construct_during_parse(py)?,
+    };
     if let Some(index) = plan.root_value {
-        return match take_fast(py, jiter, plan, &plan.nodes[index], state, 0)? {
+        return match take_fast(py, jiter, execution, &plan.nodes[index], state, 0)? {
             Taken::Ready(value) => {
                 jiter.finish()?;
-                let constructed = if contains_nested_model(plan, index) {
+                let constructed = if !execution.eager_models && contains_nested_model(plan, index) {
                     materialize_nested(py, value.clone(), plan, index)?
                 } else {
                     None
@@ -472,11 +558,13 @@ pub(crate) fn take_root<'py>(
         return Ok(None);
     }
     state.floor_exactness(Exactness::Strict);
-    let Some((model_dict, _extra, fields_set)) = fields.validate_json_streaming(py, jiter, plan, state, 0)? else {
+    let Some((model_dict, _extra, fields_set)) = fields.validate_json_streaming(py, jiter, execution, state, 0)? else {
         return Ok(None);
     };
     jiter.finish()?;
-    materialize_model_fields(py, &model_dict, fields, plan)?;
+    if !execution.eager_models {
+        materialize_model_fields(py, &model_dict, fields, plan)?;
+    }
     let instance = create_class(class.bind(py))?;
     let none = py.None();
     let fields_set = Bound::new(py, fields_set)?;
@@ -582,11 +670,12 @@ fn materialize_nested<'py>(
 fn take_list<'j, 'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'j>,
-    model_plan: &ModelPlan,
+    execution: StreamExecution<'_>,
     plan: &ContainerPlan,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
+    let model_plan = execution.plan;
     let element = &model_plan.nodes[plan.element];
     // collected first so the list is allocated once at its final size: appending into an empty
     // list over-allocates and then reallocates, which is most of what a short list costs
@@ -598,7 +687,7 @@ fn take_list<'j, 'py>(
     }
     while let Some(peek) = next {
         if all_ready && plan.max_length.is_none_or(|max| items.len() < max) {
-            match take_peeked(py, jiter, model_plan, element, peek, state, depth + 1)? {
+            match take_peeked(py, jiter, execution, element, peek, state, depth + 1)? {
                 Taken::Ready(value) => items.push(value),
                 Taken::Raw => all_ready = false,
             }
@@ -622,11 +711,12 @@ fn take_list<'j, 'py>(
 fn take_dict<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    model_plan: &ModelPlan,
+    execution: StreamExecution<'_>,
     plan: &ContainerPlan,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
+    let model_plan = execution.plan;
     let value_plan = &model_plan.nodes[plan.element];
     let dict = PyDict::new(py);
     let mut all_ready = true;
@@ -645,7 +735,7 @@ fn take_dict<'py>(
                 all_ready = false;
                 skip_unused(jiter, depth + 1)?;
             } else {
-                match take_fast(py, jiter, model_plan, value_plan, state, depth + 1)? {
+                match take_fast(py, jiter, execution, value_plan, state, depth + 1)? {
                     Taken::Ready(value) => dict.set_item(k, value)?,
                     Taken::Raw => all_ready = false,
                 }
@@ -735,13 +825,13 @@ fn check_skipped_utf8(jiter: &Jiter<'_>, start: usize) -> Result<(), StreamStop>
 fn take_fast<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    model_plan: &ModelPlan,
+    execution: StreamExecution<'_>,
     field: &FieldPlan,
     state: &mut ValidationState<'_, 'py>,
     depth: usize,
 ) -> Result<Taken<'py>, StreamStop> {
     let peek = jiter.peek()?;
-    take_peeked(py, jiter, model_plan, field, peek, state, depth)
+    take_peeked(py, jiter, execution, field, peek, state, depth)
 }
 
 /// The same, for a value whose peek the caller already has: an element of an array, or the value
@@ -749,7 +839,7 @@ fn take_fast<'py>(
 fn take_peeked<'py>(
     py: Python<'py>,
     jiter: &mut Jiter<'_>,
-    model_plan: &ModelPlan,
+    execution: StreamExecution<'_>,
     field: &FieldPlan,
     peek: Peek,
     state: &mut ValidationState<'_, 'py>,
@@ -813,16 +903,31 @@ fn take_peeked<'py>(
             };
             let fields = model.stream_fields().expect("model schema checked when building plan");
             state.floor_exactness(Exactness::Strict);
-            match fields.validate_json_streaming(py, jiter, &nested.plan, state, depth)? {
+            match fields.validate_json_streaming(
+                py,
+                jiter,
+                StreamExecution {
+                    plan: &nested.plan,
+                    ..execution
+                },
+                state,
+                depth,
+            )? {
                 Some((dict, _, fields_set)) => {
                     let fields_set = Bound::new(py, fields_set)?;
-                    Taken::Ready(PyTuple::new(py, [dict.into_any(), fields_set.into_any()])?.into_any())
+                    if execution.eager_models {
+                        let instance = create_class(model.stream_class().bind(py))?;
+                        set_model_attrs(&instance, &dict, py.None().bind(py), &fields_set)?;
+                        Taken::Ready(instance)
+                    } else {
+                        Taken::Ready(PyTuple::new(py, [dict.into_any(), fields_set.into_any()])?.into_any())
+                    }
                 }
                 None => Taken::Raw,
             }
         }
-        (Fast::List(plan), Peek::Array) => take_list(py, jiter, model_plan, plan, state, depth)?,
-        (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, model_plan, plan, state, depth)?,
+        (Fast::List(plan), Peek::Array) => take_list(py, jiter, execution, plan, state, depth)?,
+        (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, execution, plan, state, depth)?,
         // a field this path does not specialise, or a json type that does not match it: hand the
         // value to the field's own validator rather than giving up on the whole object
         _ => {
@@ -1212,14 +1317,15 @@ impl ModelFieldsValidator {
         })
     }
 
-    pub(crate) fn validate_json_streaming<'j, 'py>(
+    fn validate_json_streaming<'j, 'py>(
         &self,
         py: Python<'py>,
         jiter: &mut Jiter<'j>,
-        plan: &ModelPlan,
+        execution: StreamExecution<'_>,
         state: &mut ValidationState<'_, 'py>,
         depth: usize,
     ) -> Result<Option<ValidatedModelFields<'py>>, StreamStop> {
+        let plan = execution.plan;
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
         if LookupType::from_bools(validate_by_alias, validate_by_name).is_err() {
@@ -1244,7 +1350,7 @@ impl ModelFieldsValidator {
                     slots[index] = Some(take_fast(
                         py,
                         jiter,
-                        plan,
+                        execution,
                         &plan.nodes[plan.fields[index]],
                         state,
                         depth + 1,
