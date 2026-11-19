@@ -659,14 +659,21 @@ fn take_peeked<'j, 'py>(
             Taken::Ready(pyo3::types::PyBool::new(py, b).to_owned().into_any())
         }
         (Fast::Float(_), _) if scalar => {
-            // an int literal is a valid float under both strict and lax, and this is the same
-            // conversion the float validator would do, so the decoder can hand back either
-            let f = jiter.known_float(peek)?;
-            if f.is_finite() {
-                Taken::Ready(f.into_pyobject(py)?.into_any())
+            let start = jiter.current_index();
+            let mut value = jiter.known_float(peek)?;
+            let token = jiter.slice_to_current(start);
+            if value.is_finite() {
+                // Ordinary JSON validation parses integer -0 before converting it to float.
+                if value == 0.0 && token == b"-0" {
+                    value = 0.0;
+                }
+                if state.exactness.is_some() && token.iter().all(|byte| byte.is_ascii_digit() || *byte == b'-') {
+                    state.floor_exactness(Exactness::Strict);
+                }
+                Taken::Ready(value.into_pyobject(py)?.into_any())
             } else {
-                // Use ordinary scalar rules for non-finite float values.
-                validate_scalar_fallback(py, field, JsonValue::Float(f), state)?
+                // Re-read only nonfinite results to retain the integer digit limit and policy.
+                validate_scalar_fallback(py, field, reread(jiter, start)?, state)?
             }
         }
         (Fast::Int(_), _) if scalar => match jiter.known_number(peek)? {

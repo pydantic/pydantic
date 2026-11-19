@@ -1,5 +1,6 @@
 import copy
 import json
+import math
 import sys
 from types import FrameType
 from typing import Annotated, Any
@@ -94,3 +95,26 @@ def test_streamed_bigints_keep_value_and_sign(value: int, strict: bool) -> None:
     assert result.values == [value]
     assert result.mapping == {'value': value}
     assert TypeAdapter(list[int]).validate_json(json.dumps([value]), strict=strict) == [value]
+
+
+@pytest.mark.parametrize(('token', 'sign'), [('-0', 1), ('-0.0', -1), ('0', 1), ('0.0', 1)])
+def test_streamed_float_zero_sign(token: str, sign: int) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    scalar = TypeAdapter(float).validate_json(token)
+    item = TypeAdapter(list[float]).validate_json(f'[{token}]')[0]
+    assert math.copysign(1, scalar) == sign
+    assert math.copysign(1, item) == sign
+
+
+def test_streamed_float_retains_json_integer_digit_limit() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        TypeAdapter(float).validate_json('1' + '0' * 4300)
+
+
+@pytest.mark.parametrize('token', ['Infinity', 'NaN', '1e400'])
+def test_streamed_float_retains_nonfinite_policy(token: str) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    assert not math.isfinite(TypeAdapter(float).validate_json(token))
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'finite_number'):
+        TypeAdapter(float, config=ConfigDict(allow_inf_nan=False)).validate_json(token)
