@@ -86,15 +86,15 @@ impl Validator for IntValidator {
         input: &mut super::JsonCursor<'_>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        let peek = input.jiter.peek().expect("checked JSON value");
+        let peek = input.jiter.peek().map_err(super::JsonCursor::parse_error)?;
         if peek.is_num() {
-            match input.jiter.known_number(peek).expect("checked number") {
+            match input.jiter.known_number(peek).map_err(super::JsonCursor::parse_error)? {
                 // JSON integers are exact matches in both strict and lax mode.
                 jiter::NumberAny::Int(value) => return Ok(value.into_py_any(py)?),
                 jiter::NumberAny::Float(value) => return self.validate(py, &jiter::JsonValue::Float(value), state),
             }
         }
-        self.validate(py, &input.take_value(), state)
+        self.validate(py, &input.take_value()?, state)
     }
 
     fn get_name(&self) -> &str {

@@ -260,7 +260,7 @@ impl Validator for ModelValidator {
             )
             || !matches!(input.jiter.peek(), Ok(jiter::Peek::Object))
         {
-            return self.validate(py, &input.take_value(), state);
+            return self.validate(py, &input.take_value()?, state);
         }
         let CombinedValidator::ModelFields(fields) = self.validator.as_ref() else {
             unreachable!()

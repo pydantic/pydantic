@@ -192,29 +192,28 @@ impl Validator for ListValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         if !matches!(input.jiter.peek(), Ok(jiter::Peek::Array)) {
-            return self.validate(py, &input.take_value(), state);
+            return self.validate(py, &input.take_value()?, state);
         }
         let mut output = Vec::new();
         let mut errors = Vec::new();
         let mut length = 0;
         let mut index: usize = 0;
-        let mut next = input.jiter.known_array().expect("checked array");
+        let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
         while next.is_some() {
             let result = match &self.item_validator {
                 Some(validator) => input.validate_next(py, validator, state),
-                None => input.take_value().into_py_any(py).map_err(ValError::from),
+                None => input.take_value()?.into_py_any(py).map_err(ValError::from),
             };
             if !matches!(result, Err(ValError::Omit)) {
                 length += 1;
                 if let Some(max_length) = self.max_length
                     && length > max_length
                 {
-                    input.skip_array_tail();
                     return Err(ValError::new(
                         ErrorType::TooLong {
                             field_type: "List".to_owned(),
                             max_length,
-                            actual_length: Some(input.array_length()),
+                            actual_length: input.array_length(),
                             context: None,
                         },
                         &*input,
@@ -226,18 +225,16 @@ impl Validator for ListValidator {
                 Err(ValError::LineErrors(lines)) => {
                     errors.extend(lines.into_iter().map(|error| error.with_outer_location(index)));
                     if self.fail_fast {
-                        input.skip_array_tail();
                         return Err(ValError::LineErrors(errors));
                     }
                 }
                 Err(ValError::Omit) => (),
                 Err(error) => {
-                    input.skip_array_tail();
                     return Err(error);
                 }
             }
             index += 1;
-            next = input.jiter.array_step().expect("checked array");
+            next = input.jiter.array_step().map_err(super::JsonCursor::parse_error)?;
         }
         if !errors.is_empty() {
             return Err(ValError::LineErrors(errors));

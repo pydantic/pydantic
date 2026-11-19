@@ -58,7 +58,7 @@ impl Validator for NullableValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         if matches!(input.jiter.peek(), Ok(jiter::Peek::Null)) {
-            input.take_value();
+            input.take_value()?;
             return Ok(py.None());
         }
         self.validator.validate_json_cursor(py, input, state)

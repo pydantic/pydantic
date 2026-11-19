@@ -382,14 +382,14 @@ impl ModelFieldsValidator {
             state.validate_by_name_or(self.validate_by_name),
         )?;
         let mut inputs: SmallVec<[Option<usize>; 16]> = (0..self.fields.len()).map(|_| None).collect();
-        let mut key = input.jiter.known_object().expect("checked object");
+        let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
         while let Some(name) = key {
             let index = lookup.get(name).copied();
             if let Some(index) = index {
                 inputs[index] = Some(input.jiter.current_index());
             }
-            input.jiter.next_skip().expect("checked value");
-            key = input.jiter.next_key().expect("checked object");
+            input.jiter.next_skip().map_err(super::JsonCursor::parse_error)?;
+            key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
         }
         let model_dict = PyDict::new(py);
         let state = &mut state.scoped_set_data(Some(model_dict.clone()));

@@ -484,33 +484,31 @@ impl SchemaValidator {
         by_name: Option<bool>,
     ) -> ValResult<Py<PyAny>> {
         if !allow_partial.is_active() && self_instance.is_none() && self.validator.supports_json_cursor() {
-            // Check the entire document before running user code. `next_skip` checks syntax
-            // and depth, but deliberately omits UTF-8 validation, so check those bytes too.
-            let mut check = jiter::Jiter::new(json_data).with_allow_inf_nan();
-            if std::str::from_utf8(json_data).is_ok() && check.next_skip().is_ok() && check.finish().is_ok() {
-                let mut recursion_guard = RecursionState::default();
-                let mut state = ValidationState::new(
-                    Extra::new(
-                        strict,
-                        extra_behavior,
-                        None,
-                        context,
-                        InputType::Json,
-                        self.cache_str,
-                        by_alias,
-                        by_name,
-                    ),
-                    &mut recursion_guard,
-                    allow_partial,
+            let mut recursion_guard = RecursionState::default();
+            let mut state = ValidationState::new(
+                Extra::new(
+                    strict,
+                    extra_behavior,
                     None,
-                    None,
-                );
-                return self
-                    .validator
-                    .validate_json_cursor(py, &mut JsonCursor::new(json_data), &mut state);
+                    context,
+                    InputType::Json,
+                    self.cache_str,
+                    by_alias,
+                    by_name,
+                ),
+                &mut recursion_guard,
+                allow_partial,
+                None,
+                None,
+            );
+            let mut cursor = JsonCursor::new(json_data);
+            if let Ok(output) = self.validator.validate_json_cursor(py, &mut cursor, &mut state)
+                && cursor.jiter.finish().is_ok()
+            {
+                return Ok(output);
             }
-            // Invalid JSON goes through the existing parser for its precise error; no
-            // validation has run, so this cannot replay callbacks.
+            // The ordinary parser supplies precise errors on a failed optimistic attempt.
+            // Validation may have already called user code; invalid inputs can replay it.
         }
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
@@ -914,7 +912,7 @@ pub trait Validator: Send + Sync + Debug {
         input: &mut JsonCursor<'_>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        self.validate(py, &input.take_value(), state)
+        self.validate(py, &input.take_value()?, state)
     }
 
     /// Get a default value, currently only used by `WithDefaultValidator`
