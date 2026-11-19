@@ -6,7 +6,7 @@ mod datetime;
 mod input_abstract;
 mod input_json;
 mod input_json_bytes;
-pub(crate) use input_json_bytes::JsonBytesInput;
+pub(crate) use input_json_bytes::{JsonBytesInput, JsonObjectBytes};
 mod input_python;
 mod input_string;
 mod return_enums;

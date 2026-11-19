@@ -23,6 +23,8 @@ use crate::errors::{ErrorTypeDefaults, InputValue, ValError, ValResult};
 use crate::lookup_key::LookupPath;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
+pub(crate) type JsonObjectBytes<'a> = (&'a [(String, &'a [u8])], &'a Cell<bool>);
+
 #[derive(Debug)]
 pub(crate) struct JsonBytesInput<'data> {
     data: &'data [u8],
@@ -194,6 +196,14 @@ impl<'data> ValidatedDict<'_> for JsonObjectInput<'_, 'data> {
 impl<'py, 'data> Input<'py> for JsonBytesInput<'data> {
     fn as_json(&self) -> Option<&JsonValue<'_>> {
         self.value.get()
+    }
+
+    fn as_json_object_bytes(&self) -> Option<JsonObjectBytes<'_>> {
+        (self.data.first() == Some(&b'{')).then(|| (self.fields(), self.failed))
+    }
+
+    fn materialized_json(&self) -> Option<&JsonValue<'_>> {
+        Some(self.value())
     }
 
     fn identity(&self) -> Option<usize> {

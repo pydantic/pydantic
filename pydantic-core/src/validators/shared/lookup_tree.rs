@@ -220,10 +220,10 @@ impl LookupFieldInfo {
 
 /// Offer `value` as the input for the field of `info`, keeping it only if it matches `lookup_type`
 /// and the field doesn't already have a higher priority input. Returns whether it was kept.
-pub fn offer_field_input<'a, 'j>(
-    field_inputs: &mut [Option<(LookupFieldInfo, &'a JsonValue<'j>)>],
+pub fn offer_field_input<T>(
+    field_inputs: &mut [Option<(LookupFieldInfo, T)>],
     info: &LookupFieldInfo,
-    value: &'a JsonValue<'j>,
+    value: T,
     lookup_type: LookupType,
 ) -> bool {
     if !info.matches_lookup(lookup_type) {

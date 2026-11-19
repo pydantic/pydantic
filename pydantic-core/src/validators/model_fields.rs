@@ -266,6 +266,8 @@ impl Validator for ModelFieldsValidator {
     }
 }
 
+type JsonFieldInputs<V> = SmallVec<[Option<(LookupFieldInfo, V)>; 16]>;
+
 pub(crate) type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, ModelFieldsSet);
 
 impl ModelFieldsValidator {
@@ -313,7 +315,12 @@ impl ModelFieldsValidator {
             loc_by_alias: self.loc_by_alias,
         };
 
-        if let Some(json_input) = input.as_json() {
+        let json_input = input.as_json().or_else(|| {
+            matches!(&self.lookup, LookupTree::Nested(_))
+                .then(|| input.materialized_json())
+                .flatten()
+        });
+        if let Some(json_input) = json_input {
             let JsonValue::Object(json_object) = json_input else {
                 return Err(ValError::new(
                     ErrorType::ModelType {
@@ -324,6 +331,20 @@ impl ModelFieldsValidator {
                 ));
             };
             self.validate_json_by_iteration(py, json_input, json_object, &mut state)?;
+        } else if let Some((fields, failed)) = input.as_json_object_bytes() {
+            let mut field_inputs: JsonFieldInputs<&[u8]> = SmallVec::with_capacity(self.fields.len());
+            field_inputs.resize(self.fields.len(), None);
+            let mut possible_extra = (!matches!(&state.extra_validator, ModelExtraValidator::Ignore))
+                .then_some(IndexMap::with_hasher(RandomState::new()));
+            self.collect_flat_json(
+                fields.iter().map(|(key, value)| (key.as_str(), *value)),
+                state.lookup_type,
+                &mut field_inputs,
+                &mut possible_extra,
+            );
+            self.validate_collected_json(py, input, &field_inputs, possible_extra, &mut state, |v| {
+                crate::input::JsonBytesInput::new(v, failed)
+            })?;
         } else {
             // we convert the DictType error to a ModelType error
             let dict = match input.validate_model_fields(strict, from_attributes) {
@@ -509,8 +530,7 @@ impl ModelFieldsValidator {
         // Once the iteration is complete, the highest priority input for each field
         // is validated and the rest are propagated into extra (if necessary).
         // Keep scratch inputs inline for small models; wider models use the heap.
-        let mut field_inputs: SmallVec<[Option<(LookupFieldInfo, &JsonValue)>; 16]> =
-            SmallVec::with_capacity(self.fields.len());
+        let mut field_inputs: JsonFieldInputs<&JsonValue> = SmallVec::with_capacity(self.fields.len());
         field_inputs.resize(self.fields.len(), None);
 
         // Buffer for possible extra data, `None` if ignoring extra. Extra data
@@ -518,25 +538,49 @@ impl ModelFieldsValidator {
         let mut possible_extra = (!matches!(&state.extra_validator, ModelExtraValidator::Ignore))
             .then_some(IndexMap::with_hasher(RandomState::new()));
 
+        if let LookupTree::Nested(lookup) = &self.lookup {
+            lookup.collect_json(json_object, state.lookup_type, &mut field_inputs, |key, value| {
+                if let Some(possible_extra) = &mut possible_extra {
+                    possible_extra.insert(key, (value, false));
+                }
+            });
+        } else {
+            self.collect_flat_json(
+                json_object.iter().map(|(key, value)| (key.as_ref(), value)),
+                state.lookup_type,
+                &mut field_inputs,
+                &mut possible_extra,
+            );
+        }
+        self.validate_collected_json(py, json_input, &field_inputs, possible_extra, state, |v| v)
+    }
+
+    /// Shared key dispatch for parsed JSON values and byte-backed spans.
+    fn collect_flat_json<'key, V: Copy>(
+        &self,
+        entries: impl Iterator<Item = (&'key str, V)>,
+        lookup_type: LookupType,
+        field_inputs: &mut [Option<(LookupFieldInfo, V)>],
+        possible_extra: &mut Option<IndexMap<&'key str, (V, bool), RandomState>>,
+    ) {
         match &self.lookup {
             LookupTree::NoAliases(lookup) => {
-                for (key, value) in &**json_object {
-                    if let Some(&index) = lookup.get(key.as_ref()) {
+                for (key, value) in entries {
+                    if let Some(&index) = lookup.get(key) {
                         field_inputs[index] = Some((LookupFieldInfo::by_name(index), value));
-                    } else if let Some(extra) = &mut possible_extra {
-                        extra.insert(key.as_ref(), (value, false));
+                    } else if let Some(extra) = possible_extra.as_mut() {
+                        extra.insert(key, (value, false));
                     }
                 }
             }
             LookupTree::Flat(lookup) => {
-                for (key, value) in &**json_object {
+                for (key, value) in entries {
                     let mut might_be_extra = possible_extra.is_some();
-                    let key = key.as_ref();
                     for field_info in lookup.get(key) {
-                        if offer_field_input(&mut field_inputs, field_info, value, state.lookup_type)
+                        if offer_field_input(field_inputs, field_info, value, lookup_type)
                             && field_info
                                 .lookup_priority
-                                .is_maximum_priority_for_lookup_type(state.lookup_type)
+                                .is_maximum_priority_for_lookup_type(lookup_type)
                         {
                             might_be_extra = false;
                         }
@@ -550,15 +594,20 @@ impl ModelFieldsValidator {
                     }
                 }
             }
-            LookupTree::Nested(lookup) => {
-                lookup.collect_json(json_object, state.lookup_type, &mut field_inputs, |key, value| {
-                    if let Some(possible_extra) = &mut possible_extra {
-                        possible_extra.insert(key, (value, false));
-                    }
-                });
-            }
+            LookupTree::Nested(_) => unreachable!("nested aliases use materialized lookup"),
         }
+    }
 
+    #[allow(clippy::too_many_arguments)]
+    fn validate_collected_json<'py, V: Copy, I: BorrowInput<'py>>(
+        &self,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        field_inputs: &[Option<(LookupFieldInfo, V)>],
+        mut possible_extra: Option<IndexMap<&str, (V, bool), RandomState>>,
+        state: &mut ModelFieldsValidationState<'_, '_, 'py>,
+        to_input: impl Fn(V) -> I,
+    ) -> ValResult<()> {
         // Iterate in place to avoid moving the inline buffer into an owning iterator.
         for ((field_idx, field), field_input) in
             std::iter::zip(self.fields.iter().enumerate(), field_inputs.iter().copied())
@@ -578,10 +627,10 @@ impl ModelFieldsValidator {
                     extra.1 = true;
                 }
 
-                (lookup_path, value)
+                (lookup_path, to_input(value))
             });
 
-            state.validate_field(py, json_input, field_idx, field, field_input_with_lookup_path)?;
+            state.validate_field(py, input, field_idx, field, field_input_with_lookup_path)?;
         }
 
         // handle extra fields if necessary
@@ -590,7 +639,7 @@ impl ModelFieldsValidator {
                 // this key was consumed by a field input, so we don't want to treat it as extra
                 continue;
             }
-            state.validate_extra_key_value(py, &key.into(), key, value)?;
+            state.validate_extra_key_value(py, &key.into(), key, to_input(value))?;
         }
 
         Ok(())
