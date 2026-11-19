@@ -2,7 +2,7 @@
 
 import json
 from itertools import permutations
-from typing import Annotated
+from typing import Annotated, Literal
 
 import pytest
 from pydantic_core import PydanticOmit
@@ -11,6 +11,7 @@ from pydantic import (
     AfterValidator,
     BaseModel,
     BeforeValidator,
+    ConfigDict,
     Field,
     PrivateAttr,
     TypeAdapter,
@@ -255,3 +256,31 @@ def test_cursor_float_tokens_preserve_bits_coercion_and_finite_policy(strict: bo
         else:
             actual = adapter.validate_json(document, strict=strict)
             assert [value.hex() for value in actual] == [value.hex() for value in expected]
+
+
+@pytest.mark.parametrize('cache_mode', ['all', 'keys', 'none'])
+@pytest.mark.parametrize('strict', [True, False])
+@pytest.mark.parametrize('coerce_numbers', [True, False])
+def test_cursor_string_decoding_cache_and_coercion(
+    cache_mode: Literal['all', 'keys', 'none'], strict: bool, coerce_numbers: bool
+) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    config = ConfigDict(cache_strings=cache_mode, coerce_numbers_to_str=coerce_numbers)
+    adapter = TypeAdapter(list[str], config=config)
+    ordinary = TypeAdapter(Annotated[list[str], AfterValidator(lambda value: value)], config=config)
+    for document in (
+        json.dumps(['repeated-value', 'repeated-value', 'escaped\n\0"\\', '中文 😀'], ensure_ascii=False),
+        '[1,1.5]',
+        '[true,null,{},[]]',
+    ):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            actual = adapter.validate_json(document, strict=strict)
+            assert actual == expected
+            if cache_mode == 'all' and actual[:2] == ['repeated-value', 'repeated-value']:
+                assert actual[0] is actual[1]
