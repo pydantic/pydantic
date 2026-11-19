@@ -537,8 +537,8 @@ fn materialize_nested<'py>(
             let CombinedValidator::Model(model) = unwrap_prebuilt(&nested.validator) else {
                 unreachable!("a model plan holds a model validator");
             };
-            // Only expanded plans can contain already validated constant model defaults.
-            if !model_plan.narrow_eligible && !value.is_instance_of::<PyTuple>() {
+            // Missing constant defaults are already ordinary validated model instances.
+            if !value.is_instance_of::<PyTuple>() {
                 return Ok(None);
             }
             let class = model.stream_class();
@@ -548,10 +548,7 @@ fn materialize_nested<'py>(
             let fields = model
                 .stream_fields()
                 .ok_or_else(|| PyTypeError::new_err("model plan changed"))?;
-            // A narrow nested plan was built at depth >= 1 and has no further model nodes.
-            if !nested.plan.narrow_eligible {
-                materialize_model_fields(py, model_dict.cast::<PyDict>()?, fields, &nested.plan)?;
-            }
+            materialize_model_fields(py, model_dict.cast::<PyDict>()?, fields, &nested.plan)?;
             let instance = create_class(class.bind(py))?;
             set_model_attrs(&instance, &model_dict, py.None().bind(py), &fields_set)?;
             Ok(Some(instance))
