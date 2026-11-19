@@ -69,7 +69,6 @@ impl BuildValidator for IntValidator {
 impl_py_gc_traverse!(IntValidator {});
 
 impl IntValidator {
-    #[inline]
     pub(super) fn validate_json_cursor_peeked<'py>(
         &self,
         py: Python<'py>,
