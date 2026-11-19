@@ -426,8 +426,8 @@ Standard library type: [`fractions.Fraction`][].
 <h4>Validation</h4>
 
 * [`Fraction`][fractions.Fraction] instances are validated as is.
-* Floats, strings and [`decimal.Decimal`][] instances are validated using the [`Fraction()`][fractions.Fraction]
-  constructor.
+* Integers, floats, strings and [`decimal.Decimal`][] instances are validated using the
+  [`Fraction()`][fractions.Fraction] constructor.
 
 <h4>Strictness</h4>
 
@@ -681,7 +681,12 @@ Standard library type: [`datetime.timedelta`][].
 <h4>Validation</h4>
 
 * [`timedelta`][datetime.timedelta] instances are validated as is.
-* Strings and bytes are validated according to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) time format.
+* Strings and bytes are validated as durations, in one of the following formats:
+    * The [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Durations) duration format, e.g. `P3DT12H30M5S`.
+    * An optional number of days followed by an optional `HH:MM[:SS[.ffffff]]` time, e.g. `1 day, 01:02:03`,
+      `2 days` or `12:30:00`.
+
+    See the [speedate](https://docs.rs/speedate/latest/speedate/struct.Duration.html) documentation for more details.
 * Integers and floats (or values that can be coerced to such numbers) are validated as seconds.
 
 <h4>Constraints</h4>
