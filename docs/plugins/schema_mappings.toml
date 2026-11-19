@@ -109,10 +109,10 @@ notes = "And equivalently for any other set of subtypes. Note: If using schemas 
 minItems = 2
 maxItems = 2
 
-[["Tuple[str, int]".additional.items]]
+[["Tuple[str, int]".additional.prefixItems]]
 type = "string"
 
-[["Tuple[str, int]".additional.items]]
+[["Tuple[str, int]".additional.prefixItems]]
 type = "integer"
 
 ["Dict[str, int]"]
@@ -148,6 +148,7 @@ defined_in = "JSON Schema Validation"
 notes = ""
 
 [SecretStr.additional]
+format = "password"
 writeOnly = true
 
 [SecretBytes]
@@ -157,6 +158,7 @@ defined_in = "JSON Schema Validation"
 notes = ""
 
 [SecretBytes.additional]
+format = "password"
 writeOnly = true
 
 [EmailStr]
@@ -206,10 +208,12 @@ format = "binary"
 
 [Decimal]
 py_type = "Decimal"
-json_type = "number"
-additional = ""
+json_type = "anyOf"
 defined_in = "JSON Schema Core"
-notes = ""
+notes = "Numbers and strings are both accepted when validating. In serialization mode, the schema is `{\"type\": \"string\"}`, as decimals are serialized as strings."
+
+[Decimal.additional]
+anyOf = [{ type = "number" }, { type = "string" }]
 
 [UUID1]
 py_type = "UUID1"
@@ -312,21 +316,23 @@ format = "time"
 
 [timedelta]
 py_type = "timedelta"
-json_type = "number"
-defined_in = "Difference in seconds (a `float`), with Pydantic standard \"format\" extension"
-notes = "Suggested in JSON Schema repository's issues by maintainer."
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = "An ISO 8601 duration. In serialization mode with `ser_json_timedelta='float'`, the schema is `{\"type\": \"number\"}` instead."
 
 [timedelta.additional]
-format = "time-delta"
+format = "duration"
 
 [Json]
 py_type = "Json"
 json_type = "string"
-defined_in = "Pydantic standard \"format\" extension"
-notes = ""
+defined_in = "JSON Schema Validation"
+notes = "`contentSchema` is the schema of the wrapped type, e.g. `{\"type\": \"integer\"}` for `Json[int]`."
 
 [Json.additional]
-format = "json-string"
+contentMediaType = "application/json"
+
+[Json.additional.contentSchema]
 
 [IPv4Address]
 py_type = "IPv4Address"

@@ -17,7 +17,7 @@ Built-in type: [`bool`][]
 <h3>Validation</h3>
 
 * A valid [`bool`][] instance, i.e. `True` or `False`.
-* The integers `0` or `1`.
+* The integers `0` or `1`, as well as floats and [`Decimal`][decimal.Decimal] instances equal to `0` or `1` (e.g. `1.0`).
 * A string, which when converted to lowercase is one of `'0'`, `'off'`, `'f'`, `'false'`, `'n'`, `'no'`, `'1'`, `'on'` `'t'`, `'true'`, `'y'`, `'yes'`.
 * [`bytes`][] objects that are valid per the previous rule when decoded to a string.
 
@@ -426,8 +426,8 @@ Standard library type: [`fractions.Fraction`][].
 <h4>Validation</h4>
 
 * [`Fraction`][fractions.Fraction] instances are validated as is.
-* Floats, strings and [`decimal.Decimal`][] instances are validated using the [`Fraction()`][fractions.Fraction]
-  constructor.
+* Integers, floats, strings and [`decimal.Decimal`][] instances are validated using the
+  [`Fraction()`][fractions.Fraction] constructor.
 
 <h4>Strictness</h4>
 
@@ -681,7 +681,12 @@ Standard library type: [`datetime.timedelta`][].
 <h4>Validation</h4>
 
 * [`timedelta`][datetime.timedelta] instances are validated as is.
-* Strings and bytes are validated according to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) time format.
+* Strings and bytes are validated as durations, in one of the following formats:
+    * The [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Durations) duration format, e.g. `P3DT12H30M5S`.
+    * An optional number of days followed by an optional `HH:MM[:SS[.ffffff]]` time, e.g. `1 day, 01:02:03`,
+      `2 days` or `12:30:00`.
+
+    See the [speedate](https://docs.rs/speedate/latest/speedate/struct.Duration.html) documentation for more details.
 * Integers and floats (or values that can be coerced to such numbers) are validated as seconds.
 
 <h4>Constraints</h4>
@@ -1026,7 +1031,7 @@ Standard library type: [`collections.deque`][] (deprecated alias: [`typing.Deque
 
 <h4>Validation</h4>
 
-Any iterable (except strings, bytes and mappings) is accepted and converted to a [`deque`][collections.deque],
+Any iterable (except strings, bytes, bytearrays and mappings) is accepted and converted to a [`deque`][collections.deque],
 with each item validated against the parameter type. If the input is already a `deque` instance, its
 [`maxlen`][collections.deque.maxlen] attribute is preserved.
 
@@ -1082,7 +1087,7 @@ will apply. The [`Sequence`][collections.abc.Sequence] type can be used when you
 
 <h4>Validation</h4>
 
-Any [`collections.abc.Sequence`][] instance (expect strings and bytes) is accepted. It is converted to a list using the [`list()`][list]
+Any [`collections.abc.Sequence`][] instance (except strings, bytes and bytearrays) is accepted. It is converted to a list using the [`list()`][list]
 constructor, and then converted back to the original input type.
 
 !!! warning "Strings aren't treated as sequences"
