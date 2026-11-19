@@ -1,0 +1,44 @@
+pydantic/_internal/_generics.py
+  s_8e54fec67727d0::t_fc941697d0469b 225-264,279-281,422
+pydantic/json_schema.py
+  s_8e54fec67727d0::t_fc941697d0469b 166-167,1836-1839
+.github/workflows/ci.yml
+  s_8e54fec67727d0::t_fc941697d0469b 185-186
+pydantic-core/src/recursion_guard.rs
+  s_8e54fec67727d0::t_fc941697d0469b 210
+pydantic/types.py
+  s_8e54fec67727d0::t_fc941697d0469b 13,1969,1999-2000,2039-2041,2043-2047
+docs/plugins/schema_mappings.toml
+  s_8e54fec67727d0::t_fc941697d0469b 112,115,151,161,211,213-216,319-321,324,329-330,333-335
+pydantic-core/src/serializers/shared.rs
+  s_8e54fec67727d0::t_fc941697d0469b 170,353
+tests/test_json_schema.py
+  s_8e54fec67727d0::t_fc941697d0469b 6781-6808
+  s_8e54fec67727d0::t_e480fb09fd270e 6780
+tests/types/test_bytesize.py
+  s_8e54fec67727d0::t_fc941697d0469b 1-3,7,40,87-90,114-152
+HISTORY.md
+  s_8e54fec67727d0::t_fc941697d0469b 5-161
+tests/test_type_alias_type.py
+  s_8e54fec67727d0::t_fc941697d0469b 7,492-508
+docs/concepts/json_schema.md
+  s_8e54fec67727d0::t_fc941697d0469b 1290,1359-1362
+docs/api/standard_library_types.md
+  s_8e54fec67727d0::t_fc941697d0469b 20,429-430,684-689,1034,1090
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "052f2d701ee6f88af23391c58ac8999cdd8c56f3",
+  "prompts": {},
+  "sessions": {
+    "s_8e54fec67727d0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f538-658f-75c3-a7c8-9aa750743c65",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
