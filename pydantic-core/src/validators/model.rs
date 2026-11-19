@@ -262,22 +262,24 @@ impl Validator for ModelValidator {
         {
             return self.validate(py, &input.take_value()?, state);
         }
-        let CombinedValidator::ModelFields(fields) = self.validator.as_ref() else {
-            unreachable!()
-        };
-        state.floor_exactness(Exactness::Strict);
-        let (model_dict, model_extra, fields_set) = fields.validate_cursor_fields(py, input, state)?;
-        self.construct_from_fields(
-            py,
-            &*input,
-            (
-                model_dict.into_any(),
-                model_extra.map_or_else(|| py.None().into_bound(py), Bound::into_any),
-                Bound::new(py, fields_set)?.into_any(),
-            ),
-            None,
-            state.extra(),
-        )
+        input.with_container(|input| {
+            let CombinedValidator::ModelFields(fields) = self.validator.as_ref() else {
+                unreachable!()
+            };
+            state.floor_exactness(Exactness::Strict);
+            let (model_dict, model_extra, fields_set) = fields.validate_cursor_fields(py, input, state)?;
+            self.construct_from_fields(
+                py,
+                &*input,
+                (
+                    model_dict.into_any(),
+                    model_extra.map_or_else(|| py.None().into_bound(py), Bound::into_any),
+                    Bound::new(py, fields_set)?.into_any(),
+                ),
+                None,
+                state.extra(),
+            )
+        })
     }
 
     fn get_name(&self) -> &str {

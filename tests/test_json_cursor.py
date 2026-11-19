@@ -5,6 +5,7 @@ from itertools import permutations
 from typing import Annotated
 
 import pytest
+from pydantic_core import PydanticOmit
 
 from pydantic import (
     BaseModel,
@@ -209,3 +210,20 @@ def test_cursor_incremental_fields_preserve_schema_order_and_defaults(order: tup
     result = Model.model_validate_json(json.dumps({key: data[key] for key in order}))
     assert result.model_dump() == {'a': 1, 'b': 2 if 'b' in order else 5, 'c': 3}
     assert calls == [('a', ()), ('b', ('a',)), ('c', ('a', 'b'))]
+
+
+def test_cursor_container_omission_preserves_following_items_and_callback_count() -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    calls: list[int] = []
+
+    class Model(BaseModel):
+        value: int
+
+        def model_post_init(self, context: object) -> None:
+            calls.append(self.value)
+            if self.value % 2 == 0:
+                raise PydanticOmit
+
+    result = TypeAdapter(list[Model]).validate_json(json.dumps([{'value': i} for i in range(205)]))
+    assert [model.value for model in result] == list(range(1, 205, 2))
+    assert calls == list(range(205))

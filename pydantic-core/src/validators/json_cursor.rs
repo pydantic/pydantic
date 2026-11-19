@@ -6,9 +6,6 @@ use jiter::{Jiter, JsonValue};
 
 use crate::errors::{InputValue, ToErrorValue, ValError, ValResult};
 use crate::input::Input;
-use pyo3::prelude::*;
-
-use super::{CombinedValidator, ValidationState, Validator};
 
 /// An optimistic cursor; any parsing or validation failure retries ordinary validation.
 pub struct JsonCursor<'data> {
@@ -53,12 +50,9 @@ impl<'data> JsonCursor<'data> {
         })
     }
 
-    pub(super) fn validate_next<'py>(
-        &mut self,
-        py: Python<'py>,
-        validator: &CombinedValidator,
-        state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<Py<PyAny>> {
+    /// Only direct containers need cursor error context. Scalar and fallback
+    /// validators already own the JsonValue used to construct their errors.
+    pub(super) fn with_container<T>(&mut self, validate: impl FnOnce(&mut Self) -> ValResult<T>) -> ValResult<T> {
         if self.depth >= 200 {
             return Err(Self::parse_error(()));
         }
@@ -66,7 +60,7 @@ impl<'data> JsonCursor<'data> {
         let previous_start = self.start;
         self.start = self.jiter.current_index();
         let previous_error = self.error_value.take();
-        let result = validator.validate_json_cursor(py, self, state);
+        let result = validate(self);
         self.start = previous_start;
         self.depth -= 1;
         self.error_value.take();

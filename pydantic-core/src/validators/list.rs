@@ -194,29 +194,31 @@ impl Validator for ListValidator {
         if !matches!(input.jiter.peek(), Ok(jiter::Peek::Array)) {
             return self.validate(py, &input.take_value()?, state);
         }
-        // Ordinary validation owns error aggregation, locations and exact lengths.
-        // An optimistic failure retries that path instead of duplicating its policy.
-        let mut output = Vec::new();
-        let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
-        while next.is_some() {
-            let result = match &self.item_validator {
-                Some(validator) => input.validate_next(py, validator, state),
-                None => input.take_value()?.into_py_any(py).map_err(ValError::from),
-            };
-            match result {
-                Ok(value) => output.push(value),
-                Err(ValError::Omit) => (),
-                Err(error) => return Err(error),
+        input.with_container(|input| {
+            // Ordinary validation owns error aggregation, locations and exact lengths.
+            // An optimistic failure retries that path instead of duplicating its policy.
+            let mut output = Vec::new();
+            let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
+            while next.is_some() {
+                let result = match &self.item_validator {
+                    Some(validator) => validator.validate_json_cursor(py, input, state),
+                    None => input.take_value()?.into_py_any(py).map_err(ValError::from),
+                };
+                match result {
+                    Ok(value) => output.push(value),
+                    Err(ValError::Omit) => (),
+                    Err(error) => return Err(error),
+                }
+                if self.max_length.is_some_and(|maximum| output.len() > maximum) {
+                    return Err(super::JsonCursor::parse_error(()));
+                }
+                next = input.jiter.array_step().map_err(super::JsonCursor::parse_error)?;
             }
-            if self.max_length.is_some_and(|maximum| output.len() > maximum) {
+            if self.min_length.is_some_and(|minimum| output.len() < minimum) {
                 return Err(super::JsonCursor::parse_error(()));
             }
-            next = input.jiter.array_step().map_err(super::JsonCursor::parse_error)?;
-        }
-        if self.min_length.is_some_and(|minimum| output.len() < minimum) {
-            return Err(super::JsonCursor::parse_error(()));
-        }
-        Ok(output.into_py_any(py)?)
+            Ok(output.into_py_any(py)?)
+        })
     }
 
     fn get_name(&self) -> &str {
