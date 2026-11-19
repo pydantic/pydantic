@@ -1,0 +1,43 @@
+pydantic-core/src/input/input_json_bytes.rs
+  s_d4a691b07897c1::t_d348cf88637c5d 203-204,207
+  s_d4a691b07897c1::t_c77d25851a3ee1 26-27,201-202,205-206
+  s_d4a691b07897c1::t_b0df8900b374bb 208
+pydantic-core/src/input/mod.rs
+  s_d4a691b07897c1::t_c77d25851a3ee1 9
+pydantic-core/src/input/input_abstract.rs
+  s_d4a691b07897c1::t_d348cf88637c5d 87,92-93
+  s_d4a691b07897c1::t_c77d25851a3ee1 86,88-91
+pydantic-core/src/validators/shared/lookup_tree.rs
+  s_d4a691b07897c1::t_d348cf88637c5d 223-224,226
+pydantic-core/src/validators/model_fields.rs
+  s_d4a691b07897c1::t_d348cf88637c5d 318-319,321-323,337-345,541-555,557-565,568-569,602-606,608-610
+  s_d4a691b07897c1::t_c77d25851a3ee1 320,334-336,347
+  s_d4a691b07897c1::t_5efbbc307443dd 346,556,572,599,607
+  s_d4a691b07897c1::t_69b91254ace3d7 571
+  s_d4a691b07897c1::t_5b9ff35c4b1bb8 601
+  s_81f73a6ab0dd9f::t_d4a0933ebba50d 269-270,533,577,580,583,597,630,633,642
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7b8346e292d0a0c556192f482324708741b6abe6",
+  "prompts": {},
+  "sessions": {
+    "s_81f73a6ab0dd9f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f465-03ec-7483-bb84-e4fd2d324f7d",
+        "model": "unknown"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    },
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
