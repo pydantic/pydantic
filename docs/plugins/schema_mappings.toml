@@ -109,10 +109,10 @@ notes = "And equivalently for any other set of subtypes. Note: If using schemas 
 minItems = 2
 maxItems = 2
 
-[["Tuple[str, int]".additional.items]]
+[["Tuple[str, int]".additional.prefixItems]]
 type = "string"
 
-[["Tuple[str, int]".additional.items]]
+[["Tuple[str, int]".additional.prefixItems]]
 type = "integer"
 
 ["Dict[str, int]"]
