@@ -940,8 +940,8 @@ impl ModelFieldsValidator {
         let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
         // on the stack for all but the widest models: this is allocated once per object read,
         // and it was half of everything the streaming path allocated
-        let mut slots: SmallVec<[Option<Taken<'j, 'py>>; SLOTS_ON_STACK]> =
-            (0..self.fields.len()).map(|_| None).collect();
+        let mut slots: SmallVec<[Option<Taken<'j, 'py>>; SLOTS_ON_STACK]> = SmallVec::with_capacity(self.fields.len());
+        slots.resize_with(self.fields.len(), || None);
 
         if plan.names_only {
             let mut key = jiter.known_object()?;
