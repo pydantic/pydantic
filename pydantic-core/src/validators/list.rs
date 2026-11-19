@@ -3,7 +3,7 @@ use std::sync::{Arc, OnceLock};
 use pyo3::types::PyDict;
 use pyo3::{IntoPyObjectExt, prelude::*};
 
-use crate::errors::{ErrorType, ValError, ValResult};
+use crate::errors::{ValError, ValResult};
 use crate::input::{
     BorrowInput, ConsumeIterator, Input, MaxLengthCheck, ValidatedList, no_validator_iter_to_vec, validate_iter_to_vec,
 };
@@ -194,63 +194,27 @@ impl Validator for ListValidator {
         if !matches!(input.jiter.peek(), Ok(jiter::Peek::Array)) {
             return self.validate(py, &input.take_value()?, state);
         }
+        // Ordinary validation owns error aggregation, locations and exact lengths.
+        // An optimistic failure retries that path instead of duplicating its policy.
         let mut output = Vec::new();
-        let mut errors = Vec::new();
-        let mut length = 0;
-        let mut index: usize = 0;
         let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
         while next.is_some() {
             let result = match &self.item_validator {
                 Some(validator) => input.validate_next(py, validator, state),
                 None => input.take_value()?.into_py_any(py).map_err(ValError::from),
             };
-            if !matches!(result, Err(ValError::Omit)) {
-                length += 1;
-                if let Some(max_length) = self.max_length
-                    && length > max_length
-                {
-                    return Err(ValError::new(
-                        ErrorType::TooLong {
-                            field_type: "List".to_owned(),
-                            max_length,
-                            actual_length: input.array_length(),
-                            context: None,
-                        },
-                        &*input,
-                    ));
-                }
-            }
             match result {
                 Ok(value) => output.push(value),
-                Err(ValError::LineErrors(lines)) => {
-                    errors.extend(lines.into_iter().map(|error| error.with_outer_location(index)));
-                    if self.fail_fast {
-                        return Err(ValError::LineErrors(errors));
-                    }
-                }
                 Err(ValError::Omit) => (),
-                Err(error) => {
-                    return Err(error);
-                }
+                Err(error) => return Err(error),
             }
-            index += 1;
+            if self.max_length.is_some_and(|maximum| output.len() > maximum) {
+                return Err(super::JsonCursor::parse_error(()));
+            }
             next = input.jiter.array_step().map_err(super::JsonCursor::parse_error)?;
         }
-        if !errors.is_empty() {
-            return Err(ValError::LineErrors(errors));
-        }
-        if let Some(min_length) = self.min_length
-            && output.len() < min_length
-        {
-            return Err(ValError::new(
-                ErrorType::TooShort {
-                    field_type: "List".to_owned(),
-                    min_length,
-                    actual_length: output.len(),
-                    context: None,
-                },
-                &*input,
-            ));
+        if self.min_length.is_some_and(|minimum| output.len() < minimum) {
+            return Err(super::JsonCursor::parse_error(()));
         }
         Ok(output.into_py_any(py)?)
     }

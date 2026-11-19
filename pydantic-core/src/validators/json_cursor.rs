@@ -53,13 +53,6 @@ impl<'data> JsonCursor<'data> {
         })
     }
 
-    pub(super) fn array_length(&self) -> Option<usize> {
-        match self.value_for_context() {
-            JsonValue::Array(array) => Some(array.len()),
-            _ => None,
-        }
-    }
-
     pub(super) fn validate_next<'py>(
         &mut self,
         py: Python<'py>,
