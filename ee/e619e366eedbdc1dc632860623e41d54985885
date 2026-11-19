@@ -1,0 +1,22 @@
+tests/test_json_cursor.py
+  s_d4a691b07897c1::t_879175df961160 1-6,8-11,13-19,22-35,37-42,44-53,55-60,62-71,73-78,80-88,90-124
+  s_d4a691b07897c1::t_39211ffd44d844 7,12,20-21,36,43,54,61,72,79,89,125-126,129,131-133
+  s_d4a691b07897c1::t_505fad1733b068 134
+  s_d4a691b07897c1::t_f0124107f74f88 127-128,130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "eee619e366eedbdc1dc632860623e41d54985885",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
