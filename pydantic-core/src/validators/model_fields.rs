@@ -520,6 +520,9 @@ fn take_list<'j, 'py>(
     let mut next = jiter.known_array()?;
     while let Some(peek) = next {
         if all_ready {
+            if plan.max_length.is_some_and(|maximum| items.len() >= maximum) {
+                return Err(StreamStop::Cursor);
+            }
             match take_peeked(py, jiter, element, peek, state)? {
                 Taken::Ready(value) => items.push(value),
                 Taken::Raw(_) => all_ready = false,
