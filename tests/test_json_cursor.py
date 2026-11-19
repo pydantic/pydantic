@@ -242,10 +242,12 @@ def test_cursor_float_tokens_preserve_bits_coercion_and_finite_policy(strict: bo
     ordinary = TypeAdapter(Annotated[values, AfterValidator(lambda value: value)])
     for document in (
         '[0.0,-0.0,1.125,5e-324,1.7976931348623157e308]',
+        '[0,-0,9007199254740993,9223372036854775807,18446744073709551617]',
         '[1,123456789012345678901234567890]',
         '[1.12345678901234567890123456789]',
         '[true,false,null,{},[],"1.25"]',
         '[NaN,Infinity,-Infinity,1e309]',
+        '[' + '9' * 4301 + ']',
     ):
         try:
             expected = ordinary.validate_json(document, strict=strict)

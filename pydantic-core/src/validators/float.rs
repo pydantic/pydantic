@@ -94,16 +94,25 @@ impl Validator for FloatValidator {
     ) -> ValResult<Py<PyAny>> {
         let peek = input.jiter.peek().map_err(super::JsonCursor::parse_error)?;
         if peek.is_num() {
-            let value = match input.jiter.known_number(peek).map_err(super::JsonCursor::parse_error)? {
-                // Float tokens are exact matches. Integers retain the ordinary
-                // conversion and exactness policy, including arbitrary precision.
-                jiter::NumberAny::Float(value) => {
-                    return self.finish(py, EitherFloat::F64(value), jiter::JsonValue::Float(value));
-                }
-                jiter::NumberAny::Int(jiter::NumberInt::Int(value)) => jiter::JsonValue::Int(value),
-                jiter::NumberAny::Int(jiter::NumberInt::BigInt(value)) => jiter::JsonValue::BigInt(value),
-            };
-            return self.validate(py, &value, state);
+            let start = input.jiter.current_index();
+            let mut value = input.jiter.known_float(peek).map_err(super::JsonCursor::parse_error)?;
+            let token = input.jiter.slice_to_current(start);
+            if !value.is_finite() {
+                // Preserve the ordinary integer digit limit and nonfinite policy.
+                // Finite numbers avoid materializing an intermediate integer.
+                let value = jiter::Jiter::new(token)
+                    .with_allow_inf_nan()
+                    .next_value()
+                    .map_err(super::JsonCursor::parse_error)?;
+                return self.validate(py, &value, state);
+            }
+            if value == 0.0 && token == b"-0" {
+                value = 0.0;
+            }
+            if state.exactness.is_some() && token.iter().all(|byte| byte.is_ascii_digit() || *byte == b'-') {
+                state.floor_exactness(super::Exactness::Strict);
+            }
+            return self.finish(py, EitherFloat::F64(value), jiter::JsonValue::Float(value));
         }
         self.validate(py, &input.take_value()?, state)
     }
