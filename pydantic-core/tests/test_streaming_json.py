@@ -305,7 +305,12 @@ def _run(case: str, stream: bool, in_array: bool = False) -> dict:
         [sys.executable, '-c', script], capture_output=True, text=True, cwd=ROOT, env=env, check=False
     )
     assert proc.returncode == 0, f'{case} ({"stream" if stream else "tree"}) failed:\n{proc.stderr[-3000:]}'
-    return json.loads(proc.stdout)
+    result = json.loads(proc.stdout)
+    # GraalPy can encode C-extension booleans as JSON 0/1. Preserve the
+    # eligibility value while canonicalizing the transport representation.
+    assert result['accepted'] in (False, True)
+    result['accepted'] = bool(result['accepted'])
+    return result
 
 
 @pytest.mark.parametrize('case', sorted(CASES))
