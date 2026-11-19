@@ -449,14 +449,14 @@ impl ModelFieldsValidator {
                         deferred.resize(self.fields.len(), None);
                     }
                     deferred[index] = Some(input.jiter.current_index());
-                    input.jiter.next_skip().map_err(super::JsonCursor::parse_error)?;
+                    input.skip_value()?;
                 }
                 Some(_) => {
                     // A previously validated field has a later duplicate. Let ordinary
                     // validation select the last value; callbacks may replay on retry.
                     return Err(super::JsonCursor::parse_error(()));
                 }
-                None => input.jiter.next_skip().map_err(super::JsonCursor::parse_error)?,
+                None => input.skip_value()?,
             }
             key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
         }

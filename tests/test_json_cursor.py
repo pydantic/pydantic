@@ -120,7 +120,6 @@ def test_cursor_nested_missing_field_error_input() -> None:
     [
         pytest.param(
             b'{"value":1,"ignored":"\xff"}',
-            marks=pytest.mark.xfail(strict=True, reason='Optimistic skip does not yet validate ignored UTF-8'),
         ),
         pytest.param(
             b'{"value":1,"ignored":' + b'[' * 200 + b'1' + b']' * 200 + b'}',
@@ -227,3 +226,18 @@ def test_cursor_container_omission_preserves_following_items_and_callback_count(
     result = TypeAdapter(list[Model]).validate_json(json.dumps([{'value': i} for i in range(205)]))
     assert [model.value for model in result] == list(range(1, 205, 2))
     assert calls == list(range(205))
+
+
+@pytest.mark.parametrize(
+    'data',
+    [b'{"b":"\xff","b":"valid","a":1}', b'{"a":1,"ignored":{"nested":"\xff"},"b":"valid"}'],
+)
+def test_cursor_validates_utf8_in_all_skipped_spans(data: bytes) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+
+    class Model(BaseModel):
+        a: int
+        b: str
+
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        Model.model_validate_json(data)
