@@ -1,11 +1,11 @@
 import copy
 import sys
 from types import FrameType
-from typing import Annotated
+from typing import Annotated, Any
 
 import pytest
 
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, ValidationInfo, field_validator
 
 
 def test_streamed_valid_defaults_receive_field_context() -> None:
@@ -50,3 +50,28 @@ def test_streamed_list_bound_limits_mutable_default_copies() -> None:
         sys.setprofile(previous)
     # One speculative item, followed by the ordinary path's bounded validation.
     assert copies <= 3
+
+
+@pytest.mark.parametrize(
+    ('annotation', 'data', 'expected'),
+    [
+        (list[int], '[1,"2",3.0,true,1000000000000000000000000000000]', [1, 2, 3, 1, 10**30]),
+        (dict[str, int], '{"a":1,"b":"2","c":1000000000000000000000000000000}', {'a': 1, 'b': 2, 'c': 10**30}),
+        (list[bool], '[0,1,"true","false"]', [False, True, True, False]),
+        (list[float], '[1,"2.5",3.0]', [1.0, 2.5, 3.0]),
+        (list[str], '["a",1,2.5]', ['a', '1', '2.5']),
+    ],
+)
+def test_streamed_native_coercions_preserve_values(annotation: Any, data: str, expected: object) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    adapter = TypeAdapter(annotation, config=ConfigDict(coerce_numbers_to_str=True))
+    assert adapter.validate_json(data) == expected
+
+
+def test_streamed_native_coercion_obeys_strict_override() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    adapter = TypeAdapter(list[int], config=ConfigDict(strict=True))
+    with pytest.raises(ValidationError):
+        adapter.validate_json('[1,"2"]')
+    assert adapter.validate_json('[1,"2"]', strict=False) == [1, 2]
+    assert adapter.validate_json('[1000000000000000000000000000000]', strict=True) == [10**30]

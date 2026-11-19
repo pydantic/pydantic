@@ -302,10 +302,10 @@ impl From<std::convert::Infallible> for StreamStop {
 /// A field whose value can be taken straight off the cursor when the json type matches it exactly.
 /// In that case strict and lax agree and no validator has to run.
 pub(crate) enum Fast<'v> {
-    Str,
-    Bool,
-    Int,
-    Float,
+    Str(&'v CombinedValidator),
+    Bool(&'v CombinedValidator),
+    Int(&'v CombinedValidator),
+    Float(&'v CombinedValidator),
     /// a nested model, whose own fields come off the same cursor
     Model(Box<NestedModel<'v>>),
     /// an array whose elements all come off the cursor the same way, to any depth
@@ -388,11 +388,12 @@ fn classify(validator: &CombinedValidator, depth: u8) -> FieldPlan<'_> {
 }
 
 fn classify_fast(validator: &CombinedValidator, depth: u8) -> Fast<'_> {
-    match unwrap_prebuilt(validator) {
-        CombinedValidator::Str(_) => Fast::Str,
-        CombinedValidator::Bool(_) => Fast::Bool,
-        CombinedValidator::Int(_) => Fast::Int,
-        CombinedValidator::Float(_) => Fast::Float,
+    let validator = unwrap_prebuilt(validator);
+    match validator {
+        CombinedValidator::Str(_) => Fast::Str(validator),
+        CombinedValidator::Bool(_) => Fast::Bool(validator),
+        CombinedValidator::Int(_) => Fast::Int(validator),
+        CombinedValidator::Float(_) => Fast::Float(validator),
         // a container's element plan does not raise the depth: only a model can recurse, and
         // `list[list[list[float]]]` is a real shape that a depth cap would refuse for no reason
         CombinedValidator::List(list) => match list.stream_list() {
@@ -611,6 +612,25 @@ fn take_fast<'j, 'py>(
     take_peeked(py, jiter, field, peek, state)
 }
 
+/// Keep a successfully coerced native scalar in its surrounding streamed container.
+/// Unsupported validators remain raw so model field validation retains declaration order.
+fn validate_scalar_fallback<'j, 'py>(
+    py: Python<'py>,
+    field: &FieldPlan<'_>,
+    value: JsonValue<'j>,
+    state: &mut ValidationState<'_, 'py>,
+) -> Result<Taken<'j, 'py>, StreamStop> {
+    let (Fast::Str(validator) | Fast::Bool(validator) | Fast::Int(validator) | Fast::Float(validator)) = &field.fast
+    else {
+        return Ok(Taken::Raw(value));
+    };
+    match validator.validate(py, &value, state) {
+        Ok(value) => Ok(Taken::Ready(value.into_bound(py))),
+        Err(ValError::InternalErr(error)) => Err(StreamStop::Py(error)),
+        Err(_) => Ok(Taken::Raw(value)),
+    }
+}
+
 /// The same, for a value whose peek the caller already has: an element of an array, or the value
 /// of an object member.
 fn take_peeked<'j, 'py>(
@@ -630,46 +650,32 @@ fn take_peeked<'j, 'py>(
         Peek::String | Peek::Array | Peek::Object | Peek::Null | Peek::True | Peek::False
     );
     let value = match (fast, peek) {
-        (Fast::Str, Peek::String) => {
+        (Fast::Str(_), Peek::String) => {
             let s = jiter.known_str()?;
             Taken::Ready(new_py_string(py, s, state.cache_str()).into_any())
         }
-        (Fast::Bool, Peek::True | Peek::False) => {
+        (Fast::Bool(_), Peek::True | Peek::False) => {
             let b = jiter.known_bool(peek)?;
             Taken::Ready(pyo3::types::PyBool::new(py, b).to_owned().into_any())
         }
-        (Fast::Float, _) if scalar => {
+        (Fast::Float(_), _) if scalar => {
             // an int literal is a valid float under both strict and lax, and this is the same
             // conversion the float validator would do, so the decoder can hand back either
             let f = jiter.known_float(peek)?;
             if f.is_finite() {
                 Taken::Ready(f.into_pyobject(py)?.into_any())
             } else {
-                // the ordinary path reports what a non-finite float means for this field
-                Taken::Raw(JsonValue::Float(f))
+                // Use ordinary scalar rules for non-finite float values.
+                validate_scalar_fallback(py, field, JsonValue::Float(f), state)?
             }
         }
-        (Fast::Int, _) if scalar => {
-            let number = jiter.known_number(peek)?;
-            match (fast, number) {
-                (Fast::Int, jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
-                    Taken::Ready(i.into_pyobject(py)?.into_any())
-                }
-                (Fast::Float, jiter::NumberAny::Float(f)) if f.is_finite() => {
-                    Taken::Ready(f.into_pyobject(py)?.into_any())
-                }
-                // a json int is a valid float under both strict and lax, and the conversion is the
-                // one the float validator would do; without this a single `-128` among the decimals
-                // hands back the whole array it sits in
-                (Fast::Float, jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
-                    Taken::Ready((i as f64).into_pyobject(py)?.into_any())
-                }
-                // a float or bigint for an int field, or a non-finite float
-                (_, jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => Taken::Raw(JsonValue::Int(i)),
-                (_, jiter::NumberAny::Float(f)) => Taken::Raw(JsonValue::Float(f)),
-                (_, jiter::NumberAny::Int(jiter::NumberInt::BigInt(b))) => Taken::Raw(JsonValue::BigInt(b)),
+        (Fast::Int(_), _) if scalar => match jiter.known_number(peek)? {
+            jiter::NumberAny::Int(jiter::NumberInt::Int(value)) => Taken::Ready(value.into_pyobject(py)?.into_any()),
+            jiter::NumberAny::Int(jiter::NumberInt::BigInt(value)) => {
+                validate_scalar_fallback(py, field, JsonValue::BigInt(value), state)?
             }
-        }
+            jiter::NumberAny::Float(value) => validate_scalar_fallback(py, field, JsonValue::Float(value), state)?,
+        },
         (Fast::List(plan), Peek::Array) => take_list(py, jiter, plan, state)?,
         (Fast::Dict(plan), Peek::Object) => take_dict(py, jiter, plan, state)?,
         (Fast::Model(nested), Peek::Object) => {
@@ -681,7 +687,7 @@ fn take_peeked<'j, 'py>(
         }
         // a field this path does not specialise, or a json type that does not match it: hand the
         // value to the field's own validator rather than giving up on the whole object
-        _ => Taken::Raw(jiter.next_value()?),
+        _ => validate_scalar_fallback(py, field, jiter.next_value()?, state)?,
     };
     Ok(value)
 }
@@ -1393,7 +1399,7 @@ mod plan_tests {
     fn bounded(min: Option<usize>, max: Option<usize>) -> ContainerPlan<'static> {
         ContainerPlan {
             element: FieldPlan {
-                fast: Fast::Str,
+                fast: Fast::No,
                 nullable: false,
             },
             min_length: min,
