@@ -142,8 +142,8 @@ impl SchemaValidator {
     /// Whether `validate_json` can read this schema straight off the json cursor, rather than
     /// building a `JsonValue` tree first. Answers "is my model on the fast path", and lets a
     /// differential test tell "both paths agree" apart from "only one path ran".
-    #[getter]
-    fn _stream_plan_accepted(&self) -> bool {
+    #[getter(_stream_plan_accepted)]
+    fn stream_plan_accepted(&self) -> bool {
         let root = model_fields::unwrap_prebuilt(&self.validator);
         stream_array_of_models(root).is_some() || model_fields::root_plan(root).is_some()
     }
