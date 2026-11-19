@@ -142,14 +142,14 @@ impl_py_gc_traverse!(SchemaValidator {
 #[pymethods]
 impl SchemaValidator {
     /// Compatibility view of the original narrow eligibility; inputs may still fall back.
-    #[getter]
-    fn _stream_plan_accepted(&self) -> bool {
+    #[getter(_stream_plan_accepted)]
+    fn stream_plan_accepted(&self) -> bool {
         self.stream_plan.as_ref().is_some_and(|plan| plan.narrow_eligible)
     }
 
     /// Whether this schema has an expanded cached plan, including the original narrow subset.
-    #[getter]
-    fn _expanded_stream_plan_accepted(&self) -> bool {
+    #[getter(_expanded_stream_plan_accepted)]
+    fn expanded_stream_plan_accepted(&self) -> bool {
         self.stream_plan.is_some()
     }
 

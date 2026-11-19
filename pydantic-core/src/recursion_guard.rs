@@ -202,6 +202,7 @@ impl RecursionStack {
         }
     }
 
+    #[allow(dropping_copy_types)]
     fn remove(&mut self, v: &RecursionKey) {
         match self {
             Self::Array { data, len } => {
@@ -220,6 +221,7 @@ impl RecursionStack {
 }
 
 impl Drop for RecursionStack {
+    #[allow(dropping_copy_types)]
     fn drop(&mut self) {
         // This should compile away to a noop as Recursion>Key doesn't implement Drop, but it seemed
         // desirable to leave this in for safety in case that should change in the future

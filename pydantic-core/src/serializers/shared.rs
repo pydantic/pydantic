@@ -350,6 +350,7 @@ impl BuildSerializer for CombinedSerializer {
         // Read use_prebuilt from the definitions builder - this ensures all nested
         // serializers respect the same setting as the top-level build
         let use_prebuilt = definitions.use_prebuilt();
+        #[allow(clippy::used_underscore_items)]
         let serializer = Self::_build(schema, config, definitions, use_prebuilt)?;
         Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
     }
