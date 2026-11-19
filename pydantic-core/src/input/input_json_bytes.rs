@@ -1,10 +1,10 @@
 //! A byte-backed JSON input for the existing validator graph.
 //!
-//! JSON syntax is checked before constructing this input. Scalars and less common
+//! Parsing failures are recorded for the ordinary parser to handle. Scalars and less common
 //! operations use the existing JsonValue implementation, while objects retain
 //! field spans and arrays materialize locally before ordinary list validation.
 
-use std::cell::OnceCell;
+use std::cell::{Cell, OnceCell};
 
 use jiter::{Jiter, JsonArray, JsonValue};
 use pyo3::prelude::*;
@@ -26,31 +26,37 @@ use crate::validators::{TemporalUnitMode, ValBytesMode};
 #[derive(Debug)]
 pub(crate) struct JsonBytesInput<'data> {
     data: &'data [u8],
+    failed: &'data Cell<bool>,
     value: OnceCell<JsonValue<'data>>,
     fields: OnceCell<Vec<(String, &'data [u8])>>,
 }
 
 impl<'data> JsonBytesInput<'data> {
-    /// The caller must have checked the complete document, including UTF-8.
-    pub fn new(data: &'data [u8]) -> Self {
+    pub fn new(data: &'data [u8], failed: &'data Cell<bool>) -> Self {
         Self {
             data: data.trim_ascii_start(),
+            failed,
             value: OnceCell::new(),
             fields: OnceCell::new(),
         }
     }
 
-    fn parsed(value: JsonValue<'data>) -> Self {
+    fn parsed(value: JsonValue<'data>, failed: &'data Cell<bool>) -> Self {
         Self {
             data: &[],
+            failed,
             value: OnceCell::from(value),
             fields: OnceCell::new(),
         }
     }
 
     fn value(&self) -> &JsonValue<'data> {
-        self.value
-            .get_or_init(|| JsonValue::parse(self.data, true).expect("previously checked JSON"))
+        self.value.get_or_init(|| {
+            JsonValue::parse(self.data, true).unwrap_or_else(|_| {
+                self.failed.set(true);
+                JsonValue::Null
+            })
+        })
     }
 
     fn object(&self, deduplicate: bool) -> ValResult<JsonObjectInput<'_, 'data>> {
@@ -66,19 +72,38 @@ impl<'data> JsonBytesInput<'data> {
 
     fn fields(&self) -> &[(String, &'data [u8])] {
         self.fields.get_or_init(|| {
-            let mut cursor = Jiter::new(self.data).with_allow_inf_nan();
-            let mut fields = Vec::new();
-            let mut key = cursor.next_object().expect("checked object");
-            while let Some(name) = key {
-                let name = name.to_owned();
-                cursor.peek().expect("checked value");
-                let start = cursor.current_index();
-                cursor.next_skip().expect("checked value");
-                fields.push((name, cursor.slice_to_current(start)));
-                key = cursor.next_key().expect("checked key");
-            }
-            fields
+            let parse = || -> jiter::JiterResult<_> {
+                let mut cursor = Jiter::new(self.data).with_allow_inf_nan();
+                let mut fields = Vec::new();
+                let mut key = cursor.next_object()?;
+                while let Some(name) = key {
+                    let name = name.to_owned();
+                    cursor.peek()?;
+                    let start = cursor.current_index();
+                    cursor.next_skip()?;
+                    fields.push((name, cursor.slice_to_current(start)));
+                    key = cursor.next_key()?;
+                }
+                cursor.finish()?;
+                Ok(fields)
+            };
+            parse().unwrap_or_else(|_| {
+                self.failed.set(true);
+                Vec::new()
+            })
         })
+    }
+
+    /// Complete checks that validation may not have needed (for example an empty model).
+    pub fn finish(&self) -> bool {
+        if self.value.get().is_none() {
+            if self.data.first() == Some(&b'{') {
+                self.fields();
+            } else {
+                self.value();
+            }
+        }
+        !self.failed.get()
     }
 }
 
@@ -107,9 +132,11 @@ impl<'data> ValidatedDict<'_> for JsonObjectInput<'_, 'data> {
     fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         if self.input.data.is_empty() || !key.rest().is_empty() {
             let JsonValue::Object(object) = self.input.value() else {
-                unreachable!()
+                return Ok(None);
             };
-            return key.json_get(object).map(|v| v.cloned().map(JsonBytesInput::parsed));
+            return key
+                .json_get(object)
+                .map(|v| v.cloned().map(|v| JsonBytesInput::parsed(v, self.input.failed)));
         }
         Ok(self
             .input
@@ -117,7 +144,7 @@ impl<'data> ValidatedDict<'_> for JsonObjectInput<'_, 'data> {
             .iter()
             .rev()
             .find(|(name, _)| name == key.first_key())
-            .map(|(_, data)| JsonBytesInput::new(data)))
+            .map(|(_, data)| JsonBytesInput::new(data, self.input.failed)))
     }
 
     fn iterate<'a, R>(
@@ -126,13 +153,14 @@ impl<'data> ValidatedDict<'_> for JsonObjectInput<'_, 'data> {
     ) -> ValResult<R> {
         if self.input.data.is_empty() {
             let JsonValue::Object(object) = self.input.value() else {
-                unreachable!()
+                return Ok(consumer.consume_iterator(std::iter::empty()));
             };
-            return Ok(consumer.consume_iterator(
-                object
-                    .iter()
-                    .map(|(key, value)| Ok((key.to_string(), JsonBytesInput::parsed(value.clone())))),
-            ));
+            return Ok(consumer.consume_iterator(object.iter().map(|(key, value)| {
+                Ok((
+                    key.to_string(),
+                    JsonBytesInput::parsed(value.clone(), self.input.failed),
+                ))
+            })));
         }
         let fields = self.input.fields();
         let mut unique = indexmap::IndexMap::new();
@@ -146,13 +174,15 @@ impl<'data> ValidatedDict<'_> for JsonObjectInput<'_, 'data> {
         } else {
             Box::new(fields.iter().map(|(name, data)| (name, data)))
         };
-        Ok(consumer.consume_iterator(iter.map(|(name, data)| Ok((name.clone(), JsonBytesInput::new(data))))))
+        Ok(consumer.consume_iterator(
+            iter.map(|(name, data)| Ok((name.clone(), JsonBytesInput::new(data, self.input.failed)))),
+        ))
     }
 
     fn last_key(&self) -> Option<Self::Key<'_>> {
         if self.input.data.is_empty() {
             let JsonValue::Object(object) = self.input.value() else {
-                unreachable!()
+                return None;
             };
             object.last().map(|(name, _)| name.to_string())
         } else {
@@ -180,9 +210,7 @@ impl<'py, 'data> Input<'py> for JsonBytesInput<'data> {
     }
 
     fn is_none(&self) -> bool {
-        self.value
-            .get()
-            .map_or_else(|| self.data.first() == Some(&b'n'), Input::is_none)
+        self.value().is_none()
     }
 
     fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>> {
