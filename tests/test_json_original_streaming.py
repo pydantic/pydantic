@@ -1,4 +1,5 @@
 import copy
+import json
 import sys
 from types import FrameType
 from typing import Annotated, Any
@@ -75,3 +76,21 @@ def test_streamed_native_coercion_obeys_strict_override() -> None:
         adapter.validate_json('[1,"2"]')
     assert adapter.validate_json('[1,"2"]', strict=False) == [1, 2]
     assert adapter.validate_json('[1000000000000000000000000000000]', strict=True) == [10**30]
+
+
+@pytest.mark.parametrize('value', [2**63, -(2**63) - 1, 10**200, -(10**200)])
+@pytest.mark.parametrize('strict', [False, True])
+def test_streamed_bigints_keep_value_and_sign(value: int, strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+
+    class Model(BaseModel):
+        scalar: int
+        values: list[int]
+        mapping: dict[str, int]
+
+    data = json.dumps({'scalar': value, 'values': [value], 'mapping': {'value': value}})
+    result = Model.model_validate_json(data, strict=strict)
+    assert result.scalar == value
+    assert result.values == [value]
+    assert result.mapping == {'value': value}
+    assert TypeAdapter(list[int]).validate_json(json.dumps([value]), strict=strict) == [value]

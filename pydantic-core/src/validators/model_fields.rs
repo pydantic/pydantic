@@ -671,9 +671,7 @@ fn take_peeked<'j, 'py>(
         }
         (Fast::Int(_), _) if scalar => match jiter.known_number(peek)? {
             jiter::NumberAny::Int(jiter::NumberInt::Int(value)) => Taken::Ready(value.into_pyobject(py)?.into_any()),
-            jiter::NumberAny::Int(jiter::NumberInt::BigInt(value)) => {
-                validate_scalar_fallback(py, field, JsonValue::BigInt(value), state)?
-            }
+            jiter::NumberAny::Int(jiter::NumberInt::BigInt(value)) => Taken::Ready(value.into_pyobject(py)?.into_any()),
             jiter::NumberAny::Float(value) => validate_scalar_fallback(py, field, JsonValue::Float(value), state)?,
         },
         (Fast::List(plan), Peek::Array) => take_list(py, jiter, plan, state)?,
