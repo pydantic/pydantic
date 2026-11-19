@@ -233,10 +233,21 @@ impl Validator for ListValidator {
         if !matches!(input.jiter.peek(), Ok(jiter::Peek::Array)) {
             return self.validate(py, &input.take_value()?, state);
         }
-        self.validate_json_cursor_items(py, input, state, |input, _, state| match &self.item_validator {
-            Some(validator) => validator.validate_json_cursor(py, input, state),
-            None => input.take_value()?.into_py_any(py).map_err(ValError::from),
-        })
+        match self.item_validator.as_deref() {
+            // Select the integer validator once per list and reuse the parser's
+            // existing element peek; conversion/coercion policy stays shared.
+            Some(CombinedValidator::Int(validator)) => {
+                self.validate_json_cursor_items(py, input, state, |input, peek, state| {
+                    validator.validate_json_cursor_peeked(py, input, peek, state)
+                })
+            }
+            Some(validator) => self.validate_json_cursor_items(py, input, state, |input, _, state| {
+                validator.validate_json_cursor(py, input, state)
+            }),
+            None => self.validate_json_cursor_items(py, input, state, |input, _, _| {
+                input.take_value()?.into_py_any(py).map_err(ValError::from)
+            }),
+        }
     }
 
     fn get_name(&self) -> &str {

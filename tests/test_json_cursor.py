@@ -329,3 +329,19 @@ def test_cursor_bool_tokens_and_ordinary_coercion(strict: bool) -> None:
             assert caught.value.json(include_url=False) == error.json(include_url=False)
         else:
             assert adapter.validate_json(document, strict=strict) == expected
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_cursor_integer_list_dispatch_preserves_local_coercion(strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    adapter = TypeAdapter(list[int])
+    ordinary = TypeAdapter(Annotated[list[int], AfterValidator(lambda value: value)])
+    for document in ('[0,-0,9223372036854775808]', '[1,"2",3.0,true]', '[1,1.5,{}]'):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            assert adapter.validate_json(document, strict=strict) == expected
