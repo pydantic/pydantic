@@ -148,6 +148,7 @@ defined_in = "JSON Schema Validation"
 notes = ""
 
 [SecretStr.additional]
+format = "password"
 writeOnly = true
 
 [SecretBytes]
@@ -157,6 +158,7 @@ defined_in = "JSON Schema Validation"
 notes = ""
 
 [SecretBytes.additional]
+format = "password"
 writeOnly = true
 
 [EmailStr]
