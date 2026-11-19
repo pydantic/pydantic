@@ -409,6 +409,22 @@ pub(crate) fn root_parts(validator: &CombinedValidator) -> Option<(&Py<PyType>, 
 }
 
 impl ModelPlan {
+    /// Debug comparison must not call an enum's user-defined `_missing_` hook twice.
+    #[cfg(feature = "stream-verify")]
+    pub(crate) fn can_verify(&self) -> bool {
+        self.nodes.iter().all(|field| match &field.fast {
+            Fast::Validate(validator) => !matches!(
+                unwrap_prebuilt(validator),
+                CombinedValidator::IntEnum(_)
+                    | CombinedValidator::StrEnum(_)
+                    | CombinedValidator::FloatEnum(_)
+                    | CombinedValidator::PlainEnum(_)
+            ),
+            Fast::Model(nested) => nested.plan.can_verify(),
+            _ => true,
+        })
+    }
+
     pub(crate) fn is_model_root(&self) -> bool {
         self.root_value.is_none()
     }

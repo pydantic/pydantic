@@ -517,7 +517,12 @@ impl SchemaValidator {
             // The debug verifier compares successful results and may run construction hooks
             // again on the ordinary path.
             #[cfg(feature = "stream-verify")]
-            if let Ok(streamed) = &result {
+            if let Ok(streamed) = &result
+                && self
+                    .stream_plan
+                    .as_deref()
+                    .is_some_and(model_fields::ModelPlan::can_verify)
+            {
                 let tree = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
                     .map_err(|e| json::map_json_err(input, e, json_data))
                     .and_then(|json_value| {
