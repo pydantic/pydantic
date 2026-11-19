@@ -4,7 +4,7 @@ from typing import Annotated
 
 import pytest
 
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError, ValidationInfo, field_validator
+from pydantic import BaseModel, BeforeValidator, Field, TypeAdapter, ValidationError, ValidationInfo, field_validator
 
 
 def test_cursor_mixed_model_defaults_and_field_order() -> None:
@@ -132,3 +132,21 @@ def test_cursor_nested_list_early_errors_continue_outer_array(max_length: bool) 
     with pytest.raises(ValidationError) as caught:
         adapter.validate_json('[["bad",2,3],["also bad"]]')
     assert [error['loc'] for error in caught.value.errors()] == ([(0,), (1, 0)] if max_length else [(0, 0), (1, 0)])
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_cursor_integer_primitives_reuse_coercion_and_errors(strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    adapter = TypeAdapter(list[int])
+    # A function-before wrapper deliberately takes the ordinary JsonValue path.
+    ordinary = TypeAdapter(Annotated[list[int], BeforeValidator(lambda value: value)])
+    assert adapter.validate_json('[0,-1,9223372036854775808]', strict=strict) == [0, -1, 9223372036854775808]
+    for document in ('[1.0]', '[1.5]', '["2"]', '[true]', '[null]', '[NaN]', '[Infinity]', '[-0.0]'):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            assert adapter.validate_json(document, strict=strict) == expected
