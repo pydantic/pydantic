@@ -30,6 +30,10 @@ impl<'data> JsonCursor<'data> {
         }
     }
 
+    pub(super) fn context(&self) -> Self {
+        Self::new(&self.data[self.start..])
+    }
+
     pub(super) fn parse_error<E>(_: E) -> ValError {
         pyo3::exceptions::PyValueError::new_err("JSON cursor could not complete validation").into()
     }

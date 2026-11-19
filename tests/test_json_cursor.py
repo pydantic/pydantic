@@ -1,5 +1,7 @@
 """Regression coverage for direct JSON traversal on the validator graph."""
 
+import json
+from itertools import permutations
 from typing import Annotated
 
 import pytest
@@ -183,3 +185,27 @@ def test_cursor_model_construction_runs_post_init_after_fields() -> None:
     assert model._total == 6
     assert calls == [[1, 2, 3]]
     assert model.model_fields_set == {'numbers'}
+
+
+@pytest.mark.parametrize('order', [*permutations(('a', 'b', 'c')), *permutations(('a', 'c'))])
+def test_cursor_incremental_fields_preserve_schema_order_and_defaults(order: tuple[str, ...]) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    calls: list[tuple[str | None, tuple[str, ...]]] = []
+
+    class Model(BaseModel):
+        a: int
+        b: int = Field(default=5, validate_default=True)
+        c: int
+
+        @field_validator('*')
+        @classmethod
+        def record(cls, value: int, info: ValidationInfo) -> int:
+            assert info.mode == 'json'
+            assert info.data is not None
+            calls.append((info.field_name, tuple(info.data)))
+            return value
+
+    data = {'a': 1, 'b': 2, 'c': 3}
+    result = Model.model_validate_json(json.dumps({key: data[key] for key in order}))
+    assert result.model_dump() == {'a': 1, 'b': 2 if 'b' in order else 5, 'c': 3}
+    assert calls == [('a', ()), ('b', ('a',)), ('c', ('a', 'b'))]

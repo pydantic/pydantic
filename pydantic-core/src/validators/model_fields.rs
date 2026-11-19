@@ -381,16 +381,6 @@ impl ModelFieldsValidator {
             state.validate_by_alias_or(self.validate_by_alias),
             state.validate_by_name_or(self.validate_by_name),
         )?;
-        let mut inputs: SmallVec<[Option<usize>; 16]> = (0..self.fields.len()).map(|_| None).collect();
-        let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
-        while let Some(name) = key {
-            let index = lookup.get(name).copied();
-            if let Some(index) = index {
-                inputs[index] = Some(input.jiter.current_index());
-            }
-            input.jiter.next_skip().map_err(super::JsonCursor::parse_error)?;
-            key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
-        }
         let model_dict = PyDict::new(py);
         let state = &mut state.scoped_set_data(Some(model_dict.clone()));
         let state = &mut state.scoped_clear_field_error();
@@ -406,14 +396,75 @@ impl ModelFieldsValidator {
             loc_by_alias: self.loc_by_alias,
         };
         let data = input.data;
-        let error_input = &*input;
-        for (index, (field, start)) in self.fields.iter().zip(inputs).enumerate() {
+        let error_input = input.context();
+        let error_input = &error_input;
+        let mut deferred: SmallVec<[Option<usize>; 16]> = SmallVec::new();
+        let mut next_field = 0;
+        let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
+        while let Some(name) = key {
+            match lookup.get(name).copied() {
+                Some(index) if index == next_field => {
+                    let field = &self.fields[index];
+                    fields.validate_field_with(
+                        py,
+                        &error_input,
+                        index,
+                        field,
+                        Some((
+                            &field.lookup_path_collection.by_name,
+                            |state: &mut ValidationState<'_, 'py>| input.validate_next(py, &field.validator, state),
+                        )),
+                    )?;
+                    next_field += 1;
+                    while next_field < self.fields.len() {
+                        let Some(start) = deferred.get_mut(next_field).and_then(Option::take) else {
+                            break;
+                        };
+                        let field = &self.fields[next_field];
+                        fields.validate_field_with(
+                            py,
+                            &error_input,
+                            next_field,
+                            field,
+                            Some((
+                                &field.lookup_path_collection.by_name,
+                                |state: &mut ValidationState<'_, 'py>| {
+                                    field.validator.validate_json_cursor(
+                                        py,
+                                        &mut super::JsonCursor::new(&data[start..]),
+                                        state,
+                                    )
+                                },
+                            )),
+                        )?;
+                        next_field += 1;
+                    }
+                }
+                Some(index) if index > next_field => {
+                    // Only out-of-order values need a second traversal. Ordered fields
+                    // are validated directly, without first scanning their subtrees.
+                    if deferred.is_empty() {
+                        deferred.resize(self.fields.len(), None);
+                    }
+                    deferred[index] = Some(input.jiter.current_index());
+                    input.jiter.next_skip().map_err(super::JsonCursor::parse_error)?;
+                }
+                Some(_) => {
+                    // A previously validated field has a later duplicate. Let ordinary
+                    // validation select the last value; callbacks may replay on retry.
+                    return Err(super::JsonCursor::parse_error(()));
+                }
+                None => input.jiter.next_skip().map_err(super::JsonCursor::parse_error)?,
+            }
+            key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
+        }
+        for (index, field) in self.fields.iter().enumerate().skip(next_field) {
             fields.validate_field_with(
                 py,
                 &error_input,
                 index,
                 field,
-                start.map(|start| {
+                deferred.get(index).copied().flatten().map(|start| {
                     (
                         &field.lookup_path_collection.by_name,
                         move |state: &mut ValidationState<'_, 'py>| {
