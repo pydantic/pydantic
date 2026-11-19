@@ -222,6 +222,46 @@ def get_origin(v: Any) -> Any:
     return typing_extensions.get_origin(v)
 
 
+def _map_type_parameters(target: Any, parameters: tuple[Any, ...], args: tuple[Any, ...]) -> dict[TypeVar, Any]:
+    """Return a mapping between the type parameters of `target` and the provided arguments.
+
+    Missing arguments are filled with the parameter's default (if any).
+
+    Raises:
+        TypeError: If the number of arguments does not match the parameters (i.e. if providing too few or too many arguments).
+
+    Note:
+        This function is analogous to the private `typing._check_generic_specialization` function.
+    """
+    expected_len = len(parameters)
+    typevars_map: dict[TypeVar, Any] = {}
+
+    _MISSING = typing_extensions.Sentinel('_MISSING')
+    for parameter, argument in zip_longest(parameters, args, fillvalue=_MISSING):
+        if parameter is _MISSING:
+            raise TypeError(f'Too many arguments for {target}; actual {len(args)}, expected {expected_len}')
+
+        if argument is _MISSING:
+            param = cast(TypeVar, parameter)
+            try:
+                has_default = param.has_default()  # pyright: ignore[reportAttributeAccessIssue]
+            except AttributeError:
+                # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
+                has_default = False
+            if has_default:
+                # The default might refer to other type parameters. For an example, see:
+                # https://typing.python.org/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
+                typevars_map[param] = replace_types(param.__default__, typevars_map)  # pyright: ignore[reportAttributeAccessIssue]
+            else:
+                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)  # pyright: ignore[reportAttributeAccessIssue]
+                raise TypeError(f'Too few arguments for {target}; actual {len(args)}, expected at least {expected_len}')
+        else:
+            param = cast(TypeVar, parameter)
+            typevars_map[param] = argument
+
+    return typevars_map
+
+
 def get_standard_typevars_map(cls: Any) -> dict[TypeVar, Any] | None:
     """Package a generic type's typevars and parametrization (if present) into a dictionary compatible with the
     `replace_types` function. Specifically, this works with standard typing generics and typing._GenericAlias.
@@ -236,7 +276,9 @@ def get_standard_typevars_map(cls: Any) -> dict[TypeVar, Any] | None:
     # So it is safe to access cls.__args__ and origin.__parameters__
     args: tuple[Any, ...] = cls.__args__  # type: ignore
     parameters: tuple[TypeVar, ...] = origin.__parameters__
-    return dict(zip(parameters, args, strict=True))
+    # Type parameter defaults are not always applied to `__args__` (e.g. for type aliases
+    # created with the `type` statement), so missing arguments are filled from the defaults:
+    return _map_type_parameters(origin, parameters, args)
 
 
 def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any]:
@@ -377,33 +419,7 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
         This function is analogous to the private `typing._check_generic_specialization` function.
     """
     parameters = cls.__pydantic_generic_metadata__['parameters']
-    expected_len = len(parameters)
-    typevars_map: dict[TypeVar, Any] = {}
-
-    _missing = object()
-    for parameter, argument in zip_longest(parameters, args, fillvalue=_missing):
-        if parameter is _missing:
-            raise TypeError(f'Too many arguments for {cls}; actual {len(args)}, expected {expected_len}')
-
-        if argument is _missing:
-            param = cast(TypeVar, parameter)
-            try:
-                has_default = param.has_default()  # pyright: ignore[reportAttributeAccessIssue]
-            except AttributeError:
-                # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
-                has_default = False
-            if has_default:
-                # The default might refer to other type parameters. For an example, see:
-                # https://typing.python.org/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
-                typevars_map[param] = replace_types(param.__default__, typevars_map)  # pyright: ignore[reportAttributeAccessIssue]
-            else:
-                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)  # pyright: ignore[reportAttributeAccessIssue]
-                raise TypeError(f'Too few arguments for {cls}; actual {len(args)}, expected at least {expected_len}')
-        else:
-            param = cast(TypeVar, parameter)
-            typevars_map[param] = argument
-
-    return typevars_map
+    return _map_type_parameters(cls, parameters, args)
 
 
 _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
