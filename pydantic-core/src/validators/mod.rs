@@ -51,6 +51,7 @@ mod int;
 mod is_instance;
 mod is_subclass;
 mod json;
+mod json_cursor;
 mod json_or_python;
 mod lax_or_strict;
 mod list;
@@ -76,6 +77,7 @@ mod uuid;
 mod validation_state;
 mod with_default;
 
+pub use self::json_cursor::JsonCursor;
 pub use self::validation_state::{Exactness, ValidationState};
 pub use with_default::DefaultType;
 
@@ -481,6 +483,35 @@ impl SchemaValidator {
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> ValResult<Py<PyAny>> {
+        if !allow_partial.is_active() && self_instance.is_none() && self.validator.supports_json_cursor() {
+            // Check the entire document before running user code. `next_skip` checks syntax
+            // and depth, but deliberately omits UTF-8 validation, so check those bytes too.
+            let mut check = jiter::Jiter::new(json_data).with_allow_inf_nan();
+            if std::str::from_utf8(json_data).is_ok() && check.next_skip().is_ok() && check.finish().is_ok() {
+                let mut recursion_guard = RecursionState::default();
+                let mut state = ValidationState::new(
+                    Extra::new(
+                        strict,
+                        extra_behavior,
+                        None,
+                        context,
+                        InputType::Json,
+                        self.cache_str,
+                        by_alias,
+                        by_name,
+                    ),
+                    &mut recursion_guard,
+                    allow_partial,
+                    None,
+                    None,
+                );
+                return self
+                    .validator
+                    .validate_json_cursor(py, &mut JsonCursor::new(json_data), &mut state);
+            }
+            // Invalid JSON goes through the existing parser for its precise error; no
+            // validation has run, so this cannot replay callbacks.
+        }
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
         #[allow(clippy::used_underscore_items)]
@@ -870,6 +901,22 @@ pub trait Validator: Send + Sync + Debug {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>>;
 
+    /// Whether this validator has a useful direct-cursor implementation.
+    fn supports_json_cursor(&self) -> bool {
+        false
+    }
+
+    /// Validate the next value in a syntax-checked JSON document.
+    /// Unoptimized nodes materialize only their value and use ordinary validation.
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        self.validate(py, &input.take_value(), state)
+    }
+
     /// Get a default value, currently only used by `WithDefaultValidator`
     fn default_value<'py>(
         &self,
@@ -910,6 +957,19 @@ impl<T: Validator> Validator for Box<T> {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         (**self).validate(py, input, state)
+    }
+
+    fn supports_json_cursor(&self) -> bool {
+        (**self).supports_json_cursor()
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        (**self).validate_json_cursor(py, input, state)
     }
 
     fn default_value<'py>(

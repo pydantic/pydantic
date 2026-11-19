@@ -240,6 +240,44 @@ impl Validator for ModelValidator {
         Ok(model.into_py_any(py)?)
     }
 
+    fn supports_json_cursor(&self) -> bool {
+        !self.custom_init
+            && !self.root_model
+            && matches!(self.validator.as_ref(), CombinedValidator::ModelFields(fields) if fields.supports_json_cursor())
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        if !self.supports_json_cursor()
+            || state.self_instance.is_some()
+            || !matches!(
+                state.extra_behavior_or(crate::build_tools::ExtraBehavior::Ignore),
+                crate::build_tools::ExtraBehavior::Ignore
+            )
+            || !matches!(input.jiter.peek(), Ok(jiter::Peek::Object))
+        {
+            return self.validate(py, &input.take_value(), state);
+        }
+        let CombinedValidator::ModelFields(fields) = self.validator.as_ref() else {
+            unreachable!()
+        };
+        state.floor_exactness(Exactness::Strict);
+        let (model_dict, model_extra, fields_set) = fields.validate_cursor_fields(py, input, state)?;
+        let fields_set = Bound::new(py, fields_set)?;
+        let instance = create_class(self.class.bind(py))?;
+        let extra = model_extra.map_or_else(|| py.None().into_bound(py), Bound::into_any);
+        set_model_attrs(&instance, &model_dict, &extra, &fields_set)?;
+        if self.post_init.is_some() {
+            self.call_post_init(py, instance, input.value_for_context(), state.extra())
+        } else {
+            Ok(instance.into())
+        }
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }

@@ -15,8 +15,8 @@ use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
-use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{LocItem, ToErrorValue};
 use crate::fields_set::{FieldNames, ModelFieldsSet};
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, EitherString, Input, ValidatedDict};
@@ -363,6 +363,75 @@ impl ModelFieldsValidator {
         Ok((state.model_dict, extra_dict, state.fields_set))
     }
 
+    pub(super) fn supports_json_cursor(&self) -> bool {
+        matches!(self.lookup, LookupTree::NoAliases(_)) && matches!(self.extra_behavior, ExtraBehavior::Ignore)
+    }
+
+    pub(super) fn validate_cursor_fields<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<ValidatedModelFields<'py>> {
+        let LookupTree::NoAliases(lookup) = &self.lookup else {
+            unreachable!("cursor model uses names-only lookup");
+        };
+        state.allow_partial = false.into();
+        let lookup_type = LookupType::from_bools(
+            state.validate_by_alias_or(self.validate_by_alias),
+            state.validate_by_name_or(self.validate_by_name),
+        )?;
+        let mut inputs: SmallVec<[Option<usize>; 16]> = (0..self.fields.len()).map(|_| None).collect();
+        let mut key = input.jiter.known_object().expect("checked object");
+        while let Some(name) = key {
+            let index = lookup.get(name).copied();
+            if let Some(index) = index {
+                inputs[index] = Some(input.jiter.current_index());
+            }
+            input.jiter.next_skip().expect("checked value");
+            key = input.jiter.next_key().expect("checked object");
+        }
+        let model_dict = PyDict::new(py);
+        let state = &mut state.scoped_set_data(Some(model_dict.clone()));
+        let state = &mut state.scoped_clear_field_error();
+        let mut fields = ModelFieldsValidationState {
+            lookup_type,
+            model_dict,
+            extra_validator: ModelExtraValidator::Ignore,
+            fields_set: ModelFieldsSet::empty(Arc::clone(&self.field_names)),
+            fields_set_count: 0,
+            extra_keys_may_be_field_names: false,
+            state,
+            errors: Vec::new(),
+            loc_by_alias: self.loc_by_alias,
+        };
+        let data = input.data;
+        let error_input = &*input;
+        for (index, (field, start)) in self.fields.iter().zip(inputs).enumerate() {
+            fields.validate_field_with(
+                py,
+                &error_input,
+                index,
+                field,
+                start.map(|start| {
+                    (
+                        &field.lookup_path_collection.by_name,
+                        move |state: &mut ValidationState<'_, 'py>| {
+                            field
+                                .validator
+                                .validate_json_cursor(py, &mut super::JsonCursor::new(&data[start..]), state)
+                        },
+                    )
+                }),
+            )?;
+        }
+        if !fields.errors.is_empty() {
+            return Err(ValError::LineErrors(fields.errors));
+        }
+        fields.state.add_fields_set(fields.fields_set_count);
+        Ok((fields.model_dict, None, fields.fields_set))
+    }
+
     /// Validate a Python input field by field, looking up each field's paths in the input.
     ///
     /// For example, with `a: int = Field(alias='b')`, `validate_by_name=True` and `{'a': 1, 'b': 2}` as input:
@@ -620,7 +689,7 @@ enum ModelExtraValidator<'a, 'py> {
     },
 }
 
-impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
+impl<'s, 'py> ModelFieldsValidationState<'_, 's, 'py> {
     /// Attempt to validate a single field.
     ///
     /// Error return is for unexpected errors to be propagated upward; validation
@@ -633,12 +702,36 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
         field: &Field,
         field_input: Option<(&LookupPath, impl BorrowInput<'py>)>,
     ) -> ValResult<()> {
+        self.validate_field_with(
+            py,
+            &full_input,
+            field_idx,
+            field,
+            field_input.map(|(path, value)| {
+                (path, move |state: &mut ValidationState<'s, 'py>| {
+                    field.validator.validate(py, value.borrow_input(), state)
+                })
+            }),
+        )
+    }
+
+    fn validate_field_with<F>(
+        &mut self,
+        py: Python<'py>,
+        full_input: &dyn ToErrorValue,
+        field_idx: usize,
+        field: &Field,
+        field_input: Option<(&LookupPath, F)>,
+    ) -> ValResult<()>
+    where
+        F: FnOnce(&mut ValidationState<'s, 'py>) -> ValResult<Py<PyAny>>,
+    {
         let state = &mut self
             .state
             .scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
-        if let Some((lookup_path, value)) = field_input {
-            match field.validator.validate(py, value.borrow_input(), state) {
+        if let Some((lookup_path, validate)) = field_input {
+            match validate(state) {
                 Ok(value) => {
                     self.model_dict.set_item(&field.name, value)?;
                     self.fields_set.insert_field(field_idx);
