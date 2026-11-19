@@ -982,11 +982,14 @@ impl ModelFieldsValidator {
                         Err(_) => return Ok(None),
                     }
                 }
-                None => match field.validator.default_value(py, Some(&*field.name), state) {
-                    Ok(Some(default)) => default,
-                    // required and absent, or a default that does not simply produce a value
-                    _ => return Ok(None),
-                },
+                None => {
+                    let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
+                    match field.validator.default_value(py, Some(&*field.name), state) {
+                        Ok(Some(default)) => default,
+                        // required and absent, or a default that does not simply produce a value
+                        _ => return Ok(None),
+                    }
+                }
             };
             model_dict.set_item(&field.name, value)?;
         }
