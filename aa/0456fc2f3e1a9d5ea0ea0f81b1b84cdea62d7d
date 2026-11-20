@@ -1,0 +1,19 @@
+tests/test_json_cursor_safeguards.py
+  s_d4a691b07897c1::t_8a1dbfab560f7b 4,8,117-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aa0456fc2f3e1a9d5ea0ea0f81b1b84cdea62d7d",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
