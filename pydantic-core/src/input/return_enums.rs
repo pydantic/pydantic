@@ -137,22 +137,15 @@ pub(crate) fn validate_iter_to_vec<'py>(
             false => PartialMode::Off,
         };
         let item = item_result.map_err(|e| any_next_error!(py, e, max_length_check.input, index))?;
-        match validator.validate(py, item.borrow_input(), state) {
-            Ok(item) => {
-                max_length_check.incr()?;
-                output.push(item);
-            }
-            Err(ValError::LineErrors(line_errors)) => {
-                max_length_check.incr()?;
-                if !is_last_partial {
-                    errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
-                    if fail_fast {
-                        return Err(ValError::LineErrors(errors));
-                    }
-                }
-            }
-            Err(ValError::Omit) => (),
-            Err(err) => return Err(err),
+        if let Some(item) = validate_iter_item(
+            validator.validate(py, item.borrow_input(), state),
+            index,
+            &mut errors,
+            is_last_partial,
+            fail_fast,
+            || max_length_check.incr(),
+        )? {
+            output.push(item);
         }
     }
 
@@ -160,6 +153,35 @@ pub(crate) fn validate_iter_to_vec<'py>(
         Ok(output)
     } else {
         Err(ValError::LineErrors(errors))
+    }
+}
+
+/// Apply collection policy to one validated item, independently of how it was read.
+pub(crate) fn validate_iter_item(
+    result: ValResult<Py<PyAny>>,
+    index: usize,
+    errors: &mut Vec<ValLineError>,
+    is_last_partial: bool,
+    fail_fast: bool,
+    mut check_length: impl FnMut() -> ValResult<()>,
+) -> ValResult<Option<Py<PyAny>>> {
+    match result {
+        Ok(item) => {
+            check_length()?;
+            Ok(Some(item))
+        }
+        Err(ValError::LineErrors(line_errors)) => {
+            check_length()?;
+            if !is_last_partial {
+                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
+                if fail_fast {
+                    return Err(ValError::LineErrors(std::mem::take(errors)));
+                }
+            }
+            Ok(None)
+        }
+        Err(ValError::Omit) => Ok(None),
+        Err(err) => Err(err),
     }
 }
 
