@@ -162,14 +162,22 @@ impl FunctionAfterValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let v = call(input, state)?;
-        let r = if self.info_arg {
+        self.call_after(v, py, state).map_err(|e| convert_err(py, e, input))
+    }
+
+    fn call_after<'py>(
+        &self,
+        value: Py<PyAny>,
+        py: Python<'py>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> PyResult<Py<PyAny>> {
+        if self.info_arg {
             let field_name = state.field_name().cloned().map(Bound::unbind);
             let info = ValidationInfo::new(py, state, &self.config, field_name);
-            self.func.call1(py, (v, info))
+            self.func.call1(py, (value, info))
         } else {
-            self.func.call1(py, (v,))
-        };
-        r.map_err(|e| convert_err(py, e, input))
+            self.func.call1(py, (value,))
+        }
     }
 }
 
@@ -190,6 +198,23 @@ impl Validator for FunctionAfterValidator {
         #[allow(clippy::used_underscore_items)]
         self._validate(validate, py, input, state)
     }
+    fn supports_json_cursor(&self) -> bool {
+        self.validator.supports_json_cursor()
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        let start = input.jiter.current_index();
+        let data = input.data;
+        let value = self.validator.validate_json_cursor(py, input, state)?;
+        self.call_after(value, py, state)
+            .map_err(|error| convert_err(py, error, &input.at_value(&data[start..])))
+    }
+
     fn validate_assignment<'py>(
         &self,
         py: Python<'py>,

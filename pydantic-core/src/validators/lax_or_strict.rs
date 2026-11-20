@@ -80,6 +80,28 @@ impl Validator for LaxOrStrictValidator {
         }
     }
 
+    fn supports_json_cursor(&self) -> bool {
+        self.lax_validator.supports_json_cursor() || self.strict_validator.supports_json_cursor()
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        if state.strict_or(self.strict) {
+            self.strict_validator.validate_json_cursor(py, input, state)
+        } else if state.exactness.is_some() {
+            // Reuse ordinary strict-first selection for smart unions. Materialize only
+            // this value until cursor branch replay is shared with the union validator.
+            let value = input.take_value()?;
+            self.validate(py, &value, state)
+        } else {
+            self.lax_validator.validate_json_cursor(py, input, state)
+        }
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }
