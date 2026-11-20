@@ -431,11 +431,9 @@ impl ModelFieldsValidator {
                             Some((
                                 &field.lookup_path_collection.by_name,
                                 |state: &mut ValidationState<'_, 'py>| {
-                                    field.validator.validate_json_cursor(
-                                        py,
-                                        &mut super::JsonCursor::new(&data[start..]),
-                                        state,
-                                    )
+                                    field
+                                        .validator
+                                        .validate_json_cursor(py, &mut input.at_value(&data[start..]), state)
                                 },
                             )),
                         )?;
@@ -467,12 +465,13 @@ impl ModelFieldsValidator {
                 index,
                 field,
                 deferred.get(index).copied().flatten().map(|start| {
+                    let input = &*input;
                     (
                         &field.lookup_path_collection.by_name,
                         move |state: &mut ValidationState<'_, 'py>| {
                             field
                                 .validator
-                                .validate_json_cursor(py, &mut super::JsonCursor::new(&data[start..]), state)
+                                .validate_json_cursor(py, &mut input.at_value(&data[start..]), state)
                         },
                     )
                 }),
