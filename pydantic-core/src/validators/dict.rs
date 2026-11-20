@@ -102,7 +102,7 @@ impl Validator for DictValidator {
         if !matches!(input.jiter.peek(), Ok(jiter::Peek::Object)) {
             return self.validate(py, &input.take_value()?, state);
         }
-        input.with_complete_container(|input| {
+        input.with_container(|input| {
             let output = PyDict::new(py);
             let mut errors = Vec::new();
             let object_start = input.jiter.current_index();
@@ -135,7 +135,7 @@ impl Validator for DictValidator {
                     input.finish_object()?;
                     return Err(ValError::LineErrors(errors));
                 }
-                match input.validate_next(py, &self.value_validator, state) {
+                match self.value_validator.validate_json_cursor(py, input, state) {
                     Ok(value) => {
                         if let Some(output_key) = output_key {
                             output.set_item(output_key, value)?;

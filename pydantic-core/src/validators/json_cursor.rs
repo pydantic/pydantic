@@ -7,18 +7,14 @@ use jiter::{Jiter, JsonValue};
 use crate::errors::{InputValue, ToErrorValue, ValError, ValResult};
 use crate::input::Input;
 
-use super::{CombinedValidator, ValidationState, Validator};
-use pyo3::prelude::*;
-
 /// A cursor which retries parsing failures and incomplete validation attempts.
 pub struct JsonCursor<'data> {
     pub(super) jiter: Jiter<'data>,
     pub(super) data: &'data [u8],
     start: usize,
-    // Traversal is capped at 200; keep the error flag within the existing cursor size.
+    // The document recursion limit is 200, so one byte holds the traversal depth.
     depth: u8,
     error_value: OnceCell<JsonValue<'data>>,
-    pub(super) incomplete_validation_error: bool,
     utf8_checked: bool,
 }
 
@@ -35,7 +31,6 @@ impl<'data> JsonCursor<'data> {
             start: 0,
             depth: 0,
             error_value: OnceCell::new(),
-            incomplete_validation_error: false,
             utf8_checked,
         }
     }
@@ -109,39 +104,8 @@ impl<'data> JsonCursor<'data> {
         })
     }
 
-    /// Do not let a parent advance from a child which stopped inside its value.
-    #[inline]
-    pub(super) fn validate_next<'py>(
-        &mut self,
-        py: Python<'py>,
-        validator: &CombinedValidator,
-        state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<Py<PyAny>> {
-        let result = validator.validate_json_cursor(py, self, state);
-        result.map_err(|error| Self::reject_incomplete_error(error, self.incomplete_validation_error))
-    }
-
-    #[cold]
-    fn reject_incomplete_error(error: ValError, incomplete: bool) -> ValError {
-        match error {
-            ValError::LineErrors(_) if incomplete => Self::parse_error(()),
-            error => error,
-        }
-    }
-
-    /// The callback may return LineErrors only after consuming the whole container.
-    /// Other errors may leave it incomplete and still request ordinary retry.
-    pub(super) fn with_complete_container<T>(
-        &mut self,
-        validate: impl FnOnce(&mut Self) -> ValResult<T>,
-    ) -> ValResult<T> {
-        self.with_container_scope::<T, true>(validate)
-    }
-
-    fn with_container_scope<T, const COMPLETE: bool>(
-        &mut self,
-        validate: impl FnOnce(&mut Self) -> ValResult<T>,
-    ) -> ValResult<T> {
+    /// Scope document depth and error input while traversing a container.
+    pub(super) fn with_container<T>(&mut self, validate: impl FnOnce(&mut Self) -> ValResult<T>) -> ValResult<T> {
         if self.depth >= 200 {
             return Err(Self::parse_error(()));
         }
@@ -150,10 +114,6 @@ impl<'data> JsonCursor<'data> {
         self.start = self.jiter.current_index();
         let previous_error = self.error_value.take();
         let result = validate(self);
-        // Conservative scopes mark errors whose traversal may still be incomplete.
-        if !COMPLETE && matches!(&result, Err(ValError::LineErrors(_))) {
-            self.incomplete_validation_error = true;
-        }
         self.start = previous_start;
         self.depth -= 1;
         self.error_value.take();

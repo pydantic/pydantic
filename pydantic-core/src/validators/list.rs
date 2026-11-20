@@ -155,7 +155,7 @@ impl ListValidator {
             &mut ValidationState<'s, 'py>,
         ) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
-        input.with_complete_container(|input| {
+        input.with_container(|input| {
             let mut errors = Vec::new();
             let mut output: SmallVec<[Bound<'py, PyAny>; 8]> = SmallVec::new();
             let mut skipped_items = 0;
@@ -163,9 +163,6 @@ impl ListValidator {
             let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
             while let Some(peek) = next {
                 let result = validate(input, peek, state);
-                if matches!(&result, Err(ValError::LineErrors(_))) && input.incomplete_validation_error {
-                    return Err(super::JsonCursor::parse_error(()));
-                }
                 let mut check_length = || {
                     if let Some(maximum) = self.max_length {
                         checked_length += 1;

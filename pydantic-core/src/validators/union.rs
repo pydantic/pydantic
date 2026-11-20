@@ -251,7 +251,6 @@ impl Validator for UnionValidator {
             return self.validate(py, &input.take_value()?, state);
         }
         let checkpoint = input.jiter.clone();
-        let incoming_incomplete = input.incomplete_validation_error;
         let error_input = input.at_value(&input.data[checkpoint.current_index()..]);
         let mut first = true;
         let validate = |choice: &CombinedValidator, state: &mut ValidationState<'_, 'py>| {
@@ -260,29 +259,23 @@ impl Validator for UnionValidator {
             } else {
                 input.jiter = checkpoint.clone();
             }
-            input.incomplete_validation_error = incoming_incomplete;
             let exactness = state.exactness;
             let fields_set_count = state.fields_set_count;
             let result = choice.validate_json_cursor(py, input, state);
-            if matches!(&result, Err(ValError::InternalErr(_)))
-                || (matches!(&result, Err(ValError::LineErrors(_))) && input.incomplete_validation_error)
-            {
+            if matches!(&result, Err(ValError::InternalErr(_))) {
                 // An early failure may leave the cursor inside this value. Replay
                 // just this union branch through ordinary validation, not the document.
                 input.jiter = checkpoint.clone();
-                input.incomplete_validation_error = incoming_incomplete;
                 state.exactness = exactness;
                 state.fields_set_count = fields_set_count;
                 return choice.validate(py, &input.take_value()?, state);
             }
             result
         };
-        let result = match self.mode {
+        match self.mode {
             UnionMode::Smart => self.validate_smart(&error_input, state, validate),
             UnionMode::LeftToRight => self.validate_left_to_right(&error_input, state, validate),
-        };
-        input.incomplete_validation_error = incoming_incomplete;
-        result
+        }
     }
 
     fn get_name(&self) -> &str {
@@ -469,8 +462,7 @@ impl Validator for TaggedUnionValidator {
             unreachable!("cursor tagged union uses simple lookup paths");
         };
         let checkpoint = input.jiter.clone();
-        let incoming_incomplete = input.incomplete_validation_error;
-        let tag = input.with_complete_container(|input| {
+        let tag = input.with_container(|input| {
             let mut tag = None;
             let mut priority = usize::MAX;
             let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
@@ -498,21 +490,19 @@ impl Validator for TaggedUnionValidator {
             return self.validate(py, &input.take_value()?, state);
         };
         // The selected branch validates every member after the discriminator scan.
-        // Keep its final cursor, and replay even a recovered success if incomplete.
+        // Keep its final cursor; only internal failures request ordinary replay.
         input.jiter = checkpoint.clone();
         let exactness = state.exactness;
         let fields_set_count = state.fields_set_count;
         let result = validator.validate_json_cursor(py, input, state);
-        let result = if matches!(&result, Err(ValError::InternalErr(_))) || input.incomplete_validation_error {
+        let result = if matches!(&result, Err(ValError::InternalErr(_))) {
             input.jiter = checkpoint;
-            input.incomplete_validation_error = incoming_incomplete;
             state.exactness = exactness;
             state.fields_set_count = fields_set_count;
             validator.validate(py, &input.take_value()?, state)
         } else {
             result
         };
-        input.incomplete_validation_error = incoming_incomplete;
         result.map_err(|error| error.with_outer_location(tag))
     }
 
