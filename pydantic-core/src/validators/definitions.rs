@@ -101,6 +101,11 @@ impl Validator for DefinitionRefValidator {
         })
     }
 
+    fn supports_json_cursor(&self) -> bool {
+        // Do not recursively inspect unresolved or self-referencing definitions.
+        true
+    }
+
     fn validate_json_cursor<'py>(
         &self,
         py: Python<'py>,
