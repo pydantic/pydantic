@@ -506,7 +506,7 @@ impl SchemaValidator {
             if cursor.jiter.finish().is_ok() {
                 match result {
                     Ok(output) => return Ok(output),
-                    Err(error @ ValError::LineErrors(_)) if !cursor.incomplete_validation_error => return Err(error),
+                    Err(error @ ValError::LineErrors(_)) => return Err(error),
                     _ => (),
                 }
             }
@@ -907,8 +907,13 @@ pub trait Validator: Send + Sync + Debug {
         false
     }
 
-    /// Optimistically validate the next JSON value; the entry point retries failures.
-    /// Unoptimized nodes materialize only their value and use ordinary validation.
+    /// Validate one JSON value, materializing it first for unoptimized nodes.
+    ///
+    /// Success, `LineErrors`, `Omit` and `UseDefault` must consume and check the whole
+    /// value, including raw UTF-8 and document depth. Only `InternalErr` may leave
+    /// traversal incomplete and request ordinary retry. Recovering wrappers must
+    /// preserve that contract rather than swallow an unchecked `InternalErr`.
+    /// The caller still checks enclosing delimiters and the document's end.
     fn validate_json_cursor<'py>(
         &self,
         py: Python<'py>,

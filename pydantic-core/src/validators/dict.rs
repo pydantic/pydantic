@@ -135,7 +135,7 @@ impl Validator for DictValidator {
                     input.finish_object()?;
                     return Err(ValError::LineErrors(errors));
                 }
-                match input.validate_next(py, &self.value_validator, state) {
+                match self.value_validator.validate_json_cursor(py, input, state) {
                     Ok(value) => {
                         if let Some(output_key) = output_key {
                             output.set_item(output_key, value)?;
