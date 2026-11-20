@@ -364,7 +364,8 @@ impl ModelFieldsValidator {
     }
 
     pub(super) fn supports_json_cursor(&self) -> bool {
-        matches!(self.lookup, LookupTree::NoAliases(_)) && matches!(self.extra_behavior, ExtraBehavior::Ignore)
+        matches!(self.lookup, LookupTree::NoAliases(_))
+            && matches!(self.extra_behavior, ExtraBehavior::Ignore | ExtraBehavior::Forbid)
     }
 
     pub(super) fn validate_cursor_fields<'py>(
