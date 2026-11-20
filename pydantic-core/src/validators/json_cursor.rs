@@ -19,10 +19,16 @@ pub struct JsonCursor<'data> {
     depth: u8,
     error_value: OnceCell<JsonValue<'data>>,
     pub(super) incomplete_validation_error: bool,
+    utf8_checked: bool,
 }
 
 impl<'data> JsonCursor<'data> {
     pub(super) fn new(data: &'data [u8]) -> Self {
+        Self::new_with_utf8_checked(data, false)
+    }
+
+    /// A Python string has already passed UTF-8 conversion before cursor entry.
+    pub(super) fn new_with_utf8_checked(data: &'data [u8], utf8_checked: bool) -> Self {
         Self {
             jiter: Jiter::new(data).with_allow_inf_nan(),
             data,
@@ -30,11 +36,20 @@ impl<'data> JsonCursor<'data> {
             depth: 0,
             error_value: OnceCell::new(),
             incomplete_validation_error: false,
+            utf8_checked,
         }
     }
 
     pub(super) fn context(&self) -> Self {
-        Self::new(&self.data[self.start..])
+        self.at_value(&self.data[self.start..])
+    }
+
+    /// Fork a deferred value without resetting its document depth or UTF-8 proof.
+    pub(super) fn at_value(&self, data: &'data [u8]) -> Self {
+        let mut cursor = Self::new(data);
+        cursor.utf8_checked = self.utf8_checked;
+        cursor.depth = self.depth;
+        cursor
     }
 
     pub(super) fn parse_error<E>(_: E) -> ValError {
@@ -42,15 +57,26 @@ impl<'data> JsonCursor<'data> {
     }
 
     pub(super) fn take_value(&mut self) -> ValResult<JsonValue<'data>> {
-        self.jiter.next_value().map_err(Self::parse_error)
+        self.jiter
+            .next_value_with_recursion_limit(200 - self.depth)
+            .map_err(Self::parse_error)
     }
 
-    /// Validate UTF-8 only for values skipped by the incremental model scheduler.
-    /// Other values are decoded by their ordinary or direct validators.
+    /// Check syntax and the remaining depth without establishing raw UTF-8 validity.
+    pub(super) fn defer_value(&mut self) -> ValResult<()> {
+        self.jiter
+            .next_skip_with_recursion_limit(200 - self.depth)
+            .map_err(Self::parse_error)
+    }
+
+    /// Jiter's skip checks JSON escapes, but deliberately omits raw UTF-8 checks.
+    /// Check the input once on the first skip instead of checking each skipped span.
     pub(super) fn skip_value(&mut self) -> ValResult<()> {
-        let start = self.jiter.current_index();
-        self.jiter.next_skip().map_err(Self::parse_error)?;
-        std::str::from_utf8(self.jiter.slice_to_current(start)).map_err(Self::parse_error)?;
+        self.defer_value()?;
+        if !self.utf8_checked {
+            simdutf8::basic::from_utf8(self.data).map_err(Self::parse_error)?;
+            self.utf8_checked = true;
+        }
         Ok(())
     }
 
@@ -92,18 +118,14 @@ impl<'data> JsonCursor<'data> {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let result = validator.validate_json_cursor(py, self, state);
-        if self.incomplete_validation_error {
-            Self::reject_incomplete_error(result)
-        } else {
-            result
-        }
+        result.map_err(|error| Self::reject_incomplete_error(error, self.incomplete_validation_error))
     }
 
     #[cold]
-    fn reject_incomplete_error<T>(result: ValResult<T>) -> ValResult<T> {
-        match result {
-            Err(ValError::LineErrors(_)) => Err(Self::parse_error(())),
-            result => result,
+    fn reject_incomplete_error(error: ValError, incomplete: bool) -> ValError {
+        match error {
+            ValError::LineErrors(_) if incomplete => Self::parse_error(()),
+            error => error,
         }
     }
 
