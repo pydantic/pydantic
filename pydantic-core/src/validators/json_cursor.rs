@@ -54,68 +54,20 @@ impl<'data> JsonCursor<'data> {
     }
 
     pub(super) fn take_value(&mut self) -> ValResult<JsonValue<'data>> {
-        let start = self.jiter.current_index();
-        let value = self.jiter.next_value().map_err(Self::parse_error)?;
-        self.check_value_depth(start)?;
-        Ok(value)
+        self.jiter
+            .next_value_with_recursion_limit(200 - self.depth)
+            .map_err(Self::parse_error)
     }
 
     /// Jiter's skip checks JSON escapes, but deliberately omits raw UTF-8 checks.
     /// Check the input once on the first skip instead of checking each skipped span.
     pub(super) fn skip_value(&mut self) -> ValResult<()> {
-        let start = self.jiter.current_index();
-        self.jiter.next_skip().map_err(Self::parse_error)?;
-        self.check_value_depth(start)?;
+        self.jiter
+            .next_skip_with_recursion_limit(200 - self.depth)
+            .map_err(Self::parse_error)?;
         if !self.utf8_checked {
             simdutf8::basic::from_utf8(self.data).map_err(Self::parse_error)?;
             self.utf8_checked = true;
-        }
-        Ok(())
-    }
-
-    /// Jiter applies its recursion limit relative to this value, not the document.
-    /// Most values cannot exhaust the remaining budget, so avoid rescanning them.
-    fn check_value_depth(&self, start: usize) -> ValResult<()> {
-        let span = &self.data[start..self.jiter.current_index()];
-        if self.depth != 0
-            && span.len() > usize::from(200 - self.depth) * 2
-            && matches!(span.iter().find(|byte| !byte.is_ascii_whitespace()), Some(b'[' | b'{'))
-        {
-            self.check_container_depth(span)?;
-        }
-        Ok(())
-    }
-
-    #[inline(never)]
-    fn check_container_depth(&self, span: &[u8]) -> ValResult<()> {
-        let mut depth = usize::from(self.depth);
-        let mut bytes = span.iter();
-        while let Some(byte) = bytes.next() {
-            match byte {
-                b'"' => {
-                    // Jiter already checked syntax and escapes. Structural bytes in
-                    // strings do not contribute to the document's container depth.
-                    while let Some(byte) = bytes.next() {
-                        match byte {
-                            b'\\' => {
-                                bytes.next();
-                            }
-                            b'"' => break,
-                            _ => (),
-                        }
-                    }
-                }
-                b'[' | b'{' => {
-                    depth += 1;
-                    if depth > 200 {
-                        // Empty containers at the boundary may still be valid.
-                        // Retry the ordinary parser for the exact decision/error.
-                        return Err(Self::parse_error(()));
-                    }
-                }
-                b']' | b'}' => depth -= 1,
-                _ => (),
-            }
         }
         Ok(())
     }
