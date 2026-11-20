@@ -125,9 +125,6 @@ def test_cursor_nested_missing_field_error_input() -> None:
         ),
         pytest.param(
             b'{"value":1,"ignored":' + b'[' * 200 + b'1' + b']' * 200 + b'}',
-            marks=pytest.mark.xfail(
-                strict=True, reason='Optimistic skip checks subtree depth rather than document depth'
-            ),
         ),
         b'{"value":1,"ignored":' + b'[' * 1000 + b'1' + b']' * 1000 + b'}',
     ],
