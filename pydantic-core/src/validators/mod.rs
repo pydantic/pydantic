@@ -501,7 +501,7 @@ impl SchemaValidator {
                 None,
                 None,
             );
-            let mut cursor = JsonCursor::new(json_data);
+            let mut cursor = JsonCursor::new_with_utf8_checked(json_data, input.is_instance_of::<PyString>());
             let result = self.validator.validate_json_cursor(py, &mut cursor, &mut state);
             if cursor.jiter.finish().is_ok() {
                 match result {
