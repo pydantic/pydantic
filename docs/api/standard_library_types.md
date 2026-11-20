@@ -551,7 +551,8 @@ Standard library type: [`datetime.date`][].
     * Unix timestamps, both as seconds or milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * If the validation fails, the input can be [validated as a datetime](#datetimes) (including as numbers),
-  provided that the time component is 0 and that it is naive.
+  provided that the time component is 0. The time zone, if any, is ignored (e.g. `'2024-01-01T00:00:00+01:00'` is validated
+  as `date(2024, 1, 1)`).
 
 <h4>Serialization</h4>
 
