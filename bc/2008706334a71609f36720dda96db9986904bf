@@ -1,0 +1,75 @@
+pydantic-core/src/validators/mod.rs
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 504
+pydantic-core/src/validators/dict.rs
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 105,107-109,115-119,122,126-130,133-138,140-145,148-151,153-156,159,162-167,177-207,243,262
+tests/benchmarks/test_json_forbid_models.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-35
+tests/types/unions/test_json_cursor_tagged.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-141
+tests/test_json_cursor_control_flow.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-96
+tests/benchmarks/test_json_selectors.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-43
+pydantic-core/src/validators/string.rs
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 72-89,113-114
+tests/test_json_cursor_container_errors.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-123
+tests/benchmarks/test_json_list_rejections.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-39
+tests/benchmarks/test_json_uuid_union.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-22
+tests/test_json_cursor_controls.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-44
+tests/test_json_cursor_dict_errors.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-139
+tests/test_json_cursor_list_bounds.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-99
+tests/types/unions/test_json_cursor.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-120
+pydantic-core/src/validators/model.rs
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 257,259,265,270-274
+tests/types/unions/test_json_cursor_exactness.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-78
+tests/benchmarks/test_json_tagged_unions.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-64
+tests/test_json_cursor_safeguards.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-162
+pydantic-core/src/validators/json_cursor.rs
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 10-12,22,27-31,39,44-52,60-69,72-73,75-97,112-144,153-154
+pydantic-core/src/validators/function.rs
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 215
+pydantic-core/src/validators/list.rs
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 158-159,165-178,183-186,191-203,209-214,216,220-234,290,297
+  s_d4a691b07897c1::t_e138e3da88d276 298-301
+tests/benchmarks/test_json_dict_errors.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-40
+pydantic-core/Cargo.toml
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 48-49
+tests/test_json_cursor_forbid_models.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1-93
+tests/types/test_str.py
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 1,6,338-349
+pydantic-core/src/validators/union.rs
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 48,91,97,108,110,123,199,201,206,231-234,238-287,356,393-396,409,434-440,447-449,455-518,529,531,534,553
+pydantic-core/src/validators/model_fields.rs
+  s_d4a691b07897c1::t_9bbe1cb748ac8e 367-368,386-390,396,409-410,423,440-442,463-469,481,485-487,493-495
+  s_d4a691b07897c1::t_40c2b798e26f6a 496
+pydantic-core/Cargo.lock
+  s_d4a691b07897c1::t_687f7957361aae 316,472,635-640
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bc2008706334a71609f36720dda96db9986904bf",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
