@@ -470,7 +470,6 @@ impl Validator for TaggedUnionValidator {
         };
         let checkpoint = input.jiter.clone();
         let incoming_incomplete = input.incomplete_validation_error;
-        let error_input = input.at_value(&input.data[checkpoint.current_index()..]);
         let tag = input.with_complete_container(|input| {
             let mut tag = None;
             let mut priority = usize::MAX;
@@ -482,35 +481,39 @@ impl Validator for TaggedUnionValidator {
                     priority = index;
                     tag = Some(input.take_value()?);
                 } else {
-                    input.skip_value()?;
+                    input.defer_value()?;
                 }
                 key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
             }
             Ok(tag)
         })?;
-        let Some(tag) = tag else {
-            return Err(self.tag_not_found(&error_input));
+        let tag = tag.map(|tag| tag.to_object(py)).transpose()?;
+        let selected = tag
+            .as_ref()
+            .and_then(|tag| self.lookup.validate(py, tag).ok().flatten());
+        let Some((tag, validator)) = selected else {
+            // No branch will consume this value. Parse it before reporting the tag
+            // error so malformed JSON, including raw UTF-8, still takes precedence.
+            input.jiter = checkpoint;
+            return self.validate(py, &input.take_value()?, state);
         };
-        // Scan the whole object before selection: the final duplicate wins, and
-        // lookup-path priority is independent of object member order.
-        let result = self.find_call_validator(py, &tag.to_object(py)?, &error_input, state, |validator, state| {
-            input.jiter = checkpoint.clone();
-            let exactness = state.exactness;
-            let fields_set_count = state.fields_set_count;
-            let result = validator.validate_json_cursor(py, input, state);
-            if matches!(&result, Err(ValError::InternalErr(_)))
-                || (matches!(&result, Err(ValError::LineErrors(_))) && input.incomplete_validation_error)
-            {
-                input.jiter = checkpoint;
-                input.incomplete_validation_error = incoming_incomplete;
-                state.exactness = exactness;
-                state.fields_set_count = fields_set_count;
-                return validator.validate(py, &input.take_value()?, state);
-            }
+        // The selected branch validates every member after the discriminator scan.
+        // Keep its final cursor, and replay even a recovered success if incomplete.
+        input.jiter = checkpoint.clone();
+        let exactness = state.exactness;
+        let fields_set_count = state.fields_set_count;
+        let result = validator.validate_json_cursor(py, input, state);
+        let result = if matches!(&result, Err(ValError::InternalErr(_))) || input.incomplete_validation_error {
+            input.jiter = checkpoint;
+            input.incomplete_validation_error = incoming_incomplete;
+            state.exactness = exactness;
+            state.fields_set_count = fields_set_count;
+            validator.validate(py, &input.take_value()?, state)
+        } else {
             result
-        });
+        };
         input.incomplete_validation_error = incoming_incomplete;
-        result
+        result.map_err(|error| error.with_outer_location(tag))
     }
 
     fn get_name(&self) -> &str {

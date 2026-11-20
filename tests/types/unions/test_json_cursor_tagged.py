@@ -125,3 +125,17 @@ def test_cursor_tagged_union_callable_discriminator_still_works() -> None:
 def test_cursor_tagged_union_skipped_values_check_utf8(data: bytes) -> None:
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
         TypeAdapter(Tagged).validate_json(data)
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        b'{"kind":"invalid","padding":"\xff","values":[1]}',
+        b'{"padding":"\xff","values":[1],"kind":"invalid"}',
+        b'{"padding":"\xff","values":[1]}',
+        b'{"values":[1],"padding":"\xff"}',
+    ],
+)
+def test_cursor_tagged_union_tag_error_still_checks_skipped_utf8(data: bytes) -> None:
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        TypeAdapter(Tagged).validate_json(data)
