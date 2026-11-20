@@ -109,18 +109,17 @@ impl<'data> JsonCursor<'data> {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let result = validator.validate_json_cursor(py, self, state);
-        if self.incomplete_validation_error {
-            Self::reject_incomplete_error(result)
-        } else {
-            result
-        }
+        result.map_err(|error| Self::reject_incomplete_error(error, self.incomplete_validation_error))
     }
 
     #[cold]
-    fn reject_incomplete_error<T>(result: ValResult<T>) -> ValResult<T> {
-        match result {
-            Err(ValError::LineErrors(_)) => Err(Self::parse_error(())),
-            result => result,
+    fn reject_incomplete_error(error: ValError, incomplete: bool) -> ValError {
+        match error {
+            // A container can propagate this signal before consuming its remainder.
+            // Model field policy must not recover until ordinary parsing checked it.
+            ValError::UseDefault => Self::parse_error(()),
+            ValError::LineErrors(_) if incomplete => Self::parse_error(()),
+            error => error,
         }
     }
 
