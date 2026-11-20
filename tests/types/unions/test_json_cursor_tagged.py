@@ -139,3 +139,29 @@ def test_cursor_tagged_union_skipped_values_check_utf8(data: bytes) -> None:
 def test_cursor_tagged_union_tag_error_still_checks_skipped_utf8(data: bytes) -> None:
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
         TypeAdapter(Tagged).validate_json(data)
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        '{"values":[1],"kind":"second"}',
+        '{"extra":"ignored","values":[1],"kind":"second"}',
+        '{"values":[1],"kind":"first","kind":"second"}',
+        r'{"values":[1],"ki\u006ed":"second"}',
+    ],
+)
+def test_cursor_tagged_union_late_tag_preserves_next_field(data: str) -> None:
+    class Outer(BaseModel):
+        value: Tagged
+        following: int
+
+    result = Outer.model_validate_json('{"value":' + data + ',"following":42}')
+    assert isinstance(result.value, Second)
+    assert result.value.values == [1]
+    assert result.following == 42
+
+
+@pytest.mark.parametrize('data', ['{"values":[1,],"kind":"second"}', '{"values":[1],"kind":"second"'])
+def test_cursor_tagged_union_late_tag_malformed_json(data: str) -> None:
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        TypeAdapter(Tagged).validate_json(data)
