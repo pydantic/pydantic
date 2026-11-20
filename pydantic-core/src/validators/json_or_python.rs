@@ -58,6 +58,15 @@ impl Validator for JsonOrPython {
         }
     }
 
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        self.json.validate_json_cursor(py, input, state)
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }
