@@ -1,0 +1,19 @@
+pydantic-core/src/validators/union.rs
+  s_d4a691b07897c1::t_7e2aeee0786900 105,107,120,196,198,203,228-231
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c74861719715ae2765a0a0cddb9cb6c2222eaf44",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
