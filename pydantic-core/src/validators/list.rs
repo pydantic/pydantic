@@ -255,9 +255,14 @@ impl Validator for ListValidator {
             return self.validate(py, &input.take_value()?, state);
         }
         match self.item_validator.as_deref() {
-            // Select the integer validator once per list and reuse the parser's
+            // Select primitive validators once per list and reuse the parser's
             // existing element peek; conversion/coercion policy stays shared.
             Some(CombinedValidator::Int(validator)) => {
+                self.validate_json_cursor_items(py, input, state, |input, peek, state| {
+                    validator.validate_json_cursor_peeked(py, input, peek, state)
+                })
+            }
+            Some(CombinedValidator::Str(validator)) => {
                 self.validate_json_cursor_items(py, input, state, |input, peek, state| {
                     validator.validate_json_cursor_peeked(py, input, peek, state)
                 })
