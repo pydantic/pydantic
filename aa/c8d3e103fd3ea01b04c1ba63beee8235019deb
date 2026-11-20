@@ -1,0 +1,61 @@
+pydantic-core/src/validators/model_fields.rs
+  s_d4a691b07897c1::t_675d9b8bf5d066 367-368,386-390,396,409-410,440-442,463-469,481,485-487,493-495
+  s_d4a691b07897c1::t_e823755ebb5fc3 496
+pydantic-core/src/validators/model.rs
+  s_d4a691b07897c1::t_675d9b8bf5d066 257,259,270-274
+tests/benchmarks/test_json_selectors.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-43
+tests/test_json_cursor_forbid_models.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-93
+tests/benchmarks/test_json_forbid_models.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-35
+tests/types/unions/test_json_cursor.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 4,113-120
+tests/benchmarks/test_json_uuid_union.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-22
+tests/test_json_cursor_controls.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-44
+tests/benchmarks/test_json_list_rejections.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-39
+pydantic-core/src/validators/list.rs
+  s_d4a691b07897c1::t_675d9b8bf5d066 158-159,165-178,183-186,191-203,209-214,216,220-232
+  s_d4a691b07897c1::t_7c7d434a13074d 233-234
+tests/test_json_cursor_list_bounds.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-99
+pydantic-core/src/validators/mod.rs
+  s_d4a691b07897c1::t_675d9b8bf5d066 504
+tests/test_json_cursor_safeguards.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-162
+pydantic-core/src/validators/union.rs
+  s_d4a691b07897c1::t_675d9b8bf5d066 255,473-474
+pydantic-core/src/validators/json_cursor.rs
+  s_d4a691b07897c1::t_675d9b8bf5d066 22,27-31,39,44-52,60-69,72-73,75-97,121,125-128,153
+tests/benchmarks/test_json_dict_errors.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-40
+tests/test_json_cursor_dict_errors.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-139
+pydantic-core/src/validators/dict.rs
+  s_d4a691b07897c1::t_675d9b8bf5d066 105,107-109,115-119,122,126-130,133-138,140-145,148-151,153-156,159,162-167,177-207,243,262
+pydantic-core/Cargo.toml
+  s_d4a691b07897c1::t_675d9b8bf5d066 48-49
+tests/test_json_cursor_control_flow.py
+  s_d4a691b07897c1::t_675d9b8bf5d066 1-96
+pydantic-core/Cargo.lock
+  s_d4a691b07897c1::t_d167fff52522f5 316,472,635-640
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aac8d3e103fd3ea01b04c1ba63beee8235019deb",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
