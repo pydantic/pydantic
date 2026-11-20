@@ -67,7 +67,7 @@ impl<'data> JsonCursor<'data> {
         self.jiter.next_skip().map_err(Self::parse_error)?;
         self.check_value_depth(start)?;
         if !self.utf8_checked {
-            std::str::from_utf8(self.data).map_err(Self::parse_error)?;
+            simdutf8::basic::from_utf8(self.data).map_err(Self::parse_error)?;
             self.utf8_checked = true;
         }
         Ok(())
