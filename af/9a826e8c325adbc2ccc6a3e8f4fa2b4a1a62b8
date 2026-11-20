@@ -1,0 +1,16 @@
+tests/benchmarks/test_json_forbid_models.py
+  h_d9dd17644dded9 1-35
+tests/benchmarks/test_json_list_rejections.py
+  h_d9dd17644dded9 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "af9a826e8c325adbc2ccc6a3e8f4fa2b4a1a62b8",
+  "prompts": {},
+  "humans": {
+    "h_d9dd17644dded9": {
+      "author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
