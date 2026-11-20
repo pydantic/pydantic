@@ -1,0 +1,42 @@
+tests/benchmarks/test_json_tagged_unions.py
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 1-64
+pydantic-core/src/validators/mod.rs
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 504
+tests/benchmarks/test_json_selectors.py
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 1-43
+tests/benchmarks/test_json_wrappers.py
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 1-28
+tests/benchmarks/test_json_checked_skip.py
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 1-39
+pydantic-core/src/validators/json_cursor.rs
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 22,27-31,39,44-52,60-63,66-67,71-122
+tests/benchmarks/test_json_unions.py
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 1-82
+tests/benchmarks/test_json_dict_errors.py
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 1-40
+pydantic-core/src/validators/model_fields.rs
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 466
+  s_d4a691b07897c1::t_4811b2bc56dbc4 432-434,470-472
+tests/test_json_cursor_safeguards.py
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 1-162
+pydantic-core/Cargo.toml
+  s_d4a691b07897c1::t_c75e5caf5d2e7c 49
+pydantic-core/Cargo.lock
+  s_d4a691b07897c1::t_8cb2b782adc304 473,636-641
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4a9acf636c4d6aa1c8b6fcf45b9324b78071ad62",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
