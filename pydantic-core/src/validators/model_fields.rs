@@ -412,9 +412,7 @@ impl ModelFieldsValidator {
                         field,
                         Some((
                             &field.lookup_path_collection.by_name,
-                            |state: &mut ValidationState<'_, 'py>| {
-                                field.validator.validate_json_cursor(py, input, state)
-                            },
+                            |state: &mut ValidationState<'_, 'py>| input.validate_next(py, &field.validator, state),
                         )),
                     )?;
                     next_field += 1;
@@ -431,11 +429,7 @@ impl ModelFieldsValidator {
                             Some((
                                 &field.lookup_path_collection.by_name,
                                 |state: &mut ValidationState<'_, 'py>| {
-                                    field.validator.validate_json_cursor(
-                                        py,
-                                        &mut super::JsonCursor::new(&data[start..]),
-                                        state,
-                                    )
+                                    super::JsonCursor::new(&data[start..]).validate_next(py, &field.validator, state)
                                 },
                             )),
                         )?;
@@ -449,14 +443,14 @@ impl ModelFieldsValidator {
                         deferred.resize(self.fields.len(), None);
                     }
                     deferred[index] = Some(input.jiter.current_index());
-                    input.jiter.next_skip().map_err(super::JsonCursor::parse_error)?;
+                    input.skip_value()?;
                 }
                 Some(_) => {
                     // A previously validated field has a later duplicate. Let ordinary
                     // validation select the last value; callbacks may replay on retry.
                     return Err(super::JsonCursor::parse_error(()));
                 }
-                None => input.jiter.next_skip().map_err(super::JsonCursor::parse_error)?,
+                None => input.skip_value()?,
             }
             key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
         }
@@ -470,9 +464,7 @@ impl ModelFieldsValidator {
                     (
                         &field.lookup_path_collection.by_name,
                         move |state: &mut ValidationState<'_, 'py>| {
-                            field
-                                .validator
-                                .validate_json_cursor(py, &mut super::JsonCursor::new(&data[start..]), state)
+                            super::JsonCursor::new(&data[start..]).validate_next(py, &field.validator, state)
                         },
                     )
                 }),

@@ -7,6 +7,9 @@ use jiter::{Jiter, JsonValue};
 use crate::errors::{InputValue, ToErrorValue, ValError, ValResult};
 use crate::input::Input;
 
+use super::{CombinedValidator, ValidationState, Validator};
+use pyo3::prelude::*;
+
 /// A cursor which retries parsing failures and incomplete validation attempts.
 pub struct JsonCursor<'data> {
     pub(super) jiter: Jiter<'data>,
@@ -42,6 +45,15 @@ impl<'data> JsonCursor<'data> {
         self.jiter.next_value().map_err(Self::parse_error)
     }
 
+    /// Validate UTF-8 only for values skipped by the incremental model scheduler.
+    /// Other values are decoded by their ordinary or direct validators.
+    pub(super) fn skip_value(&mut self) -> ValResult<()> {
+        let start = self.jiter.current_index();
+        self.jiter.next_skip().map_err(Self::parse_error)?;
+        std::str::from_utf8(self.jiter.slice_to_current(start)).map_err(Self::parse_error)?;
+        Ok(())
+    }
+
     pub(super) fn value_for_context(&self) -> &JsonValue<'data> {
         // Error input is provisional: malformed subtrees can use a placeholder because
         // the entire failed attempt is retried through ordinary validation.
@@ -53,9 +65,38 @@ impl<'data> JsonCursor<'data> {
         })
     }
 
+    /// Do not let a parent advance from a child which stopped inside its value.
+    pub(super) fn validate_next<'py>(
+        &mut self,
+        py: Python<'py>,
+        validator: &CombinedValidator,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        match validator.validate_json_cursor(py, self, state) {
+            Err(ValError::LineErrors(_)) if self.incomplete_validation_error => Err(Self::parse_error(())),
+            result => result,
+        }
+    }
+
     /// Only direct containers need cursor error context. Scalar and fallback
     /// validators already own the JsonValue used to construct their errors.
     pub(super) fn with_container<T>(&mut self, validate: impl FnOnce(&mut Self) -> ValResult<T>) -> ValResult<T> {
+        self.with_container_scope::<T, false>(validate)
+    }
+
+    /// The callback may return LineErrors only after consuming the whole container.
+    /// Other errors may leave it incomplete and still request ordinary retry.
+    pub(super) fn with_complete_container<T>(
+        &mut self,
+        validate: impl FnOnce(&mut Self) -> ValResult<T>,
+    ) -> ValResult<T> {
+        self.with_container_scope::<T, true>(validate)
+    }
+
+    fn with_container_scope<T, const COMPLETE: bool>(
+        &mut self,
+        validate: impl FnOnce(&mut Self) -> ValResult<T>,
+    ) -> ValResult<T> {
         if self.depth >= 200 {
             return Err(Self::parse_error(()));
         }
@@ -66,7 +107,7 @@ impl<'data> JsonCursor<'data> {
         let result = validate(self);
         // A container which exits with an error may not have consumed its value.
         // Completed list item errors are returned outside this scope instead.
-        if matches!(&result, Err(ValError::LineErrors(_))) {
+        if !COMPLETE && matches!(&result, Err(ValError::LineErrors(_))) {
             self.incomplete_validation_error = true;
         }
         self.start = previous_start;
