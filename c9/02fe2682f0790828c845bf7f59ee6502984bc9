@@ -1,0 +1,64 @@
+tests/test_json_cursor_list_bounds.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-99
+tests/test_json_cursor_safeguards.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-162
+tests/types/unions/test_json_cursor.py
+  s_d4a691b07897c1::t_9ea795349b99d0 4,115-120
+  s_d4a691b07897c1::t_38b6ef807ae3ad 113-114
+tests/benchmarks/test_json_dict_errors.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-40
+pydantic-core/src/validators/union.rs
+  s_d4a691b07897c1::t_9ea795349b99d0 255
+pydantic-core/src/validators/json_cursor.rs
+  s_d4a691b07897c1::t_9ea795349b99d0 22,27-31,39,44-52,60-62,65-73,75-97,113,120-121,124-129,153
+tests/test_json_cursor_control_flow.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-96
+pydantic-core/src/validators/model_fields.rs
+  s_d4a691b07897c1::t_9ea795349b99d0 367-368,386-390,396,409-410,440-442,463-469,481,485-487,493-495
+  s_d4a691b07897c1::t_bbb26bb1fd0f66 496
+pydantic-core/Cargo.toml
+  s_d4a691b07897c1::t_9ea795349b99d0 48-49
+tests/test_json_cursor_dict_errors.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-139
+pydantic-core/src/validators/dict.rs
+  s_d4a691b07897c1::t_9ea795349b99d0 105,107-109,115-119,122,126-130,133-138,140-145,148-151,153-156,159,162-167,177-207,243,262
+pydantic-core/src/validators/mod.rs
+  s_d4a691b07897c1::t_9ea795349b99d0 504
+pydantic-core/src/validators/string.rs
+  s_d4a691b07897c1::t_9ea795349b99d0 97-98
+tests/test_json_cursor_controls.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-44
+tests/benchmarks/test_json_list_rejections.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-39
+tests/benchmarks/test_json_selectors.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-43
+tests/benchmarks/test_json_tagged_unions.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-64
+tests/test_json_cursor_forbid_models.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-93
+tests/benchmarks/test_json_forbid_models.py
+  s_d4a691b07897c1::t_9ea795349b99d0 1-35
+pydantic-core/src/validators/model.rs
+  s_d4a691b07897c1::t_9ea795349b99d0 257,259,270-274
+pydantic-core/src/validators/list.rs
+  s_d4a691b07897c1::t_9ea795349b99d0 158-159,165-178,183-186,191-203,209-214,216,220-232
+  s_d4a691b07897c1::t_4a5163d1bbbc0b 233-234
+pydantic-core/Cargo.lock
+  s_d4a691b07897c1::t_b3421a0d608753 316,472,635-640
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c902fe2682f0790828c845bf7f59ee6502984bc9",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
