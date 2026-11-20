@@ -1,0 +1,41 @@
+pydantic-core/src/validators/model_fields.rs
+  s_d4a691b07897c1::t_f151a9365231b7 432-434,466,470-472
+tests/benchmarks/test_json_selectors.py
+  s_d4a691b07897c1::t_f151a9365231b7 1-43
+tests/benchmarks/test_json_unions.py
+  s_d4a691b07897c1::t_f151a9365231b7 1-82
+tests/benchmarks/test_json_wrappers.py
+  s_d4a691b07897c1::t_f151a9365231b7 1-28
+pydantic-core/Cargo.toml
+  s_d4a691b07897c1::t_f151a9365231b7 48-49
+pydantic-core/src/validators/json_cursor.rs
+  s_d4a691b07897c1::t_f151a9365231b7 22,27-31,39,44-52,60-62,65-73,75-79,121,125-128
+tests/benchmarks/test_json_checked_skip.py
+  s_d4a691b07897c1::t_f151a9365231b7 1-39
+tests/benchmarks/test_json_tagged_unions.py
+  s_d4a691b07897c1::t_f151a9365231b7 1-64
+tests/test_json_cursor_controls.py
+  s_d4a691b07897c1::t_f151a9365231b7 1-44
+pydantic-core/src/validators/mod.rs
+  s_d4a691b07897c1::t_f151a9365231b7 504
+tests/test_json_cursor_safeguards.py
+  s_d4a691b07897c1::t_f151a9365231b7 1-162
+pydantic-core/Cargo.lock
+  s_d4a691b07897c1::t_753f085334b0f0 316,472,635-640
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0aeed0aeb10289fa7b4359449abbff1a23e1d8f7",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
