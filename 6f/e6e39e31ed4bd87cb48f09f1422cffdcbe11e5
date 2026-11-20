@@ -1,0 +1,14 @@
+tests/benchmarks/test_json_uuid_union.py
+  h_d9dd17644dded9 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6fe6e39e31ed4bd87cb48f09f1422cffdcbe11e5",
+  "prompts": {},
+  "humans": {
+    "h_d9dd17644dded9": {
+      "author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
