@@ -466,6 +466,11 @@ impl Validator for TaggedUnionValidator {
             let mut tag = None;
             let mut priority = usize::MAX;
             let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
+            // A late tag also makes model fields out of order. Materialize this
+            // value once instead of scanning it before another deferred traversal.
+            if key.is_some_and(|name| !paths.iter().any(|path| path.first_key() == name)) {
+                return Ok(None);
+            }
             while let Some(name) = key {
                 if let Some(index) = paths.iter().position(|path| path.first_key() == name)
                     && index <= priority

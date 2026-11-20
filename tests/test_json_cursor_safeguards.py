@@ -160,3 +160,32 @@ def test_cursor_skipped_valid_utf8_at_block_boundaries(boundary: int, character:
     prefix = b'{"a":1,"ignored":"'
     document = prefix + b'x' * (boundary - len(prefix)) + character.encode() + b'y' * 130 + b'"}'
     assert Model.model_validate_json(document).a == 1
+
+
+@pytest.mark.parametrize('as_bytearray', [False, True])
+@pytest.mark.parametrize('scalar', [b'null', b'true', b'123', b'"escaped\\n\\u65e5"'])
+@pytest.mark.parametrize('later', [b'"bad":"\xff"', b'"bad":{"nested":"\xff"}', b'"value":"\xff"'])
+def test_ascii_scalar_skip_does_not_trust_later_values(as_bytearray: bool, scalar: bytes, later: bytes) -> None:
+    class Model(BaseModel):
+        value: int
+
+    document = b'{"value":1,"ignored":' + scalar + b',' + later + b'}'
+    data = bytearray(document) if as_bytearray else document
+    with pytest.raises(ValueError):
+        from_json(data)
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        Model.model_validate_json(data)
+
+
+@pytest.mark.parametrize('as_bytearray', [False, True])
+@pytest.mark.parametrize('scalar', [b'null', b'false', b'-12.5e2', b'"ascii"'])
+def test_ascii_scalar_skip_still_checks_delimiters(as_bytearray: bool, scalar: bytes) -> None:
+    class Model(BaseModel):
+        value: int
+
+    document = b'{"ignored":' + scalar + b'x,"value":1}'
+    data = bytearray(document) if as_bytearray else document
+    with pytest.raises(ValueError):
+        from_json(data)
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        Model.model_validate_json(data)
