@@ -212,7 +212,7 @@ impl Validator for FunctionAfterValidator {
         let data = input.data;
         let value = self.validator.validate_json_cursor(py, input, state)?;
         self.call_after(value, py, state)
-            .map_err(|error| convert_err(py, error, &super::JsonCursor::new(&data[start..])))
+            .map_err(|error| convert_err(py, error, &input.at_value(&data[start..])))
     }
 
     fn validate_assignment<'py>(

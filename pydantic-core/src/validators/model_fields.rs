@@ -364,7 +364,8 @@ impl ModelFieldsValidator {
     }
 
     pub(super) fn supports_json_cursor(&self) -> bool {
-        matches!(self.lookup, LookupTree::NoAliases(_)) && matches!(self.extra_behavior, ExtraBehavior::Ignore)
+        matches!(self.lookup, LookupTree::NoAliases(_))
+            && matches!(self.extra_behavior, ExtraBehavior::Ignore | ExtraBehavior::Forbid)
     }
 
     pub(super) fn validate_cursor_fields<'py>(
@@ -382,12 +383,17 @@ impl ModelFieldsValidator {
             state.validate_by_name_or(self.validate_by_name),
         )?;
         let model_dict = PyDict::new(py);
+        let extra_validator = match state.extra_behavior_or(self.extra_behavior) {
+            ExtraBehavior::Forbid => ModelExtraValidator::Forbid,
+            ExtraBehavior::Ignore => ModelExtraValidator::Ignore,
+            ExtraBehavior::Allow => unreachable!("cursor model does not allow extra fields"),
+        };
         let state = &mut state.scoped_set_data(Some(model_dict.clone()));
         let state = &mut state.scoped_clear_field_error();
         let mut fields = ModelFieldsValidationState {
             lookup_type,
             model_dict,
-            extra_validator: ModelExtraValidator::Ignore,
+            extra_validator,
             fields_set: ModelFieldsSet::empty(Arc::clone(&self.field_names)),
             fields_set_count: 0,
             extra_keys_may_be_field_names: false,
@@ -400,6 +406,8 @@ impl ModelFieldsValidator {
         let error_input = &error_input;
         let mut deferred: SmallVec<[Option<usize>; 16]> = SmallVec::new();
         let mut next_field = 0;
+        // Keep map allocation and its hashing state off successful validation.
+        let mut forbidden_extra = None;
         let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
         while let Some(name) = key {
             match lookup.get(name).copied() {
@@ -412,9 +420,7 @@ impl ModelFieldsValidator {
                         field,
                         Some((
                             &field.lookup_path_collection.by_name,
-                            |state: &mut ValidationState<'_, 'py>| {
-                                field.validator.validate_json_cursor(py, input, state)
-                            },
+                            |state: &mut ValidationState<'_, 'py>| input.validate_next(py, &field.validator, state),
                         )),
                     )?;
                     next_field += 1;
@@ -431,11 +437,9 @@ impl ModelFieldsValidator {
                             Some((
                                 &field.lookup_path_collection.by_name,
                                 |state: &mut ValidationState<'_, 'py>| {
-                                    field.validator.validate_json_cursor(
-                                        py,
-                                        &mut super::JsonCursor::new(&data[start..]),
-                                        state,
-                                    )
+                                    input
+                                        .at_value(&data[start..])
+                                        .validate_next(py, &field.validator, state)
                                 },
                             )),
                         )?;
@@ -456,6 +460,13 @@ impl ModelFieldsValidator {
                     // validation select the last value; callbacks may replay on retry.
                     return Err(super::JsonCursor::parse_error(()));
                 }
+                None if matches!(fields.extra_validator, ModelExtraValidator::Forbid) => {
+                    let key = name.to_owned();
+                    let value = input.take_value()?;
+                    forbidden_extra
+                        .get_or_insert_with(|| Box::new(IndexMap::with_hasher(RandomState::new())))
+                        .insert(key, value);
+                }
                 None => input.skip_value()?,
             }
             key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
@@ -467,16 +478,21 @@ impl ModelFieldsValidator {
                 index,
                 field,
                 deferred.get(index).copied().flatten().map(|start| {
+                    let input = &*input;
                     (
                         &field.lookup_path_collection.by_name,
                         move |state: &mut ValidationState<'_, 'py>| {
-                            field
-                                .validator
-                                .validate_json_cursor(py, &mut super::JsonCursor::new(&data[start..]), state)
+                            input
+                                .at_value(&data[start..])
+                                .validate_next(py, &field.validator, state)
                         },
                     )
                 }),
             )?;
+        }
+        for (key, value) in forbidden_extra.into_iter().flat_map(|extras| *extras) {
+            let key = key.as_str();
+            fields.validate_extra_key_value(py, &key.into(), key, &value)?;
         }
         if !fields.errors.is_empty() {
             return Err(ValError::LineErrors(fields.errors));
