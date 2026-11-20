@@ -180,6 +180,10 @@ impl ListValidator {
                         check_length()?;
                         output.push(item.into_bound(py));
                     }
+                    Err(ValError::UseDefault) => {
+                        input.finish_array()?;
+                        return Err(ValError::UseDefault);
+                    }
                     Err(error) => {
                         // Successful items are already counted by output.len(). Only
                         // rejected or omitted items need a separate input-index count.
