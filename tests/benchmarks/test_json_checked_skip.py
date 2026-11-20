@@ -37,3 +37,15 @@ def test_json_checked_skips(benchmark: BenchmarkFixture, mode: str, case: str) -
         assert result.first == 1
         assert result.payload == document['payload']
     benchmark(model.model_validate_json, data)
+
+
+@pytest.mark.benchmark(group='JSON checked skips')
+@pytest.mark.parametrize('metadata', ['ascii', '日本語'])
+def test_json_scalar_skip_before_known_payload(benchmark: BenchmarkFixture, metadata: str) -> None:
+    class Payload(BaseModel):
+        values: list[str]
+
+    values = ['日本語 café Ελληνικά' * 4] * 256
+    data = json.dumps({'metadata': metadata, 'values': values}, ensure_ascii=False).encode()
+    assert Payload.model_validate_json(data).values == values
+    benchmark(Payload.model_validate_json, data)
