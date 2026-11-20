@@ -94,7 +94,8 @@ impl Validator for StrValidator {
     ) -> ValResult<Py<PyAny>> {
         if matches!(input.jiter.peek(), Ok(jiter::Peek::String)) {
             let value = input.jiter.known_str().map_err(super::JsonCursor::parse_error)?;
-            // JSON string tokens are exact matches; use the ordinary cache policy.
+            // Preserve JSON string scoring so specific types such as UUID can win unions.
+            state.floor_exactness(super::Exactness::Strict);
             return Ok(new_py_string(py, value, state.cache_str()).into_any().unbind());
         }
         self.validate(py, &input.take_value()?, state)
