@@ -527,6 +527,8 @@ def computed_field(
         property_name: The name of the property on the model or dataclass
         return_schema: The schema used for the type returned by the computed field
         alias: The name to use in the serialized output
+        serialization_exclude_if: A callable that determines whether to exclude the computed field when serializing
+            based on its value
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
     return _dict_not_none(
@@ -3291,6 +3293,7 @@ def typed_dict_schema(
         extra_behavior: The extra behavior to use for the typed dict
         total: Whether the typed dict is total, otherwise uses `typed_dict_total` from config
         serialization: Custom serialization schema
+        config: The config to use for the typed dict
     """
     return _dict_not_none(
         type='typed-dict',
@@ -3727,6 +3730,7 @@ def dataclass_schema(
         frozen: Whether the dataclass is frozen
         slots: Whether `slots=True` on the dataclass, means each field is assigned independently, rather than
             simply setting `__dict__`, default false
+        config: The config to use for the dataclass
     """
     return _dict_not_none(
         type='dataclass',
@@ -4435,6 +4439,7 @@ def definition_reference_schema(
 
     Args:
         schema_ref: The schema ref to use for the definition reference schema
+        ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
