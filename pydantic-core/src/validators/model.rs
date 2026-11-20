@@ -254,20 +254,24 @@ impl Validator for ModelValidator {
     ) -> ValResult<Py<PyAny>> {
         if !self.supports_json_cursor()
             || state.self_instance.is_some()
-            || !matches!(
+            || matches!(
                 state.extra_behavior_or(crate::build_tools::ExtraBehavior::Ignore),
-                crate::build_tools::ExtraBehavior::Ignore
+                crate::build_tools::ExtraBehavior::Allow
             )
             || !matches!(input.jiter.peek(), Ok(jiter::Peek::Object))
         {
             return self.validate(py, &input.take_value()?, state);
         }
-        input.with_container(|input| {
+        input.with_complete_container(|input| {
             let CombinedValidator::ModelFields(fields) = self.validator.as_ref() else {
                 unreachable!()
             };
             state.floor_exactness(Exactness::Strict);
-            let (model_dict, model_extra, fields_set) = fields.validate_cursor_fields(py, input, state)?;
+            let (model_dict, model_extra, fields_set) = match fields.validate_cursor_fields(py, input, state) {
+                Ok(values) => values,
+                Err(ValError::UseDefault) => return Err(super::JsonCursor::parse_error(())),
+                Err(error) => return Err(error),
+            };
             self.construct_from_fields(
                 py,
                 &*input,

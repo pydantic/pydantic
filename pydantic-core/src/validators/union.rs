@@ -252,7 +252,7 @@ impl Validator for UnionValidator {
         }
         let checkpoint = input.jiter.clone();
         let incoming_incomplete = input.incomplete_validation_error;
-        let error_input = super::JsonCursor::new(&input.data[checkpoint.current_index()..]);
+        let error_input = input.at_value(&input.data[checkpoint.current_index()..]);
         let mut first = true;
         let validate = |choice: &CombinedValidator, state: &mut ValidationState<'_, 'py>| {
             if first {
