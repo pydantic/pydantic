@@ -1,0 +1,21 @@
+tests/benchmarks/test_json_forbid_models.py
+  s_d4a691b07897c1::t_4897fd1a847693 1-35
+tests/benchmarks/test_json_list_rejections.py
+  s_d4a691b07897c1::t_6ad71c4b20fcf5 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4c3c53d625b82ea82245f9528ce0ea67e9c44dc6",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
