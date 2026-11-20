@@ -1,6 +1,7 @@
 """Union selection and errors on cursor-backed container values."""
 
 from typing import Annotated, Any
+from uuid import UUID
 
 import pytest
 
@@ -81,3 +82,11 @@ def test_cursor_union_best_match_survives_later_branch_failure() -> None:
 def test_cursor_union_malformed_json_retains_json_error(data: str) -> None:
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
         TypeAdapter(list[int] | list[str]).validate_json(data)
+
+
+@pytest.mark.parametrize('uuid_first', [False, True])
+def test_cursor_union_json_string_preserves_uuid_winner(uuid_first: bool) -> None:
+    annotation = list[UUID] | list[str] if uuid_first else list[str] | list[UUID]
+    value = '12345678-1234-5678-1234-567812345678'
+    result = TypeAdapter(annotation).validate_json(f'["{value}"]')
+    assert result == [UUID(value)]
