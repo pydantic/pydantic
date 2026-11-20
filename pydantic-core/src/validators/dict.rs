@@ -102,43 +102,98 @@ impl Validator for DictValidator {
         if !matches!(input.jiter.peek(), Ok(jiter::Peek::Object)) {
             return self.validate(py, &input.take_value()?, state);
         }
-        input.with_container(|input| {
+        input.with_complete_container(|input| {
             let output = PyDict::new(py);
+            let mut errors = Vec::new();
+            let object_start = input.jiter.current_index();
+            let mut key_start = object_start;
             let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
             while let Some(name) = key {
                 // `str` implements the existing JSON-key Input semantics, including
                 // strict numeric-key coercion. JsonValue::Str is a different input.
                 let output_key = match self.key_validator.validate(py, name, state) {
-                    Ok(key) => key,
+                    Ok(key) => Some(key),
+                    Err(ValError::LineErrors(line_errors)) => {
+                        extend_dict_errors(&mut errors, line_errors, name, true);
+                        None
+                    }
                     Err(ValError::Omit) => {
                         input.take_value()?;
+                        key_start = input.jiter.current_index();
                         key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
                         continue;
                     }
                     Err(error) => return Err(error),
                 };
-                match self.value_validator.validate_json_cursor(py, input, state) {
+                if self.fail_fast && !errors.is_empty() {
+                    input.skip_value()?;
+                    input.finish_object()?;
+                    return Err(ValError::LineErrors(errors));
+                }
+                match input.validate_next(py, &self.value_validator, state) {
                     Ok(value) => {
-                        output.set_item(output_key, value)?;
-                        if self.max_length.is_some_and(|maximum| output.len() > maximum) {
-                            return Err(super::JsonCursor::parse_error(()));
+                        if let Some(output_key) = output_key {
+                            output.set_item(output_key, value)?;
+                            if self.max_length.is_some_and(|maximum| output.len() > maximum) {
+                                input.finish_object()?;
+                                max_length_check!(&*input, "Dictionary", self.max_length, output);
+                            }
                         }
+                    }
+                    Err(ValError::LineErrors(line_errors)) => {
+                        let name = cursor_key_at(input, object_start, key_start)?;
+                        extend_dict_errors(&mut errors, line_errors, name, false);
                     }
                     Err(ValError::Omit) => (),
                     Err(error) => return Err(error),
                 }
+                key_start = input.jiter.current_index();
                 key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
             }
-            if self.min_length.is_some_and(|minimum| output.len() < minimum) {
-                return Err(super::JsonCursor::parse_error(()));
+            if errors.is_empty() {
+                let error_input = &*input;
+                min_length_check!(error_input, "Dictionary", self.min_length, output);
+                Ok(output.into_any().unbind())
+            } else {
+                Err(ValError::LineErrors(errors))
             }
-            Ok(output.into_any().unbind())
         })
     }
 
     fn get_name(&self) -> &str {
         &self.name
     }
+}
+
+/// Reconstruct the raw key only on rejected values, keeping successful entries allocation-free.
+#[cold]
+fn cursor_key_at(input: &super::JsonCursor<'_>, object_start: usize, key_start: usize) -> ValResult<String> {
+    let mut parser = jiter::Jiter::new(&input.data[key_start..]).with_allow_inf_nan();
+    let key = if key_start == object_start {
+        parser.known_object()
+    } else {
+        parser.next_key()
+    }
+    .map_err(super::JsonCursor::parse_error)?;
+    key.map(str::to_owned).ok_or_else(|| super::JsonCursor::parse_error(()))
+}
+
+/// Share dictionary location and key-error policy between ordinary and cursor validation.
+#[cold]
+fn extend_dict_errors<Key: Clone + Into<LocItem>>(
+    errors: &mut Vec<ValLineError>,
+    line_errors: Vec<ValLineError>,
+    key: Key,
+    key_error: bool,
+) {
+    errors.extend(line_errors.into_iter().map(|error| {
+        let error = if key_error {
+            error.with_outer_location("[key]")
+        } else {
+            error
+        };
+        error.with_outer_location(key.clone())
+    }));
 }
 
 struct ValidateToDict<'a, 's, 'py, I: Input<'py> + ?Sized> {
@@ -176,10 +231,7 @@ where
             let output_key = match self.key_validator.validate(self.py, key.borrow_input(), self.state) {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
-                    for err in line_errors {
-                        // these are added in reverse order so [key] is shunted along by the second call
-                        errors.push(err.with_outer_location("[key]").with_outer_location(key.clone()));
-                    }
+                    extend_dict_errors(&mut errors, line_errors, key.clone(), true);
                     None
                 }
                 Err(ValError::Omit) => continue,
@@ -198,7 +250,7 @@ where
                 Ok(value) => value,
                 Err(ValError::LineErrors(line_errors)) => {
                     if !is_last_partial {
-                        errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(key.clone())));
+                        extend_dict_errors(&mut errors, line_errors, key.clone(), false);
                     }
                     continue;
                 }
