@@ -1,0 +1,25 @@
+pydantic-core/src/validators/string.rs
+  s_d4a691b07897c1::t_1734406e5155d1 97-98
+tests/types/unions/test_json_cursor_exactness.py
+  s_d4a691b07897c1::t_0c56f57451a751 1-3,5-13,18-27,29-30,41-50
+  s_d4a691b07897c1::t_b1bb0526c4d7ae 28
+  s_d4a691b07897c1::t_28fddf7f888b52 15-17,66
+  s_d4a691b07897c1::t_e29d18e543f5e1 4,14
+  s_d4a691b07897c1::t_1734406e5155d1 31-40,51-65,67-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "471c1fe9c43e80acc9f9e57f2580d1c2bbda6aab",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
