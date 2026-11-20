@@ -124,3 +124,30 @@ def test_cursor_depth_ignores_escaped_string_brackets() -> None:
     text = '[{\\"' * 500
     document = json.dumps({'b': [text], 'ignored': [text], 'a': 1})
     assert Model.model_validate_json(document).b == [text]
+
+
+@pytest.mark.parametrize('as_bytearray', [False, True])
+@pytest.mark.parametrize('boundary', [31, 63, 127])
+@pytest.mark.parametrize(
+    'invalid', [b'\x80', b'\xc0\x80', b'\xe0\x80\xaf', b'\xed\xa0\x80', b'\xf4\x90\x80\x80', b'\xf0\x9f', b'\xff']
+)
+def test_cursor_skipped_invalid_utf8_at_block_boundaries(as_bytearray: bool, boundary: int, invalid: bytes) -> None:
+    class Model(BaseModel):
+        a: int
+
+    prefix = b'{"a":1,"ignored":"'
+    document = prefix + b'x' * (boundary - len(prefix)) + invalid + b'y' * 130 + b'"}'
+    data = bytearray(document) if as_bytearray else document
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        Model.model_validate_json(data)
+
+
+@pytest.mark.parametrize('boundary', [31, 63, 127])
+@pytest.mark.parametrize('character', ['é', '日', '🙂'])
+def test_cursor_skipped_valid_utf8_at_block_boundaries(boundary: int, character: str) -> None:
+    class Model(BaseModel):
+        a: int
+
+    prefix = b'{"a":1,"ignored":"'
+    document = prefix + b'x' * (boundary - len(prefix)) + character.encode() + b'y' * 130 + b'"}'
+    assert Model.model_validate_json(document).a == 1
