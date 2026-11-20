@@ -12,7 +12,8 @@ pub struct JsonCursor<'data> {
     pub(super) jiter: Jiter<'data>,
     pub(super) data: &'data [u8],
     start: usize,
-    depth: usize,
+    // Traversal is capped at 200; keep the error flag within the existing cursor size.
+    depth: u8,
     error_value: OnceCell<JsonValue<'data>>,
     pub(super) incomplete_validation_error: bool,
 }
