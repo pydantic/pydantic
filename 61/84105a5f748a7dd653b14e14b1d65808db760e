@@ -1,0 +1,23 @@
+pydantic-core/src/validators/list.rs
+  s_d4a691b07897c1::t_ac543a037287cb 10,161,163-171,174-178,180-185
+pydantic-core/src/input/return_enums.rs
+  s_d4a691b07897c1::t_ac543a037287cb 140-147,158-161,167-169,177,179-180
+pydantic-core/src/input/mod.rs
+  s_d4a691b07897c1::t_ac543a037287cb 26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6184105a5f748a7dd653b14e14b1d65808db760e",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
