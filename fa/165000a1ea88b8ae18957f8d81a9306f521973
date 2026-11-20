@@ -1,0 +1,27 @@
+tests/benchmarks/test_json_dict_errors.py
+  s_d4a691b07897c1::t_9d81f9c3c4502f 1-40
+tests/benchmarks/test_json_selectors.py
+  s_d4a691b07897c1::t_19498c650057fa 1-43
+tests/benchmarks/test_json_tagged_unions.py
+  s_d4a691b07897c1::t_1c555687667fb2 1-64
+tests/benchmarks/test_json_unions.py
+  s_d4a691b07897c1::t_36e8d8f60d5b2e 1-82
+tests/benchmarks/test_json_wrappers.py
+  s_d4a691b07897c1::t_d31aa8a97798ee 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fa165000a1ea88b8ae18957f8d81a9306f521973",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
