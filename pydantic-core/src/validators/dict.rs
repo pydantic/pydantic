@@ -123,6 +123,11 @@ impl Validator for DictValidator {
                         key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
                         continue;
                     }
+                    Err(ValError::UseDefault) => {
+                        input.skip_value()?;
+                        input.finish_object()?;
+                        return Err(ValError::UseDefault);
+                    }
                     Err(error) => return Err(error),
                 };
                 if self.fail_fast && !errors.is_empty() {
@@ -145,6 +150,10 @@ impl Validator for DictValidator {
                         extend_dict_errors(&mut errors, line_errors, name, false);
                     }
                     Err(ValError::Omit) => (),
+                    Err(ValError::UseDefault) => {
+                        input.finish_object()?;
+                        return Err(ValError::UseDefault);
+                    }
                     Err(error) => return Err(error),
                 }
                 key_start = input.jiter.current_index();
