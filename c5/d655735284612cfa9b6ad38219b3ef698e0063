@@ -1,0 +1,22 @@
+tests/benchmarks/test_json_dict_errors.py
+  h_d9dd17644dded9 1-40
+tests/benchmarks/test_json_selectors.py
+  h_d9dd17644dded9 1-43
+tests/benchmarks/test_json_tagged_unions.py
+  h_d9dd17644dded9 1-64
+tests/benchmarks/test_json_unions.py
+  h_d9dd17644dded9 1-82
+tests/benchmarks/test_json_wrappers.py
+  h_d9dd17644dded9 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c5d655735284612cfa9b6ad38219b3ef698e0063",
+  "prompts": {},
+  "humans": {
+    "h_d9dd17644dded9": {
+      "author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
