@@ -353,6 +353,7 @@ pub struct TaggedUnionValidator {
     tags_repr: String,
     discriminator_repr: String,
     name: String,
+    cursor_choices: bool,
 }
 
 impl BuildValidator for TaggedUnionValidator {
@@ -389,6 +390,10 @@ impl BuildValidator for TaggedUnionValidator {
         }
 
         let lookup = Box::new(LiteralLookup::new(py, lookup_map.into_iter())?);
+        let cursor_choices = matches!(
+            &discriminator,
+            Discriminator::LookupPaths(paths) if paths.iter().all(|path| path.rest().is_empty())
+        ) && lookup.values.iter().any(|choice| choice.supports_json_cursor());
 
         let key = intern!(py, "from_attributes");
         let from_attributes = schema_or_config(schema, config, key, key)?.unwrap_or(true);
@@ -401,6 +406,7 @@ impl BuildValidator for TaggedUnionValidator {
             tags_repr,
             discriminator_repr,
             name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
+            cursor_choices,
         }))
         .into())
     }
@@ -444,6 +450,67 @@ impl Validator for TaggedUnionValidator {
                 }
             }
         }
+    }
+
+    fn supports_json_cursor(&self) -> bool {
+        self.cursor_choices
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        if !self.cursor_choices || !matches!(input.jiter.peek(), Ok(jiter::Peek::Object)) {
+            return self.validate(py, &input.take_value()?, state);
+        }
+        let Discriminator::LookupPaths(paths) = &*self.discriminator else {
+            unreachable!("cursor tagged union uses simple lookup paths");
+        };
+        let checkpoint = input.jiter.clone();
+        let incoming_incomplete = input.incomplete_validation_error;
+        let error_input = super::JsonCursor::new(&input.data[checkpoint.current_index()..]);
+        let tag = input.with_container(|input| {
+            let mut tag = None;
+            let mut priority = usize::MAX;
+            let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
+            while let Some(name) = key {
+                if let Some(index) = paths.iter().position(|path| path.first_key() == name)
+                    && index <= priority
+                {
+                    priority = index;
+                    tag = Some(input.take_value()?);
+                } else {
+                    input.skip_value()?;
+                }
+                key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
+            }
+            Ok(tag)
+        })?;
+        let Some(tag) = tag else {
+            return Err(self.tag_not_found(&error_input));
+        };
+        // Scan the whole object before selection: the final duplicate wins, and
+        // lookup-path priority is independent of object member order.
+        let result = self.find_call_validator(py, &tag.to_object(py)?, &error_input, state, |validator, state| {
+            input.jiter = checkpoint.clone();
+            let exactness = state.exactness;
+            let fields_set_count = state.fields_set_count;
+            let result = validator.validate_json_cursor(py, input, state);
+            if matches!(&result, Err(ValError::InternalErr(_)))
+                || (matches!(&result, Err(ValError::LineErrors(_))) && input.incomplete_validation_error)
+            {
+                input.jiter = checkpoint;
+                input.incomplete_validation_error = incoming_incomplete;
+                state.exactness = exactness;
+                state.fields_set_count = fields_set_count;
+                return validator.validate(py, &input.take_value()?, state);
+            }
+            result
+        });
+        input.incomplete_validation_error = incoming_incomplete;
+        result
     }
 
     fn get_name(&self) -> &str {
