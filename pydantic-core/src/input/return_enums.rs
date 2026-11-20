@@ -137,15 +137,14 @@ pub(crate) fn validate_iter_to_vec<'py>(
             false => PartialMode::Off,
         };
         let item = item_result.map_err(|e| any_next_error!(py, e, max_length_check.input, index))?;
-        if let Some(item) = validate_iter_item(
-            validator.validate(py, item.borrow_input(), state),
-            index,
-            &mut errors,
-            is_last_partial,
-            fail_fast,
-            || max_length_check.incr(),
-        )? {
-            output.push(item);
+        match validator.validate(py, item.borrow_input(), state) {
+            Ok(item) => {
+                max_length_check.incr()?;
+                output.push(item);
+            }
+            Err(error) => handle_iter_error(error, index, &mut errors, is_last_partial, fail_fast, || {
+                max_length_check.incr()
+            })?,
         }
     }
 
@@ -156,21 +155,18 @@ pub(crate) fn validate_iter_to_vec<'py>(
     }
 }
 
-/// Apply collection policy to one validated item, independently of how it was read.
-pub(crate) fn validate_iter_item(
-    result: ValResult<Py<PyAny>>,
+/// Share collection error policy without passing successful items through it.
+#[cold]
+pub(crate) fn handle_iter_error(
+    error: ValError,
     index: usize,
     errors: &mut Vec<ValLineError>,
     is_last_partial: bool,
     fail_fast: bool,
     mut check_length: impl FnMut() -> ValResult<()>,
-) -> ValResult<Option<Py<PyAny>>> {
-    match result {
-        Ok(item) => {
-            check_length()?;
-            Ok(Some(item))
-        }
-        Err(ValError::LineErrors(line_errors)) => {
+) -> ValResult<()> {
+    match error {
+        ValError::LineErrors(line_errors) => {
             check_length()?;
             if !is_last_partial {
                 errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
@@ -178,10 +174,10 @@ pub(crate) fn validate_iter_item(
                     return Err(ValError::LineErrors(std::mem::take(errors)));
                 }
             }
-            Ok(None)
+            Ok(())
         }
-        Err(ValError::Omit) => Ok(None),
-        Err(err) => Err(err),
+        ValError::Omit => Ok(()),
+        err => Err(err),
     }
 }
 
