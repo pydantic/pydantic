@@ -59,12 +59,17 @@ impl<'data> JsonCursor<'data> {
             .map_err(Self::parse_error)
     }
 
+    /// Check syntax and the remaining depth without establishing raw UTF-8 validity.
+    pub(super) fn defer_value(&mut self) -> ValResult<()> {
+        self.jiter
+            .next_skip_with_recursion_limit(200 - self.depth)
+            .map_err(Self::parse_error)
+    }
+
     /// Jiter's skip checks JSON escapes, but deliberately omits raw UTF-8 checks.
     /// Check the input once on the first skip instead of checking each skipped span.
     pub(super) fn skip_value(&mut self) -> ValResult<()> {
-        self.jiter
-            .next_skip_with_recursion_limit(200 - self.depth)
-            .map_err(Self::parse_error)?;
+        self.defer_value()?;
         if !self.utf8_checked {
             simdutf8::basic::from_utf8(self.data).map_err(Self::parse_error)?;
             self.utf8_checked = true;
