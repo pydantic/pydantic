@@ -1,0 +1,19 @@
+tests/benchmarks/test_json_uuid_union.py
+  s_0fd372025bf338::t_edef17f33d06f8 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7cb0c7f85028cf4626b3a34249c81152d96e9448",
+  "prompts": {},
+  "sessions": {
+    "s_0fd372025bf338": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f95d-6a23-7962-b92c-c99eee694baf",
+        "model": "unknown"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
