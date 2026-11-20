@@ -5,7 +5,7 @@ from typing import Literal
 import pytest
 from pydantic_core import SchemaValidator, ValidationError, core_schema
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 
 class ForbidModel(BaseModel):
@@ -77,3 +77,17 @@ def test_cursor_forbid_model_keeps_json_syntax_priority(data: bytes) -> None:
     with pytest.raises(ValidationError) as actual:
         ForbidModel.model_validate_json(data)
     assert actual.value.errors()[0]['type'] == 'json_invalid'
+
+
+@pytest.mark.parametrize('in_list', [False, True])
+def test_cursor_forbid_extra_keeps_document_depth_budget(in_list: bool) -> None:
+    depth = 200 - int(in_list)
+    data = b'{"a":1,"z":' + b'[' * depth + b'0' + b']' * depth + b'}'
+    if in_list:
+        data = b'[' + data + b']'
+        validate = TypeAdapter(list[ForbidModel]).validate_json
+    else:
+        validate = ForbidModel.model_validate_json
+    with pytest.raises(ValidationError) as actual:
+        validate(data)
+    assert actual.value.errors(include_input=False)[0]['type'] == 'json_invalid'
