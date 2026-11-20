@@ -131,10 +131,7 @@ impl<'data> JsonCursor<'data> {
 
     /// The callback may return LineErrors only after consuming the whole container.
     /// Other errors may leave it incomplete and still request ordinary retry.
-    pub(super) fn with_complete_container<T>(
-        &mut self,
-        validate: impl FnOnce(&mut Self) -> ValResult<T>,
-    ) -> ValResult<T> {
+    pub(super) fn with_container<T>(&mut self, validate: impl FnOnce(&mut Self) -> ValResult<T>) -> ValResult<T> {
         self.with_container_scope::<T, true>(validate)
     }
 

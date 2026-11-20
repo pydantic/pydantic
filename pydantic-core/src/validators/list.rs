@@ -155,7 +155,7 @@ impl ListValidator {
             &mut ValidationState<'s, 'py>,
         ) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
-        input.with_complete_container(|input| {
+        input.with_container(|input| {
             let mut errors = Vec::new();
             let mut output: SmallVec<[Bound<'py, PyAny>; 8]> = SmallVec::new();
             let mut skipped_items = 0;

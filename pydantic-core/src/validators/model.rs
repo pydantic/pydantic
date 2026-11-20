@@ -262,7 +262,7 @@ impl Validator for ModelValidator {
         {
             return self.validate(py, &input.take_value()?, state);
         }
-        input.with_complete_container(|input| {
+        input.with_container(|input| {
             let CombinedValidator::ModelFields(fields) = self.validator.as_ref() else {
                 unreachable!()
             };

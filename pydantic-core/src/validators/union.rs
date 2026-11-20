@@ -470,7 +470,7 @@ impl Validator for TaggedUnionValidator {
         };
         let checkpoint = input.jiter.clone();
         let incoming_incomplete = input.incomplete_validation_error;
-        let tag = input.with_complete_container(|input| {
+        let tag = input.with_container(|input| {
             let mut tag = None;
             let mut priority = usize::MAX;
             let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
