@@ -425,14 +425,22 @@ impl Validator for TaggedUnionValidator {
                     return Err(self.tag_not_found(input));
                 };
                 let tag = tag_result?;
-                self.find_call_validator(py, &tag.borrow_input().to_object(py)?, input, state)
+                self.find_call_validator(
+                    py,
+                    &tag.borrow_input().to_object(py)?,
+                    input,
+                    state,
+                    |validator, state| validator.validate(py, input, state),
+                )
             }
             Discriminator::Function(func) => {
                 let tag: Py<PyAny> = func.call1(py, (input.to_object(py)?,))?;
                 if tag.is_none(py) {
                     Err(self.tag_not_found(input))
                 } else {
-                    self.find_call_validator(py, tag.bind(py), input, state)
+                    self.find_call_validator(py, tag.bind(py), input, state, |validator, state| {
+                        validator.validate(py, input, state)
+                    })
                 }
             }
         }
@@ -448,11 +456,12 @@ impl TaggedUnionValidator {
         &self,
         py: Python<'py>,
         tag: &Bound<'py, PyAny>,
-        input: &(impl Input<'py> + ?Sized),
+        input: impl ToErrorValue,
         state: &mut ValidationState<'_, 'py>,
+        validate: impl FnOnce(&CombinedValidator, &mut ValidationState<'_, 'py>) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
         if let Ok(Some((tag, validator))) = self.lookup.validate(py, tag) {
-            return match validator.validate(py, input, state) {
+            return match validate(validator, state) {
                 Ok(res) => Ok(res),
                 Err(err) => Err(err.with_outer_location(tag)),
             };
@@ -471,7 +480,7 @@ impl TaggedUnionValidator {
         }
     }
 
-    fn tag_not_found<'py>(&self, input: &(impl Input<'py> + ?Sized)) -> ValError {
+    fn tag_not_found(&self, input: impl ToErrorValue) -> ValError {
         match self.custom_error {
             Some(ref custom_error) => custom_error.as_val_error(input),
             None => ValError::new(
