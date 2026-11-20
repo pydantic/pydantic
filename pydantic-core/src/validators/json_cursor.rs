@@ -39,6 +39,15 @@ impl<'data> JsonCursor<'data> {
         self.jiter.next_value().map_err(Self::parse_error)
     }
 
+    /// Validate UTF-8 only for values skipped by the incremental model scheduler.
+    /// Other values are decoded by their ordinary or direct validators.
+    pub(super) fn skip_value(&mut self) -> ValResult<()> {
+        let start = self.jiter.current_index();
+        self.jiter.next_skip().map_err(Self::parse_error)?;
+        std::str::from_utf8(self.jiter.slice_to_current(start)).map_err(Self::parse_error)?;
+        Ok(())
+    }
+
     pub(super) fn value_for_context(&self) -> &JsonValue<'data> {
         // Error input is provisional: malformed subtrees can use a placeholder because
         // the entire failed attempt is retried through ordinary validation.
