@@ -188,6 +188,10 @@ using all possible [parameter configurations][parameter] and all possible combin
     /// version-added | v2.10
     ///
 
+    /// version-changed | v3
+    Keyword arguments not declared by the typed dictionary are now rejected by default, as per the [specification](https://typing.python.org/en/latest/spec/callables.html#extra-items).
+    ///
+
     [related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
     [PEP 692]: https://peps.python.org/pep-0692/
 
