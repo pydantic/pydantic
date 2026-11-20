@@ -45,6 +45,7 @@ pub struct UnionValidator {
     choices: Vec<(Arc<CombinedValidator>, Option<String>)>,
     custom_error: Option<CustomError>,
     name: String,
+    cursor_choices: bool,
 }
 
 impl BuildValidator for UnionValidator {
@@ -87,11 +88,13 @@ impl BuildValidator for UnionValidator {
                     .collect::<Vec<_>>()
                     .join(",");
 
+                let cursor_choices = choices.iter().any(|(choice, _)| choice.supports_json_cursor());
                 Ok(CombinedValidator::Union(Self {
                     mode,
                     choices,
                     custom_error: CustomError::build(schema, config, definitions)?,
                     name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
+                    cursor_choices,
                 })
                 .into())
             }
@@ -102,9 +105,9 @@ impl BuildValidator for UnionValidator {
 impl UnionValidator {
     fn validate_smart<'py>(
         &self,
-        py: Python<'py>,
-        input: &(impl Input<'py> + ?Sized),
+        input: impl ToErrorValue,
         state: &mut ValidationState<'_, 'py>,
+        mut validate: impl FnMut(&CombinedValidator, &mut ValidationState<'_, 'py>) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
         let old_exactness = state.exactness;
         let old_fields_set_count = state.fields_set_count;
@@ -117,7 +120,7 @@ impl UnionValidator {
         for (choice, label) in &self.choices {
             state.exactness = Some(Exactness::Exact);
             state.fields_set_count = None;
-            let result = choice.validate(py, input, state);
+            let result = validate(choice, state);
             match result {
                 Ok(new_success) => match (state.exactness, state.fields_set_count) {
                     (Some(Exactness::Exact), None) => {
@@ -193,14 +196,14 @@ impl UnionValidator {
 
     fn validate_left_to_right<'py>(
         &self,
-        py: Python<'py>,
-        input: &(impl Input<'py> + ?Sized),
+        input: impl ToErrorValue,
         state: &mut ValidationState<'_, 'py>,
+        mut validate: impl FnMut(&CombinedValidator, &mut ValidationState<'_, 'py>) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
 
         for (validator, label) in &self.choices {
-            match validator.validate(py, input, state) {
+            match validate(validator, state) {
                 Err(ValError::LineErrors(lines)) => errors.push(validator, label.as_deref(), lines),
                 otherwise => return otherwise,
             }
@@ -225,9 +228,61 @@ impl Validator for UnionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         match self.mode {
-            UnionMode::Smart => self.validate_smart(py, input, state),
-            UnionMode::LeftToRight => self.validate_left_to_right(py, input, state),
+            UnionMode::Smart => self.validate_smart(input, state, |choice, state| choice.validate(py, input, state)),
+            UnionMode::LeftToRight => {
+                self.validate_left_to_right(input, state, |choice, state| choice.validate(py, input, state))
+            }
         }
+    }
+
+    fn supports_json_cursor(&self) -> bool {
+        self.cursor_choices
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        // A scalar JsonValue is already cheap. Stream unions when at least one
+        // branch can avoid materializing an entire container subtree.
+        if !self.cursor_choices {
+            return self.validate(py, &input.take_value()?, state);
+        }
+        let checkpoint = input.jiter.clone();
+        let incoming_incomplete = input.incomplete_validation_error;
+        let error_input = input.at_value(&input.data[checkpoint.current_index()..]);
+        let mut first = true;
+        let validate = |choice: &CombinedValidator, state: &mut ValidationState<'_, 'py>| {
+            if first {
+                first = false;
+            } else {
+                input.jiter = checkpoint.clone();
+            }
+            input.incomplete_validation_error = incoming_incomplete;
+            let exactness = state.exactness;
+            let fields_set_count = state.fields_set_count;
+            let result = choice.validate_json_cursor(py, input, state);
+            if matches!(&result, Err(ValError::InternalErr(_)))
+                || (matches!(&result, Err(ValError::LineErrors(_))) && input.incomplete_validation_error)
+            {
+                // An early failure may leave the cursor inside this value. Replay
+                // just this union branch through ordinary validation, not the document.
+                input.jiter = checkpoint.clone();
+                input.incomplete_validation_error = incoming_incomplete;
+                state.exactness = exactness;
+                state.fields_set_count = fields_set_count;
+                return choice.validate(py, &input.take_value()?, state);
+            }
+            result
+        };
+        let result = match self.mode {
+            UnionMode::Smart => self.validate_smart(&error_input, state, validate),
+            UnionMode::LeftToRight => self.validate_left_to_right(&error_input, state, validate),
+        };
+        input.incomplete_validation_error = incoming_incomplete;
+        result
     }
 
     fn get_name(&self) -> &str {
@@ -298,6 +353,7 @@ pub struct TaggedUnionValidator {
     tags_repr: String,
     discriminator_repr: String,
     name: String,
+    cursor_choices: bool,
 }
 
 impl BuildValidator for TaggedUnionValidator {
@@ -334,6 +390,10 @@ impl BuildValidator for TaggedUnionValidator {
         }
 
         let lookup = Box::new(LiteralLookup::new(py, lookup_map.into_iter())?);
+        let cursor_choices = matches!(
+            &discriminator,
+            Discriminator::LookupPaths(paths) if paths.iter().all(|path| path.rest().is_empty())
+        ) && lookup.values.iter().any(|choice| choice.supports_json_cursor());
 
         let key = intern!(py, "from_attributes");
         let from_attributes = schema_or_config(schema, config, key, key)?.unwrap_or(true);
@@ -346,6 +406,7 @@ impl BuildValidator for TaggedUnionValidator {
             tags_repr,
             discriminator_repr,
             name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
+            cursor_choices,
         }))
         .into())
     }
@@ -370,17 +431,89 @@ impl Validator for TaggedUnionValidator {
                     return Err(self.tag_not_found(input));
                 };
                 let tag = tag_result?;
-                self.find_call_validator(py, &tag.borrow_input().to_object(py)?, input, state)
+                self.find_call_validator(
+                    py,
+                    &tag.borrow_input().to_object(py)?,
+                    input,
+                    state,
+                    |validator, state| validator.validate(py, input, state),
+                )
             }
             Discriminator::Function(func) => {
                 let tag: Py<PyAny> = func.call1(py, (input.to_object(py)?,))?;
                 if tag.is_none(py) {
                     Err(self.tag_not_found(input))
                 } else {
-                    self.find_call_validator(py, tag.bind(py), input, state)
+                    self.find_call_validator(py, tag.bind(py), input, state, |validator, state| {
+                        validator.validate(py, input, state)
+                    })
                 }
             }
         }
+    }
+
+    fn supports_json_cursor(&self) -> bool {
+        self.cursor_choices
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        if !self.cursor_choices || !matches!(input.jiter.peek(), Ok(jiter::Peek::Object)) {
+            return self.validate(py, &input.take_value()?, state);
+        }
+        let Discriminator::LookupPaths(paths) = &*self.discriminator else {
+            unreachable!("cursor tagged union uses simple lookup paths");
+        };
+        let checkpoint = input.jiter.clone();
+        let incoming_incomplete = input.incomplete_validation_error;
+        let tag = input.with_complete_container(|input| {
+            let mut tag = None;
+            let mut priority = usize::MAX;
+            let mut key = input.jiter.known_object().map_err(super::JsonCursor::parse_error)?;
+            while let Some(name) = key {
+                if let Some(index) = paths.iter().position(|path| path.first_key() == name)
+                    && index <= priority
+                {
+                    priority = index;
+                    tag = Some(input.take_value()?);
+                } else {
+                    input.defer_value()?;
+                }
+                key = input.jiter.next_key().map_err(super::JsonCursor::parse_error)?;
+            }
+            Ok(tag)
+        })?;
+        let tag = tag.map(|tag| tag.to_object(py)).transpose()?;
+        let selected = tag
+            .as_ref()
+            .and_then(|tag| self.lookup.validate(py, tag).ok().flatten());
+        let Some((tag, validator)) = selected else {
+            // No branch will consume this value. Parse it before reporting the tag
+            // error so malformed JSON, including raw UTF-8, still takes precedence.
+            input.jiter = checkpoint;
+            return self.validate(py, &input.take_value()?, state);
+        };
+        // The selected branch validates every member after the discriminator scan.
+        // Keep its final cursor, and replay even a recovered success if incomplete.
+        input.jiter = checkpoint.clone();
+        let exactness = state.exactness;
+        let fields_set_count = state.fields_set_count;
+        let result = validator.validate_json_cursor(py, input, state);
+        let result = if matches!(&result, Err(ValError::InternalErr(_))) || input.incomplete_validation_error {
+            input.jiter = checkpoint;
+            input.incomplete_validation_error = incoming_incomplete;
+            state.exactness = exactness;
+            state.fields_set_count = fields_set_count;
+            validator.validate(py, &input.take_value()?, state)
+        } else {
+            result
+        };
+        input.incomplete_validation_error = incoming_incomplete;
+        result.map_err(|error| error.with_outer_location(tag))
     }
 
     fn get_name(&self) -> &str {
@@ -393,11 +526,12 @@ impl TaggedUnionValidator {
         &self,
         py: Python<'py>,
         tag: &Bound<'py, PyAny>,
-        input: &(impl Input<'py> + ?Sized),
+        input: impl ToErrorValue,
         state: &mut ValidationState<'_, 'py>,
+        validate: impl FnOnce(&CombinedValidator, &mut ValidationState<'_, 'py>) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
         if let Ok(Some((tag, validator))) = self.lookup.validate(py, tag) {
-            return match validator.validate(py, input, state) {
+            return match validate(validator, state) {
                 Ok(res) => Ok(res),
                 Err(err) => Err(err.with_outer_location(tag)),
             };
@@ -416,7 +550,7 @@ impl TaggedUnionValidator {
         }
     }
 
-    fn tag_not_found<'py>(&self, input: &(impl Input<'py> + ?Sized)) -> ValError {
+    fn tag_not_found(&self, input: impl ToErrorValue) -> ValError {
         match self.custom_error {
             Some(ref custom_error) => custom_error.as_val_error(input),
             None => ValError::new(

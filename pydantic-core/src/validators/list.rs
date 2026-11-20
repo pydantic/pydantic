@@ -155,49 +155,81 @@ impl ListValidator {
             &mut ValidationState<'s, 'py>,
         ) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
-        let mut errors = Vec::new();
-        let output = input.with_container(|input| {
+        input.with_complete_container(|input| {
+            let mut errors = Vec::new();
             let mut output: SmallVec<[Bound<'py, PyAny>; 8]> = SmallVec::new();
             let mut skipped_items = 0;
             let mut checked_length = 0;
-            let mut check_length = || {
-                if let Some(maximum) = self.max_length {
-                    checked_length += 1;
-                    if checked_length > maximum {
-                        return Err(super::JsonCursor::parse_error(()));
-                    }
-                }
-                Ok(())
-            };
             let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
             while let Some(peek) = next {
-                match validate(input, peek, state) {
+                let result = validate(input, peek, state);
+                if matches!(&result, Err(ValError::LineErrors(_))) && input.incomplete_validation_error {
+                    return Err(super::JsonCursor::parse_error(()));
+                }
+                let mut check_length = || {
+                    if let Some(maximum) = self.max_length {
+                        checked_length += 1;
+                        if checked_length > maximum {
+                            return cursor_list_too_long(input, maximum);
+                        }
+                    }
+                    Ok(())
+                };
+                match result {
                     Ok(item) => {
                         check_length()?;
                         output.push(item.into_bound(py));
                     }
-                    Err(error @ ValError::LineErrors(_)) if input.incomplete_validation_error => return Err(error),
+                    Err(ValError::UseDefault) => {
+                        input.finish_array()?;
+                        return Err(ValError::UseDefault);
+                    }
                     Err(error) => {
                         // Successful items are already counted by output.len(). Only
                         // rejected or omitted items need a separate input-index count.
                         let index = output.len() + skipped_items;
-                        handle_iter_error(error, index, &mut errors, false, self.fail_fast, &mut check_length)?;
+                        if let Err(error) =
+                            handle_iter_error(error, index, &mut errors, false, self.fail_fast, &mut check_length)
+                        {
+                            // The maximum helper already finished the array. A
+                            // fail-fast item error still needs its remainder checked.
+                            if self.fail_fast
+                                && matches!(&error, ValError::LineErrors(_))
+                                && self.max_length.is_none_or(|maximum| checked_length <= maximum)
+                            {
+                                input.finish_array()?;
+                            }
+                            return Err(error);
+                        }
                         skipped_items += 1;
                     }
                 }
                 next = input.jiter.array_step().map_err(super::JsonCursor::parse_error)?;
             }
-            if self.min_length.is_some_and(|minimum| output.len() < minimum) {
-                return Err(super::JsonCursor::parse_error(()));
+            if errors.is_empty() {
+                let error_input = &*input;
+                min_length_check!(error_input, "List", self.min_length, output);
+                Ok(output.into_py_any(py)?)
+            } else {
+                Err(ValError::LineErrors(errors))
             }
-            Ok(output.into_py_any(py)?)
-        })?;
-        if errors.is_empty() {
-            Ok(output)
-        } else {
-            Err(ValError::LineErrors(errors))
-        }
+        })
     }
+}
+
+/// Preserve ordinary list length reporting after checking all remaining JSON syntax.
+#[cold]
+fn cursor_list_too_long(input: &mut super::JsonCursor<'_>, max_length: usize) -> ValResult<()> {
+    input.finish_array()?;
+    let jiter::JsonValue::Array(values) = input.value_for_context() else {
+        return Err(super::JsonCursor::parse_error(()));
+    };
+    let values = values.as_slice();
+    let error_input = &*input;
+    length_check!(error_input, "List", None::<usize>, Some(max_length), values);
+    // The non-omitted item count already exceeded the maximum, so the
+    // raw input length must exceed it too. Retry if that invariant is lost.
+    Err(super::JsonCursor::parse_error(()))
 }
 
 impl Validator for ListValidator {
@@ -255,9 +287,14 @@ impl Validator for ListValidator {
             return self.validate(py, &input.take_value()?, state);
         }
         match self.item_validator.as_deref() {
-            // Select the integer validator once per list and reuse the parser's
+            // Select primitive validators once per list and reuse the parser's
             // existing element peek; conversion/coercion policy stays shared.
             Some(CombinedValidator::Int(validator)) => {
+                self.validate_json_cursor_items(py, input, state, |input, peek, state| {
+                    validator.validate_json_cursor_peeked(py, input, peek, state)
+                })
+            }
+            Some(CombinedValidator::Str(validator)) => {
                 self.validate_json_cursor_items(py, input, state, |input, peek, state| {
                     validator.validate_json_cursor_peeked(py, input, peek, state)
                 })
