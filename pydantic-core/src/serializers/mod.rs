@@ -23,6 +23,7 @@ mod extra;
 mod fields;
 mod filter;
 mod infer;
+mod json_escape;
 mod ob_type;
 mod polymorphism_trampoline;
 mod prebuilt;
