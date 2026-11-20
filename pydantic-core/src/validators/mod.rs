@@ -118,6 +118,8 @@ impl PySome {
 #[derive(Debug)]
 pub struct SchemaValidator {
     validator: Arc<CombinedValidator>,
+    /// Owned Rust instructions; `None` also caches unsupported schemas.
+    stream_plan: Option<Box<model_fields::ModelPlan>>,
     definitions: Definitions<Arc<CombinedValidator>>,
     // References to the Python schema and config objects are saved to enable
     // reconstructing the object for cloudpickle support (see `__reduce__`).
@@ -139,6 +141,12 @@ impl_py_gc_traverse!(SchemaValidator {
 
 #[pymethods]
 impl SchemaValidator {
+    /// Whether this schema has a cached streaming plan. Individual inputs may still fall back.
+    #[getter]
+    fn _stream_plan_accepted(&self) -> bool {
+        self.stream_plan.is_some()
+    }
+
     #[new]
     #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
     pub fn py_new(
@@ -153,6 +161,7 @@ impl SchemaValidator {
 
         let validator = build_validator(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
+        let stream_plan = model_fields::root_plan(&validator).map(Box::new);
         let py_schema = schema.clone().unbind();
         let py_config = match config {
             Some(c) if !c.is_empty() => Some(c.clone().into()),
@@ -173,6 +182,7 @@ impl SchemaValidator {
             .unwrap_or(StringCacheMode::All);
         Ok(Self {
             validator,
+            stream_plan,
             definitions,
             py_schema,
             py_config,
@@ -481,6 +491,49 @@ impl SchemaValidator {
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> ValResult<Py<PyAny>> {
+        // On unless switched off. Every schema or document the fast path cannot finish falls
+        // back to the tree path, so the switch is an escape hatch rather than a feature flag:
+        static DISABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        #[allow(clippy::used_underscore_items)]
+        if !*DISABLED.get_or_init(|| std::env::var_os("PYDANTIC_DISABLE_JSON_STREAMING").is_some())
+            && let Some(result) = self._validate_json_streaming(
+                py,
+                json_data,
+                strict,
+                extra_behavior,
+                context,
+                self_instance,
+                allow_partial,
+                by_alias,
+                by_name,
+            )
+        {
+            // The debug verifier compares successful results and may run construction hooks
+            // again on the ordinary path.
+            #[cfg(feature = "stream-verify")]
+            if let Ok(streamed) = &result {
+                let tree = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
+                    .map_err(|e| json::map_json_err(input, e, json_data))
+                    .and_then(|json_value| {
+                        #[allow(clippy::used_underscore_items)]
+                        self._validate(
+                            py,
+                            &json_value,
+                            InputType::Json,
+                            strict,
+                            extra_behavior,
+                            None,
+                            context,
+                            self_instance,
+                            allow_partial,
+                            by_alias,
+                            by_name,
+                        )
+                    });
+                crate::stream_verify::compare(py, streamed, tree)?;
+            }
+            return result;
+        }
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
         #[allow(clippy::used_underscore_items)]
@@ -497,6 +550,63 @@ impl SchemaValidator {
             by_alias,
             by_name,
         )
+    }
+
+    /// Validate models straight off a json cursor, so the document's objects are never built
+    /// into a `JsonValue` tree. `None` means the schema or the document is not one this handles
+    /// and the caller should take the tree path.
+    ///
+    /// Only supported top-level models use this path. Any document it cannot finish is
+    /// validated the ordinary way, preserving errors and their locations.
+    #[allow(clippy::too_many_arguments)]
+    fn _validate_json_streaming(
+        &self,
+        py: Python<'_>,
+        json_data: &[u8],
+        strict: Option<bool>,
+        extra_behavior: Option<ExtraBehavior>,
+        context: Option<&Bound<'_, PyAny>>,
+        self_instance: Option<&Bound<'_, PyAny>>,
+        allow_partial: PartialMode,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
+    ) -> Option<ValResult<Py<PyAny>>> {
+        if by_alias.is_some()
+            || by_name.is_some()
+            || allow_partial.is_active()
+            || extra_behavior.is_some()
+            || self_instance.is_some()
+        {
+            return None;
+        }
+
+        let plan = self.stream_plan.as_deref()?;
+        let (class, fields) = model_fields::root_parts(&self.validator)?;
+
+        let mut recursion_guard = RecursionState::default();
+        let mut state = ValidationState::new(
+            Extra::new(
+                strict,
+                extra_behavior,
+                None,
+                context,
+                InputType::Json,
+                self.cache_str,
+                by_alias,
+                by_name,
+            ),
+            &mut recursion_guard,
+            allow_partial,
+            None,
+            self_instance,
+        );
+        let mut jiter = jiter::Jiter::new(json_data);
+        match model_fields::take_root(py, &mut jiter, class, fields, plan, &mut state) {
+            // trailing content is an error the ordinary path reports
+            Ok(Some(value)) if jiter.finish().is_ok() => Some(Ok(value.unbind())),
+            Err(model_fields::StreamStop::Py(err)) => Some(Err(err.into())),
+            _ => None,
+        }
     }
 
     fn prepare_validation_err(&self, py: Python, error: ValError, input_type: InputType) -> PyErr {
