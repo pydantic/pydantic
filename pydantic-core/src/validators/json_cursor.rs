@@ -64,14 +64,25 @@ impl<'data> JsonCursor<'data> {
             .map_err(Self::parse_error)
     }
 
-    /// Jiter's skip checks JSON escapes, but deliberately omits raw UTF-8 checks.
-    /// Check the input once on the first skip instead of checking each skipped span.
+    /// Jiter checks syntax and escapes; ASCII scalars need no further UTF-8 proof.
+    /// Other values establish one document-wide proof rather than rescan containers.
     pub(super) fn skip_value(&mut self) -> ValResult<()> {
-        self.defer_value()?;
-        if !self.utf8_checked {
-            simdutf8::basic::from_utf8(self.data).map_err(Self::parse_error)?;
-            self.utf8_checked = true;
+        if self.utf8_checked {
+            return self.defer_value();
         }
+        let peek = self.jiter.peek().map_err(Self::parse_error)?;
+        let start = self.jiter.current_index();
+        self.jiter
+            .known_skip_with_recursion_limit(peek, 200 - self.depth)
+            .map_err(Self::parse_error)?;
+        if !matches!(peek, jiter::Peek::Array | jiter::Peek::Object)
+            && (peek != jiter::Peek::String || self.data[start..self.jiter.current_index()].is_ascii())
+        {
+            // This proves only the skipped value. Later skips still need checking.
+            return Ok(());
+        }
+        simdutf8::basic::from_utf8(self.data).map_err(Self::parse_error)?;
+        self.utf8_checked = true;
         Ok(())
     }
 
