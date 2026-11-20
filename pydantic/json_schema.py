@@ -1895,7 +1895,8 @@ class GenerateJsonSchema:
             # override this method and return True
             return not field.get('serialization_exclude') and not field.get('init_only')
         elif self.mode == 'validation':
-            return True
+            # Dataclass fields with `init=False` can't be provided as input.
+            return field.get('init', True)
         else:
             assert_never(self.mode)
 

@@ -3018,6 +3018,31 @@ def test_init_false_with_default(input_data, extra, expected, field_constructor)
 
 
 @pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
+def test_init_false_json_schema(field_constructor) -> None:
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
+    class MyDataclass:
+        a: int
+        b: int = field_constructor(init=False, default=1)
+
+    ta = TypeAdapter(MyDataclass)
+    # `b` can't be provided during validation, but is included when serializing:
+    assert ta.json_schema(mode='validation') == {
+        'additionalProperties': False,
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'title': 'MyDataclass',
+        'type': 'object',
+    }
+    assert ta.json_schema(mode='serialization') == {
+        'additionalProperties': False,
+        'properties': {'a': {'title': 'A', 'type': 'integer'}, 'b': {'default': 1, 'title': 'B', 'type': 'integer'}},
+        'required': ['a'],
+        'title': 'MyDataclass',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
 def test_init_false_dataclass_field(field_constructor) -> None:
     """https://github.com/pydantic/pydantic/issues/13833"""
 
