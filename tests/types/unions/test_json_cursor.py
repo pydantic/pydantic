@@ -1,6 +1,6 @@
 """Union selection and errors on cursor-backed container values."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 import pytest
 
@@ -81,3 +81,31 @@ def test_cursor_union_best_match_survives_later_branch_failure() -> None:
 def test_cursor_union_malformed_json_retains_json_error(data: str) -> None:
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
         TypeAdapter(list[int] | list[str]).validate_json(data)
+
+
+@pytest.mark.parametrize('kind', ['first', 'invalid'])
+def test_cursor_union_complete_model_errors_do_not_replay(kind: str) -> None:
+    calls: list[str] = []
+
+    def record(value: Any) -> Any:
+        calls.append('values')
+        return value
+
+    class First(BaseModel):
+        kind: Literal['first']
+        values: Annotated[list[int], BeforeValidator(record)]
+
+    class Second(BaseModel):
+        kind: Literal['second']
+        values: Annotated[list[int], BeforeValidator(record)]
+
+    adapter = TypeAdapter(First | Second)
+    data = f'{{"kind":"{kind}","values":[1]}}'
+    if kind == 'invalid':
+        with pytest.raises(ValidationError) as error:
+            adapter.validate_json(data)
+        assert [item['type'] for item in error.value.errors()] == ['literal_error', 'literal_error']
+    else:
+        assert isinstance(adapter.validate_json(data), First)
+    # Each branch visits its field once, including a branch with a preceding error.
+    assert calls == ['values', 'values']
