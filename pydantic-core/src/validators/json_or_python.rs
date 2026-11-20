@@ -58,6 +58,10 @@ impl Validator for JsonOrPython {
         }
     }
 
+    fn supports_json_cursor(&self) -> bool {
+        self.json.supports_json_cursor()
+    }
+
     fn validate_json_cursor<'py>(
         &self,
         py: Python<'py>,
