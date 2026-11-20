@@ -1497,6 +1497,21 @@ class GenerateJsonSchema:
         schema."""
         openapi_discriminator: str | None = None
 
+        if self.mode == 'serialization':
+            candidates: list[str] = []
+            if isinstance(schema['discriminator'], str):
+                candidates.append(schema['discriminator'])
+            elif isinstance(schema['discriminator'], list):
+                for alias_path in schema['discriminator']:
+                    if isinstance(alias_path, str):
+                        candidates.append(alias_path)
+                    elif isinstance(alias_path, list) and len(alias_path) == 1 and isinstance(alias_path[0], str):
+                        candidates.append(alias_path[0])
+
+            for serialized_name in self._serialization_discriminator_candidates(schema, candidates):
+                if self._discriminator_present_on_all_choices(serialized_name, one_of_choices):
+                    return serialized_name
+
         if isinstance(schema['discriminator'], str):
             return schema['discriminator']
 
@@ -1516,24 +1531,70 @@ class GenerateJsonSchema:
                 alias = alias_path[0]
                 if not isinstance(alias, str):
                     continue  # this means that the "alias" does not represent a field
-                alias_is_present_on_all_choices = True
-                for choice in one_of_choices:
-                    try:
-                        choice = self.resolve_ref_schema(choice)
-                    except RuntimeError as exc:
-                        # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
-                        # for tagged union choices at this point in the schema gen process, we might need to do
-                        # another pass at the end like we do for core schemas
-                        self.emit_warning('skipped-discriminator', str(exc))
-                        choice = {}
-                    properties = choice.get('properties', {})
-                    if not isinstance(properties, dict) or alias not in properties:
-                        alias_is_present_on_all_choices = False
-                        break
-                if alias_is_present_on_all_choices:
+                if self._discriminator_present_on_all_choices(alias, one_of_choices):
                     openapi_discriminator = alias
                     break
         return openapi_discriminator
+
+    def _discriminator_present_on_all_choices(self, alias: str, one_of_choices: list[JsonDict]) -> bool:
+        for choice in one_of_choices:
+            try:
+                choice = self.resolve_ref_schema(choice)
+            except RuntimeError as exc:
+                # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
+                # for tagged union choices at this point in the schema gen process, we might need to do
+                # another pass at the end like we do for core schemas
+                self.emit_warning('skipped-discriminator', str(exc))
+                choice = {}
+            properties = choice.get('properties', {})
+            if not isinstance(properties, dict) or alias not in properties:
+                return False
+        return True
+
+    def _serialization_discriminator_candidates(
+        self, schema: core_schema.TaggedUnionSchema, candidates: list[str]
+    ) -> list[str]:
+        if not candidates:
+            return []
+        candidate_set = set(candidates)
+        serialized: list[str] = []
+        seen: set[str] = set()
+
+        def visit_choice(choice: CoreSchema) -> None:
+            choice_type = choice['type']
+            if choice_type == 'definitions':
+                visit_choice(choice['schema'])
+            elif choice_type == 'definition-ref':
+                defn = self.definitions.get(choice['schema_ref'])
+                if defn is not None:
+                    visit_choice(defn)
+            elif choice_type in ('model', 'typed-dict', 'dataclass'):
+                inner = choice.get('schema')
+                if isinstance(inner, dict):
+                    visit_choice(inner)  # type: ignore[arg-type]
+            elif choice_type in ('model-fields', 'typed-dict', 'dataclass-args'):
+                fields = choice.get('fields', {})
+                if isinstance(fields, dict):
+                    for field_name, field in fields.items():
+                        if not isinstance(field, dict):
+                            continue
+                        val_alias = field.get('validation_alias')
+                        matches_candidate = field_name in candidate_set or (
+                            isinstance(val_alias, str) and val_alias in candidate_set
+                        )
+                        if not matches_candidate and isinstance(val_alias, list):
+                            matches_candidate = any(
+                                isinstance(p, list) and len(p) == 1 and p[0] in candidate_set for p in val_alias
+                            )
+                        if matches_candidate:
+                            ser_name = self._get_alias_name(field, field_name)  # type: ignore[arg-type]
+                            if ser_name not in seen:
+                                seen.add(ser_name)
+                                serialized.append(ser_name)
+
+        for choice in schema['choices'].values():
+            visit_choice(choice)
+        return serialized
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a core_schema.ChainSchema.

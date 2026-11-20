@@ -7952,3 +7952,43 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_discriminator_serialization_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/14284"""
+
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='petType')
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='petType')
+
+    class Owner(BaseModel):
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+
+    ser_schema = Owner.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['pet']['discriminator'] == {
+        'propertyName': 'petType',
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+    }
+
+    class Circle(BaseModel):
+        shape: Literal['circle'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+
+    class Square(BaseModel):
+        shape: Literal['square'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+
+    class Drawing(BaseModel):
+        item: Union[Circle, Square] = Field(discriminator='shape')
+
+    val_schema = Drawing.model_json_schema(mode='validation')
+    assert val_schema['properties']['item']['discriminator'] == {
+        'propertyName': 'in_shape',
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+    }
+
+    ser_drawing = Drawing.model_json_schema(mode='serialization')
+    assert ser_drawing['properties']['item']['discriminator'] == {
+        'propertyName': 'out_shape',
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+    }
