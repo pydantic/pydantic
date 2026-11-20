@@ -162,14 +162,22 @@ impl FunctionAfterValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let v = call(input, state)?;
-        let r = if self.info_arg {
+        self.call_after(v, py, state).map_err(|e| convert_err(py, e, input))
+    }
+
+    fn call_after<'py>(
+        &self,
+        value: Py<PyAny>,
+        py: Python<'py>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> PyResult<Py<PyAny>> {
+        if self.info_arg {
             let field_name = state.field_name().cloned().map(Bound::unbind);
             let info = ValidationInfo::new(py, state, &self.config, field_name);
-            self.func.call1(py, (v, info))
+            self.func.call1(py, (value, info))
         } else {
-            self.func.call1(py, (v,))
-        };
-        r.map_err(|e| convert_err(py, e, input))
+            self.func.call1(py, (value,))
+        }
     }
 }
 
