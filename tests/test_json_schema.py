@@ -7952,3 +7952,62 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_discriminator_serialization_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/14284"""
+
+    # Case 1: discriminator.propertyName reflects serialization_alias
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='petType')
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='petType')
+        barks: float
+
+    Pet = Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    class Household(BaseModel):
+        pet: Pet
+
+    ser_schema = Household.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['pet']['discriminator']['propertyName'] == 'petType'
+
+    ser_schema_no_alias = Household.model_json_schema(mode='serialization', by_alias=False)
+    assert ser_schema_no_alias['properties']['pet']['discriminator']['propertyName'] == 'pet_type'
+
+    val_schema = Household.model_json_schema(mode='validation')
+    assert val_schema['properties']['pet']['discriminator']['propertyName'] == 'pet_type'
+
+    # Case 2: discriminator metadata retained when both validation and serialization aliases are specified
+    class Circle(BaseModel):
+        shape_type: Literal['circle'] = Field(
+            validation_alias='in_shape',
+            serialization_alias='out_shape',
+        )
+        radius: float
+
+    class Square(BaseModel):
+        shape_type: Literal['square'] = Field(
+            validation_alias='in_shape',
+            serialization_alias='out_shape',
+        )
+        side: float
+
+    Shape = Annotated[Circle | Square, Field(discriminator='shape_type')]
+
+    class Canvas(BaseModel):
+        shape: Shape
+
+    val_schema_canvas = Canvas.model_json_schema(mode='validation')
+    assert val_schema_canvas['properties']['shape']['discriminator']['propertyName'] == 'in_shape'
+
+    ser_schema_canvas = Canvas.model_json_schema(mode='serialization')
+    assert 'discriminator' in ser_schema_canvas['properties']['shape']
+    assert ser_schema_canvas['properties']['shape']['discriminator']['propertyName'] == 'out_shape'
+
+    ser_schema_canvas_no_alias = Canvas.model_json_schema(mode='serialization', by_alias=False)
+    assert 'discriminator' in ser_schema_canvas_no_alias['properties']['shape']
+    assert ser_schema_canvas_no_alias['properties']['shape']['discriminator']['propertyName'] == 'shape_type'
+
