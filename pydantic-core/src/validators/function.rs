@@ -198,6 +198,19 @@ impl Validator for FunctionAfterValidator {
         #[allow(clippy::used_underscore_items)]
         self._validate(validate, py, input, state)
     }
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        let start = input.jiter.current_index();
+        let data = input.data;
+        let value = self.validator.validate_json_cursor(py, input, state)?;
+        self.call_after(value, py, state)
+            .map_err(|error| convert_err(py, error, &super::JsonCursor::new(&data[start..])))
+    }
+
     fn validate_assignment<'py>(
         &self,
         py: Python<'py>,
