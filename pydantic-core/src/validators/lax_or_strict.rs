@@ -80,6 +80,10 @@ impl Validator for LaxOrStrictValidator {
         }
     }
 
+    fn supports_json_cursor(&self) -> bool {
+        self.lax_validator.supports_json_cursor() || self.strict_validator.supports_json_cursor()
+    }
+
     fn validate_json_cursor<'py>(
         &self,
         py: Python<'py>,
