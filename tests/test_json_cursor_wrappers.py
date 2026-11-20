@@ -3,6 +3,7 @@
 from typing import Annotated, Any
 
 import pytest
+from pydantic_core import SchemaValidator, core_schema
 
 from pydantic import AfterValidator, BaseModel, TypeAdapter, ValidationError, ValidationInfo
 
@@ -71,3 +72,45 @@ def test_after_container_invalid_skipped_utf8() -> None:
         adapter.validate_json(b'{"value": 1, "ignored": "\xff"}')
     assert exc_info.value.errors()[0]['type'] == 'json_invalid'
     assert calls == []
+
+
+def test_json_or_python_container_branch() -> None:
+    schema = core_schema.json_or_python_schema(
+        core_schema.list_schema(core_schema.int_schema()),
+        core_schema.list_schema(core_schema.str_schema()),
+    )
+    validator = SchemaValidator(schema)
+    assert validator.validate_json('["1", 2]') == [1, 2]
+    assert validator.validate_python(['1', '2']) == ['1', '2']
+    with pytest.raises(ValidationError) as caught:
+        validator.validate_json('["bad"]')
+    assert caught.value.errors()[0]['loc'] == (0,)
+    assert caught.value.errors()[0]['input'] == 'bad'
+
+
+@pytest.mark.parametrize('default_strict', [False, True])
+def test_lax_or_strict_container_branch(default_strict: bool) -> None:
+    schema = core_schema.lax_or_strict_schema(
+        core_schema.list_schema(core_schema.int_schema()),
+        core_schema.list_schema(core_schema.str_schema()),
+        strict=default_strict,
+    )
+    validator = SchemaValidator(schema)
+    assert validator.validate_json('["1"]') == (['1'] if default_strict else [1])
+    assert validator.validate_json('["1"]', strict=False) == [1]
+    assert validator.validate_json('["1"]', strict=True) == ['1']
+    with pytest.raises(ValidationError) as caught:
+        validator.validate_json('[1]', strict=True)
+    assert caught.value.errors()[0]['type'] == 'string_type'
+
+
+def test_lax_or_strict_container_smart_union_exactness() -> None:
+    branch = core_schema.lax_or_strict_schema(
+        core_schema.list_schema(core_schema.str_schema()),
+        core_schema.list_schema(core_schema.int_schema(strict=True)),
+    )
+    labeled = core_schema.no_info_after_validator_function(lambda value: ('wrapped', value), branch)
+    validator = SchemaValidator(
+        core_schema.list_schema(core_schema.union_schema([labeled, core_schema.list_schema(core_schema.str_schema())]))
+    )
+    assert validator.validate_json('[["1"], [2]]') == [['1'], ('wrapped', [2])]
