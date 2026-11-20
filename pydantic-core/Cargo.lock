@@ -313,8 +313,7 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 [[package]]
 name = "jiter"
 version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4027f86130c7a1997f880ed407580e58514b867af49e7ce44370f80fa6ff999f"
+source = "git+https://github.com/pydantic/jiter.git?rev=1dfc4e90425b192fc661a62916ea72f9ba3e9675#1dfc4e90425b192fc661a62916ea72f9ba3e9675"
 dependencies = [
  "ahash",
  "bitvec",
@@ -470,6 +469,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "simdutf8",
  "smallvec",
  "speedate",
  "strum",
@@ -631,6 +631,12 @@ dependencies = [
  "serde_core",
  "zmij",
 ]
+
+[[package]]
+name = "simdutf8"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
 
 [[package]]
 name = "smallvec"
