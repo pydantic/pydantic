@@ -198,6 +198,10 @@ impl Validator for FunctionAfterValidator {
         #[allow(clippy::used_underscore_items)]
         self._validate(validate, py, input, state)
     }
+    fn supports_json_cursor(&self) -> bool {
+        self.validator.supports_json_cursor()
+    }
+
     fn validate_json_cursor<'py>(
         &self,
         py: Python<'py>,
