@@ -3,7 +3,7 @@ import pytest
 from pydantic import BaseModel, ImportString, TypeAdapter, ValidationError
 
 
-@pytest.mark.parametrize('value', ['.os', '..os', '.', '.os:path', '.os.path', ' .os'])
+@pytest.mark.parametrize('value', ['.os', '..os', '.', '..', '.os:path', '.os.path', ' .os', '\t.os'])
 def test_import_string_relative_path_is_validation_error(value: str) -> None:
     with pytest.raises(
         ValidationError,
