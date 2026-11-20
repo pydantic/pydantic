@@ -1,6 +1,7 @@
+import json
 from collections import deque
 from collections.abc import MutableSequence
-from typing import Annotated
+from typing import Annotated, Literal
 
 import annotated_types
 import dirty_equals
@@ -8,6 +9,7 @@ import pytest
 from dirty_equals import IsOneOf
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from pydantic.types import OnErrorOmit
 
 
 @pytest.mark.parametrize(
@@ -322,3 +324,19 @@ def test_list_serialization_include_exclude_indices(mode) -> None:
     ]
     assert ta.dump_python(items, mode=mode, exclude={1, -1}) == [{'a': 0, 'b': 0}, {'a': 2, 'b': 2}]
     assert ta.dump_python(items, mode=mode, include={-2: {'a'}, 0: ...}) == [{'a': 0, 'b': 0}, {'a': 2}]
+
+
+@pytest.mark.parametrize('length', [0, 1, 7, 8, 9, 17])
+@pytest.mark.parametrize('mode', ['python', 'json', 'iterator'])
+def test_list_omit_length_constraints(length: int, mode: Literal['python', 'json', 'iterator']) -> None:
+    adapter = TypeAdapter(Annotated[list[OnErrorOmit[int]], Field(min_length=length, max_length=length)])
+    data = [str(i) for i in range(length)] + ['invalid']
+
+    if mode == 'json':
+        result = adapter.validate_json(json.dumps(data))
+    elif mode == 'iterator':
+        result = adapter.validate_python(iter(data))
+    else:
+        result = adapter.validate_python(data)
+
+    assert result == list(range(length))
