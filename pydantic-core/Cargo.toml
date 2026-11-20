@@ -24,6 +24,11 @@ include = [
 ]
 rust-version = "1.88"
 
+[features]
+# Check the streaming json path against the ordinary one on every call. Never released;
+# turns every existing test into a differential test of that path.
+stream-verify = []
+
 [dependencies]
 # TODO it would be very nice to remove the "py-clone" feature as it can panic,
 # but needs a bit of work to make sure it's not used in the codebase
