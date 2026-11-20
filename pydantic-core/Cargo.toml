@@ -45,7 +45,8 @@ base64 = "0.23.1"
 num-bigint = "0.4.6"
 num-traits = "0.2.19"
 uuid = "1.23.2"
-jiter = { version = "0.19.0", features = ["python"] }
+jiter = { git = "https://github.com/pydantic/jiter.git", rev = "1dfc4e90425b192fc661a62916ea72f9ba3e9675", features = ["python"] }
+simdutf8 = "0.1.5"
 hex = "0.4.3"
 percent-encoding = "2.3.2"
 hashbrown = { version = "0.17", default-features = false, features = ["inline-more"] }
