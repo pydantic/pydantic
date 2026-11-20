@@ -1,3 +1,5 @@
+"""Cover absent model fields with plain, validated, and callback defaults."""
+
 from typing import Annotated
 
 import pytest
@@ -16,6 +18,8 @@ def test_json_missing_defaults(benchmark: BenchmarkFixture, kind: str) -> None:
     model = create_model('DefaultValue', value=(annotation, Field(default=' Alice ', validate_default=kind != 'plain')))
     adapter = TypeAdapter(list[model])
     data = b'[' + b','.join([b'{}'] * 1000) + b']'
-    expected = 'Alice' if kind == 'callback' else ' Alice '
-    assert adapter.validate_json(data)[-1].value == expected
+    expected = {'value': 'Alice' if kind == 'callback' else ' Alice '}
+    result = adapter.validate_json(data)
+    assert len(result) == 1000
+    assert all(item.model_dump() == expected for item in result)
     benchmark(adapter.validate_json, data)
