@@ -1,0 +1,31 @@
+tests/benchmarks/test_integer_validation.py
+  s_d4a691b07897c1::t_b245730ad82b63 1-37
+tests/benchmarks/test_short_lists.py
+  s_d4a691b07897c1::t_b245730ad82b63 1-43
+tests/benchmarks/test_json_bounded_lists.py
+  s_d4a691b07897c1::t_b245730ad82b63 1-25
+tests/benchmarks/test_json_field_order.py
+  s_d4a691b07897c1::t_b245730ad82b63 1-23
+tests/benchmarks/test_json_missing_defaults.py
+  s_d4a691b07897c1::t_b245730ad82b63 1-25
+tests/benchmarks/test_iterable_collections.py
+  s_d4a691b07897c1::t_b245730ad82b63 1-31
+pydantic-core/python/pydantic_core/_pydantic_core/__init__.pyi
+  s_d4a691b07897c1::t_b245730ad82b63 941-942,944,1033,1036,1039
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a97ba39b412bf4fe6304805505f7211c4a02ea40",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
