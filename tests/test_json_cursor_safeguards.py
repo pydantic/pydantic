@@ -1,8 +1,12 @@
 """Checked cursor skips retain JSON validity across input kinds and deferred fields."""
 
-import pytest
+import json
+from typing import Any
 
-from pydantic import BaseModel, ValidationError
+import pytest
+from pydantic_core import from_json
+
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize('input_kind', ['str', 'bytes', 'bytearray'])
@@ -74,3 +78,49 @@ def test_checked_skips_reject_python_string_surrogates(surrogate: str) -> None:
 
     with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'string_unicode'):
         Model.model_validate_json('{"a":1,"ignored":"' + surrogate + '"}')
+
+
+@pytest.mark.parametrize('route', ['ignored', 'materialized', 'deferred', 'overwritten', 'list_item', 'nested_model'])
+@pytest.mark.parametrize('depth', [198, 199, 200, 201])
+@pytest.mark.parametrize('leaf', ['1', '[]', '{}'])
+def test_cursor_subtrees_retain_document_depth(route: str, depth: int, leaf: str) -> None:
+    class Model(BaseModel):
+        a: int
+        b: Any = None
+
+    subtree = '[' * depth + leaf + ']' * depth
+    if route == 'ignored':
+        document = '{"a":1,"ignored":' + subtree + '}'
+        adapter = TypeAdapter(Model)
+    elif route == 'materialized':
+        document = '{"a":1,"b":' + subtree + '}'
+        adapter = TypeAdapter(Model)
+    elif route == 'deferred':
+        document = '{"b":' + subtree + ',"a":1}'
+        adapter = TypeAdapter(Model)
+    elif route == 'overwritten':
+        document = '{"b":' + subtree + ',"b":0,"a":1}'
+        adapter = TypeAdapter(Model)
+    elif route == 'list_item':
+        document = '[' + subtree + ']'
+        adapter = TypeAdapter(list[Any])
+    else:
+        document = '[{"a":1,"b":' + subtree + '}]'
+        adapter = TypeAdapter(list[Model])
+    try:
+        from_json(document)
+    except ValueError:
+        with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+            adapter.validate_json(document)
+    else:
+        adapter.validate_json(document)
+
+
+def test_cursor_depth_ignores_escaped_string_brackets() -> None:
+    class Model(BaseModel):
+        a: int
+        b: Any
+
+    text = '[{\\"' * 500
+    document = json.dumps({'b': [text], 'ignored': [text], 'a': 1})
+    assert Model.model_validate_json(document).b == [text]
