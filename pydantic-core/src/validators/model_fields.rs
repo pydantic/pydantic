@@ -412,9 +412,7 @@ impl ModelFieldsValidator {
                         field,
                         Some((
                             &field.lookup_path_collection.by_name,
-                            |state: &mut ValidationState<'_, 'py>| {
-                                field.validator.validate_json_cursor(py, input, state)
-                            },
+                            |state: &mut ValidationState<'_, 'py>| input.validate_next(py, &field.validator, state),
                         )),
                     )?;
                     next_field += 1;
@@ -431,11 +429,7 @@ impl ModelFieldsValidator {
                             Some((
                                 &field.lookup_path_collection.by_name,
                                 |state: &mut ValidationState<'_, 'py>| {
-                                    field.validator.validate_json_cursor(
-                                        py,
-                                        &mut super::JsonCursor::new(&data[start..]),
-                                        state,
-                                    )
+                                    super::JsonCursor::new(&data[start..]).validate_next(py, &field.validator, state)
                                 },
                             )),
                         )?;
@@ -470,9 +464,7 @@ impl ModelFieldsValidator {
                     (
                         &field.lookup_path_collection.by_name,
                         move |state: &mut ValidationState<'_, 'py>| {
-                            field
-                                .validator
-                                .validate_json_cursor(py, &mut super::JsonCursor::new(&data[start..]), state)
+                            super::JsonCursor::new(&data[start..]).validate_next(py, &field.validator, state)
                         },
                     )
                 }),
