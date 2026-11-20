@@ -508,8 +508,9 @@ Pydantic also provides the following types to further constrain the allowed date
 
 <h4>Strictness</h4>
 
-In [strict mode](../concepts/strict_mode.md), only [`datetime`][datetime.datetime] instances are accepted. In JSON mode, only strings complying to the
-[RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (*only* datetime) or as unix timestamps are accepted.
+In [strict mode](../concepts/strict_mode.md), only [`datetime`][datetime.datetime] instances are accepted in Python mode.
+In JSON mode, strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) datetime format and strings containing
+Unix timestamps are accepted. JSON numbers are rejected.
 
 <h4>Example</h4>
 
@@ -582,8 +583,9 @@ Pydantic also provides the following types to further constrain the allowed date
 
 <h4>Strictness</h4>
 
-In [strict mode](../concepts/strict_mode.md), only [`date`][datetime.date] instances are accepted. In JSON mode, only strings complying to the
-[RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (*only* date) or as unix timestamps are accepted.
+In [strict mode](../concepts/strict_mode.md), only [`date`][datetime.date] instances are accepted in Python mode.
+In JSON mode, strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) date format and strings containing
+Unix timestamps are accepted. JSON numbers are rejected.
 
 <h4>Example</h4>
 
