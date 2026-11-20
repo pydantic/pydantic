@@ -1,0 +1,23 @@
+pydantic-core/Cargo.toml
+  s_d4a691b07897c1::t_3c83bb36773a46 48
+pydantic-core/src/validators/json_cursor.rs
+  s_d4a691b07897c1::t_3c83bb36773a46 60-69,75
+pydantic-core/Cargo.lock
+  s_d4a691b07897c1::t_58ede86dc22074 316
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1cdb9cd3d94b0e95ceb80616b36c7e63d75f819a",
+  "prompts": {},
+  "sessions": {
+    "s_d4a691b07897c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f3a8-88c7-7fa2-9bb8-6aca02aa037a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Alex Hall <alex.mojaki@gmail.com>"
+    }
+  }
+}
