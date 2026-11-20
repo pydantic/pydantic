@@ -80,6 +80,15 @@ impl<'data> JsonCursor<'data> {
         Ok(())
     }
 
+    /// Consume the remainder of an object after its current value was consumed.
+    #[cold]
+    pub(super) fn finish_object(&mut self) -> ValResult<()> {
+        while self.jiter.next_key().map_err(Self::parse_error)?.is_some() {
+            self.skip_value()?;
+        }
+        Ok(())
+    }
+
     pub(super) fn value_for_context(&self) -> &JsonValue<'data> {
         // Error input is provisional: malformed subtrees can use a placeholder because
         // the entire failed attempt is retried through ordinary validation.
