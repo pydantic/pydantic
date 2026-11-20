@@ -254,9 +254,9 @@ impl Validator for ModelValidator {
     ) -> ValResult<Py<PyAny>> {
         if !self.supports_json_cursor()
             || state.self_instance.is_some()
-            || !matches!(
+            || matches!(
                 state.extra_behavior_or(crate::build_tools::ExtraBehavior::Ignore),
-                crate::build_tools::ExtraBehavior::Ignore
+                crate::build_tools::ExtraBehavior::Allow
             )
             || !matches!(input.jiter.peek(), Ok(jiter::Peek::Object))
         {
