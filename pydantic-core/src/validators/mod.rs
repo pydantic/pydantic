@@ -141,9 +141,15 @@ impl_py_gc_traverse!(SchemaValidator {
 
 #[pymethods]
 impl SchemaValidator {
-    /// Whether this schema has a cached streaming plan. Individual inputs may still fall back.
-    #[getter]
-    fn _stream_plan_accepted(&self) -> bool {
+    /// Compatibility view of the original narrow eligibility; inputs may still fall back.
+    #[getter(_stream_plan_accepted)]
+    fn stream_plan_accepted(&self) -> bool {
+        self.stream_plan.as_ref().is_some_and(|plan| plan.narrow_eligible)
+    }
+
+    /// Whether this schema has an expanded cached plan, including the original narrow subset.
+    #[getter(_expanded_stream_plan_accepted)]
+    fn expanded_stream_plan_accepted(&self) -> bool {
         self.stream_plan.is_some()
     }
 
@@ -511,7 +517,12 @@ impl SchemaValidator {
             // The debug verifier compares successful results and may run construction hooks
             // again on the ordinary path.
             #[cfg(feature = "stream-verify")]
-            if let Ok(streamed) = &result {
+            if let Ok(streamed) = &result
+                && self
+                    .stream_plan
+                    .as_deref()
+                    .is_some_and(model_fields::ModelPlan::can_verify)
+            {
                 let tree = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
                     .map_err(|e| json::map_json_err(input, e, json_data))
                     .and_then(|json_value| {
@@ -581,7 +592,11 @@ impl SchemaValidator {
         }
 
         let plan = self.stream_plan.as_deref()?;
-        let (class, fields) = model_fields::root_parts(&self.validator)?;
+        let model = if plan.is_model_root() {
+            Some(model_fields::root_parts(&self.validator)?)
+        } else {
+            None
+        };
 
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
@@ -601,7 +616,7 @@ impl SchemaValidator {
             self_instance,
         );
         let mut jiter = jiter::Jiter::new(json_data);
-        match model_fields::take_root(py, &mut jiter, class, fields, plan, &mut state) {
+        match model_fields::take_root(py, &mut jiter, model, plan, &mut state) {
             // trailing content is an error the ordinary path reports
             Ok(Some(value)) if jiter.finish().is_ok() => Some(Ok(value.unbind())),
             Err(model_fields::StreamStop::Py(err)) => Some(Err(err.into())),

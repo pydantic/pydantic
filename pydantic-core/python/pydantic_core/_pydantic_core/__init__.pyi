@@ -938,10 +938,10 @@ class PydanticUseDefault(Exception):
 
         event1 = Event(name='party', time=datetime(2024, 1, 1, 12, 0, 0))
         print(repr(event1))
-        # > Event(name='party', time=datetime.datetime(2024, 1, 1, 12, 0))
-        event2 = Event(time=datetime(2024, 1, 1, 12, 0, 0))
+        #> Event(name='party', time=datetime.datetime(2024, 1, 1, 12, 0))
+        event2 = Event(name=None, time=datetime(2024, 1, 1, 12, 0, 0))
         print(repr(event2))
-        # > Event(name='meeting', time=datetime.datetime(2024, 1, 1, 12, 0))
+        #> Event(name='meeting', time=datetime.datetime(2024, 1, 1, 12, 0))
         ```
 
     For an additional example, see the [validating partial json data](../concepts/json.md#partial-json-parsing) section of the Pydantic documentation.
@@ -1030,13 +1030,13 @@ class ArgsKwargs:
                 return values
 
         Model(1, b=2)
-        #> ArgsKwargs((1,), {"b": 2})
+        #> ArgsKwargs((1,), {'b': 2})
 
         Model(1, 2)
-        #> ArgsKwargs((1, 2), {})
+        #> ArgsKwargs((1, 2))
 
         Model(a=1, b=2)
-        #> ArgsKwargs((), {"a": 1, "b": 2})
+        #> ArgsKwargs((), {'a': 1, 'b': 2})
         ```
     """
 

@@ -156,6 +156,13 @@ fn deep_eq(a: &Bound<'_, PyAny>, b: &Bound<'_, PyAny>, seen: &mut HashSet<(usize
     if let (Ok(fa), Ok(fb)) = (a.cast::<PyFloat>(), b.cast::<PyFloat>()) {
         return Ok(fa.value().to_bits() == fb.value().to_bits());
     }
+    // Decimal NaNs also compare unequal to themselves. Retain their sign and payload.
+    if a.get_type().is(crate::validators::decimal::get_decimal_type(a.py())?)
+        && a.call_method0("is_nan")?.is_truthy()?
+        && b.call_method0("is_nan")?.is_truthy()?
+    {
+        return a.call_method0("as_tuple")?.eq(b.call_method0("as_tuple")?);
+    }
     a.eq(b)
 }
 
@@ -196,6 +203,24 @@ mod tests {
                 let b = locals.get_item("b")?.unwrap();
                 assert!(describe(&a).contains("<recursive>"));
                 compare(py, &a.unbind(), Ok(b.unbind()))?;
+            }
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn decimal_nan_comparison_preserves_sign_and_payload() -> PyResult<()> {
+        Python::attach(|py| {
+            let decimal = crate::validators::decimal::get_decimal_type(py)?;
+            for (left, right, equal) in [
+                ("NaN", "NaN", true),
+                ("NaN12", "NaN12", true),
+                ("NaN12", "NaN13", false),
+                ("NaN", "-NaN", false),
+            ] {
+                let a = decimal.call1((left,))?.unbind();
+                let b = decimal.call1((right,))?.unbind();
+                assert_eq!(compare(py, &a, Ok(b)).is_ok(), equal);
             }
             Ok(())
         })
