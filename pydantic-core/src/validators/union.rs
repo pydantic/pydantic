@@ -102,9 +102,9 @@ impl BuildValidator for UnionValidator {
 impl UnionValidator {
     fn validate_smart<'py>(
         &self,
-        py: Python<'py>,
-        input: &(impl Input<'py> + ?Sized),
+        input: impl ToErrorValue,
         state: &mut ValidationState<'_, 'py>,
+        mut validate: impl FnMut(&CombinedValidator, &mut ValidationState<'_, 'py>) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
         let old_exactness = state.exactness;
         let old_fields_set_count = state.fields_set_count;
@@ -117,7 +117,7 @@ impl UnionValidator {
         for (choice, label) in &self.choices {
             state.exactness = Some(Exactness::Exact);
             state.fields_set_count = None;
-            let result = choice.validate(py, input, state);
+            let result = validate(choice, state);
             match result {
                 Ok(new_success) => match (state.exactness, state.fields_set_count) {
                     (Some(Exactness::Exact), None) => {
@@ -193,14 +193,14 @@ impl UnionValidator {
 
     fn validate_left_to_right<'py>(
         &self,
-        py: Python<'py>,
-        input: &(impl Input<'py> + ?Sized),
+        input: impl ToErrorValue,
         state: &mut ValidationState<'_, 'py>,
+        mut validate: impl FnMut(&CombinedValidator, &mut ValidationState<'_, 'py>) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
 
         for (validator, label) in &self.choices {
-            match validator.validate(py, input, state) {
+            match validate(validator, state) {
                 Err(ValError::LineErrors(lines)) => errors.push(validator, label.as_deref(), lines),
                 otherwise => return otherwise,
             }
@@ -225,8 +225,10 @@ impl Validator for UnionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         match self.mode {
-            UnionMode::Smart => self.validate_smart(py, input, state),
-            UnionMode::LeftToRight => self.validate_left_to_right(py, input, state),
+            UnionMode::Smart => self.validate_smart(input, state, |choice, state| choice.validate(py, input, state)),
+            UnionMode::LeftToRight => {
+                self.validate_left_to_right(input, state, |choice, state| choice.validate(py, input, state))
+            }
         }
     }
 
