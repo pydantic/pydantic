@@ -66,14 +66,25 @@ impl<'data> JsonCursor<'data> {
     }
 
     /// Do not let a parent advance from a child which stopped inside its value.
+    #[inline]
     pub(super) fn validate_next<'py>(
         &mut self,
         py: Python<'py>,
         validator: &CombinedValidator,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        match validator.validate_json_cursor(py, self, state) {
-            Err(ValError::LineErrors(_)) if self.incomplete_validation_error => Err(Self::parse_error(())),
+        let result = validator.validate_json_cursor(py, self, state);
+        if self.incomplete_validation_error {
+            Self::reject_incomplete_error(result)
+        } else {
+            result
+        }
+    }
+
+    #[cold]
+    fn reject_incomplete_error<T>(result: ValResult<T>) -> ValResult<T> {
+        match result {
+            Err(ValError::LineErrors(_)) => Err(Self::parse_error(())),
             result => result,
         }
     }
