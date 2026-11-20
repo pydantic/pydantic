@@ -1,8 +1,9 @@
+import json
 import re
 from decimal import Decimal
 from enum import StrEnum
 from numbers import Number
-from typing import Annotated
+from typing import Annotated, Literal
 
 import annotated_types
 import pytest
@@ -334,3 +335,15 @@ def test_str_validate_json():
         ta.validate_json('false')
     with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
         ta.validate_json('123')
+
+
+@pytest.mark.parametrize('length', [0, 1, 8, 9])
+@pytest.mark.parametrize('ensure_ascii', [False, True])
+@pytest.mark.parametrize('cache_mode', ['all', 'none'])
+def test_json_string_list_dispatch(length: int, ensure_ascii: bool, cache_mode: Literal['all', 'none']) -> None:
+    values = ['repeat-中文\n"\\'] * length
+    adapter = TypeAdapter(list[str], config=ConfigDict(cache_strings=cache_mode))
+    result = adapter.validate_json(json.dumps(values, ensure_ascii=ensure_ascii).encode())
+    assert result == values
+    if cache_mode == 'all' and length > 1:
+        assert result[0] is result[1]
