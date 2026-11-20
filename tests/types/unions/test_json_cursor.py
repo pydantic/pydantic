@@ -1,6 +1,7 @@
 """Union selection and errors on cursor-backed container values."""
 
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
 import pytest
 
@@ -109,3 +110,11 @@ def test_cursor_union_complete_model_errors_do_not_replay(kind: str) -> None:
         assert isinstance(adapter.validate_json(data), First)
     # Each branch visits its field once, including a branch with a preceding error.
     assert calls == ['values', 'values']
+
+
+@pytest.mark.parametrize('uuid_first', [False, True])
+def test_cursor_union_json_string_preserves_uuid_winner(uuid_first: bool) -> None:
+    annotation = list[UUID] | list[str] if uuid_first else list[str] | list[UUID]
+    value = '12345678-1234-5678-1234-567812345678'
+    result = TypeAdapter(annotation).validate_json(f'["{value}"]')
+    assert result == [UUID(value)]
