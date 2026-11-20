@@ -267,7 +267,11 @@ impl Validator for ModelValidator {
                 unreachable!()
             };
             state.floor_exactness(Exactness::Strict);
-            let (model_dict, model_extra, fields_set) = fields.validate_cursor_fields(py, input, state)?;
+            let (model_dict, model_extra, fields_set) = match fields.validate_cursor_fields(py, input, state) {
+                Ok(values) => values,
+                Err(ValError::UseDefault) => return Err(super::JsonCursor::parse_error(())),
+                Err(error) => return Err(error),
+            };
             self.construct_from_fields(
                 py,
                 &*input,
