@@ -118,3 +118,22 @@ def test_cursor_dict_maximum_preserves_json_syntax_priority(data: bytes) -> None
     with pytest.raises(ValidationError) as actual:
         SchemaValidator(schema).validate_json(data)
     assert actual.value.errors()[0]['type'] == 'json_invalid'
+
+
+@pytest.mark.parametrize('fail_fast', [False, True])
+def test_cursor_dict_key_errors_do_not_replay_values(fail_fast: bool) -> None:
+    calls: list[int] = []
+
+    def record(value: int) -> int:
+        calls.append(value)
+        return value
+
+    schema = core_schema.dict_schema(
+        core_schema.int_schema(),
+        core_schema.no_info_after_validator_function(record, core_schema.int_schema()),
+        fail_fast=fail_fast,
+    )
+    with pytest.raises(ValidationError) as actual:
+        SchemaValidator(schema).validate_json('{"1":1,"bad":3,"2":2}')
+    assert [error['loc'] for error in actual.value.errors()] == [('bad', '[key]')]
+    assert calls == ([1] if fail_fast else [1, 3, 2])
