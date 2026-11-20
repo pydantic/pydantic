@@ -1064,6 +1064,8 @@ def test_name_email_rejects_cr_lf(value: str) -> None:
     [
         ('"name@mailbox.com" <name@mailbox.com>', 'name@mailbox.com'),
         ('"Doe, John" <john@example.com>', 'Doe, John'),
+        (r'"Doe, \"John\"" <john@example.com>', 'Doe, "John"'),
+        (r'"Doe\\John" <john@example.com>', r'Doe\John'),
     ],
 )
 def test_name_email_serialization(value: str, name: str):

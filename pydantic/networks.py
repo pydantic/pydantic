@@ -1177,7 +1177,9 @@ class NameEmail(_repr.Representation):
 
     def __str__(self) -> str:
         if self.name and not _unquoted_name_regex.fullmatch(self.name):
-            return f'"{self.name}" <{self.email}>'
+            # Inside a quoted display name, backslashes and double quotes must be escaped (RFC 5322 quoted-pair).
+            quoted_name = self.name.replace('\\', '\\\\').replace('"', '\\"')
+            return f'"{quoted_name}" <{self.email}>'
 
         return f'{self.name} <{self.email}>'
 
@@ -1373,6 +1375,7 @@ def validate_email(value: str) -> tuple[str, str]:
 
         * Raw IP address (literal) domain parts are not allowed.
         * `"John Doe <local_part@domain.com>"` style "pretty" email addresses are processed.
+        * In a quoted display name, backslash escapes (RFC 5322 quoted-pairs) are removed.
         * Spaces are striped from the beginning and end of addresses, but no error is raised.
     """
     if email_validator is None:
@@ -1400,6 +1403,9 @@ def validate_email(value: str) -> tuple[str, str]:
     name: str | None = None
     if m:
         unquoted_name, quoted_name, value = m.groups()
+        if quoted_name:
+            # Undo the backslash escapes of a quoted display name (RFC 5322 quoted-pair).
+            quoted_name = re.sub(r'\\(.)', r'\1', quoted_name)
         name = unquoted_name or quoted_name
 
     email = value.strip()
