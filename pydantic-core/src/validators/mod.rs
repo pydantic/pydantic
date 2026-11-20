@@ -502,13 +502,16 @@ impl SchemaValidator {
                 None,
             );
             let mut cursor = JsonCursor::new(json_data);
-            if let Ok(output) = self.validator.validate_json_cursor(py, &mut cursor, &mut state)
-                && cursor.jiter.finish().is_ok()
-            {
-                return Ok(output);
+            let result = self.validator.validate_json_cursor(py, &mut cursor, &mut state);
+            if cursor.jiter.finish().is_ok() {
+                match result {
+                    Ok(output) => return Ok(output),
+                    Err(error @ ValError::LineErrors(_)) if !cursor.incomplete_validation_error => return Err(error),
+                    _ => (),
+                }
             }
-            // The ordinary parser supplies precise errors on a failed optimistic attempt.
-            // Validation may have already called user code; invalid inputs can replay it.
+            // Parsing failures and incomplete validation still use ordinary validation.
+            // Those retries may replay user code; completed list errors do not.
         }
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;

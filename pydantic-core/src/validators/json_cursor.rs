@@ -7,13 +7,14 @@ use jiter::{Jiter, JsonValue};
 use crate::errors::{InputValue, ToErrorValue, ValError, ValResult};
 use crate::input::Input;
 
-/// An optimistic cursor; any parsing or validation failure retries ordinary validation.
+/// A cursor which retries parsing failures and incomplete validation attempts.
 pub struct JsonCursor<'data> {
     pub(super) jiter: Jiter<'data>,
     pub(super) data: &'data [u8],
     start: usize,
     depth: usize,
     error_value: OnceCell<JsonValue<'data>>,
+    pub(super) incomplete_validation_error: bool,
 }
 
 impl<'data> JsonCursor<'data> {
@@ -24,6 +25,7 @@ impl<'data> JsonCursor<'data> {
             start: 0,
             depth: 0,
             error_value: OnceCell::new(),
+            incomplete_validation_error: false,
         }
     }
 
@@ -61,6 +63,11 @@ impl<'data> JsonCursor<'data> {
         self.start = self.jiter.current_index();
         let previous_error = self.error_value.take();
         let result = validate(self);
+        // A container which exits with an error may not have consumed its value.
+        // Completed list item errors are returned outside this scope instead.
+        if matches!(&result, Err(ValError::LineErrors(_))) {
+            self.incomplete_validation_error = true;
+        }
         self.start = previous_start;
         self.depth -= 1;
         self.error_value.take();
