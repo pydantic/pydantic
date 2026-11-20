@@ -1,10 +1,11 @@
 """Checked cursor skips retain JSON validity across input kinds and deferred fields."""
 
 import json
+import platform
 from typing import Any
 
 import pytest
-from pydantic_core import from_json
+from pydantic_core import _pydantic_core, from_json
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
@@ -113,6 +114,14 @@ def test_cursor_subtrees_retain_document_depth(route: str, depth: int, leaf: str
         with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
             adapter.validate_json(document)
     else:
+        if (
+            platform.python_implementation() == 'PyPy'
+            and _pydantic_core.build_profile == 'debug'
+            and route in {'materialized', 'deferred', 'list_item', 'nested_model'}
+        ):
+            # Ordinary validation also exhausts PyPy's stack converting these
+            # accepted deep Any values; JSON rejection cases remain covered.
+            pytest.skip('PyPy debug builds lack stack space for deep Any-to-Python conversion')
         adapter.validate_json(document)
 
 
