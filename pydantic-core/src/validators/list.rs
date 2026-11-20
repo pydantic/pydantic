@@ -7,7 +7,8 @@ use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::errors::{ValError, ValResult};
 use crate::input::{
-    BorrowInput, ConsumeIterator, Input, MaxLengthCheck, ValidatedList, no_validator_iter_to_vec, validate_iter_to_vec,
+    BorrowInput, ConsumeIterator, Input, MaxLengthCheck, ValidatedList, handle_iter_error, no_validator_iter_to_vec,
+    validate_iter_to_vec,
 };
 use crate::tools::SchemaDict;
 
@@ -154,20 +155,35 @@ impl ListValidator {
             &mut ValidationState<'s, 'py>,
         ) -> ValResult<Py<PyAny>>,
     ) -> ValResult<Py<PyAny>> {
-        input.with_container(|input| {
-            // Ordinary validation owns error aggregation, locations and exact lengths.
-            // An optimistic failure retries that path instead of duplicating its policy.
+        let mut errors = Vec::new();
+        let output = input.with_container(|input| {
             let mut output: SmallVec<[Bound<'py, PyAny>; 8]> = SmallVec::new();
+            let mut skipped_items = 0;
+            let mut checked_length = 0;
+            let mut check_length = || {
+                if let Some(maximum) = self.max_length {
+                    checked_length += 1;
+                    if checked_length > maximum {
+                        return Err(super::JsonCursor::parse_error(()));
+                    }
+                }
+                Ok(())
+            };
             let mut next = input.jiter.known_array().map_err(super::JsonCursor::parse_error)?;
             while let Some(peek) = next {
-                let result = validate(input, peek, state);
-                match result {
-                    Ok(value) => output.push(value.into_bound(py)),
-                    Err(ValError::Omit) => (),
-                    Err(error) => return Err(error),
-                }
-                if self.max_length.is_some_and(|maximum| output.len() > maximum) {
-                    return Err(super::JsonCursor::parse_error(()));
+                match validate(input, peek, state) {
+                    Ok(item) => {
+                        check_length()?;
+                        output.push(item.into_bound(py));
+                    }
+                    Err(error @ ValError::LineErrors(_)) if input.incomplete_validation_error => return Err(error),
+                    Err(error) => {
+                        // Successful items are already counted by output.len(). Only
+                        // rejected or omitted items need a separate input-index count.
+                        let index = output.len() + skipped_items;
+                        handle_iter_error(error, index, &mut errors, false, self.fail_fast, &mut check_length)?;
+                        skipped_items += 1;
+                    }
                 }
                 next = input.jiter.array_step().map_err(super::JsonCursor::parse_error)?;
             }
@@ -175,7 +191,12 @@ impl ListValidator {
                 return Err(super::JsonCursor::parse_error(()));
             }
             Ok(output.into_py_any(py)?)
-        })
+        })?;
+        if errors.is_empty() {
+            Ok(output)
+        } else {
+            Err(ValError::LineErrors(errors))
+        }
     }
 }
 

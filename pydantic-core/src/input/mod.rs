@@ -23,7 +23,7 @@ pub(crate) use input_python::{downcast_python_input, input_as_python_instance};
 pub(crate) use input_string::StringMapping;
 pub(crate) use return_enums::{
     EitherBytes, EitherFloat, EitherInt, EitherString, GenericIterator, Int, MaxLengthCheck, ValidationMatch,
-    no_validator_iter_to_vec, py_string_str, validate_iter_to_set, validate_iter_to_vec,
+    handle_iter_error, no_validator_iter_to_vec, py_string_str, validate_iter_to_set, validate_iter_to_vec,
 };
 
 // Defined here as it's not exported by pyo3

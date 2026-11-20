@@ -142,17 +142,9 @@ pub(crate) fn validate_iter_to_vec<'py>(
                 max_length_check.incr()?;
                 output.push(item);
             }
-            Err(ValError::LineErrors(line_errors)) => {
-                max_length_check.incr()?;
-                if !is_last_partial {
-                    errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
-                    if fail_fast {
-                        return Err(ValError::LineErrors(errors));
-                    }
-                }
-            }
-            Err(ValError::Omit) => (),
-            Err(err) => return Err(err),
+            Err(error) => handle_iter_error(error, index, &mut errors, is_last_partial, fail_fast, || {
+                max_length_check.incr()
+            })?,
         }
     }
 
@@ -160,6 +152,32 @@ pub(crate) fn validate_iter_to_vec<'py>(
         Ok(output)
     } else {
         Err(ValError::LineErrors(errors))
+    }
+}
+
+/// Share collection error policy without passing successful items through it.
+#[cold]
+pub(crate) fn handle_iter_error(
+    error: ValError,
+    index: usize,
+    errors: &mut Vec<ValLineError>,
+    is_last_partial: bool,
+    fail_fast: bool,
+    mut check_length: impl FnMut() -> ValResult<()>,
+) -> ValResult<()> {
+    match error {
+        ValError::LineErrors(line_errors) => {
+            check_length()?;
+            if !is_last_partial {
+                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
+                if fail_fast {
+                    return Err(ValError::LineErrors(std::mem::take(errors)));
+                }
+            }
+            Ok(())
+        }
+        ValError::Omit => Ok(()),
+        err => Err(err),
     }
 }
 
