@@ -481,6 +481,33 @@ impl SchemaValidator {
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> ValResult<Py<PyAny>> {
+        // Prototype byte-backed input; partial parsing retains its existing representation.
+        static DISABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        if !allow_partial.is_active()
+            && !*DISABLED.get_or_init(|| std::env::var_os("PYDANTIC_DISABLE_JSON_BYTES").is_some())
+        {
+            let failed = std::cell::Cell::new(false);
+            let json_input = crate::input::JsonBytesInput::new(json_data, &failed);
+            #[allow(clippy::used_underscore_items)]
+            let result = self._validate(
+                py,
+                &json_input,
+                InputType::Json,
+                strict,
+                extra_behavior,
+                None,
+                context,
+                self_instance,
+                allow_partial,
+                by_alias,
+                by_name,
+            );
+            if json_input.finish() {
+                return result;
+            }
+            // Retry malformed input through the ordinary parser for precise errors.
+            // Callbacks may already have run on this optimistic path.
+        }
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
         #[allow(clippy::used_underscore_items)]
