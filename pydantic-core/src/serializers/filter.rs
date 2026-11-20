@@ -19,21 +19,17 @@ pub(crate) struct SchemaFilter<T> {
 }
 
 fn map_negative_index<'py>(value: &Bound<'py, PyAny>, len: Option<usize>) -> PyResult<Bound<'py, PyAny>> {
-    let py = value.py();
+    // Non-negative indices and keys that can't be compared to an integer (e.g. `'__all__'`) are left as is,
+    // so that out of range indices don't match any item.
+    if !value.lt(0).unwrap_or(false) {
+        return Ok(value.clone());
+    }
     match len {
-        Some(len) => Ok(value
-            .call_method1(intern!(py, "__mod__"), (len,))
-            .unwrap_or_else(|_| value.clone())),
-        None => {
-            // check that it's not negative
-            if value.lt(0).unwrap_or(false) {
-                Err(PyValueError::new_err(
-                    "Negative indices cannot be used to exclude items on unsized iterables",
-                ))
-            } else {
-                Ok(value.clone())
-            }
-        }
+        // Out of range negative indices stay negative after the shift, so don't match any item either.
+        Some(len) => value.add(len),
+        None => Err(PyValueError::new_err(
+            "Negative indices cannot be used to exclude items on unsized iterables",
+        )),
     }
 }
 

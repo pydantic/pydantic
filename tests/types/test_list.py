@@ -322,3 +322,14 @@ def test_list_serialization_include_exclude_indices(mode) -> None:
     ]
     assert ta.dump_python(items, mode=mode, exclude={1, -1}) == [{'a': 0, 'b': 0}, {'a': 2, 'b': 2}]
     assert ta.dump_python(items, mode=mode, include={-2: {'a'}, 0: ...}) == [{'a': 0, 'b': 0}, {'a': 2}]
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+@pytest.mark.parametrize('index', [3, 10, -4, -10])
+def test_list_serialization_include_exclude_out_of_range_index(mode, index) -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/14303."""
+    ta = TypeAdapter(list[int])
+
+    assert ta.dump_python([1, 2, 3], mode=mode, exclude={index}) == [1, 2, 3]
+    assert ta.dump_python([1, 2, 3], mode=mode, include={index}) == []
+    assert ta.dump_python([1, 2, 3], mode=mode, include={index, -1}) == [3]
