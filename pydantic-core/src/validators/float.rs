@@ -8,8 +8,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, schema_or_config_same};
-use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::Input;
+use crate::errors::{ErrorType, ErrorTypeDefaults, ToErrorValue, ValError, ValResult};
+use crate::input::{EitherFloat, Input};
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
@@ -47,6 +47,15 @@ pub struct FloatValidator {
     allow_inf_nan: bool,
 }
 
+impl FloatValidator {
+    fn finish(&self, py: Python<'_>, either_float: EitherFloat<'_>, input: impl ToErrorValue) -> ValResult<Py<PyAny>> {
+        if !self.allow_inf_nan && !either_float.as_f64().is_finite() {
+            return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));
+        }
+        Ok(either_float.into_py_any(py)?)
+    }
+}
+
 impl BuildValidator for FloatValidator {
     const EXPECTED_TYPE: &'static str = "float";
 
@@ -74,10 +83,38 @@ impl Validator for FloatValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let either_float = input.validate_float(state.strict_or(self.strict))?.unpack(state);
-        if !self.allow_inf_nan && !either_float.as_f64().is_finite() {
-            return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));
+        self.finish(py, either_float, input)
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        let peek = input.jiter.peek().map_err(super::JsonCursor::parse_error)?;
+        if peek.is_num() {
+            let start = input.jiter.current_index();
+            let mut value = input.jiter.known_float(peek).map_err(super::JsonCursor::parse_error)?;
+            let token = input.jiter.slice_to_current(start);
+            if !value.is_finite() {
+                // Preserve the ordinary integer digit limit and nonfinite policy.
+                // Finite numbers avoid materializing an intermediate integer.
+                let value = jiter::Jiter::new(token)
+                    .with_allow_inf_nan()
+                    .next_value()
+                    .map_err(super::JsonCursor::parse_error)?;
+                return self.validate(py, &value, state);
+            }
+            if value == 0.0 && token == b"-0" {
+                value = 0.0;
+            }
+            if state.exactness.is_some() && token.iter().all(|byte| byte.is_ascii_digit() || *byte == b'-') {
+                state.floor_exactness(super::Exactness::Strict);
+            }
+            return self.finish(py, EitherFloat::F64(value), jiter::JsonValue::Float(value));
         }
-        Ok(either_float.into_py_any(py)?)
+        self.validate(py, &input.take_value()?, state)
     }
 
     fn get_name(&self) -> &str {

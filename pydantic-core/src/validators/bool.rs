@@ -55,4 +55,18 @@ impl Validator for BoolValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        let peek = input.jiter.peek().map_err(super::JsonCursor::parse_error)?;
+        if matches!(peek, jiter::Peek::True | jiter::Peek::False) {
+            let value = input.jiter.known_bool(peek).map_err(super::JsonCursor::parse_error)?;
+            return Ok(value.into_py_any(py)?);
+        }
+        self.validate(py, &input.take_value()?, state)
+    }
 }

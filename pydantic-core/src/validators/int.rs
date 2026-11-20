@@ -68,6 +68,25 @@ impl BuildValidator for IntValidator {
 
 impl_py_gc_traverse!(IntValidator {});
 
+impl IntValidator {
+    pub(super) fn validate_json_cursor_peeked<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        peek: jiter::Peek,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        if peek.is_num() {
+            match input.jiter.known_number(peek).map_err(super::JsonCursor::parse_error)? {
+                // JSON integers are exact matches in both strict and lax mode.
+                jiter::NumberAny::Int(value) => return Ok(value.into_py_any(py)?),
+                jiter::NumberAny::Float(value) => return self.validate(py, &jiter::JsonValue::Float(value), state),
+            }
+        }
+        self.validate(py, &input.take_value()?, state)
+    }
+}
+
 impl Validator for IntValidator {
     fn validate<'py>(
         &self,
@@ -78,6 +97,16 @@ impl Validator for IntValidator {
         input
             .validate_int(state.strict_or(self.strict))
             .and_then(|val_match| Ok(val_match.unpack(state).into_py_any(py)?))
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        let peek = input.jiter.peek().map_err(super::JsonCursor::parse_error)?;
+        self.validate_json_cursor_peeked(py, input, peek, state)
     }
 
     fn get_name(&self) -> &str {

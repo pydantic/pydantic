@@ -13,7 +13,7 @@ use regex::Regex;
 use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config, schema_or_config_same};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
-use crate::tools::SchemaDict;
+use crate::tools::{SchemaDict, new_py_string};
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
@@ -84,6 +84,20 @@ impl Validator for StrValidator {
                     .as_py_string(py, state.cache_str())
                     .into_py_any(py)?)
             })
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        if matches!(input.jiter.peek(), Ok(jiter::Peek::String)) {
+            let value = input.jiter.known_str().map_err(super::JsonCursor::parse_error)?;
+            // JSON string tokens are exact matches; use the ordinary cache policy.
+            return Ok(new_py_string(py, value, state.cache_str()).into_any().unbind());
+        }
+        self.validate(py, &input.take_value()?, state)
     }
 
     fn get_name(&self) -> &str {
