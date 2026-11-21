@@ -715,6 +715,12 @@ class _AliasChoicesPathModel(BaseModel):
     field: int = Field(validation_alias=AliasChoices('direct', AliasPath('path', 'sub')))
 
 
+class _AliasNameCollisionModel(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    a: int = Field(alias='b')
+    b: int
+
+
 class _SharedRootAliasPathModel(BaseModel):
     model_config = ConfigDict(extra='allow')
     f1: int = Field(validation_alias=AliasPath('shared', 'x'))
@@ -776,6 +782,12 @@ class _AliasPathBeforeSharedFieldModel(BaseModel):
             {'nested': {'unrelated': 123}, 'extra_k': 456},
             {'f': 0},
             {'nested': {'unrelated': 123}, 'extra_k': 456},
+        ),
+        (
+            _AliasNameCollisionModel,
+            {'b': 5},
+            {'a': 5, 'b': 5},
+            {},
         ),
         (
             _SharedFieldBeforeAliasPathModel,

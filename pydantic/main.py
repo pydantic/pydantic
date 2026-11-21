@@ -356,14 +356,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
         fields_set = set()
-        matched_keys: set[str] | None = None
+        matched_keys: set[str] = set()
 
         for name, field in cls.__pydantic_fields__.items():
             if field.alias is not None and field.alias in values:
                 fields_values[name] = values[field.alias]
                 fields_set.add(name)
-                if matched_keys is None:
-                    matched_keys = set()
                 matched_keys.add(field.alias)
 
             if (name not in fields_set) and (field.validation_alias is not None):
@@ -377,8 +375,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     if isinstance(alias, str) and alias in values:
                         fields_values[name] = values[alias]
                         fields_set.add(name)
-                        if matched_keys is None:
-                            matched_keys = set()
                         matched_keys.add(alias)
                         break
                     elif isinstance(alias, AliasPath):
@@ -388,8 +384,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                             fields_set.add(name)
                             root = alias.path[0]
                             if isinstance(root, str):
-                                if matched_keys is None:
-                                    matched_keys = set()
                                 matched_keys.add(root)
                             break
 
@@ -397,17 +391,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 if name in values:
                     fields_values[name] = values[name]
                     fields_set.add(name)
-                    if matched_keys is None:
-                        matched_keys = set()
                     matched_keys.add(name)
                 elif not field.is_required():
                     fields_values[name] = field.get_default(call_default_factory=True, validated_data=fields_values)
         if _fields_set is None:
             _fields_set = fields_set
 
-        if matched_keys is not None:
-            for k in matched_keys:
-                values.pop(k, None)
+        for k in matched_keys:
+            values.pop(k, None)
 
         _extra: dict[str, Any] | None = values if cls.model_config.get('extra') == 'allow' else None
         _object_setattr(m, '__dict__', fields_values)
