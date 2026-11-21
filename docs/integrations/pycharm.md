@@ -17,4 +17,4 @@ The plugin currently supports the following features:
 
 More information can be found on the
 [official plugin page](https://plugins.jetbrains.com/plugin/12861-pydantic)
-and [Github repository](https://github.com/koxudaxi/pydantic-pycharm-plugin).
+and [GitHub repository](https://github.com/koxudaxi/pydantic-pycharm-plugin).
