@@ -1490,12 +1490,37 @@ class GenerateJsonSchema:
 
         return json_schema
 
+    def _is_discriminator_present_on_all_choices(self, alias: str, one_of_choices: list[JsonDict]) -> bool:
+        for choice in one_of_choices:
+            try:
+                choice = self.resolve_ref_schema(choice)
+            except RuntimeError as exc:
+                # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
+                # for tagged union choices at this point in the schema gen process, we might need to do
+                # another pass at the end like we do for core schemas
+                self.emit_warning('skipped-discriminator', str(exc))
+                choice = {}
+            properties = choice.get('properties', {})
+            if not isinstance(properties, dict) or alias not in properties:
+                return False
+        return True
+
     def _extract_discriminator(
         self, schema: core_schema.TaggedUnionSchema, one_of_choices: list[JsonDict]
     ) -> str | None:
         """Extract a compatible OpenAPI discriminator from the schema and one_of choices that end up in the final
         schema."""
         openapi_discriminator: str | None = None
+
+        if self.mode == 'serialization' and self.by_alias:
+            metadata = schema.get('metadata')
+            if isinstance(metadata, dict) and 'pydantic_internal_serialization_discriminator' in metadata:
+                ser_discriminator = metadata['pydantic_internal_serialization_discriminator']
+                if isinstance(ser_discriminator, str) and self._is_discriminator_present_on_all_choices(
+                    ser_discriminator, one_of_choices
+                ):
+                    return ser_discriminator
+                return None
 
         if isinstance(schema['discriminator'], str):
             return schema['discriminator']
@@ -1516,21 +1541,7 @@ class GenerateJsonSchema:
                 alias = alias_path[0]
                 if not isinstance(alias, str):
                     continue  # this means that the "alias" does not represent a field
-                alias_is_present_on_all_choices = True
-                for choice in one_of_choices:
-                    try:
-                        choice = self.resolve_ref_schema(choice)
-                    except RuntimeError as exc:
-                        # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
-                        # for tagged union choices at this point in the schema gen process, we might need to do
-                        # another pass at the end like we do for core schemas
-                        self.emit_warning('skipped-discriminator', str(exc))
-                        choice = {}
-                    properties = choice.get('properties', {})
-                    if not isinstance(properties, dict) or alias not in properties:
-                        alias_is_present_on_all_choices = False
-                        break
-                if alias_is_present_on_all_choices:
+                if self._is_discriminator_present_on_all_choices(alias, one_of_choices):
                     openapi_discriminator = alias
                     break
         return openapi_discriminator

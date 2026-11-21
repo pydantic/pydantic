@@ -7952,3 +7952,89 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_discriminated_union_serialization_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/14284"""
+
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='petType')
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='petType')
+        barks: float
+
+    class Household(BaseModel):
+        pet: Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    val_schema = Household.model_json_schema(mode='validation')
+    assert val_schema['properties']['pet']['discriminator'] == {
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+        'propertyName': 'pet_type',
+    }
+
+    ser_schema = Household.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['pet']['discriminator'] == {
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+        'propertyName': 'petType',
+    }
+
+    ser_no_alias = Household.model_json_schema(mode='serialization', by_alias=False)
+    assert ser_no_alias['properties']['pet']['discriminator'] == {
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+        'propertyName': 'pet_type',
+    }
+
+
+def test_discriminated_union_validation_and_serialization_aliases() -> None:
+    """https://github.com/pydantic/pydantic/issues/14284"""
+
+    class Circle(BaseModel):
+        shape_type: Literal['circle'] = Field(
+            validation_alias='in_shape',
+            serialization_alias='out_shape',
+        )
+        radius: float
+
+    class Square(BaseModel):
+        shape_type: Literal['square'] = Field(
+            validation_alias='in_shape',
+            serialization_alias='out_shape',
+        )
+        side: float
+
+    class Canvas(BaseModel):
+        shape: Annotated[Circle | Square, Field(discriminator='shape_type')]
+
+    val_schema = Canvas.model_json_schema(mode='validation')
+    assert val_schema['properties']['shape']['discriminator'] == {
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+        'propertyName': 'in_shape',
+    }
+
+    ser_schema = Canvas.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['shape']['discriminator'] == {
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+        'propertyName': 'out_shape',
+    }
+
+    ser_no_alias = Canvas.model_json_schema(mode='serialization', by_alias=False)
+    assert ser_no_alias['properties']['shape']['discriminator'] == {
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+        'propertyName': 'shape_type',
+    }
+
+
+def test_discriminated_union_mismatched_serialization_aliases() -> None:
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='catType')
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='dogType')
+
+    class Household(BaseModel):
+        pet: Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    ser_schema = Household.model_json_schema(mode='serialization')
+    assert 'discriminator' not in ser_schema['properties']['pet']

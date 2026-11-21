@@ -106,6 +106,9 @@ class _ApplyInferredDiscriminator:
         # provide the full flexibility/power of pydantic_core's TaggedUnionSchema where necessary for
         # more complex cases, without over-complicating the inference logic for the common cases.
         self._discriminator_alias: str | None = None
+        self._discriminator_serialization_alias: str | None = None
+        self._has_serialization_alias_set = False
+        self._has_custom_serialization_alias = False
 
         # `_should_be_nullable` indicates whether the converted union has `None` as an allowed value.
         # If `None` is an acceptable value of the (possibly-wrapped) union, we ignore it while
@@ -234,6 +237,12 @@ class _ApplyInferredDiscriminator:
             discriminator: str | list[list[str | int]] = [[self.discriminator], [self._discriminator_alias]]
         else:
             discriminator = self.discriminator
+        metadata = schema.get('metadata')
+        if self._has_custom_serialization_alias:
+            metadata = {
+                **(metadata or {}),
+                'pydantic_internal_serialization_discriminator': self._discriminator_serialization_alias,
+            }
         return core_schema.tagged_union_schema(
             choices=self._tagged_union_choices,
             discriminator=discriminator,
@@ -243,7 +252,7 @@ class _ApplyInferredDiscriminator:
             strict=False,
             from_attributes=True,
             ref=schema.get('ref'),
-            metadata=schema.get('metadata'),
+            metadata=metadata,
             serialization=schema.get('serialization'),
         )
 
@@ -448,6 +457,14 @@ class _ApplyInferredDiscriminator:
                 f'(got {alias}, {self._discriminator_alias})',
                 code='discriminator-alias',
             )
+        ser_alias = field.get('serialization_alias', self.discriminator)
+        if ser_alias != self.discriminator:
+            self._has_custom_serialization_alias = True
+        if not self._has_serialization_alias_set:
+            self._has_serialization_alias_set = True
+            self._discriminator_serialization_alias = ser_alias if isinstance(ser_alias, str) else None
+        elif self._discriminator_serialization_alias != ser_alias:
+            self._discriminator_serialization_alias = None
         return self._infer_discriminator_values_for_inner_schema(field['schema'], source)
 
     def _infer_discriminator_values_for_inner_schema(self, schema: core_schema.CoreSchema, source: str) -> list[Any]:
