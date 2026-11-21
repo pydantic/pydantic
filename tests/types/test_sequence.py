@@ -1,5 +1,5 @@
 from collections import deque, namedtuple
-from collections.abc import Sequence
+from collections.abc import MutableSequence, Sequence
 from typing import Any
 
 import pytest
@@ -238,3 +238,43 @@ def test_sequence_named_tuple_nested_type() -> None:
     assert ta.dump_json(pair, exclude={'__all__': {'b'}}) == b'[{"a":1},{"a":3}]'
     assert ta.dump_python(pair, exclude={0}) == ({'a': 3, 'b': 4},)
     assert ta.dump_json(pair, exclude={0}) == b'[{"a":3,"b":4}]'
+
+
+@pytest.mark.parametrize('sequence_type', [list, Sequence, MutableSequence])
+def test_negative_indices_include_exclude(sequence_type: type) -> None:
+    """Negative indices in include/exclude should work on `Sequence` fields,
+    like they do on `list` fields.
+
+    https://github.com/pydantic/pydantic/issues/14304
+    """
+
+    class Item(BaseModel):
+        a: int
+
+    class Model(BaseModel):
+        items: sequence_type[Item]
+
+    m = Model(items=[Item(a=1), Item(a=2), Item(a=3)])
+
+    assert m.model_dump() == {'items': [{'a': 1}, {'a': 2}, {'a': 3}]}
+    assert m.model_dump(exclude={'items': {-1}}) == {'items': [{'a': 1}, {'a': 2}]}
+    assert m.model_dump(include={'items': {-1}}) == {'items': [{'a': 3}]}
+    assert m.model_dump(include={'items': {-1, -3}}) == {'items': [{'a': 1}, {'a': 3}]}
+    assert m.model_dump(exclude={'items': {0, -1}}) == {'items': [{'a': 2}]}
+    # dict form, with nested include/exclude on the item:
+    assert m.model_dump(exclude={'items': {-1: {'a'}}}) == {'items': [{'a': 1}, {'a': 2}, {}]}
+    assert m.model_dump(include={'items': {-1: {'a'}}}) == {'items': [{'a': 3}]}
+    # JSON mode:
+    assert m.model_dump_json(exclude={'items': {-1}}) == '{"items":[{"a":1},{"a":2}]}'
+    assert m.model_dump_json(include={'items': {-1, -2}}) == '{"items":[{"a":2},{"a":3}]}'
+
+
+def test_sequence_type_adapter_negative_indices() -> None:
+    """https://github.com/pydantic/pydantic/issues/14304"""
+    ta = TypeAdapter(Sequence[int])
+
+    assert ta.dump_python([1, 2, 3], exclude={-1}) == [1, 2]
+    assert ta.dump_python([1, 2, 3], include={-1, -3}) == [1, 3]
+    assert ta.dump_python((1, 2, 3), exclude={-1}) == (1, 2)
+    assert ta.dump_python(deque([1, 2, 3]), include={-2}) == deque([2])
+    assert ta.dump_json([1, 2, 3], exclude={-2}) == b'[1,3]'

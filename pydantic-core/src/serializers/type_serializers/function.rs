@@ -460,12 +460,13 @@ impl SerializationCallable {
         self.extra_owned.context = None;
     }
 
-    #[pyo3(signature = (value, index_key=None))]
+    #[pyo3(signature = (value, index_key=None, sequence_len=None))]
     fn __call__(
         &mut self,
         py: Python,
         value: &Bound<'_, PyAny>,
         index_key: Option<&Bound<'_, PyAny>>,
+        sequence_len: Option<usize>,
     ) -> PyResult<Option<Py<PyAny>>> {
         // NB wrap serializers have strong coupling to their inner type,
         // so use to_python_no_infer so that type inference can't apply
@@ -475,7 +476,9 @@ impl SerializationCallable {
 
         if let Some(index_key) = index_key {
             let filter = if let Ok(index) = index_key.extract::<usize>() {
-                self.filter.for_sequence(state, None).index_filter(index)?
+                // `sequence_len` is the length of the sequence being iterated, if known;
+                // it allows negative indices in include/exclude to be resolved, like for lists
+                self.filter.for_sequence(state, sequence_len).index_filter(index)?
             } else if index_key.is_instance_of::<PyString>() || index_key.is_instance_of::<PyInt>() {
                 self.filter.key_filter(index_key, state)?
             } else {

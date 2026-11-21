@@ -480,6 +480,65 @@ def test_deque():
     assert s.to_json(deque([1, 2, 3]), exclude={2}) == b'[1,2]'
 
 
+def test_wrap_handler_sequence_len():
+    """The `sequence_len` argument of the wrap handler lets negative indices in
+    include/exclude be resolved against the length of the sequence being iterated."""
+
+    def serialize_sequence(value, serializer, _info):
+        items = []
+        sequence_len = len(value)
+        for index, item in enumerate(value):
+            try:
+                v = serializer(item, index, sequence_len)
+            except PydanticOmit:
+                pass
+            else:
+                items.append(v)
+        return items
+
+    s = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                serialize_sequence, info_arg=True, schema=core_schema.any_schema()
+            )
+        )
+    )
+    assert s.to_python([1, 2, 3]) == [1, 2, 3]
+    assert s.to_python([1, 2, 3], exclude={-1}) == [1, 2]
+    assert s.to_python([1, 2, 3], exclude={0, -1}) == [2]
+    assert s.to_python([1, 2, 3], include={-1, -3}) == [1, 3]
+    assert s.to_python([1, 2, 3], exclude={-1: ...}) == [1, 2]
+    assert s.to_python([1, 2, 3], mode='json', exclude={-1}) == [1, 2]
+    assert s.to_json([1, 2, 3], exclude={-1}) == b'[1,2]'
+    assert s.to_json([1, 2, 3], include={-1, -2}) == b'[2,3]'
+
+
+def test_wrap_handler_no_sequence_len_negative_indices():
+    """Without `sequence_len`, negative indices in include/exclude can't be resolved."""
+
+    def serialize_sequence(value, serializer, _info):
+        items = []
+        for index, item in enumerate(value):
+            try:
+                v = serializer(item, index)
+            except PydanticOmit:
+                pass
+            else:
+                items.append(v)
+        return items
+
+    s = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                serialize_sequence, info_arg=True, schema=core_schema.any_schema()
+            )
+        )
+    )
+    assert s.to_python([1, 2, 3], exclude={1}) == [1, 3]
+    with pytest.raises(PydanticSerializationError, match='Negative indices cannot be used to exclude items'):
+        s.to_python([1, 2, 3], exclude={-1})
+
+
 def test_custom_mapping():
     def serialize_custom_mapping(value, serializer, _info):
         items = {}

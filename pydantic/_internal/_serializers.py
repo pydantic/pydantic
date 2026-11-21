@@ -42,9 +42,12 @@ def serialize_sequence_via_list(
         # we shouldn't hit this branch, should probably add a serialization error or something
         return v
 
+    # the length of the sequence is passed to the handler so that negative indices
+    # in include/exclude can be resolved, like they are for `list` fields
+    sequence_len = len(v)
     for index, item in enumerate(v):
         try:
-            item_v = handler(item, index)
+            item_v = handler(item, index, sequence_len)
         except PydanticOmit:  # noqa: PERF203
             pass
         else:
