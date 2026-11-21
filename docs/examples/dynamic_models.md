@@ -6,7 +6,7 @@ we will make use of the [`model_fields`][pydantic.main.BaseModel.model_fields] m
 from the field definitions to be passed to the [`create_model()`][pydantic.create_model] factory. Of course, this example can apply
 to any use case where you need to derive a new model from another (remove default values, add aliases, etc).
 
-```python {lint="skip" linenums="1"}
+```python {lint="skip" linenums="1" group="dynamic-models"}
 from typing import Annotated
 
 from pydantic import BaseModel, Field, create_model
@@ -17,6 +17,8 @@ def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
 
     for f_name, f_info in model_cls.model_fields.items():
         f_dct = f_info.asdict()
+        f_dct['attributes'].pop('default', None)
+        f_dct['attributes'].pop('default_factory', None)
         new_fields[f_name] = (
             Annotated[f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes'])],
             None,
@@ -66,25 +68,29 @@ new_annotation = Annotated[
     metadata).
 
 3. We specify the field-specific attributes by using the [`Field()`][pydantic.Field] function
-    (in our previous example, this is equivalent to `Field(title='F')`).
+    (in our previous example, this is equivalent to `Field(title='F')`). `default` and `default_factory`
+    are removed from `attributes` first so they don't conflict with the new `None` default.
 
 and specify `None` as a default value (the second element of the tuple for the field definition accepted by [`create_model()`][pydantic.create_model]).
 
 Here is a demonstration of our factory function:
 
-```python {lint="skip" test="skip"}
+```python {group="dynamic-models"}
+from typing import Annotated
+
 from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
     a: Annotated[int, Field(gt=1)]
+    b: list[int] = Field(default_factory=list)
 
 
 ModelOptional = make_fields_optional(Model)
 
 m = ModelOptional()
-print(m.a)
-#> None
+print(m)
+#> a=None b=None
 ```
 
 A couple notes on the implementation:
