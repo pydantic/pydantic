@@ -6031,6 +6031,30 @@ def test_skip_json_schema_exclude_default():
     }
 
 
+def test_skip_json_schema_shared_typealiastype():
+    T = typing.TypeVar('T')
+    Skip = TypeAliasType('Skip', SkipJsonSchema[T], type_params=(T,))
+
+    class R:
+        pass
+
+    ANN = Skip[R | None]
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+        label: str = ''
+        a: ANN = None
+        b: ANN = None
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'label': {'default': '', 'title': 'Label', 'type': 'string'},
+        },
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_typeddict_field_required_missing() -> None:
     """https://github.com/pydantic/pydantic/issues/6192"""
 
