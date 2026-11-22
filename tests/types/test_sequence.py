@@ -238,3 +238,94 @@ def test_sequence_named_tuple_nested_type() -> None:
     assert ta.dump_json(pair, exclude={'__all__': {'b'}}) == b'[{"a":1},{"a":3}]'
     assert ta.dump_python(pair, exclude={0}) == ({'a': 3, 'b': 4},)
     assert ta.dump_json(pair, exclude={0}) == b'[{"a":3,"b":4}]'
+
+
+class TestSequenceNegativeIndices:
+    """https://github.com/pydantic/pydantic/issues/14304"""
+
+    def test_exclude_last_item(self):
+        class Item(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            items: Sequence[Item] = [Item(), Item(), Item()]
+
+        result = Model().model_dump(exclude={'items': {-1}})
+        assert result == {'items': [{'a': 1}, {'a': 1}]}
+
+    def test_exclude_last_item_json(self):
+        class Item(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            items: Sequence[Item] = [Item(), Item(), Item()]
+
+        result = Model().model_dump(mode='json', exclude={'items': {-1}})
+        assert result == {'items': [{'a': 1}, {'a': 1}]}
+
+    def test_exclude_multiple_negative(self):
+        class Item(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            items: Sequence[Item] = [Item(), Item(), Item()]
+
+        result = Model().model_dump(exclude={'items': {-1, -2}})
+        assert result == {'items': [{'a': 1}]}
+
+    def test_exclude_mixed_positive_and_negative(self):
+        class Item(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            items: Sequence[Item] = [Item(), Item(), Item()]
+
+        result = Model().model_dump(exclude={'items': {0, -1}})
+        assert result == {'items': [{'a': 1}]}
+
+    def test_mutable_sequence_exclude_negative(self):
+        from typing import MutableSequence
+
+        class Item(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            items: MutableSequence[Item] = [Item(), Item(), Item()]
+
+        result = Model().model_dump(exclude={'items': {-1}})
+        assert result == {'items': [{'a': 1}, {'a': 1}]}
+
+    def test_positive_indices_still_work(self):
+        class Item(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            items: Sequence[Item] = [Item(), Item(), Item()]
+
+        result = Model().model_dump(exclude={'items': {1}})
+        assert result == {'items': [{'a': 1}, {'a': 1}]}
+
+    def test_no_exclude(self):
+        class Item(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            items: Sequence[Item] = [Item(), Item(), Item()]
+
+        result = Model().model_dump()
+        assert result == {'items': [{'a': 1}, {'a': 1}, {'a': 1}]}
+
+    def test_matches_list_behavior(self):
+        class Item(BaseModel):
+            a: int = 1
+
+        class SeqModel(BaseModel):
+            items: Sequence[Item] = [Item(), Item(), Item()]
+
+        class ListModel(BaseModel):
+            items: list[Item] = [Item(), Item(), Item()]
+
+        for exclude in [{-1}, {-2}, {-1, -2}, {0, -1}]:
+            seq_result = SeqModel().model_dump(exclude={'items': exclude})
+            list_result = ListModel().model_dump(exclude={'items': exclude})
+            assert seq_result == list_result, f'Mismatch for exclude={exclude}'
