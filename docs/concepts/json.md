@@ -115,11 +115,11 @@ print(dog_dict)
     [Logfire](../integrations/logfire.md) can record just the failures, so you can see which generations
     didn't match your schema, and why.
 
-In future versions of Pydantic, we expect to expand support for this feature through either Pydantic's other JSON validation functions
-([`pydantic.main.BaseModel.model_validate_json`][pydantic.main.BaseModel.model_validate_json] and
-[`pydantic.type_adapter.TypeAdapter.validate_json`][pydantic.type_adapter.TypeAdapter.validate_json]) or model configuration. Stay tuned 🚀!
+[`TypeAdapter.validate_json()`][pydantic.type_adapter.TypeAdapter.validate_json] also supports partial JSON input
+through the `experimental_allow_partial` argument (see [partial validation](./experimental.md#partial-validation)).
+This is not yet supported by [`BaseModel.model_validate_json()`][pydantic.main.BaseModel.model_validate_json].
 
-For now, you can use [`pydantic_core.from_json`][pydantic_core.from_json] in combination with [`pydantic.main.BaseModel.model_validate`][pydantic.main.BaseModel.model_validate] to achieve the same result. Here's an example:
+You can also use [`pydantic_core.from_json`][pydantic_core.from_json] in combination with [`pydantic.main.BaseModel.model_validate`][pydantic.main.BaseModel.model_validate] to achieve the same result. Here's an example:
 
 ```python
 from pydantic_core import from_json
