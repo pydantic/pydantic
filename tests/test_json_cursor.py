@@ -1,0 +1,347 @@
+"""Regression coverage for direct JSON traversal on the validator graph."""
+
+import json
+from itertools import permutations
+from typing import Annotated, Literal
+
+import pytest
+from pydantic_core import PydanticOmit
+
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    TypeAdapter,
+    ValidationError,
+    ValidationInfo,
+    field_validator,
+)
+
+
+def test_cursor_mixed_model_defaults_and_field_order() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    calls: list[tuple[str | None, list[int]]] = []
+
+    class Model(BaseModel):
+        numbers: list[int]
+        username: str = Field(default=' Alice ', validate_default=True)
+
+        @field_validator('username')
+        @classmethod
+        def normalize(cls, value: str, info: ValidationInfo) -> str:
+            assert info.data is not None
+            calls.append((info.field_name, info.data['numbers']))
+            return value.strip().lower()
+
+    result = Model.model_validate_json('{"username":" Alice ","numbers":[1,"2",3]}')
+    assert result.model_dump() == {'numbers': [1, 2, 3], 'username': 'alice'}
+    assert calls == [('username', [1, 2, 3])]
+    calls.clear()
+    assert Model.model_validate_json('{"numbers":[4]}').username == 'alice'
+    assert calls == [('username', [4])]
+
+
+@pytest.mark.parametrize('data', [b'[{"value":1}] trailing', b'[{"value":1}, {"value":}]'])
+def test_cursor_invalid_json_retries_normal_error(data: bytes) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+
+    class Model(BaseModel):
+        value: int
+
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        TypeAdapter(list[Model]).validate_json(data)
+
+
+def test_cursor_rejected_callback_returns_original_error() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+
+    class Model(BaseModel):
+        value: int
+
+        @field_validator('value')
+        @classmethod
+        def reject(cls, value: int) -> int:
+            raise ValueError('rejected')
+
+    with pytest.raises(ValidationError, match='rejected'):
+        Model.model_validate_json('{"value":1}')
+
+
+def test_cursor_duplicate_fields_select_last_value_before_validation() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    calls: list[int] = []
+
+    class Model(BaseModel):
+        value: int
+
+        @field_validator('value')
+        @classmethod
+        def record(cls, value: int) -> int:
+            calls.append(value)
+            return value
+
+    assert Model.model_validate_json('{"value":"invalid","value":2}').value == 2
+    assert calls == [2]
+
+
+def test_cursor_list_bounds_stop_default_construction() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    calls: list[int] = []
+
+    class Model(BaseModel):
+        value: int = Field(default_factory=lambda: calls.append(1) or 1)
+
+    adapter = TypeAdapter(Annotated[list[Model], Field(max_length=1)])
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['ctx']['actual_length'] == 1000):
+        adapter.validate_json('[' + ','.join('{}' for _ in range(1000)) + ']')
+    # The failed optimistic attempt and ordinary retry each stop at the bound.
+    assert len(calls) <= 4
+
+
+def test_cursor_nested_missing_field_error_input() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+
+    class Model(BaseModel):
+        value: int
+
+    with pytest.raises(
+        ValidationError,
+        check=lambda error: (
+            error.errors(include_url=False)
+            == [{'type': 'missing', 'loc': (1, 'value'), 'msg': 'Field required', 'input': {}}]
+        ),
+    ):
+        TypeAdapter(list[Model]).validate_json('[{"value":1},{}]')
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        pytest.param(
+            b'{"value":1,"ignored":"\xff"}',
+            marks=pytest.mark.xfail(strict=True, reason='Optimistic skip does not yet validate ignored UTF-8'),
+        ),
+        pytest.param(
+            b'{"value":1,"ignored":' + b'[' * 200 + b'1' + b']' * 200 + b'}',
+            marks=pytest.mark.xfail(
+                strict=True, reason='Optimistic skip checks subtree depth rather than document depth'
+            ),
+        ),
+        b'{"value":1,"ignored":' + b'[' * 1000 + b'1' + b']' * 1000 + b'}',
+    ],
+)
+def test_cursor_checks_ignored_utf8_and_depth(data: bytes) -> None:
+    """https://github.com/pydantic/pydantic/pull/14123"""
+
+    class Model(BaseModel):
+        value: int
+
+    with pytest.raises(ValidationError, check=lambda error: error.errors()[0]['type'] == 'json_invalid'):
+        Model.model_validate_json(data)
+
+
+@pytest.mark.parametrize('max_length', [True, False])
+def test_cursor_nested_list_early_errors_continue_outer_array(max_length: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    constraint = Field(max_length=1) if max_length else Field(fail_fast=True)
+    adapter = TypeAdapter(list[Annotated[list[int], constraint]])
+    with pytest.raises(ValidationError) as caught:
+        adapter.validate_json('[["bad",2,3],["also bad"]]')
+    assert [error['loc'] for error in caught.value.errors()] == ([(0,), (1, 0)] if max_length else [(0, 0), (1, 0)])
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_cursor_integer_primitives_reuse_coercion_and_errors(strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    adapter = TypeAdapter(list[int])
+    # A function-before wrapper deliberately takes the ordinary JsonValue path.
+    ordinary = TypeAdapter(Annotated[list[int], BeforeValidator(lambda value: value)])
+    assert adapter.validate_json('[0,-1,9223372036854775808]', strict=strict) == [0, -1, 9223372036854775808]
+    for document in ('[1.0]', '[1.5]', '["2"]', '[true]', '[null]', '[NaN]', '[Infinity]', '[-0.0]'):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            assert adapter.validate_json(document, strict=strict) == expected
+
+
+def test_cursor_model_construction_runs_post_init_after_fields() -> None:
+    """https://github.com/pydantic/pydantic/pull/13884"""
+    calls: list[list[int]] = []
+
+    class Model(BaseModel):
+        numbers: list[int]
+        _total: int = PrivateAttr(default=0)
+
+        def model_post_init(self, context: object) -> None:
+            assert context is calls
+            self._total = sum(self.numbers)
+            calls.append(self.numbers)
+
+    model = Model.model_validate_json('{"numbers":[1,"2",3]}', context=calls)
+    assert model._total == 6
+    assert calls == [[1, 2, 3]]
+    assert model.model_fields_set == {'numbers'}
+
+
+@pytest.mark.parametrize('order', [*permutations(('a', 'b', 'c')), *permutations(('a', 'c'))])
+def test_cursor_incremental_fields_preserve_schema_order_and_defaults(order: tuple[str, ...]) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    calls: list[tuple[str | None, tuple[str, ...]]] = []
+
+    class Model(BaseModel):
+        a: int
+        b: int = Field(default=5, validate_default=True)
+        c: int
+
+        @field_validator('*')
+        @classmethod
+        def record(cls, value: int, info: ValidationInfo) -> int:
+            assert info.mode == 'json'
+            assert info.data is not None
+            calls.append((info.field_name, tuple(info.data)))
+            return value
+
+    data = {'a': 1, 'b': 2, 'c': 3}
+    result = Model.model_validate_json(json.dumps({key: data[key] for key in order}))
+    assert result.model_dump() == {'a': 1, 'b': 2 if 'b' in order else 5, 'c': 3}
+    assert calls == [('a', ()), ('b', ('a',)), ('c', ('a', 'b'))]
+
+
+def test_cursor_container_omission_preserves_following_items_and_callback_count() -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    calls: list[int] = []
+
+    class Model(BaseModel):
+        value: int
+
+        def model_post_init(self, context: object) -> None:
+            calls.append(self.value)
+            if self.value % 2 == 0:
+                raise PydanticOmit
+
+    result = TypeAdapter(list[Model]).validate_json(json.dumps([{'value': i} for i in range(205)]))
+    assert [model.value for model in result] == list(range(1, 205, 2))
+    assert calls == list(range(205))
+
+
+@pytest.mark.parametrize('strict', [True, False])
+@pytest.mark.parametrize('allow_inf_nan', [True, False])
+def test_cursor_float_tokens_preserve_bits_coercion_and_finite_policy(strict: bool, allow_inf_nan: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    values = list[Annotated[float, Field(allow_inf_nan=allow_inf_nan)]]
+    adapter = TypeAdapter(values)
+    # After-validation forces ordinary JSON validation without converting its
+    # input to Python first, preserving the exact JSON conversion semantics.
+    ordinary = TypeAdapter(Annotated[values, AfterValidator(lambda value: value)])
+    for document in (
+        '[0.0,-0.0,1.125,5e-324,1.7976931348623157e308]',
+        '[0,-0,9007199254740993,9223372036854775807,18446744073709551617]',
+        '[1,123456789012345678901234567890]',
+        '[1.12345678901234567890123456789]',
+        '[true,false,null,{},[],"1.25"]',
+        '[NaN,Infinity,-Infinity,1e309]',
+        '[' + '9' * 4301 + ']',
+    ):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            actual = adapter.validate_json(document, strict=strict)
+            assert [value.hex() for value in actual] == [value.hex() for value in expected]
+
+
+@pytest.mark.parametrize('cache_mode', ['all', 'keys', 'none'])
+@pytest.mark.parametrize('strict', [True, False])
+@pytest.mark.parametrize('coerce_numbers', [True, False])
+def test_cursor_string_decoding_cache_and_coercion(
+    cache_mode: Literal['all', 'keys', 'none'], strict: bool, coerce_numbers: bool
+) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    config = ConfigDict(cache_strings=cache_mode, coerce_numbers_to_str=coerce_numbers)
+    adapter = TypeAdapter(list[str], config=config)
+    ordinary = TypeAdapter(Annotated[list[str], AfterValidator(lambda value: value)], config=config)
+    for document in (
+        json.dumps(['repeated-value', 'repeated-value', 'escaped\n\0"\\', '中文 😀'], ensure_ascii=False),
+        '[1,1.5]',
+        '[true,null,{},[]]',
+    ):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            actual = adapter.validate_json(document, strict=strict)
+            assert actual == expected
+            if cache_mode == 'all' and actual[:2] == ['repeated-value', 'repeated-value']:
+                assert actual[0] is actual[1]
+
+
+def test_cursor_dict_json_keys_duplicates_and_omissions() -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    assert TypeAdapter(dict[int, int]).validate_json('{"1":2,"3":4}', strict=True) == {1: 2, 3: 4}
+    assert TypeAdapter(dict[float, str]).validate_json('{"1.5":"value"}', strict=True) == {1.5: 'value'}
+    calls: list[int] = []
+
+    def record(value: int) -> int:
+        calls.append(value)
+        if value == 0:
+            raise PydanticOmit
+        return value
+
+    adapter = TypeAdapter(dict[str, Annotated[int, AfterValidator(record)]])
+    assert adapter.validate_json('{"a":1,"a":2,"b":0,"c":3}') == {'a': 2, 'c': 3}
+    assert calls == [1, 2, 0, 3]
+
+    def omit_key(value: str) -> str:
+        if value == 'skip':
+            raise PydanticOmit
+        return value
+
+    calls.clear()
+    adapter = TypeAdapter(dict[Annotated[str, AfterValidator(omit_key)], Annotated[int, AfterValidator(record)]])
+    assert adapter.validate_json('{"skip":{"nested":[1,2]},"keep":3}') == {'keep': 3}
+    assert calls == [3]
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_cursor_bool_tokens_and_ordinary_coercion(strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    adapter = TypeAdapter(list[bool])
+    ordinary = TypeAdapter(Annotated[list[bool], AfterValidator(lambda value: value)])
+    for document in ('[true,false,true]', '[0,1,"yes","off"]', '[2,{},[],null]'):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            assert adapter.validate_json(document, strict=strict) == expected
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_cursor_integer_list_dispatch_preserves_local_coercion(strict: bool) -> None:
+    """https://github.com/pydantic/pydantic/pull/14331"""
+    adapter = TypeAdapter(list[int])
+    ordinary = TypeAdapter(Annotated[list[int], AfterValidator(lambda value: value)])
+    for document in ('[0,-0,9223372036854775808]', '[1,"2",3.0,true]', '[1,1.5,{}]'):
+        try:
+            expected = ordinary.validate_json(document, strict=strict)
+        except ValidationError as error:
+            with pytest.raises(ValidationError) as caught:
+                adapter.validate_json(document, strict=strict)
+            assert caught.value.json(include_url=False) == error.json(include_url=False)
+        else:
+            assert adapter.validate_json(document, strict=strict) == expected

@@ -15,7 +15,7 @@ use super::{
 use crate::PydanticUndefinedType;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
-use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ToErrorValue, ValError, ValResult};
 use crate::fields_set::FieldsSet;
 use crate::input::{Input, input_as_python_instance, py_error_on_minusone};
 use crate::tools::{ROOT_FIELD, SchemaDict, py_err, root_field_py_str};
@@ -240,6 +240,48 @@ impl Validator for ModelValidator {
         Ok(model.into_py_any(py)?)
     }
 
+    fn supports_json_cursor(&self) -> bool {
+        !self.custom_init
+            && !self.root_model
+            && matches!(self.validator.as_ref(), CombinedValidator::ModelFields(fields) if fields.supports_json_cursor())
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        if !self.supports_json_cursor()
+            || state.self_instance.is_some()
+            || !matches!(
+                state.extra_behavior_or(crate::build_tools::ExtraBehavior::Ignore),
+                crate::build_tools::ExtraBehavior::Ignore
+            )
+            || !matches!(input.jiter.peek(), Ok(jiter::Peek::Object))
+        {
+            return self.validate(py, &input.take_value()?, state);
+        }
+        input.with_container(|input| {
+            let CombinedValidator::ModelFields(fields) = self.validator.as_ref() else {
+                unreachable!()
+            };
+            state.floor_exactness(Exactness::Strict);
+            let (model_dict, model_extra, fields_set) = fields.validate_cursor_fields(py, input, state)?;
+            self.construct_from_fields(
+                py,
+                &*input,
+                (
+                    model_dict.into_any(),
+                    model_extra.map_or_else(|| py.None().into_bound(py), Bound::into_any),
+                    Bound::new(py, fields_set)?.into_any(),
+                ),
+                None,
+                state.extra(),
+            )
+        })
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }
@@ -337,20 +379,37 @@ impl ModelValidator {
             force_setattr(py, &instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
             force_setattr(py, &instance, root_field, output)?;
         } else {
-            let (model_dict, model_extra, val_fields_set) = self.validate_inner_fields(py, input, state)?;
-            instance = create_class(self.class.bind(py))?;
-
-            let fields_set = existing_fields_set.unwrap_or(&val_fields_set);
-            set_model_attrs(&instance, &model_dict, &model_extra, fields_set)?;
+            let fields = self.validate_inner_fields(py, input, state)?;
+            return self.construct_from_fields(py, input, fields, existing_fields_set, state.extra());
         }
         self.call_post_init(py, instance, input, state.extra())
+    }
+
+    /// Complete ordinary and cursor model validation through the same construction path.
+    fn construct_from_fields<'py>(
+        &self,
+        py: Python<'py>,
+        input: impl ToErrorValue,
+        fields: (Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>),
+        existing_fields_set: Option<&Bound<'_, PyAny>>,
+        extra: &Extra<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        let (model_dict, model_extra, fields_set) = fields;
+        let instance = create_class(self.class.bind(py))?;
+        set_model_attrs(
+            &instance,
+            &model_dict,
+            &model_extra,
+            existing_fields_set.unwrap_or(&fields_set),
+        )?;
+        self.call_post_init(py, instance, input, extra)
     }
 
     fn call_post_init<'py>(
         &self,
         py: Python<'py>,
         instance: Bound<'_, PyAny>,
-        input: &(impl Input<'py> + ?Sized),
+        input: impl ToErrorValue,
         extra: &Extra<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         if let Some(ref post_init) = self.post_init {

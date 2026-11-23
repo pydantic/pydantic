@@ -52,6 +52,22 @@ impl Validator for PrebuiltValidator {
         self.schema_validator.get().validator.validate(py, input, state)
     }
 
+    fn supports_json_cursor(&self) -> bool {
+        self.schema_validator.get().validator.supports_json_cursor()
+    }
+
+    fn validate_json_cursor<'py>(
+        &self,
+        py: Python<'py>,
+        input: &mut super::JsonCursor<'_>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        self.schema_validator
+            .get()
+            .validator
+            .validate_json_cursor(py, input, state)
+    }
+
     fn get_name(&self) -> &str {
         self.schema_validator.get().validator.get_name()
     }
