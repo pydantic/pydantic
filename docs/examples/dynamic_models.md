@@ -8,7 +8,7 @@ to any use case where you need to derive a new model from another (remove defaul
 
 === "Python 3.10"
 
-    ```python {lint="skip" linenums="1"}
+    ```python {lint="skip" linenums="1" group="dynamic-models"}
     from typing import Annotated
 
     from pydantic import BaseModel, Field, create_model
@@ -19,6 +19,8 @@ to any use case where you need to derive a new model from another (remove defaul
 
         for f_name, f_info in model_cls.model_fields.items():
             f_dct = f_info.asdict()
+            f_dct['attributes'].pop('default', None)
+            f_dct['attributes'].pop('default_factory', None)
             new_fields[f_name] = (
                 Annotated[(f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes']))],
                 None,
@@ -36,7 +38,7 @@ to any use case where you need to derive a new model from another (remove defaul
 
 === "Python 3.11 and above"
 
-    ```python {lint="skip" requires="3.11" linenums="1"}
+    ```python {lint="skip" requires="3.11" linenums="1" group="dynamic-models"}
     from typing import Annotated
 
     from pydantic import BaseModel, Field, create_model
@@ -47,6 +49,8 @@ to any use case where you need to derive a new model from another (remove defaul
 
         for f_name, f_info in model_cls.model_fields.items():
             f_dct = f_info.asdict()
+            f_dct['attributes'].pop('default', None)
+            f_dct['attributes'].pop('default_factory', None)
             new_fields[f_name] = (
                 Annotated[f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes'])],
                 None,
@@ -124,19 +128,22 @@ and specify `None` as a default value (the second element of the tuple for the f
 
 Here is a demonstration of our factory function:
 
-```python {lint="skip" test="skip"}
+```python {group="dynamic-models"}
+from typing import Annotated
+
 from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
     a: Annotated[int, Field(gt=1)]
+    b: list[int] = Field(default_factory=list)
 
 
 ModelOptional = make_fields_optional(Model)
 
 m = ModelOptional()
-print(m.a)
-#> None
+print(m)
+#> a=None b=None
 ```
 
 A couple notes on the implementation:
@@ -164,6 +171,9 @@ A couple notes on the implementation:
 
 * The [`MISSING` sentinel](../concepts/types.md#missing-sentinel) can be used as an alternative to `None`
   for the default values. Simply replace `None` by `MISSING` in the new annotation and default value.
+
+* We explicitly removed the `default` and `default_factory` attributes, as we are setting a `None` default for every
+  field. You may want to tweak this logic to preserve existing defaults.
 
 * You might be tempted to make a copy of the original [`FieldInfo`][pydantic.fields.FieldInfo] instances, add a
   default and/or perform other mutations, to then reuse it as [`Annotated`][typing.Annotated] metadata. While this
