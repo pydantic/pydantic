@@ -1397,6 +1397,24 @@ class GenerateSchema:
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         schema = core_schema.literal_schema(expected)
 
+        plain_enums = [v for v in expected if isinstance(v, Enum) and not isinstance(v, (int, str))]
+        if plain_enums:
+            json_expected = [
+                v.value if isinstance(v, Enum) and not isinstance(v, (int, str)) else v for v in expected
+            ]
+            value_to_enum = {v.value: v for v in plain_enums}
+            json_schema = core_schema.no_info_after_validator_function(
+                lambda v, _map=value_to_enum: v.value
+                if self._config_wrapper.use_enum_values and isinstance(v, Enum)
+                else (_map[v] if not isinstance(v, Enum) and v in _map else v),
+                core_schema.literal_schema(json_expected),
+            )
+            if self._config_wrapper.use_enum_values and any(isinstance(v, Enum) for v in expected):
+                schema = core_schema.no_info_after_validator_function(
+                    lambda v: v.value if isinstance(v, Enum) else v, schema
+                )
+            return core_schema.json_or_python_schema(json_schema=json_schema, python_schema=schema)
+
         if self._config_wrapper.use_enum_values and any(isinstance(v, Enum) for v in expected):
             schema = core_schema.no_info_after_validator_function(
                 lambda v: v.value if isinstance(v, Enum) else v, schema

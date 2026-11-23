@@ -137,6 +137,8 @@ class _ApplyInferredDiscriminator:
         # `_tagged_union_choices` is built during the call to `apply`, and will hold the choices to be included
         # in the output TaggedUnionSchema that will replace the union from the input schema
         self._tagged_union_choices: dict[Any, core_schema.CoreSchema] = {}
+        self._json_tagged_union_choices: dict[Any, core_schema.CoreSchema] = {}
+        self._pending_json_values: list[Any] = []
 
         # `_used` is changed to True after applying the discriminator to prevent accidental reuse
         self._used = False
@@ -234,7 +236,7 @@ class _ApplyInferredDiscriminator:
             discriminator: str | list[list[str | int]] = [[self.discriminator], [self._discriminator_alias]]
         else:
             discriminator = self.discriminator
-        return core_schema.tagged_union_schema(
+        python_tagged = core_schema.tagged_union_schema(
             choices=self._tagged_union_choices,
             discriminator=discriminator,
             custom_error_type=schema.get('custom_error_type'),
@@ -242,6 +244,24 @@ class _ApplyInferredDiscriminator:
             custom_error_context=schema.get('custom_error_context'),
             strict=False,
             from_attributes=True,
+            ref=schema.get('ref'),
+            metadata=schema.get('metadata'),
+            serialization=schema.get('serialization'),
+        )
+        if not self._json_tagged_union_choices:
+            return python_tagged
+        json_tagged = core_schema.tagged_union_schema(
+            choices={**self._tagged_union_choices, **self._json_tagged_union_choices},
+            discriminator=discriminator,
+            custom_error_type=schema.get('custom_error_type'),
+            custom_error_message=schema.get('custom_error_message'),
+            custom_error_context=schema.get('custom_error_context'),
+            strict=False,
+            from_attributes=True,
+        )
+        return core_schema.json_or_python_schema(
+            json_schema=json_tagged,
+            python_schema=python_tagged,
             ref=schema.get('ref'),
             metadata=schema.get('metadata'),
             serialization=schema.get('serialization'),
@@ -303,8 +323,12 @@ class _ApplyInferredDiscriminator:
                 self._choices_to_handle.extend(subchoices[::-1])
                 return
 
+            self._pending_json_values.clear()
             inferred_discriminator_values = self._infer_discriminator_values_for_choice(choice, source_name=None)
             self._set_unique_choice_for_values(choice, inferred_discriminator_values)
+            for val in self._pending_json_values:
+                self._json_tagged_union_choices.setdefault(val, choice)
+            self._pending_json_values.clear()
 
     def _is_discriminator_shared(self, choice: core_schema.TaggedUnionSchema) -> bool:
         """This method returns a boolean indicating whether the discriminator for the `choice`
@@ -475,6 +499,11 @@ class _ApplyInferredDiscriminator:
             case {'type': 'function-after', 'schema': inner_schema}:
                 # After validators don't affect the discriminator values
                 return self._infer_discriminator_values_for_inner_schema(inner_schema, source)
+            case {'type': 'json-or-python', 'json_schema': json_schema, 'python_schema': python_schema}:
+                for val in self._infer_discriminator_values_for_inner_schema(json_schema, source):
+                    if val not in self._pending_json_values:
+                        self._pending_json_values.append(val)
+                return self._infer_discriminator_values_for_inner_schema(python_schema, source)
             case {'type': 'model', 'root_model': True, 'schema': inner_schema}:
                 # Support RootModel[Literal[...]] as discriminator field type
                 return self._infer_discriminator_values_for_inner_schema(inner_schema, source)

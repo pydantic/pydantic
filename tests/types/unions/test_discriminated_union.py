@@ -2600,3 +2600,26 @@ def test_union_tags_in_errors():
             'type': 'dict_type',
         },
     ]
+
+
+def test_discriminated_union_plain_enum_literal_json_roundtrip() -> None:
+    import enum
+
+    class Kind(enum.Enum):
+        CAT = 'cat'
+        DOG = 'dog'
+
+    class Cat(BaseModel):
+        kind: Literal[Kind.CAT] = Kind.CAT
+
+    class Dog(BaseModel):
+        kind: Literal[Kind.DOG] = Kind.DOG
+
+    class Owner(BaseModel):
+        pet: Annotated[Cat | Dog, Field(discriminator='kind')]
+
+    dumped = Owner(pet=Dog()).model_dump_json()
+    assert dumped == '{"pet":{"kind":"dog"}}'
+    validated = Owner.model_validate_json(dumped)
+    assert isinstance(validated.pet, Dog)
+    assert validated.pet.kind is Kind.DOG
