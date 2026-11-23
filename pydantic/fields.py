@@ -586,7 +586,7 @@ class FieldInfo(_repr.Representation):
         Returns:
             A field object with the passed values.
         """
-        if annotation is not MISSING and annotation is default:
+        if annotation is not MISSING and not _typing_extra.is_sentinel(annotation) and annotation is default:
             raise PydanticUserError(
                 'Error when building FieldInfo from annotated attribute. '
                 "Make sure you don't have any field name clashing with a type annotation.",

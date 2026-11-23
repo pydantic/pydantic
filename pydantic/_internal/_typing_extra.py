@@ -121,6 +121,21 @@ def is_generic_alias(tp: Any, /) -> bool:
     return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
 
 
+_SENTINEL_TYPES: tuple[type[Any], ...] = tuple(
+    t
+    for t in (
+        getattr(typing, 'Sentinel', None),
+        getattr(typing_extensions, 'Sentinel', None),
+    )
+    if isinstance(t, type)
+)
+
+
+def is_sentinel(tp: Any, /) -> bool:
+    """Return whether the given object is a PEP 661 sentinel."""
+    return bool(_SENTINEL_TYPES) and isinstance(tp, _SENTINEL_TYPES)
+
+
 # TODO: Ideally, we should avoid relying on the private `typing` constructs:
 WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # pyright: ignore[reportAttributeAccessIssue]
 

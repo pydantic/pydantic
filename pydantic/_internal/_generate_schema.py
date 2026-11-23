@@ -742,6 +742,18 @@ class GenerateSchema:
             return core_schema.any_schema()
         return core_schema.is_instance_schema(tp)
 
+    def _sentinel_schema(self, obj: Any) -> CoreSchema:
+        def validate_sentinel(value: Any) -> Any:
+            if value is obj:
+                return value
+            raise PydanticCustomError(
+                'sentinel_error',
+                'Input should be {expected}',
+                {'expected': repr(obj)},
+            )
+
+        return core_schema.no_info_plain_validator_function(validate_sentinel)
+
     def _unknown_type_schema(self, obj: Any) -> CoreSchema:
         raise PydanticSchemaGenerationError(
             f'Unable to generate pydantic-core schema for {obj!r}. '
@@ -1166,6 +1178,8 @@ class GenerateSchema:
             # the case of a dc type here
             elif dataclasses.is_dataclass(obj):
                 return self._dataclass_schema(obj, None)  # pyright: ignore[reportArgumentType]
+            elif _typing_extra.is_sentinel(obj):
+                return self._sentinel_schema(obj)
 
         if origin is not None:
             return self._match_generic_type(obj, origin)
