@@ -486,3 +486,24 @@ def test_default_factory_without_validated_data_unsupported() -> None:
 )
 def test_privateattr_repr(private_attr: ModelPrivateAttr, result: str) -> None:
     assert repr(private_attr) == result
+
+
+@pytest.mark.parametrize('attr', [FieldInfo(default_factory=list), ModelPrivateAttr(default_factory=list)])
+def test_default_factory_takes_validated_data_reassigned_factory(attr: FieldInfo | ModelPrivateAttr) -> None:
+    assert attr.default_factory_takes_validated_data is False
+
+    attr.default_factory = lambda data: data['a']
+    assert attr.default_factory_takes_validated_data is True
+
+    attr.default_factory = None
+    assert attr.default_factory_takes_validated_data is None
+
+
+def test_default_factory_takes_validated_data_field_info_copy() -> None:
+    field_info = FieldInfo(default_factory=list)
+    assert field_info.default_factory_takes_validated_data is False
+
+    copied = field_info._copy()
+    copied.default_factory = lambda data: data['a']
+    assert copied.default_factory_takes_validated_data is True
+    assert field_info.default_factory_takes_validated_data is False

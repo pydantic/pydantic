@@ -206,6 +206,7 @@ class FieldInfo(_repr.Representation):
         '_original_assignment',
         '_original_annotation',
         '_final',
+        '_default_factory_takes_validated_data_cache',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -469,6 +470,9 @@ class FieldInfo(_repr.Representation):
         # or if it is the result of the `Field()` function being used as metadata in an `Annotated` type/as an assignment
         # (not an ideal pattern, see https://github.com/pydantic/pydantic/issues/11122):
         self._final = False
+        # The default factory and whether it takes a validated data argument (see the
+        # `default_factory_takes_validated_data` property), `None` if not computed yet:
+        self._default_factory_takes_validated_data_cache: tuple[Callable[..., Any], bool] | None = None
 
     @staticmethod
     def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> FieldInfo:
@@ -831,8 +835,18 @@ class FieldInfo(_repr.Representation):
 
         Returns `None` if no default factory is set.
         """
-        if self.default_factory is not None:
-            return _fields.takes_validated_data_argument(self.default_factory)
+        default_factory = self.default_factory
+        if default_factory is None:
+            return None
+
+        # Inspecting the signature is expensive, so the result is cached. The default factory
+        # is stored along with the result, as `default_factory` can be reassigned
+        # (would benefit from FieldInfo being frozen, but this is far from feasible...)
+        cache = self._default_factory_takes_validated_data_cache
+        if cache is None or cache[0] is not default_factory:
+            cache = (default_factory, _fields.takes_validated_data_argument(default_factory))
+            self._default_factory_takes_validated_data_cache = cache
+        return cache[1]
 
     @overload
     def get_default(
@@ -968,6 +982,7 @@ class FieldInfo(_repr.Representation):
                 '_original_assignment',
                 '_original_annotation',
                 '_final',
+                '_default_factory_takes_validated_data_cache',
             ):
                 continue
             elif s == 'metadata' and not self.metadata:
@@ -1454,7 +1469,7 @@ class ModelPrivateAttr(_repr.Representation):
             [`__dict__`][object.__dict__]) and the already initialized private attributes.
     """
 
-    __slots__ = ('default', 'default_factory', '_default_factory_takes_validated_data')
+    __slots__ = ('default', 'default_factory', '_default_factory_takes_validated_data_cache')
 
     def __init__(
         self,
@@ -1467,7 +1482,9 @@ class ModelPrivateAttr(_repr.Representation):
         else:
             self.default = default
         self.default_factory = default_factory
-        self._default_factory_takes_validated_data: bool | None = _Unset
+        # The default factory and whether it takes a validated data argument (see the
+        # `default_factory_takes_validated_data` property), `None` if not computed yet:
+        self._default_factory_takes_validated_data_cache: tuple[Callable[..., Any], bool] | None = None
 
     if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
@@ -1496,15 +1513,17 @@ class ModelPrivateAttr(_repr.Representation):
 
         Returns `None` if no default factory is set.
         """
-        if self._default_factory_takes_validated_data is not _Unset:
-            return self._default_factory_takes_validated_data
+        default_factory = self.default_factory
+        if default_factory is None:
+            return None
 
-        value: bool | None = None
-        if self.default_factory is not None:
-            value = _fields.takes_validated_data_argument(self.default_factory)
-
-        self._default_factory_takes_validated_data = value
-        return value
+        # Inspecting the signature is expensive, so the result is cached. The default factory
+        # is stored along with the result, as `default_factory` can be reassigned:
+        cache = self._default_factory_takes_validated_data_cache
+        if cache is None or cache[0] is not default_factory:
+            cache = (default_factory, _fields.takes_validated_data_argument(default_factory))
+            self._default_factory_takes_validated_data_cache = cache
+        return cache[1]
 
     @overload
     def get_default(
