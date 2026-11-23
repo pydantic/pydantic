@@ -7952,3 +7952,48 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_discriminated_union_serialization_alias():
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='petType')
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='petType')
+        barks: float
+
+    class Household(BaseModel):
+        pet: Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    ser_schema = Household.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['pet']['discriminator'] == {
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+        'propertyName': 'petType',
+    }
+    assert Household.model_json_schema(mode='serialization', by_alias=False)['properties']['pet']['discriminator'] == {
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+        'propertyName': 'pet_type',
+    }
+
+    class Circle(BaseModel):
+        shape_type: Literal['circle'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+        radius: float
+
+    class Square(BaseModel):
+        shape_type: Literal['square'] = Field(validation_alias='in_shape', serialization_alias='out_shape')
+        side: float
+
+    class Canvas(BaseModel):
+        shape: Annotated[Circle | Square, Field(discriminator='shape_type')]
+
+    val_schema = Canvas.model_json_schema(mode='validation')
+    assert val_schema['properties']['shape']['discriminator'] == {
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+        'propertyName': 'in_shape',
+    }
+    ser_canvas_schema = Canvas.model_json_schema(mode='serialization')
+    assert ser_canvas_schema['properties']['shape']['discriminator'] == {
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+        'propertyName': 'out_shape',
+    }
