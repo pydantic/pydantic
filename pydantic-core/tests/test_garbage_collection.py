@@ -315,10 +315,7 @@ def _gc_reaches(obj: Any, target: Any, depth: int = 3) -> bool:
     return any(r is target for r in referents) or any(_gc_reaches(r, target, depth - 1) for r in referents)
 
 
-@pytest.mark.xfail(
-    reason="'ArgsKwargs' uses a freelist, and GC is broken on reused objects from the freelist (https://github.com/PyO3/pyo3/pull/6442)"
-)
-def test_exceptions_and_markers_report_python_references() -> None:
+def test_exceptions_report_python_references() -> None:
     """https://github.com/pydantic/pydantic/issues/14237"""
     marker = object()
 
@@ -329,6 +326,16 @@ def test_exceptions_and_markers_report_python_references() -> None:
     known_error = PydanticKnownError('value_error', {'error': marker})
     assert gc.is_tracked(known_error)
     assert _gc_reaches(known_error, marker)
+
+
+@pytest.mark.xfail(
+    reason="'ArgsKwargs' uses a freelist, and GC is broken on reused objects from the freelist (https://github.com/PyO3/pyo3/pull/6442)"
+)
+def test_args_kwargs_reports_python_references():
+    marker = object()
+
+    # Create an initial instance so that next ones will be taken from the freelist:
+    ArgsKwargs(())
 
     args_kwargs = ArgsKwargs((marker,), {'kw': marker})
     assert gc.is_tracked(args_kwargs)
