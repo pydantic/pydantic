@@ -355,6 +355,7 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_ns_resolver',
         '_typevars_map',
+        '_typed_dict_config_hashes',
         'field_name_stack',
         'model_type_stack',
         'defs',
@@ -370,6 +371,7 @@ class GenerateSchema:
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._ns_resolver = ns_resolver or NsResolver()
         self._typevars_map = typevars_map
+        self._typed_dict_config_hashes: dict[str, int] = {}
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
@@ -1416,7 +1418,21 @@ class GenerateSchema:
         """
         FieldInfo = import_cached_field_info()
 
+        try:
+            # if a typed dictionary class doesn't have config, we use the parent's config, hence a default of `None`
+            # see https://github.com/pydantic/pydantic/issues/10917
+            config: ConfigDict | None = get_attribute_from_bases(typed_dict_cls, '__pydantic_config__')
+        except AttributeError:
+            config = None
+
         typed_dict_ref = _type_refs.class_type_ref(typed_dict_cls, origin)
+        if config is None and self._config_wrapper.config_dict:
+            config_hash = hash(
+                tuple(sorted((k, repr(v)) for k, v in self._config_wrapper.config_dict.items()))
+            )
+            first_hash = self._typed_dict_config_hashes.setdefault(typed_dict_ref, config_hash)
+            if first_hash != config_hash:
+                typed_dict_ref = f'{typed_dict_ref}:config={config_hash}'
         with (
             self.model_type_stack.push(typed_dict_cls),
             self.defs.get_definition_ref_schema(ref=typed_dict_ref) as maybe_schema,
@@ -1433,13 +1449,6 @@ class GenerateSchema:
                     'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.12.',
                     code='typed-dict-version',
                 )
-
-            try:
-                # if a typed dictionary class doesn't have config, we use the parent's config, hence a default of `None`
-                # see https://github.com/pydantic/pydantic/issues/10917
-                config: ConfigDict | None = get_attribute_from_bases(typed_dict_cls, '__pydantic_config__')
-            except AttributeError:
-                config = None
 
             with self._config_wrapper_stack.push(config):
                 core_config = self._config_wrapper.core_config(title=typed_dict_cls.__name__)
