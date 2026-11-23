@@ -630,10 +630,22 @@ class GenerateSchema:
             )
 
         path_constructor = pathlib.PurePath if tp is os.PathLike else tp
+        path_str_kwargs: dict[str, Any] = {
+            'strip_whitespace': False,
+            'to_lower': False,
+            'to_upper': False,
+            'coerce_numbers_to_str': False,
+        }
         strict_inner_schema = (
-            core_schema.bytes_schema(strict=True) if (path_type is bytes) else core_schema.str_schema(strict=True)
+            core_schema.bytes_schema(strict=True)
+            if (path_type is bytes)
+            else core_schema.str_schema(strict=True, **path_str_kwargs)
         )
-        lax_inner_schema = core_schema.bytes_schema() if (path_type is bytes) else core_schema.str_schema()
+        lax_inner_schema = (
+            core_schema.bytes_schema()
+            if (path_type is bytes)
+            else core_schema.str_schema(**path_str_kwargs)
+        )
 
         def path_validator(input_value: str | bytes) -> os.PathLike[Any]:  # type: ignore
             try:

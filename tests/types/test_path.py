@@ -312,3 +312,23 @@ def test_ser_path_incorrect() -> None:
     ta = TypeAdapter(Path)
     with pytest.warns(UserWarning, match='serialized value may not be as expected.'):
         ta.dump_python(123)
+
+
+def test_path_ignores_str_config_mutations() -> None:
+    ta = TypeAdapter(
+        Path,
+        config=ConfigDict(
+            str_strip_whitespace=True,
+            str_to_upper=True,
+            coerce_numbers_to_str=True,
+        ),
+    )
+    assert ta.validate_python(' /a/b ') == Path(' /a/b ')
+    assert ta.validate_json('" /a/b "') == Path(' /a/b ')
+
+    ta_lower = TypeAdapter(Path, config=ConfigDict(str_to_lower=True))
+    assert ta_lower.validate_python('/A/B') == Path('/A/B')
+    assert ta_lower.validate_json('"/A/B"') == Path('/A/B')
+
+    with pytest.raises(ValidationError):
+        ta.validate_json('1')
