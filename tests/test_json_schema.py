@@ -7047,6 +7047,23 @@ def test_unless_none_serializer_on_nullable_schema_in_wrapper(wrap: Any, when_us
     }
 
 
+@pytest.mark.parametrize('when_used', ['unless-none', 'json-unless-none'])
+def test_unless_none_serializer_on_non_nullable_wrapper_schemas_accepting_none(when_used: str) -> None:
+    class Model(BaseModel):
+        a: Any = None
+        o: object = None
+        n: None = None
+        l: Literal[1, None] = None
+
+        @field_serializer('a', 'o', 'n', 'l', when_used=when_used)
+        def ser(self, v: Any) -> str:
+            return f'<{v}>'
+
+    props = Model.model_json_schema(mode='serialization')['properties']
+    for key in ('a', 'o', 'n', 'l'):
+        assert props[key]['anyOf'] == [{'type': 'null'}, {'type': 'string'}]
+
+
 def test_merge_json_schema_extra_from_field_infos() -> None:
     class Model(BaseModel):
         f: Annotated[str, Field(json_schema_extra={'a': 1, 'b': 2})]

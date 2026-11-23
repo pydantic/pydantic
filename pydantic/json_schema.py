@@ -3262,8 +3262,8 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
 
 
 def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
-    """Whether the schema is a `'nullable'` schema, possibly wrapped in default, validator function, chain,
-    lax-or-strict and JSON-or-Python schemas.
+    """Whether the schema accepts `None`, possibly wrapped in default, validator function, chain,
+    lax-or-strict, JSON-or-Python, and union schemas.
 
     For the latter three, the same inner schema as the one used to generate the serialization JSON Schema
     is checked (see the corresponding `GenerateJsonSchema` methods).
@@ -3277,4 +3277,11 @@ def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
         return _is_nullable_schema(schema['strict_schema'] if schema.get('strict', False) else schema['lax_schema'])
     if schema['type'] == 'json-or-python':
         return _is_nullable_schema(schema['json_schema'])
-    return schema['type'] == 'nullable'
+    if schema['type'] == 'union':
+        return any(
+            _is_nullable_schema(choice[0] if isinstance(choice, tuple) else choice)
+            for choice in schema['choices']
+        )
+    if schema['type'] == 'literal':
+        return any(value is None for value in schema['expected'])
+    return schema['type'] in ('nullable', 'any', 'none')
