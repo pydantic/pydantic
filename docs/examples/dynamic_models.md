@@ -68,8 +68,7 @@ new_annotation = Annotated[
     metadata).
 
 3. We specify the field-specific attributes by using the [`Field()`][pydantic.Field] function
-    (in our previous example, this is equivalent to `Field(title='F')`). `default` and `default_factory`
-    are removed from `attributes` first so they don't conflict with the new `None` default.
+    (in our previous example, this is equivalent to `Field(title='F')`).
 
 and specify `None` as a default value (the second element of the tuple for the field definition accepted by [`create_model()`][pydantic.create_model]).
 
@@ -118,6 +117,9 @@ A couple notes on the implementation:
 
 * The [`MISSING` sentinel](../concepts/types.md#missing-sentinel) can be used as an alternative to `None`
   for the default values. Simply replace `None` by `MISSING` in the new annotation and default value.
+
+* We explicitly removed the `default` and `default_factory` attributes, as we are setting a `None` default for every
+  field. You may want to tweak this logic to preserve existing defaults.
 
 * You might be tempted to make a copy of the original [`FieldInfo`][pydantic.fields.FieldInfo] instances, add a
   default and/or perform other mutations, to then reuse it as [`Annotated`][typing.Annotated] metadata. While this
