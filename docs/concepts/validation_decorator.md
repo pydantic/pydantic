@@ -70,8 +70,24 @@ Type coercion like this can be extremely helpful, but also confusing or not desi
 can be enabled by using a [custom configuration](#custom-configuration).
 
 !!! note "Validating the return value"
-    By default, the return value of the function is **not** validated. To do so, the `validate_return` argument
-    of the decorator can be set to `True`.
+    Set `validate_return=True` to also validate the function's return value against its annotation.
+    In a return validation error, the `input` field comes from the function's return value.
+
+    ```python
+    from pydantic import ValidationError, validate_call
+
+
+    @validate_call(validate_return=True)
+    def get_count() -> int:
+        return 'unknown'  # type: ignore[return-value]
+
+
+    try:
+        get_count()
+    except ValidationError as exc:
+        print(exc.errors()[0]['input'])
+        #> unknown
+    ```
 
 ## Function signatures
 
