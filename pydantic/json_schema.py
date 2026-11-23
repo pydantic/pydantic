@@ -1497,43 +1497,102 @@ class GenerateJsonSchema:
         schema."""
         openapi_discriminator: str | None = None
 
+        field_name: str | None = None
         if isinstance(schema['discriminator'], str):
-            return schema['discriminator']
+            field_name = schema['discriminator']
+        elif isinstance(schema['discriminator'], list) and len(schema['discriminator']) > 0:
+            first = schema['discriminator'][0]
+            if isinstance(first, str):
+                field_name = first
+            elif isinstance(first, list) and len(first) == 1 and isinstance(first[0], str):
+                field_name = first[0]
+
+        candidates: list[str] = []
+        if field_name is not None:
+            choice_aliases: set[str] = set()
+            for choice in schema['choices'].values():
+                field = self._find_field_in_choice(choice, field_name)
+                if field is not None:
+                    if self.by_alias:
+                        choice_aliases.add(self._get_alias_name(field, field_name))
+                    else:
+                        choice_aliases.add(field_name)
+            if len(choice_aliases) == 1:
+                candidates.append(next(iter(choice_aliases)))
 
         if isinstance(schema['discriminator'], list):
-            # If the discriminator is a single item list containing a string, that is equivalent to the string case
-            if len(schema['discriminator']) == 1 and isinstance(schema['discriminator'][0], str):
-                return schema['discriminator'][0]
-            # When an alias is used that is different from the field name, the discriminator will be a list of single
-            # str lists, one for the attribute and one for the actual alias. The logic here will work even if there is
-            # more than one possible attribute, and looks for whether a single alias choice is present as a documented
-            # property on all choices. If so, that property will be used as the OpenAPI discriminator.
             for alias_path in schema['discriminator']:
                 if not isinstance(alias_path, list):
                     break  # this means that the discriminator is not a list of alias paths
                 if len(alias_path) != 1:
                     continue  # this means that the "alias" does not represent a single field
                 alias = alias_path[0]
-                if not isinstance(alias, str):
-                    continue  # this means that the "alias" does not represent a field
-                alias_is_present_on_all_choices = True
-                for choice in one_of_choices:
-                    try:
-                        choice = self.resolve_ref_schema(choice)
-                    except RuntimeError as exc:
-                        # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
-                        # for tagged union choices at this point in the schema gen process, we might need to do
-                        # another pass at the end like we do for core schemas
-                        self.emit_warning('skipped-discriminator', str(exc))
-                        choice = {}
-                    properties = choice.get('properties', {})
-                    if not isinstance(properties, dict) or alias not in properties:
-                        alias_is_present_on_all_choices = False
-                        break
-                if alias_is_present_on_all_choices:
-                    openapi_discriminator = alias
-                    break
+                if isinstance(alias, str) and alias not in candidates:
+                    candidates.append(alias)
+        elif isinstance(schema['discriminator'], str) and schema['discriminator'] not in candidates:
+            candidates.append(schema['discriminator'])
+
+        if field_name and field_name not in candidates:
+            candidates.append(field_name)
+
+        for alias in candidates:
+            if all(self._choice_has_property(choice, alias) for choice in one_of_choices):
+                openapi_discriminator = alias
+                break
+
+        if openapi_discriminator is None and candidates:
+            # Fallback to first candidate if choices could not be verified (e.g. unresolvable refs)
+            openapi_discriminator = candidates[0]
+
         return openapi_discriminator
+
+    def _choice_has_property(self, choice: JsonDict, prop: str) -> bool:
+        try:
+            choice = self.resolve_ref_schema(choice)
+        except RuntimeError:
+            return False
+        if 'properties' in choice:
+            return isinstance(choice['properties'], dict) and prop in choice['properties']
+        if 'oneOf' in choice:
+            return all(self._choice_has_property(subchoice, prop) for subchoice in choice['oneOf'])
+        if 'anyOf' in choice:
+            return all(self._choice_has_property(subchoice, prop) for subchoice in choice['anyOf'])
+        return False
+
+    def _find_field_in_choice(self, choice_schema: core_schema.CoreSchema, field_name: str) -> CoreSchemaField | None:
+        while choice_schema['type'] in (
+            'definitions',
+            'function-after',
+            'function-before',
+            'function-wrap',
+            'nullable',
+        ):
+            choice_schema = choice_schema['schema']
+        if choice_schema['type'] == 'model':
+            inner = choice_schema['schema']
+            if inner['type'] == 'model-fields':
+                return inner['fields'].get(field_name)
+        elif choice_schema['type'] == 'dataclass':
+            inner = choice_schema['schema']
+            if inner['type'] == 'dataclass-args':
+                for field in inner['fields']:
+                    if field['name'] == field_name:
+                        return field
+        elif choice_schema['type'] == 'typed-dict':
+            return choice_schema['fields'].get(field_name)
+        elif choice_schema['type'] == 'tagged-union':
+            for subchoice in choice_schema['choices'].values():
+                field = self._find_field_in_choice(subchoice, field_name)
+                if field is not None:
+                    return field
+        elif choice_schema['type'] == 'lax-or-strict':
+            return self._find_field_in_choice(choice_schema['lax_schema'], field_name)
+        elif choice_schema['type'] == 'chain':
+            for step in choice_schema['steps']:
+                field = self._find_field_in_choice(step, field_name)
+                if field is not None:
+                    return field
+        return None
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a core_schema.ChainSchema.

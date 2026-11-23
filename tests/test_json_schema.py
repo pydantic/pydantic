@@ -4794,6 +4794,72 @@ def test_alias_same():
     }
 
 
+def test_discriminator_serialization_alias():
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(serialization_alias='petType')
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(serialization_alias='petType')
+        barks: float
+
+    class Household(BaseModel):
+        pet: Annotated[Cat | Dog, Field(discriminator='pet_type')]
+
+    val_schema = Household.model_json_schema(mode='validation')
+    assert val_schema['properties']['pet']['discriminator'] == {
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+        'propertyName': 'pet_type',
+    }
+
+    ser_schema = Household.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['pet']['discriminator'] == {
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+        'propertyName': 'petType',
+    }
+
+    noalias_schema = Household.model_json_schema(mode='serialization', by_alias=False)
+    assert noalias_schema['properties']['pet']['discriminator'] == {
+        'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
+        'propertyName': 'pet_type',
+    }
+
+    class Circle(BaseModel):
+        shape_type: Literal['circle'] = Field(
+            validation_alias='in_shape',
+            serialization_alias='out_shape',
+        )
+        radius: float
+
+    class Square(BaseModel):
+        shape_type: Literal['square'] = Field(
+            validation_alias='in_shape',
+            serialization_alias='out_shape',
+        )
+        side: float
+
+    class Canvas(BaseModel):
+        shape: Annotated[Circle | Square, Field(discriminator='shape_type')]
+
+    canvas_val_schema = Canvas.model_json_schema(mode='validation')
+    assert canvas_val_schema['properties']['shape']['discriminator'] == {
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+        'propertyName': 'in_shape',
+    }
+
+    canvas_ser_schema = Canvas.model_json_schema(mode='serialization')
+    assert canvas_ser_schema['properties']['shape']['discriminator'] == {
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+        'propertyName': 'out_shape',
+    }
+
+    canvas_noalias_schema = Canvas.model_json_schema(mode='serialization', by_alias=False)
+    assert canvas_noalias_schema['properties']['shape']['discriminator'] == {
+        'mapping': {'circle': '#/$defs/Circle', 'square': '#/$defs/Square'},
+        'propertyName': 'shape_type',
+    }
+
+
 def test_nested_python_dataclasses():
     """
     Test schema generation for nested python dataclasses
