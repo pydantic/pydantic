@@ -165,7 +165,7 @@ class _Pipeline(Generic[_InT, _OutT]):
         """Parse the input into a new type, deferring resolution of the type until the current class
         is fully defined.
 
-        This is useful when you need to reference the class in it's own type annotations.
+        This is useful when you need to reference the class in its own type annotations.
         """
         return _Pipeline[_InT, _NewOutT](self._steps + (_ValidateAsDefer(func),))
 
