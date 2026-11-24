@@ -1,6 +1,5 @@
 use std::sync::{Arc, LazyLock};
 
-use jiter::JsonValue;
 use num_bigint::BigInt;
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
@@ -76,11 +75,6 @@ impl Validator for IntValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        if let Some(JsonValue::BigInt(value)) = input.as_json() {
-            // JSON integers are exact in both strict and lax mode. Convert the
-            // borrowed value directly instead of cloning it into EitherInt.
-            return Ok(value.into_py_any(py)?);
-        }
         input
             .validate_int(state.strict_or(self.strict))
             .and_then(|val_match| Ok(val_match.unpack(state).into_py_any(py)?))
