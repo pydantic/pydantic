@@ -1,6 +1,6 @@
 use std::sync::{Arc, OnceLock};
 
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyList};
 use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::errors::ValResult;
@@ -219,8 +219,8 @@ impl<'py, T, I: Input<'py> + ?Sized> ConsumeIterator<PyResult<T>> for ValidateTo
 where
     T: BorrowInput<'py>,
 {
-    type Output = ValResult<Vec<Py<PyAny>>>;
-    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<Vec<Py<PyAny>>> {
+    type Output = ValResult<Bound<'py, PyList>>;
+    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<Bound<'py, PyList>> {
         let capacity = self.actual_length.unwrap_or(DEFAULT_CAPACITY);
         let max_length_check = MaxLengthCheck::new(self.max_length, self.field_type, self.input, self.actual_length);
         validate_iter_to_vec(
@@ -247,8 +247,8 @@ impl<'py, T, I: Input<'py> + ?Sized> ConsumeIterator<PyResult<T>> for ToVec<'_, 
 where
     T: BorrowInput<'py>,
 {
-    type Output = ValResult<Vec<Py<PyAny>>>;
-    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<Vec<Py<PyAny>>> {
+    type Output = ValResult<Bound<'py, PyList>>;
+    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<Bound<'py, PyList>> {
         let max_length_check = MaxLengthCheck::new(self.max_length, self.field_type, self.input, self.actual_length);
         no_validator_iter_to_vec(self.py, self.input, iterator, max_length_check)
     }

@@ -2,7 +2,7 @@ use std::sync::{Arc, OnceLock};
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::PyDict;
 
 use crate::common::deque::new_deque;
 use crate::errors::ValResult;
@@ -79,7 +79,7 @@ impl Validator for DequeValidator {
 
         // `maxlen` is preserved from the input deque (if any). The validated output can't have
         // more items than the input, so the deque constructor will never truncate the items here.
-        Ok(new_deque(py, PyList::new(py, output)?, maxlen)?)
+        Ok(new_deque(py, output, maxlen)?)
     }
 
     fn get_name(&self) -> &str {
