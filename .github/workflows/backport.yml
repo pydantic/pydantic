@@ -79,6 +79,8 @@ jobs:
             core.setOutput('merge-sha', pr.merge_commit_sha);
             core.setOutput('targets', JSON.stringify(targets));
 
+  # Creates the backport commit, and uploads it as a patch (along with the agent report, if any) for the `publish` job.
+  # As the agent can run arbitrary code, this job has no publishing credentials.
   backport:
     name: Backport to ${{ matrix.target.branch }}
     needs: plan
@@ -87,8 +89,6 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
-      # To comment on the PR on failure:
-      pull-requests: write
       # To authenticate to the Pydantic AI Gateway:
       id-token: write
     strategy:
@@ -183,10 +183,9 @@ jobs:
         env:
           ANTHROPIC_BASE_URL: https://gateway-eu.pydantic.dev/proxy/anthropic
           ANTHROPIC_API_KEY: ${{ steps.logfire.outputs.token }}
-          REPORT_FILE: ${{ runner.temp }}/backport-report.md
+          REPORT_FILE: ${{ runner.temp }}/backport/report.md
         run: |
-          # The agent has no GitHub credentials: the checkouts don't persist them, and the
-          # app token is only created afterwards.
+          mkdir -p "$(dirname "$REPORT_FILE")"
           prompt="$(envsubst '$PR_NUMBER $MERGE_SHA $TARGET_BRANCH $REPORT_FILE' < ../bot/.github/backport/AGENT.md)"
           ../bot/.github/backport/node_modules/.bin/claude --print "$prompt" \
             --model claude-opus-5-5 \
@@ -220,6 +219,91 @@ jobs:
             | git commit --amend --file - --cleanup=whitespace --trailer "Backport-of: #$PR_NUMBER"
           git log -1 --format=fuller
 
+      - name: Export patch
+        if: steps.check.outputs.skip != 'true'
+        working-directory: repo
+        run: |
+          mkdir -p "$RUNNER_TEMP/backport"
+          git format-patch -1 --stdout > "$RUNNER_TEMP/backport/backport.patch"
+
+      - name: Upload backport
+        # Also on failure, so that the agent report can be posted:
+        if: always() && steps.check.outputs.skip != 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.target.label }}
+          path: ${{ runner.temp }}/backport/
+          if-no-files-found: ignore
+          retention-days: 1
+
+  # Pushes the backport branch and opens the backport PR, on a fresh runner that doesn't reuse anything from the
+  # `backport` job but its artifact (treated as untrusted).
+  publish:
+    name: Publish backport to ${{ matrix.target.branch }}
+    needs: [plan, backport]
+    if: always() && needs.plan.result == 'success' && needs.plan.outputs.targets != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # To comment on the PR on failure:
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    env:
+      PR_NUMBER: ${{ needs.plan.outputs.pr }}
+      MERGE_SHA: ${{ needs.plan.outputs.merge-sha }}
+      TARGET_BRANCH: ${{ matrix.target.branch }}
+      BACKPORT_BRANCH: backport/${{ needs.plan.outputs.pr }}-to-${{ matrix.target.branch }}
+      BACKPORT_DIR: ${{ github.workspace }}/backport
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ matrix.target.branch }}
+          path: repo
+          persist-credentials: false
+
+      - name: Check backport branch
+        id: check
+        working-directory: repo
+        run: |
+          if git ls-remote --exit-code origin "refs/heads/$BACKPORT_BRANCH" > /dev/null; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download backport
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        # There is no artifact if the `backport` job failed before resolving conflicts:
+        continue-on-error: true
+        with:
+          name: ${{ matrix.target.label }}
+          path: ${{ env.BACKPORT_DIR }}
+
+      - name: Apply patch
+        if: steps.check.outputs.skip != 'true'
+        working-directory: repo
+        run: |
+          if [[ ! -f "$BACKPORT_DIR/backport.patch" ]]; then
+            echo "::error::The backport job did not produce a patch"
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$BACKPORT_BRANCH"
+          git am "$BACKPORT_DIR/backport.patch"
+
+          # Don't trust the artifact, check that it is a single commit without conflict markers:
+          if [[ "$(git rev-list --count "origin/$TARGET_BRANCH..HEAD")" != 1 ]] \
+            || git diff HEAD^ HEAD | grep -qE '^\+(<<<<<<<|>>>>>>>)( |$)'; then
+            echo "::error::Invalid backport patch"
+            exit 1
+          fi
+          git log -1 --format=fuller
+
       - name: Generate app token
         id: app-token
         if: steps.check.outputs.skip != 'true'
@@ -242,22 +326,21 @@ jobs:
       - name: Open backport PR
         if: steps.check.outputs.skip != 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          HAS_CONFLICTS: ${{ steps.cherry-pick.outputs.has_conflicts }}
-          REPORT_FILE: ${{ runner.temp }}/backport-report.md
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const fs = require('fs');
-            const { PR_NUMBER, TARGET_BRANCH, BACKPORT_BRANCH, HAS_CONFLICTS, REPORT_FILE } = process.env;
+            const { PR_NUMBER, TARGET_BRANCH, BACKPORT_BRANCH, BACKPORT_DIR } = process.env;
+            const reportFile = `${BACKPORT_DIR}/report.md`;
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             const { data: original } = await github.rest.pulls.get({ ...context.repo, pull_number: Number(PR_NUMBER) });
 
             let body = `Backport of #${PR_NUMBER} to \`${TARGET_BRANCH}\`.`;
-            if (HAS_CONFLICTS === 'true') {
+            // The agent only runs (and writes a report) if the cherry-pick conflicted:
+            if (fs.existsSync(reportFile)) {
               // The first line of the report is the status line:
-              const report = fs.readFileSync(REPORT_FILE, 'utf8').split('\n').slice(1).join('\n').trim();
+              const report = fs.readFileSync(reportFile, 'utf8').split('\n').slice(1).join('\n').trim();
               body += `
 
             > [!WARNING]
@@ -296,12 +379,11 @@ jobs:
       - name: Report failure
         if: failure()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          REPORT_FILE: ${{ runner.temp }}/backport-report.md
         with:
           script: |
             const fs = require('fs');
-            const { PR_NUMBER, MERGE_SHA, TARGET_BRANCH, BACKPORT_BRANCH, REPORT_FILE } = process.env;
+            const { PR_NUMBER, MERGE_SHA, TARGET_BRANCH, BACKPORT_BRANCH, BACKPORT_DIR } = process.env;
+            const reportFile = `${BACKPORT_DIR}/report.md`;
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             let body = `The backport to \`${TARGET_BRANCH}\` failed (see ${runUrl}). To backport manually:
@@ -310,9 +392,9 @@ jobs:
             git switch ${TARGET_BRANCH} && git switch -c ${BACKPORT_BRANCH}
             git cherry-pick -x ${MERGE_SHA}
             \`\`\``;
-            if (fs.existsSync(REPORT_FILE)) {
+            if (fs.existsSync(reportFile)) {
               // The first line of the report is the status line:
-              const report = fs.readFileSync(REPORT_FILE, 'utf8').split('\n').slice(1).join('\n').trim();
+              const report = fs.readFileSync(reportFile, 'utf8').split('\n').slice(1).join('\n').trim();
               body += `
 
             <details><summary>Agent report</summary>
