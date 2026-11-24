@@ -1,4 +1,7 @@
-We'd love you to contribute to Pydantic!
+As of November 2026, Pydantic does *not* accept contributions from external developers, apart from trivial fixes (typo, docs tweak).
+
+Any pull request opened to fix an existing issue will be closed and can result in a permanent ban from the GitHub organization.
+Similarly, issue comments asking for assignment will be deleted to avoid cluterring the issue timeline (repeated comments can also result in a permanent ban).
 
 ## Issues
 
@@ -35,17 +38,6 @@ Because of this, setting up and running the tests should be very simple.
 !!! tip
     **tl;dr**: use `make format` to fix formatting, `make` to run tests and linting and `make docs`
     to build the docs.
-
-## AI policy
-
-We welcome the use of AI when contributing to Pydantic. However, users should certify that they fully understand the code being submitted.
-We reserve the right to close any pull request at our discretion, without further justification. This includes, but is not limited to, cases where:
-
-* the contribution does not meet our quality standards,
-* the author appears to be mass-submitting pull requests across multiple repositories (spam),
-* the pull request description is AI generated *and* incoherent or nonsensical.
-
-Such behavior can also result in a permanent ban from the organization.
 
 ### Prerequisites
 
