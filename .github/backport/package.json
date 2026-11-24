@@ -1,0 +1,8 @@
+{
+  "name": "backport-bot",
+  "private": true,
+  "description": "Dependencies of `.github/workflows/backport.yml`.",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.331"
+  }
+}

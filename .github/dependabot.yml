@@ -8,6 +8,12 @@ updates:
     cooldown:
       default-days: 7
 
+  # No cooldown, to get Claude Code releases right away:
+  - package-ecosystem: npm # zizmor: ignore[dependabot-cooldown]
+    directory: /.github/backport/
+    schedule:
+      interval: monthly
+
   - package-ecosystem: cargo
     directory: /pydantic-core/
     schedule:

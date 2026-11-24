@@ -89,6 +89,8 @@ jobs:
       contents: read
       # To comment on the PR on failure:
       pull-requests: write
+      # To authenticate to the Pydantic AI Gateway:
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -156,19 +158,37 @@ jobs:
         if: steps.cherry-pick.outputs.has_conflicts == 'true'
         uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88 # stable
 
+      - name: Install Claude Code
+        if: steps.cherry-pick.outputs.has_conflicts == 'true'
+        working-directory: bot/.github/backport
+        run: npm ci --no-audit --no-fund
+
+      # Exchanges the job's OIDC token for a short-lived Logfire token (revoked at the end
+      # of the job), allowed by a trust policy on the Logfire project:
+      - name: Authenticate to Logfire
+        id: logfire
+        if: steps.cherry-pick.outputs.has_conflicts == 'true'
+        uses: pydantic/logfire-auth-action@c9ee4aa5dbd2f593fc9f6062075846d046c98c14 # v1.2.0
+        with:
+          region: eu
+          organization: logfire
+          project: logfire
+          scopes: project:gateway_proxy
+
       - name: Resolve conflicts
         if: steps.cherry-pick.outputs.has_conflicts == 'true'
+        # Should not exceed the trust policy's token TTL:
+        timeout-minutes: 30
         working-directory: repo
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_BASE_URL: https://gateway-eu.pydantic.dev/proxy/anthropic
+          ANTHROPIC_API_KEY: ${{ steps.logfire.outputs.token }}
           REPORT_FILE: ${{ runner.temp }}/backport-report.md
         run: |
-          npm install --global @anthropic-ai/claude-code@2.1.312 # zizmor: ignore[adhoc-packages]
-
           # The agent has no GitHub credentials: the checkouts don't persist them, and the
           # app token is only created afterwards.
           prompt="$(envsubst '$PR_NUMBER $MERGE_SHA $TARGET_BRANCH $REPORT_FILE' < ../bot/.github/backport/AGENT.md)"
-          claude --print "$prompt" \
+          ../bot/.github/backport/node_modules/.bin/claude --print "$prompt" \
             --model claude-opus-5-5 \
             --max-budget-usd 20 \
             --add-dir "$RUNNER_TEMP" \
