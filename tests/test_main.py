@@ -769,6 +769,34 @@ def test_default_hash_function_overrides_default_hash_function():
     assert hash(A(x=1)) != hash(B(x=1, y=2)) != hash(B(x=1, y=3))
 
 
+def test_model_eq_ignores_non_bool_comparable_cached_property():
+    class _AmbiguousBool:
+        def __eq__(self, other: object) -> object:
+            return self
+
+        def __bool__(self) -> bool:
+            raise ValueError('The truth value of an array is ambiguous')
+
+    class Model(BaseModel):
+        model_config = ConfigDict(frozen=True)
+        value: int
+
+        @cached_property
+        def derived(self) -> _AmbiguousBool:
+            return _AmbiguousBool()
+
+    a = Model(value=1)
+    b = Model(value=1)
+    c = Model(value=2)
+    _ = a.derived
+    _ = b.derived
+    _ = c.derived
+
+    assert a == b
+    assert a != c
+    assert {a: 1}[b] == 1
+
+
 def test_hash_method_is_inherited_for_frozen_models():
     class MyBaseModel(BaseModel):
         """A base model with sensible configurations."""
