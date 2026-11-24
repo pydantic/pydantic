@@ -307,3 +307,20 @@ class WrapFieldSerializer(BaseModel):
     def valid_info(
         self, value: Any, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo[int]
     ) -> Any: ...
+
+
+class BaseValidatedModel(BaseModel):
+    a: int
+
+    @model_validator(mode='after')
+    def _validate(self) -> Self:
+        return self
+
+
+class SubValidatedModel(BaseValidatedModel):
+    b: int
+
+    @model_validator(mode='after')
+    def _validate(self) -> Self:
+        super()._validate()
+        return self

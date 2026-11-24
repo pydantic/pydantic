@@ -147,12 +147,12 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
                 self.decorator_info.wrapped_property = self.wrapped
         return self
 
-    def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:
+    def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> Any:
         try:
-            return self.wrapped.__get__(obj, obj_type)  # pyright: ignore[reportReturnType]
+            return self.wrapped.__get__(obj, obj_type)
         except AttributeError:
             # not a descriptor, e.g. a partial object
-            return self.wrapped  # type: ignore[return-value]
+            return self.wrapped
 
     def __set_name__(self, instance: Any, name: str) -> None:
         if hasattr(self.wrapped, '__set_name__'):
