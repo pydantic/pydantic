@@ -304,6 +304,13 @@ jobs:
           fi
           git log -1 --format=fuller
 
+          {
+            echo "(cherry picked from commit $MERGE_SHA)"
+            echo
+            { git log -1 --format='%an <%ae>'; git log -1 --format='%(trailers:key=Co-authored-by,valueonly)'; } \
+              | awk 'NF && !seen[$0]++ { print "Co-authored-by: " $0 }'
+          } > "$RUNNER_TEMP/squash-message.txt"
+
       - name: Generate app token
         id: app-token
         if: steps.check.outputs.skip != 'true'
@@ -335,8 +342,17 @@ jobs:
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             const { data: original } = await github.rest.pulls.get({ ...context.repo, pull_number: Number(PR_NUMBER) });
+            const squashMessage = fs.readFileSync(`${process.env.RUNNER_TEMP}/squash-message.txt`, 'utf8').trim();
+            // e.g. `v2.14-fixes` -> `2.14`:
+            const version = TARGET_BRANCH.replace(/^v(.+)-fixes$/, '$1');
 
-            let body = `Backport of #${PR_NUMBER} to \`${TARGET_BRANCH}\`.`;
+            let body = `Backport of #${PR_NUMBER} to \`${TARGET_BRANCH}\`.
+
+            Commit message description:
+
+            \`\`\`text
+            ${squashMessage}
+            \`\`\``;
             // The agent only runs (and writes a report) if the cherry-pick conflicted:
             if (fs.existsSync(reportFile)) {
               // The first line of the report is the status line:
@@ -357,7 +373,7 @@ jobs:
 
             const { data: backport } = await github.rest.pulls.create({
               ...context.repo,
-              title: original.title,
+              title: `[${version}] ${original.title} (#${PR_NUMBER})`,
               body,
               base: TARGET_BRANCH,
               head: BACKPORT_BRANCH,
