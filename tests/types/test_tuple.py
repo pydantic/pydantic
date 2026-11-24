@@ -132,3 +132,14 @@ def test_tuple_strict() -> None:
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
+
+
+@pytest.mark.parametrize('tp', [tuple[int, ...], tuple[int, int, int]], ids=['variadic', 'positional'])
+@pytest.mark.parametrize('index', [3, 10, -4, -10])
+def test_tuple_serialization_include_exclude_out_of_range_index(tp, index) -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/14303."""
+    ta = TypeAdapter(tp)
+
+    assert ta.dump_python((1, 2, 3), exclude={index}) == (1, 2, 3)
+    assert ta.dump_python((1, 2, 3), include={index}) == ()
+    assert ta.dump_json((1, 2, 3), include={index, -1}) == b'[3]'
