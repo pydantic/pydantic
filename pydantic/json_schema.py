@@ -2073,7 +2073,7 @@ class GenerateJsonSchema:
         """Generates a JSON schema that matches a schema that defines a function's keyword arguments.
 
         Args:
-            arguments: The core schema.
+            arguments: The list of keyword argument definitions.
             var_kwargs_schema: The core schema of the variadic keyword arguments, if any.
             var_kwargs_mode: How the variadic keyword arguments are validated.
 
@@ -2126,7 +2126,8 @@ class GenerateJsonSchema:
         """Generates a JSON schema that matches a schema that defines a function's positional arguments.
 
         Args:
-            arguments: The core schema.
+            arguments: The list of positional argument definitions.
+            var_args_schema: The core schema of the variadic positional arguments, if any.
 
         Returns:
             The generated JSON schema.
