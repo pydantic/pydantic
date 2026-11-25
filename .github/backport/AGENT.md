@@ -9,7 +9,8 @@ applies the same change as the original PR, adapted to the state of `$TARGET_BRA
 1. Understand the original change: `git show $MERGE_SHA`. Use `git log` and `git show` on `origin/main` to understand
    the context of conflicting hunks (e.g. which commits touched the conflicting lines on `main` but are not on
    `$TARGET_BRANCH`).
-2. List the conflicts with `git status`, and resolve each conflicted file. Stage it with `git add` once resolved.
+2. List the conflicts with `git status`, and resolve each conflicted file. Stage it with `git add` once resolved
+   (or with `git rm` to keep it deleted, for files that don't exist on `$TARGET_BRANCH`).
 3. Run the tests related to the change (see "Running tests" below), and fix the backport if they fail.
 4. Write the report (see "Report" below).
 
