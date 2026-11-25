@@ -307,6 +307,7 @@ jobs:
           {
             echo "(cherry picked from commit $MERGE_SHA)"
             echo
+            echo "Backport-of: #$PR_NUMBER"
             { git log -1 --format='%an <%ae>'; git log -1 --format='%(trailers:key=Co-authored-by,valueonly)'; } \
               | awk 'NF && !seen[$0]++ { print "Co-authored-by: " $0 }'
           } > "$RUNNER_TEMP/squash-message.txt"
