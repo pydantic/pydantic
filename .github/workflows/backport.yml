@@ -1,0 +1,424 @@
+# Opens backport PRs for merged PRs carrying a backport label.
+# The merge commit is cherry-picked onto the target branch. If the cherry-pick conflicts, an agent resolves the conflicts
+# (following `.github/backport/AGENT.md`), and the backport PR is opened with a report of the resolutions. If the agent
+# can't resolve them, no PR is opened and the failure is reported on the original PR.
+name: backport
+
+on:
+  # zizmor: ignore[dangerous-triggers] -- only the merged commit (already on `main`) is checked out, never the PR head
+  pull_request_target:
+    types: [closed, labeled]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Number of the merged PR to backport
+        required: true
+        type: number
+      label:
+        description: Backport label, as defined in `.github/backport/config.yml`
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  plan:
+    # On event `closed`, every backport label of the PR is processed. On event `labeled`, only the added label is
+    # (labels added before the merge are skipped here, and handled on `closed`).
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged && github.event.pull_request.base.ref == 'main')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      pr: ${{ steps.targets.outputs.pr }}
+      merge-sha: ${{ steps.targets.outputs.merge-sha }}
+      targets: ${{ steps.targets.outputs.targets }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          sparse-checkout: .github/backport
+          persist-credentials: false
+
+      - name: Generate backport targets
+        id: targets
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { stdout } = await exec.getExecOutput('yq', ['-o=json', '.branches', '.github/backport/config.yml'], { silent: true });
+            const branches = JSON.parse(stdout);
+
+            let prNumber, labels;
+            if (context.eventName === 'workflow_dispatch') {
+              prNumber = Number(context.payload.inputs.pr);
+              labels = [context.payload.inputs.label];
+              if (!Object.hasOwn(branches, labels[0])) {
+                core.setFailed(`Label '${labels[0]}' is not defined in .github/backport/config.yml`);
+                return;
+              }
+            } else {
+              prNumber = context.payload.pull_request.number;
+              labels = context.payload.action === 'labeled'
+                ? [context.payload.label.name]
+                : context.payload.pull_request.labels.map((label) => label.name);
+            }
+
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: prNumber });
+            if (!pr.merged || pr.base.ref !== 'main') {
+              core.setFailed(`#${prNumber} is not a PR merged into main`);
+              return;
+            }
+
+            const targets = labels
+              .filter((label) => Object.hasOwn(branches, label))
+              .map((label) => ({ label, branch: branches[label] }));
+            core.info(`Backport targets for #${prNumber}: ${JSON.stringify(targets)}`);
+
+            core.setOutput('pr', prNumber);
+            core.setOutput('merge-sha', pr.merge_commit_sha);
+            core.setOutput('targets', JSON.stringify(targets));
+
+  # Creates the backport commit, and uploads it as a patch (along with the agent report, if any) for the `publish` job.
+  # As the agent can run arbitrary code, this job has no publishing credentials.
+  backport:
+    name: Backport to ${{ matrix.target.branch }}
+    needs: plan
+    if: needs.plan.outputs.targets != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      # To authenticate to the Pydantic AI Gateway:
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    concurrency:
+      group: backport-${{ needs.plan.outputs.pr }}-${{ matrix.target.branch }}
+    env:
+      PR_NUMBER: ${{ needs.plan.outputs.pr }}
+      MERGE_SHA: ${{ needs.plan.outputs.merge-sha }}
+      TARGET_BRANCH: ${{ matrix.target.branch }}
+      BACKPORT_BRANCH: backport/${{ needs.plan.outputs.pr }}-to-${{ matrix.target.branch }}
+    steps:
+      - name: Checkout backport instructions
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          path: bot
+          sparse-checkout: .github/backport
+          persist-credentials: false
+
+      - name: Checkout target branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ matrix.target.branch }}
+          path: repo
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check backport branch
+        id: check
+        working-directory: repo
+        run: |
+          if git ls-remote --exit-code origin "refs/heads/$BACKPORT_BRANCH" > /dev/null; then
+            echo "::notice::Branch $BACKPORT_BRANCH already exists, skipping. Delete it to backport again."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cherry-pick
+        id: cherry-pick
+        if: steps.check.outputs.skip != 'true'
+        working-directory: repo
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$BACKPORT_BRANCH"
+
+          if git cherry-pick -x "$MERGE_SHA"; then
+            echo "has_conflicts=false" >> "$GITHUB_OUTPUT"
+          elif [[ -n "$(git diff --name-only --diff-filter=U)" ]]; then
+            echo "has_conflicts=true" >> "$GITHUB_OUTPUT"
+            git status --short
+          else
+            # Not a conflict (e.g. the PR was already backported).
+            echo "::error::Cherry-pick of $MERGE_SHA failed without conflicts"
+            exit 1
+          fi
+
+      - name: Install uv
+        if: steps.cherry-pick.outputs.has_conflicts == 'true'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: '3.15'
+
+      - name: Install Rust
+        if: steps.cherry-pick.outputs.has_conflicts == 'true'
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88 # stable
+
+      - name: Install Claude Code
+        if: steps.cherry-pick.outputs.has_conflicts == 'true'
+        working-directory: bot/.github/backport
+        run: npm ci --no-audit --no-fund
+
+      # Exchanges the job's OIDC token for a short-lived Logfire token (revoked at the end
+      # of the job), allowed by a trust policy on the Logfire project:
+      - name: Authenticate to Logfire
+        id: logfire
+        if: steps.cherry-pick.outputs.has_conflicts == 'true'
+        uses: pydantic/logfire-auth-action@c9ee4aa5dbd2f593fc9f6062075846d046c98c14 # v1.2.0
+        with:
+          region: eu
+          organization: logfire
+          project: logfire
+          scopes: project:gateway_proxy
+
+      - name: Resolve conflicts
+        if: steps.cherry-pick.outputs.has_conflicts == 'true'
+        # Should not exceed the trust policy's token TTL:
+        timeout-minutes: 30
+        working-directory: repo
+        env:
+          ANTHROPIC_BASE_URL: https://gateway-eu.pydantic.dev/proxy/anthropic
+          ANTHROPIC_API_KEY: ${{ steps.logfire.outputs.token }}
+          REPORT_FILE: ${{ runner.temp }}/backport/report.md
+        run: |
+          mkdir -p "$(dirname "$REPORT_FILE")"
+          prompt="$(envsubst '$PR_NUMBER $MERGE_SHA $TARGET_BRANCH $REPORT_FILE' < ../bot/.github/backport/AGENT.md)"
+          ../bot/.github/backport/node_modules/.bin/claude --print "$prompt" \
+            --model claude-opus-5-5 \
+            --max-budget-usd 20 \
+            --add-dir "$RUNNER_TEMP" \
+            --allowedTools 'Read,Edit,Write,Glob,Grep,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git add:*),Bash(git checkout --ours:*),Bash(git checkout --theirs:*),Bash(uv:*),Bash(make:*)' \
+            || echo "::warning::Agent exited with an error"
+
+          # Don't trust the agent report alone, check that no conflicts are left:
+          if [[ -n "$(git diff --name-only --diff-filter=U)" ]] \
+            || git grep -nE '^(<<<<<<<|>>>>>>>)( |$)' > /dev/null \
+            || ! head -n 1 "$REPORT_FILE" 2>/dev/null | grep -qx 'Status: resolved'; then
+            echo "::error::The agent could not resolve the conflicts"
+            exit 1
+          fi
+
+      - name: Commit
+        if: steps.check.outputs.skip != 'true'
+        working-directory: repo
+        env:
+          HAS_CONFLICTS: ${{ steps.cherry-pick.outputs.has_conflicts }}
+        run: |
+          if [[ "$HAS_CONFLICTS" == true ]]; then
+            git add --all
+            GIT_EDITOR=true git cherry-pick --continue
+          fi
+
+          # Drop the PR number from the subject (it would be duplicated on the backport PR) and reference the original PR:
+          git log -1 --format=%B \
+            | sed '1s/ (#[0-9]*)$//' \
+            | git commit --amend --file - --cleanup=whitespace --trailer "Backport-of: #$PR_NUMBER"
+          git log -1 --format=fuller
+
+      - name: Export patch
+        if: steps.check.outputs.skip != 'true'
+        working-directory: repo
+        run: |
+          mkdir -p "$RUNNER_TEMP/backport"
+          git format-patch -1 --stdout > "$RUNNER_TEMP/backport/backport.patch"
+
+      - name: Upload backport
+        # Also on failure, so that the agent report can be posted:
+        if: always() && steps.check.outputs.skip != 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.target.label }}
+          path: ${{ runner.temp }}/backport/
+          if-no-files-found: ignore
+          retention-days: 1
+
+  # Pushes the backport branch and opens the backport PR, on a fresh runner that doesn't reuse anything from the
+  # `backport` job but its artifact (treated as untrusted).
+  publish:
+    name: Publish backport to ${{ matrix.target.branch }}
+    needs: [plan, backport]
+    if: always() && needs.plan.result == 'success' && needs.plan.outputs.targets != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # To comment on the PR on failure:
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    env:
+      PR_NUMBER: ${{ needs.plan.outputs.pr }}
+      MERGE_SHA: ${{ needs.plan.outputs.merge-sha }}
+      TARGET_BRANCH: ${{ matrix.target.branch }}
+      BACKPORT_BRANCH: backport/${{ needs.plan.outputs.pr }}-to-${{ matrix.target.branch }}
+      BACKPORT_DIR: ${{ github.workspace }}/backport
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ matrix.target.branch }}
+          path: repo
+          persist-credentials: false
+
+      - name: Check backport branch
+        id: check
+        working-directory: repo
+        run: |
+          if git ls-remote --exit-code origin "refs/heads/$BACKPORT_BRANCH" > /dev/null; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download backport
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        # There is no artifact if the `backport` job failed before resolving conflicts:
+        continue-on-error: true
+        with:
+          name: ${{ matrix.target.label }}
+          path: ${{ env.BACKPORT_DIR }}
+
+      - name: Apply patch
+        if: steps.check.outputs.skip != 'true'
+        working-directory: repo
+        run: |
+          if [[ ! -f "$BACKPORT_DIR/backport.patch" ]]; then
+            echo "::error::The backport job did not produce a patch"
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$BACKPORT_BRANCH"
+          git am "$BACKPORT_DIR/backport.patch"
+
+          # Don't trust the artifact, check that it is a single commit without conflict markers:
+          if [[ "$(git rev-list --count "origin/$TARGET_BRANCH..HEAD")" != 1 ]] \
+            || git diff HEAD^ HEAD | grep -qE '^\+(<<<<<<<|>>>>>>>)( |$)'; then
+            echo "::error::Invalid backport patch"
+            exit 1
+          fi
+          git log -1 --format=fuller
+
+          {
+            echo "(cherry picked from commit $MERGE_SHA)"
+            echo
+            echo "Backport-of: #$PR_NUMBER"
+            { git log -1 --format='%an <%ae>'; git log -1 --format='%(trailers:key=Co-authored-by,valueonly)'; } \
+              | awk 'NF && !seen[$0]++ { print "Co-authored-by: " $0 }'
+          } > "$RUNNER_TEMP/squash-message.txt"
+
+      - name: Generate app token
+        id: app-token
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.BACKPORT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BACKPORT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          # Required to push backports touching workflow files:
+          permission-workflows: write
+
+      - name: Push
+        if: steps.check.outputs.skip != 'true'
+        working-directory: repo
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$BACKPORT_BRANCH"
+
+      - name: Open backport PR
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const fs = require('fs');
+            const { PR_NUMBER, TARGET_BRANCH, BACKPORT_BRANCH, BACKPORT_DIR } = process.env;
+            const reportFile = `${BACKPORT_DIR}/report.md`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const { data: original } = await github.rest.pulls.get({ ...context.repo, pull_number: Number(PR_NUMBER) });
+            const squashMessage = fs.readFileSync(`${process.env.RUNNER_TEMP}/squash-message.txt`, 'utf8').trim();
+            // e.g. `v2.14-fixes` -> `2.14`:
+            const version = TARGET_BRANCH.replace(/^v(.+)-fixes$/, '$1');
+
+            let body = `Backport of #${PR_NUMBER} to \`${TARGET_BRANCH}\`.
+
+            Commit message description:
+
+            \`\`\`text
+            ${squashMessage}
+            \`\`\``;
+            // The agent only runs (and writes a report) if the cherry-pick conflicted:
+            if (fs.existsSync(reportFile)) {
+              // The first line of the report is the status line:
+              const report = fs.readFileSync(reportFile, 'utf8').split('\n').slice(1).join('\n').trim();
+              body += `
+
+            > [!WARNING]
+            > The cherry-pick conflicted, and the conflicts were resolved by an agent. Review the resolutions carefully.
+
+            <details><summary>Agent report</summary>
+
+            ${report}
+
+            </details>
+
+            Agent run: ${runUrl}`;
+            }
+
+            const { data: backport } = await github.rest.pulls.create({
+              ...context.repo,
+              title: `[${version}] ${original.title} (#${PR_NUMBER})`,
+              body,
+              base: TARGET_BRANCH,
+              head: BACKPORT_BRANCH,
+            });
+
+            // Carry release notes labels:
+            const labels = original.labels.map((label) => label.name).filter((name) => name.startsWith('relnotes-'));
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({ ...context.repo, issue_number: backport.number, labels });
+            }
+            await github.rest.issues.addAssignees({ ...context.repo, issue_number: backport.number, assignees: [context.actor] });
+
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: original.number,
+              body: `Backport to \`${TARGET_BRANCH}\`: ${backport.html_url}`,
+            });
+
+      - name: Report failure
+        if: failure()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const { PR_NUMBER, MERGE_SHA, TARGET_BRANCH, BACKPORT_BRANCH, BACKPORT_DIR } = process.env;
+            const reportFile = `${BACKPORT_DIR}/report.md`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            let body = `The backport to \`${TARGET_BRANCH}\` failed (see ${runUrl}). To backport manually:
+
+            \`\`\`bash
+            git switch ${TARGET_BRANCH} && git switch -c ${BACKPORT_BRANCH}
+            git cherry-pick -x ${MERGE_SHA}
+            \`\`\``;
+            if (fs.existsSync(reportFile)) {
+              // The first line of the report is the status line:
+              const report = fs.readFileSync(reportFile, 'utf8').split('\n').slice(1).join('\n').trim();
+              body += `
+
+            <details><summary>Agent report</summary>
+
+            ${report}
+
+            </details>`;
+            }
+
+            await github.rest.issues.createComment({ ...context.repo, issue_number: Number(PR_NUMBER), body });

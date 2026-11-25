@@ -8,6 +8,11 @@ updates:
     cooldown:
       default-days: 7
 
+  - package-ecosystem: npm # zizmor: ignore[dependabot-cooldown]
+    directory: /.github/backport/
+    schedule:
+      interval: monthly
+
   - package-ecosystem: cargo
     directory: /pydantic-core/
     schedule:
