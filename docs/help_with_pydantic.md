@@ -27,5 +27,3 @@ Use the [`pydantic`](https://stackoverflow.com/questions/tagged/pydantic) tag on
 ## :simple-youtube: YouTube
 
 Youtube has lots of useful [videos on Pydantic](https://www.youtube.com/results?search_query=pydantic).
-
-In particular Marcelo Trylesinski's video ["Pydantic V1 to V2 - The Migration"](https://youtu.be/sD_xpYl4fPU) has helped people a lot when migrating from Pydantic V1 to V2.

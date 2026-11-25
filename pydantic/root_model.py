@@ -4,10 +4,9 @@ from __future__ import annotations as _annotations
 
 from collections.abc import Callable
 from copy import copy, deepcopy
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, Self, TypeVar, dataclass_transform
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import Self, dataclass_transform
 
 from . import PydanticUserError
 from ._internal import _model_construction, _repr
@@ -121,7 +120,7 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         m = cls.__new__(cls)
         memo[id(self)] = m
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
-        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
+        # This next line doesn't need a deepcopy because __pydantic_fields_set__ only contains strings,
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m
@@ -192,4 +191,5 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         ].annotation and super().__eq__(other)
 
     def __repr_args__(self) -> _repr.ReprArgs:
-        yield 'root', self.root
+        if self.__pydantic_fields__['root'].repr:
+            yield 'root', self.root

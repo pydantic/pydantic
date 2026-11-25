@@ -5,7 +5,7 @@ from typing import Annotated, Any
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
 
-from pydantic import AliasChoices, AliasPath, BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
+from pydantic import AliasChoices, AliasPath, BaseModel, ConfigDict, Field, PrivateAttr
 
 
 class Model(BaseModel):
@@ -110,39 +110,9 @@ def test_large_any_str():
     assert m.b == content_str
 
 
-def deprecated_copy(m: BaseModel, *, include=None, exclude=None, update=None, deep=False):
-    """
-    This should only be used to make calls to the deprecated `copy` method with arguments
-    that have been removed from `model_copy`. Otherwise, use the `copy_method` fixture below
-    """
-    with pytest.warns(
-        PydanticDeprecatedSince20,
-        match=(
-            'The `copy` method is deprecated; use `model_copy` instead. '
-            'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.'
-        ),
-    ):
-        return m.copy(include=include, exclude=exclude, update=update, deep=deep)
-
-
-@pytest.fixture(params=['copy', 'model_copy'])
-def copy_method(request):
-    """
-    Fixture to test both the old/deprecated `copy` and new `model_copy` methods.
-    """
-    if request.param == 'copy':
-        return deprecated_copy
-    else:
-
-        def new_copy_method(m, *, update=None, deep=False):
-            return m.model_copy(update=update, deep=deep)
-
-        return new_copy_method
-
-
-def test_simple_copy(copy_method):
+def test_simple_copy():
     m = Model(a=24)
-    m2 = copy_method(m)
+    m2 = m.model_copy()
 
     assert m.a == m2.a == 24
     assert m.b == m2.b == 10
@@ -162,10 +132,10 @@ def model_two_fixture():
     return ModelTwo
 
 
-def test_deep_copy(ModelTwo, copy_method):
+def test_deep_copy(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m._foo_ = {'new value'}
-    m2 = copy_method(m, deep=True)
+    m2 = m.model_copy(deep=True)
 
     assert m.a == m2.a == 24
     assert m.b == m2.b == 10
@@ -176,114 +146,9 @@ def test_deep_copy(ModelTwo, copy_method):
     assert m._foo_ is not m2._foo_
 
 
-@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
-def test_copy_exclude(ModelTwo):
+def test_copy_update(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
-    m2 = deprecated_copy(m, exclude={'b'})
-
-    assert m.a == m2.a == 24
-    assert isinstance(m2.d, Model)
-    assert m2.d.a == 12
-
-    assert hasattr(m2, 'c')
-    assert not hasattr(m2, 'b')
-    assert set(m.model_dump().keys()) == {'a', 'b', 'c', 'd'}
-    assert set(m2.model_dump().keys()) == {'a', 'c', 'd'}
-
-    assert m != m2
-
-
-@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
-def test_copy_include(ModelTwo):
-    m = ModelTwo(a=24, d=Model(a='12'))
-    m2 = deprecated_copy(m, include={'a'})
-
-    assert m.a == m2.a == 24
-    assert set(m.model_dump().keys()) == {'a', 'b', 'c', 'd'}
-    assert set(m2.model_dump().keys()) == {'a'}
-
-    assert m != m2
-
-
-@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
-def test_copy_include_exclude(ModelTwo):
-    m = ModelTwo(a=24, d=Model(a='12'))
-    m2 = deprecated_copy(m, include={'a', 'b', 'c'}, exclude={'c'})
-
-    assert set(m.model_dump().keys()) == {'a', 'b', 'c', 'd'}
-    assert set(m2.model_dump().keys()) == {'a', 'b'}
-
-
-@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
-def test_copy_advanced_exclude():
-    class SubSubModel(BaseModel):
-        a: str
-        b: str
-
-    class SubModel(BaseModel):
-        c: str
-        d: list[SubSubModel]
-
-    class Model(BaseModel):
-        e: str
-        f: SubModel
-
-    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
-    m2 = deprecated_copy(m, exclude={'f': {'c': ..., 'd': {-1: {'a'}}}})
-    assert hasattr(m.f, 'c')
-    assert not hasattr(m2.f, 'c')
-
-    assert m2.model_dump() == {'e': 'e', 'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}}
-    m2 = deprecated_copy(m, exclude={'e': ..., 'f': {'d'}})
-    assert m2.model_dump() == {'f': {'c': 'foo'}}
-
-
-@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
-def test_copy_advanced_include():
-    class SubSubModel(BaseModel):
-        a: str
-        b: str
-
-    class SubModel(BaseModel):
-        c: str
-        d: list[SubSubModel]
-
-    class Model(BaseModel):
-        e: str
-        f: SubModel
-
-    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
-    m2 = deprecated_copy(m, include={'f': {'c'}})
-    assert hasattr(m.f, 'c')
-    assert hasattr(m2.f, 'c')
-    assert m2.model_dump() == {'f': {'c': 'foo'}}
-
-    m2 = deprecated_copy(m, include={'e': ..., 'f': {'d': {-1}}})
-    assert m2.model_dump() == {'e': 'e', 'f': {'d': [{'a': 'c', 'b': 'e'}]}}
-
-
-@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
-def test_copy_advanced_include_exclude():
-    class SubSubModel(BaseModel):
-        a: str
-        b: str
-
-    class SubModel(BaseModel):
-        c: str
-        d: list[SubSubModel]
-
-    class Model(BaseModel):
-        e: str
-        f: SubModel
-
-    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
-    m2 = deprecated_copy(m, include={'e': ..., 'f': {'d'}}, exclude={'e': ..., 'f': {'d': {0}}})
-    assert m2.model_dump() == {'f': {'d': [{'a': 'c', 'b': 'e'}]}}
-
-
-def test_copy_update(ModelTwo, copy_method):
-    m = ModelTwo(a=24, d=Model(a='12'))
-    m2 = copy_method(m, update={'a': 'different'})
+    m2 = m.model_copy(update={'a': 'different'})
 
     assert m.a == 24
     assert m2.a == 'different'
@@ -297,13 +162,13 @@ def test_copy_update(ModelTwo, copy_method):
     assert m != m2
 
 
-def test_copy_update_unset(copy_method):
+def test_copy_update_unset():
     class Foo(BaseModel):
         foo: str | None = None
         bar: str | None = None
 
     assert (
-        copy_method(Foo(foo='hello'), update={'bar': 'world'}).model_dump_json(exclude_unset=True)
+        Foo(foo='hello').model_copy(update={'bar': 'world'}).model_dump_json(exclude_unset=True)
         == '{"foo":"hello","bar":"world"}'
     )
 
@@ -312,14 +177,14 @@ class ExtraModel(BaseModel, extra='allow'):
     pass
 
 
-def test_copy_deep_extra(copy_method):
+def test_copy_deep_extra():
     class Foo(BaseModel, extra='allow'):
         pass
 
     m = Foo(extra=[])
-    assert copy_method(m).extra is m.extra
-    assert copy_method(m, deep=True).extra == m.extra
-    assert copy_method(m, deep=True).extra is not m.extra
+    assert m.model_copy().extra is m.extra
+    assert m.model_copy(deep=True).extra == m.extra
+    assert m.model_copy(deep=True).extra is not m.extra
 
 
 class NotDeepCopyable:
@@ -427,9 +292,9 @@ def test_deepcopy_mutually_referential_models() -> None:
     assert copied.other.other is copied
 
 
-def test_copy_set_fields(ModelTwo, copy_method):
+def test_copy_set_fields(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
-    m2 = copy_method(m)
+    m2 = m.model_copy()
 
     assert m.model_dump(exclude_unset=True) == {'a': 24.0, 'd': {'a': 12}}
     assert m.model_dump(exclude_unset=True) == m2.model_dump(exclude_unset=True)
@@ -499,27 +364,27 @@ def test_pickle_undefined(create_module):
     assert not hasattr(m3, '_foo_')
 
 
-def test_copy_undefined(ModelTwo, copy_method):
+def test_copy_undefined(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='123.45'))
-    m2 = copy_method(m)
+    m2 = m.model_copy()
     assert m2._foo_ == {'private'}
 
     m._foo_ = PydanticUndefined
-    m3 = copy_method(m)
+    m3 = m.model_copy()
     assert not hasattr(m3, '_foo_')
 
 
-def test_immutable_copy_with_frozen(copy_method):
+def test_immutable_copy_with_frozen():
     class Model(BaseModel):
         model_config = ConfigDict(frozen=True)
         a: int
         b: int
 
     m = Model(a=40, b=10)
-    assert m == copy_method(m)
+    assert m == m.model_copy()
     assert repr(m) == 'Model(a=40, b=10)'
 
-    m2 = copy_method(m, update={'b': 12})
+    m2 = m.model_copy(update={'b': 12})
     assert repr(m2) == 'Model(a=40, b=12)'
     with pytest.raises(ValidationError):
         m2.b = 13
@@ -539,43 +404,14 @@ def test_pickle_preserves_extra():
     assert m2.model_extra == {'a': 24}
 
 
-def test_copy_update_exclude():
-    class SubModel(BaseModel):
-        a: str
-        b: str
-
-    class Model(BaseModel):
-        c: str
-        d: SubModel
-
-    m = Model(c='ex', d=dict(a='ax', b='bx'))
-    assert m.model_dump() == {'c': 'ex', 'd': {'a': 'ax', 'b': 'bx'}}
-    assert deprecated_copy(m, exclude={'c'}).model_dump() == {'d': {'a': 'ax', 'b': 'bx'}}
-    with pytest.warns(
-        UserWarning,
-        match=r"Expected `str` - serialized value may not be as expected \[field_name='c', input_value=42, input_type=int\]",
-    ):
-        assert deprecated_copy(m, exclude={'c'}, update={'c': 42}).model_dump() == {
-            'c': 42,
-            'd': {'a': 'ax', 'b': 'bx'},
-        }
-
-    with pytest.warns(
-        PydanticDeprecatedSince20,
-        match='The private method `_calculate_keys` will be removed and should no longer be used.',
-    ):
-        assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False) == {'c', 'd'}
-        assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False, update={'c': 42}) == {'d'}
-
-
-def test_shallow_copy_modify(copy_method):
+def test_shallow_copy_modify():
     class X(BaseModel):
         val: int
         deep: Any
 
     x = X(val=1, deep={'deep_thing': [1, 2]})
 
-    y = copy_method(x)
+    y = x.model_copy()
     y.val = 2
     y.deep['deep_thing'].append(3)
 
@@ -594,20 +430,6 @@ def test_construct_default_factory():
     m = Model.model_construct()
     assert m.foo == []
     assert m.bar == 'Baz'
-
-
-@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
-def test_copy_with_excluded_fields():
-    class User(BaseModel):
-        name: str
-        age: int
-        dob: str
-
-    user = User(name='test_user', age=23, dob='01/01/2000')
-    user_copy = deprecated_copy(user, exclude={'dob': ...})
-
-    assert 'dob' in user.model_fields_set
-    assert 'dob' not in user_copy.model_fields_set
 
 
 def test_dunder_copy(ModelTwo):

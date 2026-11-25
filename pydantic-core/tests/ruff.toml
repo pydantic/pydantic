@@ -1,0 +1,7 @@
+extend = '../pyproject.toml'
+
+[lint]
+extend-select = ['TID251']
+
+[lint.flake8-tidy-imports.extend-banned-api]
+'pydantic'.msg = "'pydantic-core' tests must not depend on 'pydantic'."

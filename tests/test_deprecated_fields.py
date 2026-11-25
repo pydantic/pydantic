@@ -1,7 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 import pytest
-from typing_extensions import Self, deprecated
+from typing_extensions import deprecated
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 

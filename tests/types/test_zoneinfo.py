@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import UTC, timezone
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -70,4 +70,4 @@ def test_zoneinfo_json_schema() -> None:
 def test_zoneinfo_union() -> None:
     ta = TypeAdapter(ZoneInfo | timezone, config=ConfigDict(arbitrary_types_allowed=True))
 
-    assert ta.validate_python(timezone.utc) is timezone.utc
+    assert ta.validate_python(UTC) is UTC

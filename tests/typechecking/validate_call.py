@@ -1,4 +1,4 @@
-from typing_extensions import assert_type
+from typing import assert_type
 
 from pydantic import validate_call
 

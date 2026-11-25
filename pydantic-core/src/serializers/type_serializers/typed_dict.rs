@@ -6,8 +6,6 @@ use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::PyDict;
 
-use ahash::AHashMap;
-
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, py_schema_error_type, schema_or_config};
 use crate::definitions::DefinitionsBuilder;
@@ -15,7 +13,9 @@ use crate::serializers::SerializationState;
 use crate::serializers::shared::TypeSerializer;
 use crate::tools::SchemaDict;
 
-use super::{BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, SerField};
+use super::{
+    BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, SerField, SerFields,
+};
 
 #[derive(Debug)]
 pub struct TypedDictSerializer {
@@ -45,7 +45,7 @@ impl BuildSerializer for TypedDictSerializer {
         let serialize_by_alias = config.get_as(intern!(py, "serialize_by_alias"))?;
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields = AHashMap::with_capacity(fields_dict.len());
+        let mut fields = SerFields::with_capacity(fields_dict.len());
 
         let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
             (Some(v), FieldsMode::TypedDictAllow) => {

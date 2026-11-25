@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta, timezone
 from typing import Literal
 
 import pytest
@@ -48,7 +48,7 @@ def tz(**kwargs):
     'value,expected',
     [
         (datetime(2022, 12, 2, 12, 13, 14), '2022-12-02T12:13:14'),
-        (datetime(2022, 12, 2, 12, tzinfo=timezone.utc), '2022-12-02T12:00:00Z'),
+        (datetime(2022, 12, 2, 12, tzinfo=UTC), '2022-12-02T12:00:00Z'),
         (datetime(2022, 12, 2, 12, tzinfo=tz(hours=2)), '2022-12-02T12:00:00+02:00'),
         (datetime(2022, 12, 2, 12, tzinfo=tz(hours=2, minutes=30)), '2022-12-02T12:00:00+02:30'),
         (datetime(2022, 12, 2, 12, tzinfo=tz(hours=-2)), '2022-12-02T12:00:00-02:00'),
@@ -198,9 +198,9 @@ def test_config_datetime(
 @pytest.mark.parametrize(
     ['dt', 'expected', 'expected_json', 'expected_key', 'mode'],
     [
-        (datetime(2026, 1, 1, tzinfo=timezone.utc), 1767225600.0, b'1767225600.0', '1767225600', 'seconds'),
+        (datetime(2026, 1, 1, tzinfo=UTC), 1767225600.0, b'1767225600.0', '1767225600', 'seconds'),
         (
-            datetime(2026, 1, 1, tzinfo=timezone.utc),
+            datetime(2026, 1, 1, tzinfo=UTC),
             1767225600000.0,
             b'1767225600000.0',
             '1767225600000',

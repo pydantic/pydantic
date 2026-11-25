@@ -111,7 +111,7 @@ def display_as_type(obj: Any) -> str:
         if typing_objects.is_literal(typing_extensions.get_origin(obj)):
             args = ', '.join(map(repr, typing_extensions.get_args(obj)))
         else:
-            args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
+            args = ', '.join(map(_display_type_arg, typing_extensions.get_args(obj)))
         try:
             return f'{obj.__qualname__}[{args}]'
         except AttributeError:
@@ -120,3 +120,10 @@ def display_as_type(obj: Any) -> str:
         return obj.__qualname__
     else:
         return repr(obj).replace('typing.', '').replace('typing_extensions.', '')
+
+
+def _display_type_arg(arg: Any) -> str:
+    # The parameters of `Callable[[int, str], bool]` are given as a list:
+    if isinstance(arg, list):
+        return f'[{", ".join(map(display_as_type, arg))}]'
+    return display_as_type(arg)

@@ -4,7 +4,7 @@ import pytest
 from pydantic_core import ArgsKwargs, SchemaValidator
 from typing_extensions import TypedDict, Unpack
 
-from pydantic import AliasGenerator, Field, PydanticUserError, ValidationError
+from pydantic import AliasGenerator, BeforeValidator, Field, PydanticUserError, ValidationError, ValidationInfo
 from pydantic.experimental.arguments_schema import generate_arguments_schema
 
 
@@ -97,6 +97,70 @@ def test_arguments_v3_kwargs_uniform() -> None:
     assert kwargs == {'extra': 1}
 
 
+@pytest.mark.parametrize(
+    ['input', 'json', 'msg'],
+    [
+        ([1, 2], False, 'Arguments must be a dictionary'),
+        ((1, 2), False, 'Arguments must be a dictionary'),
+        (1, False, 'Arguments must be a dictionary'),
+        ('[1, 2]', True, 'Arguments must be an object'),
+    ],
+)
+def test_arguments_v3_invalid_type(input: Any, json: bool, msg: str) -> None:
+    def func(a: int, b: int) -> None: ...
+
+    arguments_schema = generate_arguments_schema(func=func, schema_type='arguments-v3')
+    val = SchemaValidator(arguments_schema)
+
+    with pytest.raises(ValidationError) as exc_info:
+        val.validate_json(input) if json else val.validate_python(input)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'arguments_type', 'loc': (), 'msg': msg, 'input': [1, 2] if json else input},
+    ]
+
+
+class _ExtraOptions(TypedDict, total=False, extra_items=Any):
+    m: int
+
+
+def _keyword_only(*, n: int, **kwargs: Any) -> None: ...
+
+
+def _positional_or_keyword(n: int, **kwargs: Any) -> None: ...
+
+
+def _unpacked_typed_dict(*, n: int, **kwargs: Unpack[_ExtraOptions]) -> None: ...
+
+
+@pytest.mark.parametrize('func', [_keyword_only, _positional_or_keyword, _unpacked_typed_dict])
+def test_arguments_v3_var_kwargs_overlapping_parameter(func: Any) -> None:
+    arguments_schema = generate_arguments_schema(func=func, schema_type='arguments-v3')
+    val = SchemaValidator(arguments_schema)
+
+    with pytest.raises(ValidationError) as exc_info:
+        val.validate_python({'n': 1, 'kwargs': {'n': 'not-an-int'}})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'multiple_argument_values',
+            'loc': ('kwargs', 'n'),
+            'msg': 'Got multiple values for argument',
+            'input': 'not-an-int',
+        },
+    ]
+
+
+def test_arguments_v3_var_kwargs_positional_only_name() -> None:
+    def func(n: int, /, **kwargs: Any) -> None: ...
+
+    arguments_schema = generate_arguments_schema(func=func, schema_type='arguments-v3')
+    val = SchemaValidator(arguments_schema)
+
+    # Like in Python, the name of a positional-only parameter can be used in variadic keyword arguments:
+    assert val.validate_python({'n': 1, 'kwargs': {'n': 'x'}}) == ((1,), {'n': 'x'})
+
+
 class _Options(TypedDict):
     b: int
 
@@ -123,6 +187,36 @@ def test_arguments_v3_variadic_after_default(func: Any, input: Any, expected: An
     val = SchemaValidator(arguments_schema)
 
     assert val.validate_python(input) == expected
+
+
+@pytest.mark.parametrize(
+    ['input', 'expected_field_names'],
+    [
+        (
+            {'a': 1, 'b': 2, 'args': [3], 'c': 4, 'kwargs': {'d': 5}},
+            ['a', 'b', 'args', 'c', 'kwargs'],
+        ),
+        (
+            ArgsKwargs((1, 2, 3), {'c': 4, 'd': 5}),
+            ['a', 'b', 'c', 'args', 'kwargs'],
+        ),
+    ],
+)
+def test_arguments_v3_field_name(input: Any, expected_field_names: list[str]) -> None:
+    field_names: list[str | None] = []
+
+    def record_field_name(value: Any, info: ValidationInfo) -> Any:
+        field_names.append(info.field_name)
+        return value
+
+    RecordedInt = Annotated[int, BeforeValidator(record_field_name)]
+
+    def func(a: RecordedInt, /, b: RecordedInt, *args: RecordedInt, c: RecordedInt, **kwargs: RecordedInt) -> None: ...
+
+    arguments_schema = generate_arguments_schema(func=func, schema_type='arguments-v3')
+    SchemaValidator(arguments_schema).validate_python(input)
+
+    assert field_names == expected_field_names
 
 
 def test_unpacked_typed_dict_kwargs_invalid_type() -> None:

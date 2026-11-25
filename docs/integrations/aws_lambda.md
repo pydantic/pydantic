@@ -28,7 +28,7 @@ pip install \
     --platform manylinux2014_x86_64 \  # (1)!
     --target=<your_package_dir> \  # (2)!
     --implementation cp \  # (3)!
-    --python-version 3.10 \  # (4)!
+    --python-version 3.11 \  # (4)!
     --only-binary=:all: \  # (5)!
     --upgrade pydantic  # (6)!
 ```

@@ -40,7 +40,7 @@ from dataclasses import fields
 from functools import lru_cache
 from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, TypeAlias, overload
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Self, TypeAlias, overload
 
 from pydantic_core import (
     MultiHostHost,
@@ -51,12 +51,10 @@ from pydantic_core import (
 )
 from pydantic_core import MultiHostUrl as _CoreMultiHostUrl
 from pydantic_core import Url as _CoreUrl
-from typing_extensions import Self
 
 from pydantic.errors import PydanticUserError
 
 from ._internal import _repr, _schema_generation_shared
-from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler
 from .json_schema import JsonSchemaValue
 from .type_adapter import TypeAdapter
@@ -1412,6 +1410,3 @@ def validate_email(value: str) -> tuple[str, str]:
     assert email is not None
     name = name or parts.local_part
     return name, email
-
-
-__getattr__ = getattr_migration(__name__)

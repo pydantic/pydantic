@@ -1,0 +1,2261 @@
+{
+  "versions": {
+    "google-genai": "2.34.0",
+    "httpx": "0.28.1",
+    "httpx2": "2.16.0"
+  },
+  "roots": [
+    "google",
+    "httpx",
+    "httpx2"
+  ],
+  "models": [
+    "google.genai._common:BaseModel",
+    "google.genai._gaos.errors.cancelinteractionbyid:CancelInteractionByIDClientErrorData",
+    "google.genai._gaos.errors.cancelinteractionbyid:CancelInteractionByIDServerErrorData",
+    "google.genai._gaos.errors.createinteraction:CreateInteractionClientErrorData",
+    "google.genai._gaos.errors.createinteraction:CreateInteractionServerErrorData",
+    "google.genai._gaos.errors.deleteinteraction:DeleteInteractionClientErrorData",
+    "google.genai._gaos.errors.deleteinteraction:DeleteInteractionServerErrorData",
+    "google.genai._gaos.errors.getinteractionbyid:GetInteractionByIDClientErrorData",
+    "google.genai._gaos.errors.getinteractionbyid:GetInteractionByIDServerErrorData",
+    "google.genai._gaos.models.cancelinteractionbyid:CancelInteractionByIDGlobals",
+    "google.genai._gaos.models.cancelinteractionbyid:CancelInteractionByIDRequest",
+    "google.genai._gaos.models.createagent:CreateAgentGlobals",
+    "google.genai._gaos.models.createagent:CreateAgentRequest",
+    "google.genai._gaos.models.createcredential:CreateCredentialGlobals",
+    "google.genai._gaos.models.createcredential:CreateCredentialRequest",
+    "google.genai._gaos.models.createenvironment:CreateEnvironmentGlobals",
+    "google.genai._gaos.models.createenvironment:CreateEnvironmentRequest",
+    "google.genai._gaos.models.createinteraction:CreateInteractionGlobals",
+    "google.genai._gaos.models.createinteraction:CreateInteractionRequest",
+    "google.genai._gaos.models.createtrigger:CreateTriggerGlobals",
+    "google.genai._gaos.models.createtrigger:CreateTriggerRequest",
+    "google.genai._gaos.models.createvoice:CreateVoiceGlobals",
+    "google.genai._gaos.models.createvoice:CreateVoiceRequest",
+    "google.genai._gaos.models.createwebhook:CreateWebhookGlobals",
+    "google.genai._gaos.models.createwebhook:CreateWebhookRequest",
+    "google.genai._gaos.models.deleteagent:DeleteAgentGlobals",
+    "google.genai._gaos.models.deleteagent:DeleteAgentRequest",
+    "google.genai._gaos.models.deletecredential:DeleteCredentialGlobals",
+    "google.genai._gaos.models.deletecredential:DeleteCredentialRequest",
+    "google.genai._gaos.models.deleteenvironment:DeleteEnvironmentGlobals",
+    "google.genai._gaos.models.deleteenvironment:DeleteEnvironmentRequest",
+    "google.genai._gaos.models.deleteinteraction:DeleteInteractionGlobals",
+    "google.genai._gaos.models.deleteinteraction:DeleteInteractionRequest",
+    "google.genai._gaos.models.deletetrigger:DeleteTriggerGlobals",
+    "google.genai._gaos.models.deletetrigger:DeleteTriggerRequest",
+    "google.genai._gaos.models.deletevoice:DeleteVoiceGlobals",
+    "google.genai._gaos.models.deletevoice:DeleteVoiceRequest",
+    "google.genai._gaos.models.deletewebhook:DeleteWebhookGlobals",
+    "google.genai._gaos.models.deletewebhook:DeleteWebhookRequest",
+    "google.genai._gaos.models.getagent:GetAgentGlobals",
+    "google.genai._gaos.models.getagent:GetAgentRequest",
+    "google.genai._gaos.models.getcredential:GetCredentialGlobals",
+    "google.genai._gaos.models.getcredential:GetCredentialRequest",
+    "google.genai._gaos.models.getenvironment:GetEnvironmentGlobals",
+    "google.genai._gaos.models.getenvironment:GetEnvironmentRequest",
+    "google.genai._gaos.models.getenvironmentfiles:GetEnvironmentFilesGlobals",
+    "google.genai._gaos.models.getenvironmentfiles:GetEnvironmentFilesRequest",
+    "google.genai._gaos.models.getinteractionbyid:GetInteractionByIDGlobals",
+    "google.genai._gaos.models.getinteractionbyid:GetInteractionByIDRequest",
+    "google.genai._gaos.models.gettrigger:GetTriggerGlobals",
+    "google.genai._gaos.models.gettrigger:GetTriggerRequest",
+    "google.genai._gaos.models.getvoice:GetVoiceGlobals",
+    "google.genai._gaos.models.getvoice:GetVoiceRequest",
+    "google.genai._gaos.models.getwebhook:GetWebhookGlobals",
+    "google.genai._gaos.models.getwebhook:GetWebhookRequest",
+    "google.genai._gaos.models.internal.globals:Globals",
+    "google.genai._gaos.models.listagents:ListAgentsGlobals",
+    "google.genai._gaos.models.listagents:ListAgentsRequest",
+    "google.genai._gaos.models.listcredentials:ListCredentialsGlobals",
+    "google.genai._gaos.models.listcredentials:ListCredentialsRequest",
+    "google.genai._gaos.models.listenvironments:ListEnvironmentsGlobals",
+    "google.genai._gaos.models.listenvironments:ListEnvironmentsRequest",
+    "google.genai._gaos.models.listtriggerexecutions:ListTriggerExecutionsGlobals",
+    "google.genai._gaos.models.listtriggerexecutions:ListTriggerExecutionsRequest",
+    "google.genai._gaos.models.listtriggers:ListTriggersGlobals",
+    "google.genai._gaos.models.listtriggers:ListTriggersRequest",
+    "google.genai._gaos.models.listvoices:ListVoicesGlobals",
+    "google.genai._gaos.models.listvoices:ListVoicesRequest",
+    "google.genai._gaos.models.listwebhooks:ListWebhooksGlobals",
+    "google.genai._gaos.models.listwebhooks:ListWebhooksRequest",
+    "google.genai._gaos.models.pingwebhook:PingWebhookGlobals",
+    "google.genai._gaos.models.pingwebhook:PingWebhookRequest",
+    "google.genai._gaos.models.rotatesigningsecret:RotateSigningSecretGlobals",
+    "google.genai._gaos.models.rotatesigningsecret:RotateSigningSecretRequest",
+    "google.genai._gaos.models.runtrigger:RunTriggerGlobals",
+    "google.genai._gaos.models.runtrigger:RunTriggerRequest",
+    "google.genai._gaos.models.startenvironmentfileupload:StartEnvironmentFileUploadGlobals",
+    "google.genai._gaos.models.startenvironmentfileupload:StartEnvironmentFileUploadRequest",
+    "google.genai._gaos.models.startenvironmentfileupload:StartEnvironmentFileUploadResponse",
+    "google.genai._gaos.models.updatecredential:UpdateCredentialGlobals",
+    "google.genai._gaos.models.updatecredential:UpdateCredentialRequest",
+    "google.genai._gaos.models.updatetrigger:UpdateTriggerGlobals",
+    "google.genai._gaos.models.updatetrigger:UpdateTriggerRequest",
+    "google.genai._gaos.models.updatewebhook:UpdateWebhookGlobals",
+    "google.genai._gaos.models.updatewebhook:UpdateWebhookRequest",
+    "google.genai._gaos.types.agents.agent:Agent",
+    "google.genai._gaos.types.agents.agentlistresponse:AgentListResponse",
+    "google.genai._gaos.types.agents.agenttool:UnknownAgentTool",
+    "google.genai._gaos.types.basemodel:BaseModel",
+    "google.genai._gaos.types.basemodel:Unset",
+    "google.genai._gaos.types.credentials.credential:Credential",
+    "google.genai._gaos.types.credentials.credentiallistresponse:CredentialListResponse",
+    "google.genai._gaos.types.credentials.environmentvariableconfig:EnvironmentVariableConfig",
+    "google.genai._gaos.types.credentials.environmentvariableupdateconfig:EnvironmentVariableUpdateConfig",
+    "google.genai._gaos.types.credentials.httpbearerconfig:HTTPBearerConfig",
+    "google.genai._gaos.types.credentials.httpbearerupdateconfig:HTTPBearerUpdateConfig",
+    "google.genai._gaos.types.credentials.oauth2config:OAuth2Config",
+    "google.genai._gaos.types.credentials.oauth2updateconfig:OAuth2UpdateConfig",
+    "google.genai._gaos.types.environments.createenvironmentrequest:CreateEnvironmentRequest",
+    "google.genai._gaos.types.environments.environment:Environment",
+    "google.genai._gaos.types.environments.environmentfile:EnvironmentFile",
+    "google.genai._gaos.types.environments.getenvironmentfilesresponse:GetEnvironmentFilesResponse",
+    "google.genai._gaos.types.environments.listenvironmentsresponse:ListEnvironmentsResponse",
+    "google.genai._gaos.types.interactions.allowedtools:AllowedTools",
+    "google.genai._gaos.types.interactions.allowlistentry:AllowlistEntry",
+    "google.genai._gaos.types.interactions.annotation:UnknownAnnotation",
+    "google.genai._gaos.types.interactions.antigravityagentconfig:AntigravityAgentConfig",
+    "google.genai._gaos.types.interactions.argumentsdelta:ArgumentsDelta",
+    "google.genai._gaos.types.interactions.audiocontent:AudioContent",
+    "google.genai._gaos.types.interactions.audiodelta:AudioDelta",
+    "google.genai._gaos.types.interactions.audioresponseformat:AudioResponseFormat",
+    "google.genai._gaos.types.interactions.codeexecution:CodeExecution",
+    "google.genai._gaos.types.interactions.codeexecutioncallarguments:CodeExecutionCallArguments",
+    "google.genai._gaos.types.interactions.codeexecutioncalldelta:CodeExecutionCallDelta",
+    "google.genai._gaos.types.interactions.codeexecutioncallstep:CodeExecutionCallStep",
+    "google.genai._gaos.types.interactions.codeexecutionresultdelta:CodeExecutionResultDelta",
+    "google.genai._gaos.types.interactions.codeexecutionresultstep:CodeExecutionResultStep",
+    "google.genai._gaos.types.interactions.codemenderagentconfig:CodeMenderAgentConfig",
+    "google.genai._gaos.types.interactions.computeruse:ComputerUse",
+    "google.genai._gaos.types.interactions.content:UnknownContent",
+    "google.genai._gaos.types.interactions.createagentinteraction:CreateAgentInteraction",
+    "google.genai._gaos.types.interactions.createmodelinteraction:CreateModelInteraction",
+    "google.genai._gaos.types.interactions.deepresearchagentconfig:DeepResearchAgentConfig",
+    "google.genai._gaos.types.interactions.documentcontent:DocumentContent",
+    "google.genai._gaos.types.interactions.documentdelta:DocumentDelta",
+    "google.genai._gaos.types.interactions.dynamicagentconfig:DynamicAgentConfig",
+    "google.genai._gaos.types.interactions.empty:Empty",
+    "google.genai._gaos.types.interactions.environment:Environment",
+    "google.genai._gaos.types.interactions.environmentnetworkegressallowlist:EnvironmentNetworkEgressAllowlist",
+    "google.genai._gaos.types.interactions.envvar:EnvVar",
+    "google.genai._gaos.types.interactions.error:Error",
+    "google.genai._gaos.types.interactions.errorevent:ErrorEvent",
+    "google.genai._gaos.types.interactions.exaaisearchconfig:ExaAISearchConfig",
+    "google.genai._gaos.types.interactions.filecitation:FileCitation",
+    "google.genai._gaos.types.interactions.filecontent:FileContent",
+    "google.genai._gaos.types.interactions.filesearch:FileSearch",
+    "google.genai._gaos.types.interactions.filesearchcalldelta:FileSearchCallDelta",
+    "google.genai._gaos.types.interactions.filesearchcallstep:FileSearchCallStep",
+    "google.genai._gaos.types.interactions.filesearchresult:FileSearchResult",
+    "google.genai._gaos.types.interactions.filesearchresultdelta:FileSearchResultDelta",
+    "google.genai._gaos.types.interactions.filesearchresultstep:FileSearchResultStep",
+    "google.genai._gaos.types.interactions.filter_:Filter",
+    "google.genai._gaos.types.interactions.findrequest:FindRequest",
+    "google.genai._gaos.types.interactions.fixrequest:FixRequest",
+    "google.genai._gaos.types.interactions.function:Function",
+    "google.genai._gaos.types.interactions.functioncallstep:FunctionCallStep",
+    "google.genai._gaos.types.interactions.functionresultdelta:FunctionResultDelta",
+    "google.genai._gaos.types.interactions.functionresultdelta:FunctionResultDeltaResult",
+    "google.genai._gaos.types.interactions.functionresultstep:FunctionResultStep",
+    "google.genai._gaos.types.interactions.functionresultstep:FunctionResultStepResult",
+    "google.genai._gaos.types.interactions.functionresultsubcontent:UnknownFunctionResultSubcontent",
+    "google.genai._gaos.types.interactions.generationconfig:GenerationConfig",
+    "google.genai._gaos.types.interactions.googlemaps:GoogleMaps",
+    "google.genai._gaos.types.interactions.googlemapscallarguments:GoogleMapsCallArguments",
+    "google.genai._gaos.types.interactions.googlemapscalldelta:GoogleMapsCallDelta",
+    "google.genai._gaos.types.interactions.googlemapscallstep:GoogleMapsCallStep",
+    "google.genai._gaos.types.interactions.googlemapsresult:GoogleMapsResult",
+    "google.genai._gaos.types.interactions.googlemapsresultdelta:GoogleMapsResultDelta",
+    "google.genai._gaos.types.interactions.googlemapsresultplaces:GoogleMapsResultPlaces",
+    "google.genai._gaos.types.interactions.googlemapsresultstep:GoogleMapsResultStep",
+    "google.genai._gaos.types.interactions.googlesearch:GoogleSearch",
+    "google.genai._gaos.types.interactions.googlesearchcallarguments:GoogleSearchCallArguments",
+    "google.genai._gaos.types.interactions.googlesearchcalldelta:GoogleSearchCallDelta",
+    "google.genai._gaos.types.interactions.googlesearchcallstep:GoogleSearchCallStep",
+    "google.genai._gaos.types.interactions.googlesearchresult:GoogleSearchResult",
+    "google.genai._gaos.types.interactions.googlesearchresultdelta:GoogleSearchResultDelta",
+    "google.genai._gaos.types.interactions.googlesearchresultstep:GoogleSearchResultStep",
+    "google.genai._gaos.types.interactions.groundingtoolcount:GroundingToolCount",
+    "google.genai._gaos.types.interactions.hybridsearch:HybridSearch",
+    "google.genai._gaos.types.interactions.imageconfig:ImageConfig",
+    "google.genai._gaos.types.interactions.imagecontent:ImageContent",
+    "google.genai._gaos.types.interactions.imagedelta:ImageDelta",
+    "google.genai._gaos.types.interactions.imageresponseformat:ImageResponseFormat",
+    "google.genai._gaos.types.interactions.interaction:Interaction",
+    "google.genai._gaos.types.interactions.interaction:UnknownInteractionAgentConfig",
+    "google.genai._gaos.types.interactions.interactioncompletedevent:InteractionCompletedEvent",
+    "google.genai._gaos.types.interactions.interactioncreatedevent:InteractionCreatedEvent",
+    "google.genai._gaos.types.interactions.interactionsseevent:UnknownInteractionSSEEvent",
+    "google.genai._gaos.types.interactions.interactionsseeventinteraction:InteractionSseEventInteraction",
+    "google.genai._gaos.types.interactions.interactionssestreamevent:InteractionSSEStreamEvent",
+    "google.genai._gaos.types.interactions.interactionstatusupdate:InteractionStatusUpdate",
+    "google.genai._gaos.types.interactions.mcpserver:MCPServer",
+    "google.genai._gaos.types.interactions.mcpservertoolcalldelta:MCPServerToolCallDelta",
+    "google.genai._gaos.types.interactions.mcpservertoolcallstep:MCPServerToolCallStep",
+    "google.genai._gaos.types.interactions.mcpservertoolresultdelta:MCPServerToolResultDelta",
+    "google.genai._gaos.types.interactions.mcpservertoolresultdelta:MCPServerToolResultDeltaResult",
+    "google.genai._gaos.types.interactions.mcpservertoolresultstep:MCPServerToolResultStep",
+    "google.genai._gaos.types.interactions.mcpservertoolresultstep:MCPServerToolResultStepResult",
+    "google.genai._gaos.types.interactions.modalitytokens:ModalityTokens",
+    "google.genai._gaos.types.interactions.modeloutputstep:ModelOutputStep",
+    "google.genai._gaos.types.interactions.parallelaisearchconfig:ParallelAISearchConfig",
+    "google.genai._gaos.types.interactions.placecitation:PlaceCitation",
+    "google.genai._gaos.types.interactions.processingcalldelta:ProcessingCallDelta",
+    "google.genai._gaos.types.interactions.processingcallstep:ProcessingCallStep",
+    "google.genai._gaos.types.interactions.processingresultdelta:ProcessingResultDelta",
+    "google.genai._gaos.types.interactions.processingresultstep:ProcessingResultStep",
+    "google.genai._gaos.types.interactions.ragresource:RagResource",
+    "google.genai._gaos.types.interactions.ragretrievalconfig:RagRetrievalConfig",
+    "google.genai._gaos.types.interactions.ragstoreconfig:RagStoreConfig",
+    "google.genai._gaos.types.interactions.ranking:Ranking",
+    "google.genai._gaos.types.interactions.rankservice:RankService",
+    "google.genai._gaos.types.interactions.retrieval:Retrieval",
+    "google.genai._gaos.types.interactions.retrievalcallarguments:RetrievalCallArguments",
+    "google.genai._gaos.types.interactions.retrievalcalldelta:RetrievalCallDelta",
+    "google.genai._gaos.types.interactions.retrievalcallstep:RetrievalCallStep",
+    "google.genai._gaos.types.interactions.retrievalresultdelta:RetrievalResultDelta",
+    "google.genai._gaos.types.interactions.retrievalresultstep:RetrievalResultStep",
+    "google.genai._gaos.types.interactions.reviewsnippet:ReviewSnippet",
+    "google.genai._gaos.types.interactions.safetysetting:SafetySetting",
+    "google.genai._gaos.types.interactions.sessionconfig:SessionConfig",
+    "google.genai._gaos.types.interactions.smarttranscriptionmode:SmartTranscriptionMode",
+    "google.genai._gaos.types.interactions.source:Source",
+    "google.genai._gaos.types.interactions.speakerconfig:SpeakerConfig",
+    "google.genai._gaos.types.interactions.speechannotation:SpeechAnnotation",
+    "google.genai._gaos.types.interactions.speechconfig:SpeechConfig",
+    "google.genai._gaos.types.interactions.staticmediaprocessing:StaticMediaProcessing",
+    "google.genai._gaos.types.interactions.status:Status",
+    "google.genai._gaos.types.interactions.step:UnknownStep",
+    "google.genai._gaos.types.interactions.stepdelta:StepDelta",
+    "google.genai._gaos.types.interactions.stepdeltadata:UnknownStepDeltaData",
+    "google.genai._gaos.types.interactions.stepdeltametadata:StepDeltaMetadata",
+    "google.genai._gaos.types.interactions.stepstart:StepStart",
+    "google.genai._gaos.types.interactions.stepstop:StepStop",
+    "google.genai._gaos.types.interactions.textannotationdelta:TextAnnotationDelta",
+    "google.genai._gaos.types.interactions.textcontent:TextContent",
+    "google.genai._gaos.types.interactions.textdelta:TextDelta",
+    "google.genai._gaos.types.interactions.textresponseformat:TextResponseFormat",
+    "google.genai._gaos.types.interactions.thoughtsignaturedelta:ThoughtSignatureDelta",
+    "google.genai._gaos.types.interactions.thoughtstep:ThoughtStep",
+    "google.genai._gaos.types.interactions.thoughtsummarycontent:UnknownThoughtSummaryContent",
+    "google.genai._gaos.types.interactions.thoughtsummarydelta:ThoughtSummaryDelta",
+    "google.genai._gaos.types.interactions.tool:UnknownTool",
+    "google.genai._gaos.types.interactions.toolchoiceconfig:ToolChoiceConfig",
+    "google.genai._gaos.types.interactions.transcriptionconfig:TranscriptionConfig",
+    "google.genai._gaos.types.interactions.transcriptionmode:UnknownTranscriptionMode",
+    "google.genai._gaos.types.interactions.urlcitation:URLCitation",
+    "google.genai._gaos.types.interactions.urlcontext:URLContext",
+    "google.genai._gaos.types.interactions.urlcontextcallarguments:URLContextCallArguments",
+    "google.genai._gaos.types.interactions.urlcontextcalldelta:URLContextCallDelta",
+    "google.genai._gaos.types.interactions.urlcontextcallstep:URLContextCallStep",
+    "google.genai._gaos.types.interactions.urlcontextresult:URLContextResult",
+    "google.genai._gaos.types.interactions.urlcontextresultdelta:URLContextResultDelta",
+    "google.genai._gaos.types.interactions.urlcontextresultstep:URLContextResultStep",
+    "google.genai._gaos.types.interactions.usage:Usage",
+    "google.genai._gaos.types.interactions.userinputstep:UserInputStep",
+    "google.genai._gaos.types.interactions.verbatimtranscriptionmode:VerbatimTranscriptionMode",
+    "google.genai._gaos.types.interactions.vertexaisearchconfig:VertexAISearchConfig",
+    "google.genai._gaos.types.interactions.videoconfig:VideoConfig",
+    "google.genai._gaos.types.interactions.videocontent:VideoContent",
+    "google.genai._gaos.types.interactions.videodelta:VideoDelta",
+    "google.genai._gaos.types.interactions.videoresponseformat:VideoResponseFormat",
+    "google.genai._gaos.types.interactions.webhookconfig:WebhookConfig",
+    "google.genai._gaos.types.interactions.wordinfo:WordInfo",
+    "google.genai._gaos.types.security:Security",
+    "google.genai._gaos.types.triggers.listtriggerexecutionsresponse:ListTriggerExecutionsResponse",
+    "google.genai._gaos.types.triggers.listtriggersresponse:ListTriggersResponse",
+    "google.genai._gaos.types.triggers.trigger:Trigger",
+    "google.genai._gaos.types.triggers.triggercreateparams:TriggerCreateParams",
+    "google.genai._gaos.types.triggers.triggerexecution:TriggerExecution",
+    "google.genai._gaos.types.triggers.triggerupdate:TriggerUpdate",
+    "google.genai._gaos.types.voices.audiodata:AudioData",
+    "google.genai._gaos.types.voices.createvoicerequest:CreateVoiceRequest",
+    "google.genai._gaos.types.voices.deletevoiceresponse:DeleteVoiceResponse",
+    "google.genai._gaos.types.voices.listvoicesresponse:ListVoicesResponse",
+    "google.genai._gaos.types.voices.promptedvoice:PromptedVoice",
+    "google.genai._gaos.types.voices.replicatedvoice:ReplicatedVoice",
+    "google.genai._gaos.types.voices.voice_input:VoiceInput",
+    "google.genai._gaos.types.voices.voice_output:VoiceOutput",
+    "google.genai._gaos.types.webhooks.pingwebhookrequest:PingWebhookRequest",
+    "google.genai._gaos.types.webhooks.rotatesigningsecretrequest:RotateSigningSecretRequest",
+    "google.genai._gaos.types.webhooks.signingsecret:SigningSecret",
+    "google.genai._gaos.types.webhooks.webhook:Webhook",
+    "google.genai._gaos.types.webhooks.webhook:WebhookInput",
+    "google.genai._gaos.types.webhooks.webhooklistresponse:WebhookListResponse",
+    "google.genai._gaos.types.webhooks.webhookpingresponse:WebhookPingResponse",
+    "google.genai._gaos.types.webhooks.webhookrotatesigningsecretresponse:WebhookRotateSigningSecretResponse",
+    "google.genai._gaos.types.webhooks.webhookupdate:WebhookUpdate",
+    "google.genai._replay_api_client:ReplayFile",
+    "google.genai._replay_api_client:ReplayInteraction",
+    "google.genai._replay_api_client:ReplayRequest",
+    "google.genai._replay_api_client:ReplayResponse",
+    "google.genai.client:DebugConfig",
+    "google.genai.types:ActivityEnd",
+    "google.genai.types:ActivityStart",
+    "google.genai.types:AggregationOutput",
+    "google.genai.types:AggregationResult",
+    "google.genai.types:ApiAuth",
+    "google.genai.types:ApiAuthApiKeyConfig",
+    "google.genai.types:ApiKeyConfig",
+    "google.genai.types:AudioChunk",
+    "google.genai.types:AudioResponseFormat",
+    "google.genai.types:AudioTranscriptionConfig",
+    "google.genai.types:AuthConfig",
+    "google.genai.types:AuthConfigGoogleServiceAccountConfig",
+    "google.genai.types:AuthConfigHttpBasicAuthConfig",
+    "google.genai.types:AuthConfigOauthConfig",
+    "google.genai.types:AuthConfigOidcConfig",
+    "google.genai.types:AuthToken",
+    "google.genai.types:AutomaticActivityDetection",
+    "google.genai.types:AutomaticFunctionCallingConfig",
+    "google.genai.types:AutoraterConfig",
+    "google.genai.types:AvatarConfig",
+    "google.genai.types:BatchJob",
+    "google.genai.types:BatchJobDestination",
+    "google.genai.types:BatchJobOutputInfo",
+    "google.genai.types:BatchJobSource",
+    "google.genai.types:BigQuerySource",
+    "google.genai.types:BleuMetricValue",
+    "google.genai.types:BleuSpec",
+    "google.genai.types:Blob",
+    "google.genai.types:CachedContent",
+    "google.genai.types:CachedContentUsageMetadata",
+    "google.genai.types:CancelBatchJobConfig",
+    "google.genai.types:CancelTuningJobConfig",
+    "google.genai.types:CancelTuningJobResponse",
+    "google.genai.types:Candidate",
+    "google.genai.types:Checkpoint",
+    "google.genai.types:ChunkingConfig",
+    "google.genai.types:Citation",
+    "google.genai.types:CitationMetadata",
+    "google.genai.types:CodeExecutionResult",
+    "google.genai.types:CompletionStats",
+    "google.genai.types:CompositeReinforcementTuningRewardConfig",
+    "google.genai.types:CompositeReinforcementTuningRewardConfigWeightedRewardConfig",
+    "google.genai.types:ComputationBasedMetricSpec",
+    "google.genai.types:ComputeTokensConfig",
+    "google.genai.types:ComputeTokensResponse",
+    "google.genai.types:ComputeTokensResult",
+    "google.genai.types:ComputerUse",
+    "google.genai.types:Content",
+    "google.genai.types:ContentEmbedding",
+    "google.genai.types:ContentEmbeddingStatistics",
+    "google.genai.types:ContentReferenceImage",
+    "google.genai.types:ContextWindowCompressionConfig",
+    "google.genai.types:ControlReferenceConfig",
+    "google.genai.types:ControlReferenceImage",
+    "google.genai.types:CountTokensConfig",
+    "google.genai.types:CountTokensResponse",
+    "google.genai.types:CountTokensResult",
+    "google.genai.types:CreateAuthTokenConfig",
+    "google.genai.types:CreateAuthTokenParameters",
+    "google.genai.types:CreateBatchJobConfig",
+    "google.genai.types:CreateCachedContentConfig",
+    "google.genai.types:CreateEmbeddingsBatchJobConfig",
+    "google.genai.types:CreateFileConfig",
+    "google.genai.types:CreateFileResponse",
+    "google.genai.types:CreateFileSearchStoreConfig",
+    "google.genai.types:CreateTuningJobConfig",
+    "google.genai.types:CreateTuningJobParameters",
+    "google.genai.types:CustomCodeExecutionResult",
+    "google.genai.types:CustomCodeExecutionSpec",
+    "google.genai.types:CustomMetadata",
+    "google.genai.types:CustomOutput",
+    "google.genai.types:CustomOutputFormatConfig",
+    "google.genai.types:CustomizedAvatar",
+    "google.genai.types:DatasetDistribution",
+    "google.genai.types:DatasetDistributionDistributionBucket",
+    "google.genai.types:DatasetStats",
+    "google.genai.types:DeleteBatchJobConfig",
+    "google.genai.types:DeleteCachedContentConfig",
+    "google.genai.types:DeleteCachedContentResponse",
+    "google.genai.types:DeleteDocumentConfig",
+    "google.genai.types:DeleteFileConfig",
+    "google.genai.types:DeleteFileResponse",
+    "google.genai.types:DeleteFileSearchStoreConfig",
+    "google.genai.types:DeleteModelConfig",
+    "google.genai.types:DeleteModelResponse",
+    "google.genai.types:DeleteResourceJob",
+    "google.genai.types:DistillationDataStats",
+    "google.genai.types:DistillationHyperParameters",
+    "google.genai.types:DistillationSamplingSpec",
+    "google.genai.types:DistillationSpec",
+    "google.genai.types:Document",
+    "google.genai.types:DownloadFileConfig",
+    "google.genai.types:DownloadMediaConfig",
+    "google.genai.types:DynamicRetrievalConfig",
+    "google.genai.types:EditImageConfig",
+    "google.genai.types:EditImageResponse",
+    "google.genai.types:EmbedContentBatch",
+    "google.genai.types:EmbedContentConfig",
+    "google.genai.types:EmbedContentMetadata",
+    "google.genai.types:EmbedContentParameters",
+    "google.genai.types:EmbedContentResponse",
+    "google.genai.types:EmbeddingsBatchJobSource",
+    "google.genai.types:EncryptionSpec",
+    "google.genai.types:Endpoint",
+    "google.genai.types:EnterpriseWebSearch",
+    "google.genai.types:EntityLabel",
+    "google.genai.types:EvaluateDatasetResponse",
+    "google.genai.types:EvaluateDatasetRun",
+    "google.genai.types:EvaluationConfig",
+    "google.genai.types:EvaluationDataset",
+    "google.genai.types:EvaluationParserConfig",
+    "google.genai.types:EvaluationParserConfigCustomCodeParserConfig",
+    "google.genai.types:ExactMatchMetricValue",
+    "google.genai.types:ExecutableCode",
+    "google.genai.types:ExternalApi",
+    "google.genai.types:ExternalApiElasticSearchParams",
+    "google.genai.types:ExternalApiSimpleSearchParams",
+    "google.genai.types:FetchPredictOperationConfig",
+    "google.genai.types:File",
+    "google.genai.types:FileData",
+    "google.genai.types:FileSearch",
+    "google.genai.types:FileSearchStore",
+    "google.genai.types:FileStatus",
+    "google.genai.types:FullFineTuningSpec",
+    "google.genai.types:FunctionCall",
+    "google.genai.types:FunctionCallingConfig",
+    "google.genai.types:FunctionDeclaration",
+    "google.genai.types:FunctionResponse",
+    "google.genai.types:FunctionResponseBlob",
+    "google.genai.types:FunctionResponseFileData",
+    "google.genai.types:FunctionResponsePart",
+    "google.genai.types:GcsDestination",
+    "google.genai.types:GcsSource",
+    "google.genai.types:GeminiPreferenceExample",
+    "google.genai.types:GeminiPreferenceExampleCompletion",
+    "google.genai.types:GenerateContentConfig",
+    "google.genai.types:GenerateContentResponse",
+    "google.genai.types:GenerateContentResponsePromptFeedback",
+    "google.genai.types:GenerateContentResponseUsageMetadata",
+    "google.genai.types:GenerateImagesConfig",
+    "google.genai.types:GenerateImagesResponse",
+    "google.genai.types:GenerateVideosConfig",
+    "google.genai.types:GenerateVideosOperation",
+    "google.genai.types:GenerateVideosResponse",
+    "google.genai.types:GenerateVideosSource",
+    "google.genai.types:GeneratedImage",
+    "google.genai.types:GeneratedImageMask",
+    "google.genai.types:GeneratedVideo",
+    "google.genai.types:GenerationConfig",
+    "google.genai.types:GenerationConfigRoutingConfig",
+    "google.genai.types:GenerationConfigRoutingConfigAutoRoutingMode",
+    "google.genai.types:GenerationConfigRoutingConfigManualRoutingMode",
+    "google.genai.types:GenerationConfigThinkingConfig",
+    "google.genai.types:GenerationOutputConfig",
+    "google.genai.types:GetBatchJobConfig",
+    "google.genai.types:GetCachedContentConfig",
+    "google.genai.types:GetDocumentConfig",
+    "google.genai.types:GetFileConfig",
+    "google.genai.types:GetFileSearchStoreConfig",
+    "google.genai.types:GetModelConfig",
+    "google.genai.types:GetOperationConfig",
+    "google.genai.types:GetTuningJobConfig",
+    "google.genai.types:GoogleMaps",
+    "google.genai.types:GoogleMapsGroundingTypes",
+    "google.genai.types:GoogleMapsPlaces",
+    "google.genai.types:GoogleMapsRouting",
+    "google.genai.types:GoogleRpcStatus",
+    "google.genai.types:GoogleSearch",
+    "google.genai.types:GoogleSearchRetrieval",
+    "google.genai.types:GoogleTypeDate",
+    "google.genai.types:GroundingChunk",
+    "google.genai.types:GroundingChunkCustomMetadata",
+    "google.genai.types:GroundingChunkImage",
+    "google.genai.types:GroundingChunkMaps",
+    "google.genai.types:GroundingChunkMapsPlaceAnswerSources",
+    "google.genai.types:GroundingChunkMapsPlaceAnswerSourcesAuthorAttribution",
+    "google.genai.types:GroundingChunkMapsPlaceAnswerSourcesReviewSnippet",
+    "google.genai.types:GroundingChunkMapsRoute",
+    "google.genai.types:GroundingChunkRetrievedContext",
+    "google.genai.types:GroundingChunkStringList",
+    "google.genai.types:GroundingChunkWeb",
+    "google.genai.types:GroundingMetadata",
+    "google.genai.types:GroundingMetadataSourceFlaggingUri",
+    "google.genai.types:GroundingSupport",
+    "google.genai.types:HistoryConfig",
+    "google.genai.types:HttpOptions",
+    "google.genai.types:HttpResponse",
+    "google.genai.types:HttpRetryOptions",
+    "google.genai.types:Image",
+    "google.genai.types:ImageConfig",
+    "google.genai.types:ImageConfigImageOutputOptions",
+    "google.genai.types:ImageResponseFormat",
+    "google.genai.types:ImageSearch",
+    "google.genai.types:ImportFileConfig",
+    "google.genai.types:ImportFileOperation",
+    "google.genai.types:ImportFileResponse",
+    "google.genai.types:InlinedEmbedContentResponse",
+    "google.genai.types:InlinedRequest",
+    "google.genai.types:InlinedResponse",
+    "google.genai.types:Interval",
+    "google.genai.types:JSONSchema",
+    "google.genai.types:JobError",
+    "google.genai.types:LLMBasedMetricSpec",
+    "google.genai.types:LanguageAuto",
+    "google.genai.types:LanguageHints",
+    "google.genai.types:LatLng",
+    "google.genai.types:ListBatchJobsConfig",
+    "google.genai.types:ListBatchJobsResponse",
+    "google.genai.types:ListCachedContentsConfig",
+    "google.genai.types:ListCachedContentsResponse",
+    "google.genai.types:ListDocumentsConfig",
+    "google.genai.types:ListDocumentsResponse",
+    "google.genai.types:ListFileSearchStoresConfig",
+    "google.genai.types:ListFileSearchStoresResponse",
+    "google.genai.types:ListFilesConfig",
+    "google.genai.types:ListFilesResponse",
+    "google.genai.types:ListModelsConfig",
+    "google.genai.types:ListModelsResponse",
+    "google.genai.types:ListTuningJobsConfig",
+    "google.genai.types:ListTuningJobsResponse",
+    "google.genai.types:LiveClientContent",
+    "google.genai.types:LiveClientContextUpdate",
+    "google.genai.types:LiveClientContextUpdateTools",
+    "google.genai.types:LiveClientMessage",
+    "google.genai.types:LiveClientRealtimeInput",
+    "google.genai.types:LiveClientSetup",
+    "google.genai.types:LiveClientToolResponse",
+    "google.genai.types:LiveConnectConfig",
+    "google.genai.types:LiveConnectConstraints",
+    "google.genai.types:LiveConnectParameters",
+    "google.genai.types:LiveMusicClientContent",
+    "google.genai.types:LiveMusicClientMessage",
+    "google.genai.types:LiveMusicClientSetup",
+    "google.genai.types:LiveMusicConnectParameters",
+    "google.genai.types:LiveMusicFilteredPrompt",
+    "google.genai.types:LiveMusicGenerationConfig",
+    "google.genai.types:LiveMusicServerContent",
+    "google.genai.types:LiveMusicServerMessage",
+    "google.genai.types:LiveMusicServerSetupComplete",
+    "google.genai.types:LiveMusicSetConfigParameters",
+    "google.genai.types:LiveMusicSetWeightedPromptsParameters",
+    "google.genai.types:LiveMusicSourceMetadata",
+    "google.genai.types:LiveSendRealtimeInputParameters",
+    "google.genai.types:LiveServerContent",
+    "google.genai.types:LiveServerGoAway",
+    "google.genai.types:LiveServerMessage",
+    "google.genai.types:LiveServerSessionResumptionUpdate",
+    "google.genai.types:LiveServerSetupComplete",
+    "google.genai.types:LiveServerToolCall",
+    "google.genai.types:LiveServerToolCallCancellation",
+    "google.genai.types:LogprobsResult",
+    "google.genai.types:LogprobsResultCandidate",
+    "google.genai.types:LogprobsResultTopCandidates",
+    "google.genai.types:MaskReferenceConfig",
+    "google.genai.types:MaskReferenceImage",
+    "google.genai.types:McpServer",
+    "google.genai.types:Metric",
+    "google.genai.types:ModalityTokenCount",
+    "google.genai.types:Model",
+    "google.genai.types:ModelArmorConfig",
+    "google.genai.types:ModelContent",
+    "google.genai.types:ModelSelectionConfig",
+    "google.genai.types:ModelStatus",
+    "google.genai.types:MultiSpeakerVoiceConfig",
+    "google.genai.types:OutputConfig",
+    "google.genai.types:OutputInfo",
+    "google.genai.types:PairwiseMetricResult",
+    "google.genai.types:PairwiseMetricSpec",
+    "google.genai.types:Part",
+    "google.genai.types:PartMediaResolution",
+    "google.genai.types:PartialArg",
+    "google.genai.types:PartnerModelTuningSpec",
+    "google.genai.types:PointwiseMetricResult",
+    "google.genai.types:PointwiseMetricSpec",
+    "google.genai.types:PreTunedModel",
+    "google.genai.types:PrebuiltVoiceConfig",
+    "google.genai.types:PredefinedMetricSpec",
+    "google.genai.types:PreferenceOptimizationDataStats",
+    "google.genai.types:PreferenceOptimizationHyperParameters",
+    "google.genai.types:PreferenceOptimizationSpec",
+    "google.genai.types:ProactivityConfig",
+    "google.genai.types:ProductImage",
+    "google.genai.types:ProjectOperation",
+    "google.genai.types:RagChunk",
+    "google.genai.types:RagChunkPageSpan",
+    "google.genai.types:RagRetrievalConfig",
+    "google.genai.types:RagRetrievalConfigFilter",
+    "google.genai.types:RagRetrievalConfigHybridSearch",
+    "google.genai.types:RagRetrievalConfigRanking",
+    "google.genai.types:RagRetrievalConfigRankingLlmRanker",
+    "google.genai.types:RagRetrievalConfigRankingRankService",
+    "google.genai.types:RawOutput",
+    "google.genai.types:RawReferenceImage",
+    "google.genai.types:RealtimeInputConfig",
+    "google.genai.types:RecontextImageConfig",
+    "google.genai.types:RecontextImageResponse",
+    "google.genai.types:RecontextImageSource",
+    "google.genai.types:RegisterFilesConfig",
+    "google.genai.types:RegisterFilesResponse",
+    "google.genai.types:ReinforcementTuningAutoraterScorer",
+    "google.genai.types:ReinforcementTuningAutoraterScorerExactMatchScorer",
+    "google.genai.types:ReinforcementTuningAutoraterScorerParsedResponseConversionScorer",
+    "google.genai.types:ReinforcementTuningCloudRunRewardScorer",
+    "google.genai.types:ReinforcementTuningCodeExecutionRewardScorer",
+    "google.genai.types:ReinforcementTuningExample",
+    "google.genai.types:ReinforcementTuningHyperParameters",
+    "google.genai.types:ReinforcementTuningParseResponseConfig",
+    "google.genai.types:ReinforcementTuningRewardInfo",
+    "google.genai.types:ReinforcementTuningSpec",
+    "google.genai.types:ReinforcementTuningStringMatchRewardScorer",
+    "google.genai.types:ReinforcementTuningStringMatchRewardScorerJsonMatchExpression",
+    "google.genai.types:ReinforcementTuningStringMatchRewardScorerStringMatchExpression",
+    "google.genai.types:ReinforcementTuningUserDatasetExamples",
+    "google.genai.types:ReplayFile",
+    "google.genai.types:ReplayInteraction",
+    "google.genai.types:ReplayRequest",
+    "google.genai.types:ReplayResponse",
+    "google.genai.types:ReplicatedVoiceConfig",
+    "google.genai.types:ResponseFormat",
+    "google.genai.types:Retrieval",
+    "google.genai.types:RetrievalConfig",
+    "google.genai.types:RetrievalMetadata",
+    "google.genai.types:RougeMetricValue",
+    "google.genai.types:RougeSpec",
+    "google.genai.types:RubricGenerationSpec",
+    "google.genai.types:SafetyAttributes",
+    "google.genai.types:SafetyRating",
+    "google.genai.types:SafetySetting",
+    "google.genai.types:Schema",
+    "google.genai.types:ScribbleImage",
+    "google.genai.types:SearchEntryPoint",
+    "google.genai.types:SearchTypes",
+    "google.genai.types:Segment",
+    "google.genai.types:SegmentImageConfig",
+    "google.genai.types:SegmentImageResponse",
+    "google.genai.types:SegmentImageSource",
+    "google.genai.types:SessionResumptionConfig",
+    "google.genai.types:SingleEmbedContentResponse",
+    "google.genai.types:SingleReinforcementTuningRewardConfig",
+    "google.genai.types:SlidingWindow",
+    "google.genai.types:SpeakerVoiceConfig",
+    "google.genai.types:SpeechConfig",
+    "google.genai.types:SpeechMetadata",
+    "google.genai.types:StreamableHttpTransport",
+    "google.genai.types:StringList",
+    "google.genai.types:StyleReferenceConfig",
+    "google.genai.types:StyleReferenceImage",
+    "google.genai.types:SubjectReferenceConfig",
+    "google.genai.types:SubjectReferenceImage",
+    "google.genai.types:SupervisedHyperParameters",
+    "google.genai.types:SupervisedTuningDataStats",
+    "google.genai.types:SupervisedTuningDatasetDistribution",
+    "google.genai.types:SupervisedTuningDatasetDistributionDatasetBucket",
+    "google.genai.types:SupervisedTuningSpec",
+    "google.genai.types:TestTableFile",
+    "google.genai.types:TestTableItem",
+    "google.genai.types:TextResponseFormat",
+    "google.genai.types:ThinkingConfig",
+    "google.genai.types:TokensInfo",
+    "google.genai.types:Tool",
+    "google.genai.types:ToolCall",
+    "google.genai.types:ToolCodeExecution",
+    "google.genai.types:ToolConfig",
+    "google.genai.types:ToolExaAiSearch",
+    "google.genai.types:ToolParallelAiSearch",
+    "google.genai.types:ToolResponse",
+    "google.genai.types:Transcription",
+    "google.genai.types:TranslationConfig",
+    "google.genai.types:TunedModel",
+    "google.genai.types:TunedModelCheckpoint",
+    "google.genai.types:TunedModelInfo",
+    "google.genai.types:TuningDataStats",
+    "google.genai.types:TuningDataset",
+    "google.genai.types:TuningExample",
+    "google.genai.types:TuningJob",
+    "google.genai.types:TuningJobMetadata",
+    "google.genai.types:TuningOperation",
+    "google.genai.types:TuningValidationDataset",
+    "google.genai.types:UnifiedMetric",
+    "google.genai.types:UpdateCachedContentConfig",
+    "google.genai.types:UpdateModelConfig",
+    "google.genai.types:UploadFileConfig",
+    "google.genai.types:UploadToFileSearchStoreConfig",
+    "google.genai.types:UploadToFileSearchStoreOperation",
+    "google.genai.types:UploadToFileSearchStoreResponse",
+    "google.genai.types:UploadToFileSearchStoreResumableResponse",
+    "google.genai.types:UpscaleImageConfig",
+    "google.genai.types:UpscaleImageParameters",
+    "google.genai.types:UpscaleImageResponse",
+    "google.genai.types:UrlContext",
+    "google.genai.types:UrlContextMetadata",
+    "google.genai.types:UrlMetadata",
+    "google.genai.types:UsageMetadata",
+    "google.genai.types:UserContent",
+    "google.genai.types:ValidateRewardConfig",
+    "google.genai.types:ValidateRewardResponse",
+    "google.genai.types:VeoHyperParameters",
+    "google.genai.types:VeoLoraTuningSpec",
+    "google.genai.types:VeoTuningSpec",
+    "google.genai.types:VertexAISearch",
+    "google.genai.types:VertexAISearchDataStoreSpec",
+    "google.genai.types:VertexMultimodalDatasetDestination",
+    "google.genai.types:VertexRagStore",
+    "google.genai.types:VertexRagStoreRagResource",
+    "google.genai.types:Video",
+    "google.genai.types:VideoGenerationMask",
+    "google.genai.types:VideoGenerationReferenceImage",
+    "google.genai.types:VideoMetadata",
+    "google.genai.types:VideoResponseFormat",
+    "google.genai.types:VoiceActivity",
+    "google.genai.types:VoiceActivityDetectionSignal",
+    "google.genai.types:VoiceConfig",
+    "google.genai.types:VoiceConsentSignature",
+    "google.genai.types:WebSearch",
+    "google.genai.types:WebhookConfig",
+    "google.genai.types:WeightedPrompt",
+    "google.genai.types:WhiteSpaceConfig",
+    "google.genai.types:WordInfo",
+    "google.genai.types:_CancelBatchJobParameters",
+    "google.genai.types:_CancelTuningJobParameters",
+    "google.genai.types:_ComputeTokensParameters",
+    "google.genai.types:_CountTokensParameters",
+    "google.genai.types:_CreateBatchJobParameters",
+    "google.genai.types:_CreateCachedContentParameters",
+    "google.genai.types:_CreateEmbeddingsBatchJobParameters",
+    "google.genai.types:_CreateFileParameters",
+    "google.genai.types:_CreateFileSearchStoreParameters",
+    "google.genai.types:_CreateTuningJobParametersPrivate",
+    "google.genai.types:_DeleteBatchJobParameters",
+    "google.genai.types:_DeleteCachedContentParameters",
+    "google.genai.types:_DeleteDocumentParameters",
+    "google.genai.types:_DeleteFileParameters",
+    "google.genai.types:_DeleteFileSearchStoreParameters",
+    "google.genai.types:_DeleteModelParameters",
+    "google.genai.types:_EditImageParameters",
+    "google.genai.types:_EmbedContentParametersPrivate",
+    "google.genai.types:_FetchPredictOperationParameters",
+    "google.genai.types:_GenerateContentParameters",
+    "google.genai.types:_GenerateImagesParameters",
+    "google.genai.types:_GenerateVideosParameters",
+    "google.genai.types:_GetBatchJobParameters",
+    "google.genai.types:_GetCachedContentParameters",
+    "google.genai.types:_GetDocumentParameters",
+    "google.genai.types:_GetFileParameters",
+    "google.genai.types:_GetFileSearchStoreParameters",
+    "google.genai.types:_GetModelParameters",
+    "google.genai.types:_GetOperationParameters",
+    "google.genai.types:_GetProjectOperationParameters",
+    "google.genai.types:_GetTuningJobParameters",
+    "google.genai.types:_ImportFileParameters",
+    "google.genai.types:_InternalRegisterFilesParameters",
+    "google.genai.types:_ListBatchJobsParameters",
+    "google.genai.types:_ListCachedContentsParameters",
+    "google.genai.types:_ListDocumentsParameters",
+    "google.genai.types:_ListFileSearchStoresParameters",
+    "google.genai.types:_ListFilesParameters",
+    "google.genai.types:_ListModelsParameters",
+    "google.genai.types:_ListTuningJobsParameters",
+    "google.genai.types:_RecontextImageParameters",
+    "google.genai.types:_ReferenceImageAPI",
+    "google.genai.types:_SegmentImageParameters",
+    "google.genai.types:_UpdateCachedContentParameters",
+    "google.genai.types:_UpdateModelParameters",
+    "google.genai.types:_UploadToFileSearchStoreParameters",
+    "google.genai.types:_UpscaleImageAPIConfig",
+    "google.genai.types:_UpscaleImageAPIParameters",
+    "google.genai.types:_ValidateRewardParameters"
+  ],
+  "declarations": {
+    "google.genai._common": [
+      "BaseModel"
+    ],
+    "google.genai._gaos.errors.cancelinteractionbyid": [
+      "CancelInteractionByIDClientErrorData",
+      "CancelInteractionByIDServerErrorData"
+    ],
+    "google.genai._gaos.errors.createinteraction": [
+      "CreateInteractionClientErrorData",
+      "CreateInteractionServerErrorData"
+    ],
+    "google.genai._gaos.errors.deleteinteraction": [
+      "DeleteInteractionClientErrorData",
+      "DeleteInteractionServerErrorData"
+    ],
+    "google.genai._gaos.errors.getinteractionbyid": [
+      "GetInteractionByIDClientErrorData",
+      "GetInteractionByIDServerErrorData"
+    ],
+    "google.genai._gaos.models.cancelinteractionbyid": [
+      "CancelInteractionByIDGlobals",
+      "CancelInteractionByIDRequest"
+    ],
+    "google.genai._gaos.models.createagent": [
+      "CreateAgentGlobals",
+      "CreateAgentRequest"
+    ],
+    "google.genai._gaos.models.createcredential": [
+      "CreateCredentialGlobals",
+      "CreateCredentialRequest"
+    ],
+    "google.genai._gaos.models.createenvironment": [
+      "CreateEnvironmentGlobals",
+      "CreateEnvironmentRequest"
+    ],
+    "google.genai._gaos.models.createinteraction": [
+      "CreateInteractionGlobals",
+      "CreateInteractionRequest"
+    ],
+    "google.genai._gaos.models.createtrigger": [
+      "CreateTriggerGlobals",
+      "CreateTriggerRequest"
+    ],
+    "google.genai._gaos.models.createvoice": [
+      "CreateVoiceGlobals",
+      "CreateVoiceRequest"
+    ],
+    "google.genai._gaos.models.createwebhook": [
+      "CreateWebhookGlobals",
+      "CreateWebhookRequest"
+    ],
+    "google.genai._gaos.models.deleteagent": [
+      "DeleteAgentGlobals",
+      "DeleteAgentRequest"
+    ],
+    "google.genai._gaos.models.deletecredential": [
+      "DeleteCredentialGlobals",
+      "DeleteCredentialRequest"
+    ],
+    "google.genai._gaos.models.deleteenvironment": [
+      "DeleteEnvironmentGlobals",
+      "DeleteEnvironmentRequest"
+    ],
+    "google.genai._gaos.models.deleteinteraction": [
+      "DeleteInteractionGlobals",
+      "DeleteInteractionRequest"
+    ],
+    "google.genai._gaos.models.deletetrigger": [
+      "DeleteTriggerGlobals",
+      "DeleteTriggerRequest"
+    ],
+    "google.genai._gaos.models.deletevoice": [
+      "DeleteVoiceGlobals",
+      "DeleteVoiceRequest"
+    ],
+    "google.genai._gaos.models.deletewebhook": [
+      "DeleteWebhookGlobals",
+      "DeleteWebhookRequest"
+    ],
+    "google.genai._gaos.models.getagent": [
+      "GetAgentGlobals",
+      "GetAgentRequest"
+    ],
+    "google.genai._gaos.models.getcredential": [
+      "GetCredentialGlobals",
+      "GetCredentialRequest"
+    ],
+    "google.genai._gaos.models.getenvironment": [
+      "GetEnvironmentGlobals",
+      "GetEnvironmentRequest"
+    ],
+    "google.genai._gaos.models.getenvironmentfiles": [
+      "GetEnvironmentFilesGlobals",
+      "GetEnvironmentFilesRequest"
+    ],
+    "google.genai._gaos.models.getinteractionbyid": [
+      "GetInteractionByIDGlobals",
+      "GetInteractionByIDRequest"
+    ],
+    "google.genai._gaos.models.gettrigger": [
+      "GetTriggerGlobals",
+      "GetTriggerRequest"
+    ],
+    "google.genai._gaos.models.getvoice": [
+      "GetVoiceGlobals",
+      "GetVoiceRequest"
+    ],
+    "google.genai._gaos.models.getwebhook": [
+      "GetWebhookGlobals",
+      "GetWebhookRequest"
+    ],
+    "google.genai._gaos.models.internal.globals": [
+      "Globals"
+    ],
+    "google.genai._gaos.models.listagents": [
+      "ListAgentsGlobals",
+      "ListAgentsRequest"
+    ],
+    "google.genai._gaos.models.listcredentials": [
+      "ListCredentialsGlobals",
+      "ListCredentialsRequest"
+    ],
+    "google.genai._gaos.models.listenvironments": [
+      "ListEnvironmentsGlobals",
+      "ListEnvironmentsRequest"
+    ],
+    "google.genai._gaos.models.listtriggerexecutions": [
+      "ListTriggerExecutionsGlobals",
+      "ListTriggerExecutionsRequest"
+    ],
+    "google.genai._gaos.models.listtriggers": [
+      "ListTriggersGlobals",
+      "ListTriggersRequest"
+    ],
+    "google.genai._gaos.models.listvoices": [
+      "ListVoicesGlobals",
+      "ListVoicesRequest"
+    ],
+    "google.genai._gaos.models.listwebhooks": [
+      "ListWebhooksGlobals",
+      "ListWebhooksRequest"
+    ],
+    "google.genai._gaos.models.pingwebhook": [
+      "PingWebhookGlobals",
+      "PingWebhookRequest"
+    ],
+    "google.genai._gaos.models.rotatesigningsecret": [
+      "RotateSigningSecretGlobals",
+      "RotateSigningSecretRequest"
+    ],
+    "google.genai._gaos.models.runtrigger": [
+      "RunTriggerGlobals",
+      "RunTriggerRequest"
+    ],
+    "google.genai._gaos.models.startenvironmentfileupload": [
+      "StartEnvironmentFileUploadGlobals",
+      "StartEnvironmentFileUploadRequest",
+      "StartEnvironmentFileUploadResponse"
+    ],
+    "google.genai._gaos.models.updatecredential": [
+      "UpdateCredentialGlobals",
+      "UpdateCredentialRequest"
+    ],
+    "google.genai._gaos.models.updatetrigger": [
+      "UpdateTriggerGlobals",
+      "UpdateTriggerRequest"
+    ],
+    "google.genai._gaos.models.updatewebhook": [
+      "UpdateWebhookGlobals",
+      "UpdateWebhookRequest"
+    ],
+    "google.genai._gaos.types.agents.agent": [
+      "Agent"
+    ],
+    "google.genai._gaos.types.agents.agentlistresponse": [
+      "AgentListResponse"
+    ],
+    "google.genai._gaos.types.agents.agenttool": [
+      "UnknownAgentTool"
+    ],
+    "google.genai._gaos.types.basemodel": [
+      "BaseModel",
+      "Unset"
+    ],
+    "google.genai._gaos.types.credentials.credential": [
+      "Credential"
+    ],
+    "google.genai._gaos.types.credentials.credentiallistresponse": [
+      "CredentialListResponse"
+    ],
+    "google.genai._gaos.types.credentials.environmentvariableconfig": [
+      "EnvironmentVariableConfig"
+    ],
+    "google.genai._gaos.types.credentials.environmentvariableupdateconfig": [
+      "EnvironmentVariableUpdateConfig"
+    ],
+    "google.genai._gaos.types.credentials.httpbearerconfig": [
+      "HTTPBearerConfig"
+    ],
+    "google.genai._gaos.types.credentials.httpbearerupdateconfig": [
+      "HTTPBearerUpdateConfig"
+    ],
+    "google.genai._gaos.types.credentials.oauth2config": [
+      "OAuth2Config"
+    ],
+    "google.genai._gaos.types.credentials.oauth2updateconfig": [
+      "OAuth2UpdateConfig"
+    ],
+    "google.genai._gaos.types.environments.createenvironmentrequest": [
+      "CreateEnvironmentRequest"
+    ],
+    "google.genai._gaos.types.environments.environment": [
+      "Environment"
+    ],
+    "google.genai._gaos.types.environments.environmentfile": [
+      "EnvironmentFile"
+    ],
+    "google.genai._gaos.types.environments.getenvironmentfilesresponse": [
+      "GetEnvironmentFilesResponse"
+    ],
+    "google.genai._gaos.types.environments.listenvironmentsresponse": [
+      "ListEnvironmentsResponse"
+    ],
+    "google.genai._gaos.types.interactions.allowedtools": [
+      "AllowedTools"
+    ],
+    "google.genai._gaos.types.interactions.allowlistentry": [
+      "AllowlistEntry"
+    ],
+    "google.genai._gaos.types.interactions.annotation": [
+      "UnknownAnnotation"
+    ],
+    "google.genai._gaos.types.interactions.antigravityagentconfig": [
+      "AntigravityAgentConfig"
+    ],
+    "google.genai._gaos.types.interactions.argumentsdelta": [
+      "ArgumentsDelta"
+    ],
+    "google.genai._gaos.types.interactions.audiocontent": [
+      "AudioContent"
+    ],
+    "google.genai._gaos.types.interactions.audiodelta": [
+      "AudioDelta"
+    ],
+    "google.genai._gaos.types.interactions.audioresponseformat": [
+      "AudioResponseFormat"
+    ],
+    "google.genai._gaos.types.interactions.codeexecution": [
+      "CodeExecution"
+    ],
+    "google.genai._gaos.types.interactions.codeexecutioncallarguments": [
+      "CodeExecutionCallArguments"
+    ],
+    "google.genai._gaos.types.interactions.codeexecutioncalldelta": [
+      "CodeExecutionCallDelta"
+    ],
+    "google.genai._gaos.types.interactions.codeexecutioncallstep": [
+      "CodeExecutionCallStep"
+    ],
+    "google.genai._gaos.types.interactions.codeexecutionresultdelta": [
+      "CodeExecutionResultDelta"
+    ],
+    "google.genai._gaos.types.interactions.codeexecutionresultstep": [
+      "CodeExecutionResultStep"
+    ],
+    "google.genai._gaos.types.interactions.codemenderagentconfig": [
+      "CodeMenderAgentConfig"
+    ],
+    "google.genai._gaos.types.interactions.computeruse": [
+      "ComputerUse"
+    ],
+    "google.genai._gaos.types.interactions.content": [
+      "UnknownContent"
+    ],
+    "google.genai._gaos.types.interactions.createagentinteraction": [
+      "CreateAgentInteraction"
+    ],
+    "google.genai._gaos.types.interactions.createmodelinteraction": [
+      "CreateModelInteraction"
+    ],
+    "google.genai._gaos.types.interactions.deepresearchagentconfig": [
+      "DeepResearchAgentConfig"
+    ],
+    "google.genai._gaos.types.interactions.documentcontent": [
+      "DocumentContent"
+    ],
+    "google.genai._gaos.types.interactions.documentdelta": [
+      "DocumentDelta"
+    ],
+    "google.genai._gaos.types.interactions.dynamicagentconfig": [
+      "DynamicAgentConfig"
+    ],
+    "google.genai._gaos.types.interactions.empty": [
+      "Empty"
+    ],
+    "google.genai._gaos.types.interactions.environment": [
+      "Environment"
+    ],
+    "google.genai._gaos.types.interactions.environmentnetworkegressallowlist": [
+      "EnvironmentNetworkEgressAllowlist"
+    ],
+    "google.genai._gaos.types.interactions.envvar": [
+      "EnvVar"
+    ],
+    "google.genai._gaos.types.interactions.error": [
+      "Error"
+    ],
+    "google.genai._gaos.types.interactions.errorevent": [
+      "ErrorEvent"
+    ],
+    "google.genai._gaos.types.interactions.exaaisearchconfig": [
+      "ExaAISearchConfig"
+    ],
+    "google.genai._gaos.types.interactions.filecitation": [
+      "FileCitation"
+    ],
+    "google.genai._gaos.types.interactions.filecontent": [
+      "FileContent"
+    ],
+    "google.genai._gaos.types.interactions.filesearch": [
+      "FileSearch"
+    ],
+    "google.genai._gaos.types.interactions.filesearchcalldelta": [
+      "FileSearchCallDelta"
+    ],
+    "google.genai._gaos.types.interactions.filesearchcallstep": [
+      "FileSearchCallStep"
+    ],
+    "google.genai._gaos.types.interactions.filesearchresult": [
+      "FileSearchResult"
+    ],
+    "google.genai._gaos.types.interactions.filesearchresultdelta": [
+      "FileSearchResultDelta"
+    ],
+    "google.genai._gaos.types.interactions.filesearchresultstep": [
+      "FileSearchResultStep"
+    ],
+    "google.genai._gaos.types.interactions.filter_": [
+      "Filter"
+    ],
+    "google.genai._gaos.types.interactions.findrequest": [
+      "FindRequest"
+    ],
+    "google.genai._gaos.types.interactions.fixrequest": [
+      "FixRequest"
+    ],
+    "google.genai._gaos.types.interactions.function": [
+      "Function"
+    ],
+    "google.genai._gaos.types.interactions.functioncallstep": [
+      "FunctionCallStep"
+    ],
+    "google.genai._gaos.types.interactions.functionresultdelta": [
+      "FunctionResultDelta",
+      "FunctionResultDeltaResult"
+    ],
+    "google.genai._gaos.types.interactions.functionresultstep": [
+      "FunctionResultStep",
+      "FunctionResultStepResult"
+    ],
+    "google.genai._gaos.types.interactions.functionresultsubcontent": [
+      "UnknownFunctionResultSubcontent"
+    ],
+    "google.genai._gaos.types.interactions.generationconfig": [
+      "GenerationConfig"
+    ],
+    "google.genai._gaos.types.interactions.googlemaps": [
+      "GoogleMaps"
+    ],
+    "google.genai._gaos.types.interactions.googlemapscallarguments": [
+      "GoogleMapsCallArguments"
+    ],
+    "google.genai._gaos.types.interactions.googlemapscalldelta": [
+      "GoogleMapsCallDelta"
+    ],
+    "google.genai._gaos.types.interactions.googlemapscallstep": [
+      "GoogleMapsCallStep"
+    ],
+    "google.genai._gaos.types.interactions.googlemapsresult": [
+      "GoogleMapsResult"
+    ],
+    "google.genai._gaos.types.interactions.googlemapsresultdelta": [
+      "GoogleMapsResultDelta"
+    ],
+    "google.genai._gaos.types.interactions.googlemapsresultplaces": [
+      "GoogleMapsResultPlaces"
+    ],
+    "google.genai._gaos.types.interactions.googlemapsresultstep": [
+      "GoogleMapsResultStep"
+    ],
+    "google.genai._gaos.types.interactions.googlesearch": [
+      "GoogleSearch"
+    ],
+    "google.genai._gaos.types.interactions.googlesearchcallarguments": [
+      "GoogleSearchCallArguments"
+    ],
+    "google.genai._gaos.types.interactions.googlesearchcalldelta": [
+      "GoogleSearchCallDelta"
+    ],
+    "google.genai._gaos.types.interactions.googlesearchcallstep": [
+      "GoogleSearchCallStep"
+    ],
+    "google.genai._gaos.types.interactions.googlesearchresult": [
+      "GoogleSearchResult"
+    ],
+    "google.genai._gaos.types.interactions.googlesearchresultdelta": [
+      "GoogleSearchResultDelta"
+    ],
+    "google.genai._gaos.types.interactions.googlesearchresultstep": [
+      "GoogleSearchResultStep"
+    ],
+    "google.genai._gaos.types.interactions.groundingtoolcount": [
+      "GroundingToolCount"
+    ],
+    "google.genai._gaos.types.interactions.hybridsearch": [
+      "HybridSearch"
+    ],
+    "google.genai._gaos.types.interactions.imageconfig": [
+      "ImageConfig"
+    ],
+    "google.genai._gaos.types.interactions.imagecontent": [
+      "ImageContent"
+    ],
+    "google.genai._gaos.types.interactions.imagedelta": [
+      "ImageDelta"
+    ],
+    "google.genai._gaos.types.interactions.imageresponseformat": [
+      "ImageResponseFormat"
+    ],
+    "google.genai._gaos.types.interactions.interaction": [
+      "Interaction",
+      "UnknownInteractionAgentConfig"
+    ],
+    "google.genai._gaos.types.interactions.interactioncompletedevent": [
+      "InteractionCompletedEvent"
+    ],
+    "google.genai._gaos.types.interactions.interactioncreatedevent": [
+      "InteractionCreatedEvent"
+    ],
+    "google.genai._gaos.types.interactions.interactionsseevent": [
+      "UnknownInteractionSSEEvent"
+    ],
+    "google.genai._gaos.types.interactions.interactionsseeventinteraction": [
+      "InteractionSseEventInteraction"
+    ],
+    "google.genai._gaos.types.interactions.interactionssestreamevent": [
+      "InteractionSSEStreamEvent"
+    ],
+    "google.genai._gaos.types.interactions.interactionstatusupdate": [
+      "InteractionStatusUpdate"
+    ],
+    "google.genai._gaos.types.interactions.mcpserver": [
+      "MCPServer"
+    ],
+    "google.genai._gaos.types.interactions.mcpservertoolcalldelta": [
+      "MCPServerToolCallDelta"
+    ],
+    "google.genai._gaos.types.interactions.mcpservertoolcallstep": [
+      "MCPServerToolCallStep"
+    ],
+    "google.genai._gaos.types.interactions.mcpservertoolresultdelta": [
+      "MCPServerToolResultDelta",
+      "MCPServerToolResultDeltaResult"
+    ],
+    "google.genai._gaos.types.interactions.mcpservertoolresultstep": [
+      "MCPServerToolResultStep",
+      "MCPServerToolResultStepResult"
+    ],
+    "google.genai._gaos.types.interactions.modalitytokens": [
+      "ModalityTokens"
+    ],
+    "google.genai._gaos.types.interactions.modeloutputstep": [
+      "ModelOutputStep"
+    ],
+    "google.genai._gaos.types.interactions.parallelaisearchconfig": [
+      "ParallelAISearchConfig"
+    ],
+    "google.genai._gaos.types.interactions.placecitation": [
+      "PlaceCitation"
+    ],
+    "google.genai._gaos.types.interactions.processingcalldelta": [
+      "ProcessingCallDelta"
+    ],
+    "google.genai._gaos.types.interactions.processingcallstep": [
+      "ProcessingCallStep"
+    ],
+    "google.genai._gaos.types.interactions.processingresultdelta": [
+      "ProcessingResultDelta"
+    ],
+    "google.genai._gaos.types.interactions.processingresultstep": [
+      "ProcessingResultStep"
+    ],
+    "google.genai._gaos.types.interactions.ragresource": [
+      "RagResource"
+    ],
+    "google.genai._gaos.types.interactions.ragretrievalconfig": [
+      "RagRetrievalConfig"
+    ],
+    "google.genai._gaos.types.interactions.ragstoreconfig": [
+      "RagStoreConfig"
+    ],
+    "google.genai._gaos.types.interactions.ranking": [
+      "Ranking"
+    ],
+    "google.genai._gaos.types.interactions.rankservice": [
+      "RankService"
+    ],
+    "google.genai._gaos.types.interactions.retrieval": [
+      "Retrieval"
+    ],
+    "google.genai._gaos.types.interactions.retrievalcallarguments": [
+      "RetrievalCallArguments"
+    ],
+    "google.genai._gaos.types.interactions.retrievalcalldelta": [
+      "RetrievalCallDelta"
+    ],
+    "google.genai._gaos.types.interactions.retrievalcallstep": [
+      "RetrievalCallStep"
+    ],
+    "google.genai._gaos.types.interactions.retrievalresultdelta": [
+      "RetrievalResultDelta"
+    ],
+    "google.genai._gaos.types.interactions.retrievalresultstep": [
+      "RetrievalResultStep"
+    ],
+    "google.genai._gaos.types.interactions.reviewsnippet": [
+      "ReviewSnippet"
+    ],
+    "google.genai._gaos.types.interactions.safetysetting": [
+      "SafetySetting"
+    ],
+    "google.genai._gaos.types.interactions.sessionconfig": [
+      "SessionConfig"
+    ],
+    "google.genai._gaos.types.interactions.smarttranscriptionmode": [
+      "SmartTranscriptionMode"
+    ],
+    "google.genai._gaos.types.interactions.source": [
+      "Source"
+    ],
+    "google.genai._gaos.types.interactions.speakerconfig": [
+      "SpeakerConfig"
+    ],
+    "google.genai._gaos.types.interactions.speechannotation": [
+      "SpeechAnnotation"
+    ],
+    "google.genai._gaos.types.interactions.speechconfig": [
+      "SpeechConfig"
+    ],
+    "google.genai._gaos.types.interactions.staticmediaprocessing": [
+      "StaticMediaProcessing"
+    ],
+    "google.genai._gaos.types.interactions.status": [
+      "Status"
+    ],
+    "google.genai._gaos.types.interactions.step": [
+      "UnknownStep"
+    ],
+    "google.genai._gaos.types.interactions.stepdelta": [
+      "StepDelta"
+    ],
+    "google.genai._gaos.types.interactions.stepdeltadata": [
+      "UnknownStepDeltaData"
+    ],
+    "google.genai._gaos.types.interactions.stepdeltametadata": [
+      "StepDeltaMetadata"
+    ],
+    "google.genai._gaos.types.interactions.stepstart": [
+      "StepStart"
+    ],
+    "google.genai._gaos.types.interactions.stepstop": [
+      "StepStop"
+    ],
+    "google.genai._gaos.types.interactions.textannotationdelta": [
+      "TextAnnotationDelta"
+    ],
+    "google.genai._gaos.types.interactions.textcontent": [
+      "TextContent"
+    ],
+    "google.genai._gaos.types.interactions.textdelta": [
+      "TextDelta"
+    ],
+    "google.genai._gaos.types.interactions.textresponseformat": [
+      "TextResponseFormat"
+    ],
+    "google.genai._gaos.types.interactions.thoughtsignaturedelta": [
+      "ThoughtSignatureDelta"
+    ],
+    "google.genai._gaos.types.interactions.thoughtstep": [
+      "ThoughtStep"
+    ],
+    "google.genai._gaos.types.interactions.thoughtsummarycontent": [
+      "UnknownThoughtSummaryContent"
+    ],
+    "google.genai._gaos.types.interactions.thoughtsummarydelta": [
+      "ThoughtSummaryDelta"
+    ],
+    "google.genai._gaos.types.interactions.tool": [
+      "UnknownTool"
+    ],
+    "google.genai._gaos.types.interactions.toolchoiceconfig": [
+      "ToolChoiceConfig"
+    ],
+    "google.genai._gaos.types.interactions.transcriptionconfig": [
+      "TranscriptionConfig"
+    ],
+    "google.genai._gaos.types.interactions.transcriptionmode": [
+      "UnknownTranscriptionMode"
+    ],
+    "google.genai._gaos.types.interactions.urlcitation": [
+      "URLCitation"
+    ],
+    "google.genai._gaos.types.interactions.urlcontext": [
+      "URLContext"
+    ],
+    "google.genai._gaos.types.interactions.urlcontextcallarguments": [
+      "URLContextCallArguments"
+    ],
+    "google.genai._gaos.types.interactions.urlcontextcalldelta": [
+      "URLContextCallDelta"
+    ],
+    "google.genai._gaos.types.interactions.urlcontextcallstep": [
+      "URLContextCallStep"
+    ],
+    "google.genai._gaos.types.interactions.urlcontextresult": [
+      "URLContextResult"
+    ],
+    "google.genai._gaos.types.interactions.urlcontextresultdelta": [
+      "URLContextResultDelta"
+    ],
+    "google.genai._gaos.types.interactions.urlcontextresultstep": [
+      "URLContextResultStep"
+    ],
+    "google.genai._gaos.types.interactions.usage": [
+      "Usage"
+    ],
+    "google.genai._gaos.types.interactions.userinputstep": [
+      "UserInputStep"
+    ],
+    "google.genai._gaos.types.interactions.verbatimtranscriptionmode": [
+      "VerbatimTranscriptionMode"
+    ],
+    "google.genai._gaos.types.interactions.vertexaisearchconfig": [
+      "VertexAISearchConfig"
+    ],
+    "google.genai._gaos.types.interactions.videoconfig": [
+      "VideoConfig"
+    ],
+    "google.genai._gaos.types.interactions.videocontent": [
+      "VideoContent"
+    ],
+    "google.genai._gaos.types.interactions.videodelta": [
+      "VideoDelta"
+    ],
+    "google.genai._gaos.types.interactions.videoresponseformat": [
+      "VideoResponseFormat"
+    ],
+    "google.genai._gaos.types.interactions.webhookconfig": [
+      "WebhookConfig"
+    ],
+    "google.genai._gaos.types.interactions.wordinfo": [
+      "WordInfo"
+    ],
+    "google.genai._gaos.types.security": [
+      "Security"
+    ],
+    "google.genai._gaos.types.triggers.listtriggerexecutionsresponse": [
+      "ListTriggerExecutionsResponse"
+    ],
+    "google.genai._gaos.types.triggers.listtriggersresponse": [
+      "ListTriggersResponse"
+    ],
+    "google.genai._gaos.types.triggers.trigger": [
+      "Trigger"
+    ],
+    "google.genai._gaos.types.triggers.triggercreateparams": [
+      "TriggerCreateParams"
+    ],
+    "google.genai._gaos.types.triggers.triggerexecution": [
+      "TriggerExecution"
+    ],
+    "google.genai._gaos.types.triggers.triggerupdate": [
+      "TriggerUpdate"
+    ],
+    "google.genai._gaos.types.voices.audiodata": [
+      "AudioData"
+    ],
+    "google.genai._gaos.types.voices.createvoicerequest": [
+      "CreateVoiceRequest"
+    ],
+    "google.genai._gaos.types.voices.deletevoiceresponse": [
+      "DeleteVoiceResponse"
+    ],
+    "google.genai._gaos.types.voices.listvoicesresponse": [
+      "ListVoicesResponse"
+    ],
+    "google.genai._gaos.types.voices.promptedvoice": [
+      "PromptedVoice"
+    ],
+    "google.genai._gaos.types.voices.replicatedvoice": [
+      "ReplicatedVoice"
+    ],
+    "google.genai._gaos.types.voices.voice_input": [
+      "VoiceInput"
+    ],
+    "google.genai._gaos.types.voices.voice_output": [
+      "VoiceOutput"
+    ],
+    "google.genai._gaos.types.webhooks.pingwebhookrequest": [
+      "PingWebhookRequest"
+    ],
+    "google.genai._gaos.types.webhooks.rotatesigningsecretrequest": [
+      "RotateSigningSecretRequest"
+    ],
+    "google.genai._gaos.types.webhooks.signingsecret": [
+      "SigningSecret"
+    ],
+    "google.genai._gaos.types.webhooks.webhook": [
+      "Webhook",
+      "WebhookInput"
+    ],
+    "google.genai._gaos.types.webhooks.webhooklistresponse": [
+      "WebhookListResponse"
+    ],
+    "google.genai._gaos.types.webhooks.webhookpingresponse": [
+      "WebhookPingResponse"
+    ],
+    "google.genai._gaos.types.webhooks.webhookrotatesigningsecretresponse": [
+      "WebhookRotateSigningSecretResponse"
+    ],
+    "google.genai._gaos.types.webhooks.webhookupdate": [
+      "WebhookUpdate"
+    ],
+    "google.genai._replay_api_client": [
+      "ReplayFile",
+      "ReplayInteraction",
+      "ReplayRequest",
+      "ReplayResponse"
+    ],
+    "google.genai.client": [
+      "DebugConfig"
+    ],
+    "google.genai.types": [
+      "ActivityEnd",
+      "ActivityStart",
+      "AggregationOutput",
+      "AggregationResult",
+      "ApiAuth",
+      "ApiAuthApiKeyConfig",
+      "ApiKeyConfig",
+      "AudioChunk",
+      "AudioResponseFormat",
+      "AudioTranscriptionConfig",
+      "AuthConfig",
+      "AuthConfigGoogleServiceAccountConfig",
+      "AuthConfigHttpBasicAuthConfig",
+      "AuthConfigOauthConfig",
+      "AuthConfigOidcConfig",
+      "AuthToken",
+      "AutomaticActivityDetection",
+      "AutomaticFunctionCallingConfig",
+      "AutoraterConfig",
+      "AvatarConfig",
+      "BatchJob",
+      "BatchJobDestination",
+      "BatchJobOutputInfo",
+      "BatchJobSource",
+      "BigQuerySource",
+      "BleuMetricValue",
+      "BleuSpec",
+      "Blob",
+      "CachedContent",
+      "CachedContentUsageMetadata",
+      "CancelBatchJobConfig",
+      "CancelTuningJobConfig",
+      "CancelTuningJobResponse",
+      "Candidate",
+      "Checkpoint",
+      "ChunkingConfig",
+      "Citation",
+      "CitationMetadata",
+      "CodeExecutionResult",
+      "CompletionStats",
+      "CompositeReinforcementTuningRewardConfig",
+      "CompositeReinforcementTuningRewardConfigWeightedRewardConfig",
+      "ComputationBasedMetricSpec",
+      "ComputeTokensConfig",
+      "ComputeTokensResponse",
+      "ComputeTokensResult",
+      "ComputerUse",
+      "Content",
+      "ContentEmbedding",
+      "ContentEmbeddingStatistics",
+      "ContentReferenceImage",
+      "ContextWindowCompressionConfig",
+      "ControlReferenceConfig",
+      "ControlReferenceImage",
+      "CountTokensConfig",
+      "CountTokensResponse",
+      "CountTokensResult",
+      "CreateAuthTokenConfig",
+      "CreateAuthTokenParameters",
+      "CreateBatchJobConfig",
+      "CreateCachedContentConfig",
+      "CreateEmbeddingsBatchJobConfig",
+      "CreateFileConfig",
+      "CreateFileResponse",
+      "CreateFileSearchStoreConfig",
+      "CreateTuningJobConfig",
+      "CreateTuningJobParameters",
+      "CustomCodeExecutionResult",
+      "CustomCodeExecutionSpec",
+      "CustomMetadata",
+      "CustomOutput",
+      "CustomOutputFormatConfig",
+      "CustomizedAvatar",
+      "DatasetDistribution",
+      "DatasetDistributionDistributionBucket",
+      "DatasetStats",
+      "DeleteBatchJobConfig",
+      "DeleteCachedContentConfig",
+      "DeleteCachedContentResponse",
+      "DeleteDocumentConfig",
+      "DeleteFileConfig",
+      "DeleteFileResponse",
+      "DeleteFileSearchStoreConfig",
+      "DeleteModelConfig",
+      "DeleteModelResponse",
+      "DeleteResourceJob",
+      "DistillationDataStats",
+      "DistillationHyperParameters",
+      "DistillationSamplingSpec",
+      "DistillationSpec",
+      "Document",
+      "DownloadFileConfig",
+      "DownloadMediaConfig",
+      "DynamicRetrievalConfig",
+      "EditImageConfig",
+      "EditImageResponse",
+      "EmbedContentBatch",
+      "EmbedContentConfig",
+      "EmbedContentMetadata",
+      "EmbedContentParameters",
+      "EmbedContentResponse",
+      "EmbeddingsBatchJobSource",
+      "EncryptionSpec",
+      "Endpoint",
+      "EnterpriseWebSearch",
+      "EntityLabel",
+      "EvaluateDatasetResponse",
+      "EvaluateDatasetRun",
+      "EvaluationConfig",
+      "EvaluationDataset",
+      "EvaluationParserConfig",
+      "EvaluationParserConfigCustomCodeParserConfig",
+      "ExactMatchMetricValue",
+      "ExecutableCode",
+      "ExternalApi",
+      "ExternalApiElasticSearchParams",
+      "ExternalApiSimpleSearchParams",
+      "FetchPredictOperationConfig",
+      "File",
+      "FileData",
+      "FileSearch",
+      "FileSearchStore",
+      "FileStatus",
+      "FullFineTuningSpec",
+      "FunctionCall",
+      "FunctionCallingConfig",
+      "FunctionDeclaration",
+      "FunctionResponse",
+      "FunctionResponseBlob",
+      "FunctionResponseFileData",
+      "FunctionResponsePart",
+      "GcsDestination",
+      "GcsSource",
+      "GeminiPreferenceExample",
+      "GeminiPreferenceExampleCompletion",
+      "GenerateContentConfig",
+      "GenerateContentResponse",
+      "GenerateContentResponsePromptFeedback",
+      "GenerateContentResponseUsageMetadata",
+      "GenerateImagesConfig",
+      "GenerateImagesResponse",
+      "GenerateVideosConfig",
+      "GenerateVideosOperation",
+      "GenerateVideosResponse",
+      "GenerateVideosSource",
+      "GeneratedImage",
+      "GeneratedImageMask",
+      "GeneratedVideo",
+      "GenerationConfig",
+      "GenerationConfigRoutingConfig",
+      "GenerationConfigRoutingConfigAutoRoutingMode",
+      "GenerationConfigRoutingConfigManualRoutingMode",
+      "GenerationConfigThinkingConfig",
+      "GenerationOutputConfig",
+      "GetBatchJobConfig",
+      "GetCachedContentConfig",
+      "GetDocumentConfig",
+      "GetFileConfig",
+      "GetFileSearchStoreConfig",
+      "GetModelConfig",
+      "GetOperationConfig",
+      "GetTuningJobConfig",
+      "GoogleMaps",
+      "GoogleMapsGroundingTypes",
+      "GoogleMapsPlaces",
+      "GoogleMapsRouting",
+      "GoogleRpcStatus",
+      "GoogleSearch",
+      "GoogleSearchRetrieval",
+      "GoogleTypeDate",
+      "GroundingChunk",
+      "GroundingChunkCustomMetadata",
+      "GroundingChunkImage",
+      "GroundingChunkMaps",
+      "GroundingChunkMapsPlaceAnswerSources",
+      "GroundingChunkMapsPlaceAnswerSourcesAuthorAttribution",
+      "GroundingChunkMapsPlaceAnswerSourcesReviewSnippet",
+      "GroundingChunkMapsRoute",
+      "GroundingChunkRetrievedContext",
+      "GroundingChunkStringList",
+      "GroundingChunkWeb",
+      "GroundingMetadata",
+      "GroundingMetadataSourceFlaggingUri",
+      "GroundingSupport",
+      "HistoryConfig",
+      "HttpOptions",
+      "HttpResponse",
+      "HttpRetryOptions",
+      "Image",
+      "ImageConfig",
+      "ImageConfigImageOutputOptions",
+      "ImageResponseFormat",
+      "ImageSearch",
+      "ImportFileConfig",
+      "ImportFileOperation",
+      "ImportFileResponse",
+      "InlinedEmbedContentResponse",
+      "InlinedRequest",
+      "InlinedResponse",
+      "Interval",
+      "JSONSchema",
+      "JobError",
+      "LLMBasedMetricSpec",
+      "LanguageAuto",
+      "LanguageHints",
+      "LatLng",
+      "ListBatchJobsConfig",
+      "ListBatchJobsResponse",
+      "ListCachedContentsConfig",
+      "ListCachedContentsResponse",
+      "ListDocumentsConfig",
+      "ListDocumentsResponse",
+      "ListFileSearchStoresConfig",
+      "ListFileSearchStoresResponse",
+      "ListFilesConfig",
+      "ListFilesResponse",
+      "ListModelsConfig",
+      "ListModelsResponse",
+      "ListTuningJobsConfig",
+      "ListTuningJobsResponse",
+      "LiveClientContent",
+      "LiveClientContextUpdate",
+      "LiveClientContextUpdateTools",
+      "LiveClientMessage",
+      "LiveClientRealtimeInput",
+      "LiveClientSetup",
+      "LiveClientToolResponse",
+      "LiveConnectConfig",
+      "LiveConnectConstraints",
+      "LiveConnectParameters",
+      "LiveMusicClientContent",
+      "LiveMusicClientMessage",
+      "LiveMusicClientSetup",
+      "LiveMusicConnectParameters",
+      "LiveMusicFilteredPrompt",
+      "LiveMusicGenerationConfig",
+      "LiveMusicServerContent",
+      "LiveMusicServerMessage",
+      "LiveMusicServerSetupComplete",
+      "LiveMusicSetConfigParameters",
+      "LiveMusicSetWeightedPromptsParameters",
+      "LiveMusicSourceMetadata",
+      "LiveSendRealtimeInputParameters",
+      "LiveServerContent",
+      "LiveServerGoAway",
+      "LiveServerMessage",
+      "LiveServerSessionResumptionUpdate",
+      "LiveServerSetupComplete",
+      "LiveServerToolCall",
+      "LiveServerToolCallCancellation",
+      "LogprobsResult",
+      "LogprobsResultCandidate",
+      "LogprobsResultTopCandidates",
+      "MaskReferenceConfig",
+      "MaskReferenceImage",
+      "McpServer",
+      "Metric",
+      "ModalityTokenCount",
+      "Model",
+      "ModelArmorConfig",
+      "ModelContent",
+      "ModelSelectionConfig",
+      "ModelStatus",
+      "MultiSpeakerVoiceConfig",
+      "OutputConfig",
+      "OutputInfo",
+      "PairwiseMetricResult",
+      "PairwiseMetricSpec",
+      "Part",
+      "PartMediaResolution",
+      "PartialArg",
+      "PartnerModelTuningSpec",
+      "PointwiseMetricResult",
+      "PointwiseMetricSpec",
+      "PreTunedModel",
+      "PrebuiltVoiceConfig",
+      "PredefinedMetricSpec",
+      "PreferenceOptimizationDataStats",
+      "PreferenceOptimizationHyperParameters",
+      "PreferenceOptimizationSpec",
+      "ProactivityConfig",
+      "ProductImage",
+      "ProjectOperation",
+      "RagChunk",
+      "RagChunkPageSpan",
+      "RagRetrievalConfig",
+      "RagRetrievalConfigFilter",
+      "RagRetrievalConfigHybridSearch",
+      "RagRetrievalConfigRanking",
+      "RagRetrievalConfigRankingLlmRanker",
+      "RagRetrievalConfigRankingRankService",
+      "RawOutput",
+      "RawReferenceImage",
+      "RealtimeInputConfig",
+      "RecontextImageConfig",
+      "RecontextImageResponse",
+      "RecontextImageSource",
+      "RegisterFilesConfig",
+      "RegisterFilesResponse",
+      "ReinforcementTuningAutoraterScorer",
+      "ReinforcementTuningAutoraterScorerExactMatchScorer",
+      "ReinforcementTuningAutoraterScorerParsedResponseConversionScorer",
+      "ReinforcementTuningCloudRunRewardScorer",
+      "ReinforcementTuningCodeExecutionRewardScorer",
+      "ReinforcementTuningExample",
+      "ReinforcementTuningHyperParameters",
+      "ReinforcementTuningParseResponseConfig",
+      "ReinforcementTuningRewardInfo",
+      "ReinforcementTuningSpec",
+      "ReinforcementTuningStringMatchRewardScorer",
+      "ReinforcementTuningStringMatchRewardScorerJsonMatchExpression",
+      "ReinforcementTuningStringMatchRewardScorerStringMatchExpression",
+      "ReinforcementTuningUserDatasetExamples",
+      "ReplayFile",
+      "ReplayInteraction",
+      "ReplayRequest",
+      "ReplayResponse",
+      "ReplicatedVoiceConfig",
+      "ResponseFormat",
+      "Retrieval",
+      "RetrievalConfig",
+      "RetrievalMetadata",
+      "RougeMetricValue",
+      "RougeSpec",
+      "RubricGenerationSpec",
+      "SafetyAttributes",
+      "SafetyRating",
+      "SafetySetting",
+      "Schema",
+      "ScribbleImage",
+      "SearchEntryPoint",
+      "SearchTypes",
+      "Segment",
+      "SegmentImageConfig",
+      "SegmentImageResponse",
+      "SegmentImageSource",
+      "SessionResumptionConfig",
+      "SingleEmbedContentResponse",
+      "SingleReinforcementTuningRewardConfig",
+      "SlidingWindow",
+      "SpeakerVoiceConfig",
+      "SpeechConfig",
+      "SpeechMetadata",
+      "StreamableHttpTransport",
+      "StringList",
+      "StyleReferenceConfig",
+      "StyleReferenceImage",
+      "SubjectReferenceConfig",
+      "SubjectReferenceImage",
+      "SupervisedHyperParameters",
+      "SupervisedTuningDataStats",
+      "SupervisedTuningDatasetDistribution",
+      "SupervisedTuningDatasetDistributionDatasetBucket",
+      "SupervisedTuningSpec",
+      "TestTableFile",
+      "TestTableItem",
+      "TextResponseFormat",
+      "ThinkingConfig",
+      "TokensInfo",
+      "Tool",
+      "ToolCall",
+      "ToolCodeExecution",
+      "ToolConfig",
+      "ToolExaAiSearch",
+      "ToolParallelAiSearch",
+      "ToolResponse",
+      "Transcription",
+      "TranslationConfig",
+      "TunedModel",
+      "TunedModelCheckpoint",
+      "TunedModelInfo",
+      "TuningDataStats",
+      "TuningDataset",
+      "TuningExample",
+      "TuningJob",
+      "TuningJobMetadata",
+      "TuningOperation",
+      "TuningValidationDataset",
+      "UnifiedMetric",
+      "UpdateCachedContentConfig",
+      "UpdateModelConfig",
+      "UploadFileConfig",
+      "UploadToFileSearchStoreConfig",
+      "UploadToFileSearchStoreOperation",
+      "UploadToFileSearchStoreResponse",
+      "UploadToFileSearchStoreResumableResponse",
+      "UpscaleImageConfig",
+      "UpscaleImageParameters",
+      "UpscaleImageResponse",
+      "UrlContext",
+      "UrlContextMetadata",
+      "UrlMetadata",
+      "UsageMetadata",
+      "UserContent",
+      "ValidateRewardConfig",
+      "ValidateRewardResponse",
+      "VeoHyperParameters",
+      "VeoLoraTuningSpec",
+      "VeoTuningSpec",
+      "VertexAISearch",
+      "VertexAISearchDataStoreSpec",
+      "VertexMultimodalDatasetDestination",
+      "VertexRagStore",
+      "VertexRagStoreRagResource",
+      "Video",
+      "VideoGenerationMask",
+      "VideoGenerationReferenceImage",
+      "VideoMetadata",
+      "VideoResponseFormat",
+      "VoiceActivity",
+      "VoiceActivityDetectionSignal",
+      "VoiceConfig",
+      "VoiceConsentSignature",
+      "WebSearch",
+      "WebhookConfig",
+      "WeightedPrompt",
+      "WhiteSpaceConfig",
+      "WordInfo",
+      "_CancelBatchJobParameters",
+      "_CancelTuningJobParameters",
+      "_ComputeTokensParameters",
+      "_CountTokensParameters",
+      "_CreateBatchJobParameters",
+      "_CreateCachedContentParameters",
+      "_CreateEmbeddingsBatchJobParameters",
+      "_CreateFileParameters",
+      "_CreateFileSearchStoreParameters",
+      "_CreateTuningJobParametersPrivate",
+      "_DeleteBatchJobParameters",
+      "_DeleteCachedContentParameters",
+      "_DeleteDocumentParameters",
+      "_DeleteFileParameters",
+      "_DeleteFileSearchStoreParameters",
+      "_DeleteModelParameters",
+      "_EditImageParameters",
+      "_EmbedContentParametersPrivate",
+      "_FetchPredictOperationParameters",
+      "_GenerateContentParameters",
+      "_GenerateImagesParameters",
+      "_GenerateVideosParameters",
+      "_GetBatchJobParameters",
+      "_GetCachedContentParameters",
+      "_GetDocumentParameters",
+      "_GetFileParameters",
+      "_GetFileSearchStoreParameters",
+      "_GetModelParameters",
+      "_GetOperationParameters",
+      "_GetProjectOperationParameters",
+      "_GetTuningJobParameters",
+      "_ImportFileParameters",
+      "_InternalRegisterFilesParameters",
+      "_ListBatchJobsParameters",
+      "_ListCachedContentsParameters",
+      "_ListDocumentsParameters",
+      "_ListFileSearchStoresParameters",
+      "_ListFilesParameters",
+      "_ListModelsParameters",
+      "_ListTuningJobsParameters",
+      "_RecontextImageParameters",
+      "_ReferenceImageAPI",
+      "_SegmentImageParameters",
+      "_UpdateCachedContentParameters",
+      "_UpdateModelParameters",
+      "_UploadToFileSearchStoreParameters",
+      "_UpscaleImageAPIConfig",
+      "_UpscaleImageAPIParameters",
+      "_ValidateRewardParameters"
+    ]
+  },
+  "sources": {
+    "google/genai/__init__.py": "1347651deee5c8542c51e437cb41444228808302d583dd0c07c49a3091867a15",
+    "google/genai/_common.py": "8a45f980cfd1c4fcef967a5f5618490d611637bb7772fd42bdad0cb63050ba2a",
+    "google/genai/_gaos/errors/cancelinteractionbyid.py": "08ee7d111f0279eec68aa2df98f1c3861aaef79def2058053f4cc1abd8320b77",
+    "google/genai/_gaos/errors/createinteraction.py": "46f0cad67e8e59db254080a08761097aca85d789b331084853b8f31fec34b577",
+    "google/genai/_gaos/errors/deleteinteraction.py": "5e63d7546ed2e4d226ed7085e3d34de7b8f1f3aae5712b47b2d58a5bfb7a283f",
+    "google/genai/_gaos/errors/getinteractionbyid.py": "52d6fd2e935ce32a8ae21cb6ba351bcdee7133e310aa3f748325f6d497938464",
+    "google/genai/_gaos/models/cancelinteractionbyid.py": "182c9244e4ed42c4b6659c98da0d3759ba124e4e2d8590ab4df6c221662e645d",
+    "google/genai/_gaos/models/createagent.py": "df291b9547ade70cecd3b10bde2f0f0cb61f19666001133c2c9df1289474693c",
+    "google/genai/_gaos/models/createcredential.py": "2cdf30745e434a708b4514b365815512eb77af0f309ea565db22e3fd107f4825",
+    "google/genai/_gaos/models/createenvironment.py": "fa738349508e2edd02b602dd8d8aec3899d70612dff663d82c2544edb2fbf537",
+    "google/genai/_gaos/models/createinteraction.py": "92cdf0bea505cabd47eecae9eb1b8b7d650ad000a75fa82387df5e5052fb9821",
+    "google/genai/_gaos/models/createtrigger.py": "d732306ce93c74f447d44bd970d018099bb1a83b8e02cc5e7fa1701f12c2cf8c",
+    "google/genai/_gaos/models/createvoice.py": "630ac768606ebcd24c83b149136ab37a452bfaf6b92fe3919de702e20c524d07",
+    "google/genai/_gaos/models/createwebhook.py": "c54af9b8873f6f6a002cfbeb63140fcffe5bb256303ef99dace62b9f9022e598",
+    "google/genai/_gaos/models/deleteagent.py": "471ee08c45277ff0515bdb9d38ba5020dbba4232b50fd0c20a85b89101a4a806",
+    "google/genai/_gaos/models/deletecredential.py": "b20b9b490012706c2175a2a211acc639c2bc7b45587bd04622c4bbf68cfbc908",
+    "google/genai/_gaos/models/deleteenvironment.py": "a5f3ce809eee0e40f52ff1af90ec32910c61b1ec0712077c10134688da55b380",
+    "google/genai/_gaos/models/deleteinteraction.py": "13ac9a6943990e25d5f5d067221653ff753641b934dbb8f200de097aa5ae0e81",
+    "google/genai/_gaos/models/deletetrigger.py": "357149cd3aa11125f4913072c6fbc84fabd303a5a47269d4684cdca1e3250378",
+    "google/genai/_gaos/models/deletevoice.py": "b3189d4d0a478643bae269a6e01d06599fcac5e4f60b84b9fbbce74226c50185",
+    "google/genai/_gaos/models/deletewebhook.py": "74f7bc3ff83cf2119198a5ca6247bc8938851e2bf5bff3901057e05ddf15ddd7",
+    "google/genai/_gaos/models/getagent.py": "54a7c17ffab83172bcafa48be26770f8af97c040a05ea42cb1e4a2aa4223f732",
+    "google/genai/_gaos/models/getcredential.py": "c397c670ccb0527b7fe0b7853733e12f523f84032ca07399c442840eacd262af",
+    "google/genai/_gaos/models/getenvironment.py": "b90b63063f1d9c18337cdf908b58678137d34db61eaf5d6a29c25f50da02d27c",
+    "google/genai/_gaos/models/getenvironmentfiles.py": "b52774f0581bddbada64b9368da2d3935e42c3bacc9f338f5fe5c08d5789ccb3",
+    "google/genai/_gaos/models/getinteractionbyid.py": "3c4ee0ebdfd37dbd72adb357bf194823b9ef0818418221e415aadfdcab3da178",
+    "google/genai/_gaos/models/gettrigger.py": "500b6fcc07ea931d909d53ef0aaec6a66841ac7907488a345815d0706be2c8d0",
+    "google/genai/_gaos/models/getvoice.py": "0e18a0a8bb19003712333731ef98e4b3b593c35423e4294a1dcb98794774661a",
+    "google/genai/_gaos/models/getwebhook.py": "188d2e514d4e1cdf6cb5e50721f75a42dc6f387f8e979e88cd2e4c8854c6f9a9",
+    "google/genai/_gaos/models/internal/globals.py": "714a17fe705621fadfbf86477f15c9dea79d0d2c49d4deaa6fd0387fdc9551f0",
+    "google/genai/_gaos/models/listagents.py": "779f625147426d1c972a82b9f68b55efefce742f2501ab5843e6bc32b9b09505",
+    "google/genai/_gaos/models/listcredentials.py": "35af93e1cbe2f9782422aa546263ad33547c1db1cf42885dfc2417f16708e841",
+    "google/genai/_gaos/models/listenvironments.py": "14c1c168200ba96905448f33c2da68c654c56705a61331fb063a65d59fc216b2",
+    "google/genai/_gaos/models/listtriggerexecutions.py": "ba9b6ecda6768b464369d9d71cc4d75b3ab74ed35d49901005ff9c626eaf16f7",
+    "google/genai/_gaos/models/listtriggers.py": "3738b1a0fc09661c3017414101a7d4eb8e8f80888b0999ba6738eb375f501fdf",
+    "google/genai/_gaos/models/listvoices.py": "87ebdb3b63e1d4f49673e186aaf7ab3b7481d7fade0af947f993233233b7007c",
+    "google/genai/_gaos/models/listwebhooks.py": "129d2639e0b604a2daf19e8f1fb476ac22dbee2d2c9afea74814f36ebd791bee",
+    "google/genai/_gaos/models/pingwebhook.py": "3531fc79c7dff447bc448c9bb33f4cea5932909132802a81c97cc6d0d6b7c14f",
+    "google/genai/_gaos/models/rotatesigningsecret.py": "cb4fa3f1b07514333d726a6a27b75782f95edc2b7e62368a2e9d7682b7f4c8ad",
+    "google/genai/_gaos/models/runtrigger.py": "ffc382de53df4d1b71bb01cbc30caacd214bfb65a011c263537e4bd70a2d3c68",
+    "google/genai/_gaos/models/startenvironmentfileupload.py": "d8253f3a8eb2b57605881e015ae21deb030847f4c5484976becb8b70f885102c",
+    "google/genai/_gaos/models/updatecredential.py": "09f5fcf5549dd4f96b89dd5428e13cfeb984a7d633c95b2027ce036d6bd1ad9b",
+    "google/genai/_gaos/models/updatetrigger.py": "79aeca61d98cd15eb97c7dcebcbdc7a99a63ad5bb2090e6221d986ec7466d34e",
+    "google/genai/_gaos/models/updatewebhook.py": "7fcfbb6eb55aae637c778e1cca5423c6a9e1836f575d283ac11c12113305cca0",
+    "google/genai/_gaos/types/__init__.py": "3709448517b079e22e6315ecc2a1768cf74e54986379cd649b14071444523bf1",
+    "google/genai/_gaos/types/agents/__init__.py": "9d26eb6c9313474e821a63830ee05255dbb36a81db5b29a3305bee57d3951ac4",
+    "google/genai/_gaos/types/agents/agent.py": "7488604f57148e9d8d7747cb2ba2a4e1b5240ed2f02a6f7d5624e911790a67c1",
+    "google/genai/_gaos/types/agents/agentlistresponse.py": "9b84096a44cfdf51406266098e13e3c7f6df70e9e3acb8dfd36f14540544464c",
+    "google/genai/_gaos/types/agents/agenttool.py": "278ea009b17dc8fb88eeb65368e76c44911b8dc4c9d98be8e5f8a96e1100c605",
+    "google/genai/_gaos/types/base64fileinput.py": "cd110a377c4272b081d166333fa6b5741c374084455cdc74e53c19f3123a3219",
+    "google/genai/_gaos/types/basemodel.py": "1755356700983f1f8e4e80bfb716e0062eb2228b8c0f1670f30ecc9361757f50",
+    "google/genai/_gaos/types/credentials/__init__.py": "7f6bbabb57e18be47ff325c514f5b98e279ecb96b404b33393f41257903820ef",
+    "google/genai/_gaos/types/credentials/credential.py": "49ad23f3df5f294dd519ddc1e033602f7a1efc3207150d2b48b53e40d030911c",
+    "google/genai/_gaos/types/credentials/credentialcreateparams.py": "c2460e5c1b63d26924c32254c19163de7858e6bd5d8bdb3586e7b437708d028b",
+    "google/genai/_gaos/types/credentials/credentiallistresponse.py": "21c8202bf4ed2253a9fa747f4f4cdb0b7a3cfc8f5dd602dcc6f9a2e9de7131c0",
+    "google/genai/_gaos/types/credentials/credentialupdate.py": "4870b1d49c9d96a2984c65b002be879c1f44d6e321495dc614a09e29898aeede",
+    "google/genai/_gaos/types/credentials/environmentvariableconfig.py": "ab96603a207e96ce66bf77b4b639c305e6f3ec06f80025375bb70b43e730e87a",
+    "google/genai/_gaos/types/credentials/environmentvariableupdateconfig.py": "fab998491c62411720cf4cd0e43513feeaf7436f795ce1c2825ba0b3cfe37b2f",
+    "google/genai/_gaos/types/credentials/httpbearerconfig.py": "f91fc0e44a276c358ded0e185060b82ec38488c6ba7028cf685fe4d3f9ff1300",
+    "google/genai/_gaos/types/credentials/httpbearerupdateconfig.py": "666eecb1dc214e2b2c78260b48e1eb3502f24d298203227b01d25b0e222c9de3",
+    "google/genai/_gaos/types/credentials/injectionlocation_enum.py": "576e3bb896f1ab9710c1bf9a677f223c326f0989e847cf1caa77462e96fce988",
+    "google/genai/_gaos/types/credentials/oauth2config.py": "8cfe646053251a5ce8a4f9e0313d745243973d86d051e4e766ff8fc49e10bc33",
+    "google/genai/_gaos/types/credentials/oauth2updateconfig.py": "13fb7fc1c74465608b1f6f64592b5b67beb24d2365d74c3e6c2af49bfe110e70",
+    "google/genai/_gaos/types/environments/__init__.py": "cbe7feb088aa65cca6cb73d828e314139af783157d6f0af3475978b2e5c1e6c0",
+    "google/genai/_gaos/types/environments/createenvironmentrequest.py": "793e66c0d4f9659af9d440220f5e42cc8c646e30f30222992a8b3bd29e6d659d",
+    "google/genai/_gaos/types/environments/environment.py": "73b2052c7d1c97965b53bdfcae35912cc8da19522a002dd181bb9b90227ab638",
+    "google/genai/_gaos/types/environments/environmentfile.py": "5d8a7649a5cb21701acb6ef56efd97763e3b7b030ba69bb6dcb871f42d6ef188",
+    "google/genai/_gaos/types/environments/getenvironmentfilesresponse.py": "da8590d4de70deac0197f8921fddd506bca5616b2d62db76087324b0f07eeffc",
+    "google/genai/_gaos/types/environments/listenvironmentsresponse.py": "3f32259022ea03f85ea381d0d5384dbdf8e54a50bde63a23348053a5955812f4",
+    "google/genai/_gaos/types/interactions/__init__.py": "4f2e79d385cbffae079e609821548500ba58912b6f300ec1b40cbcb577c1606a",
+    "google/genai/_gaos/types/interactions/agentoption.py": "2ddadf0018c3e4f84a516a8532a522d9fb602409698403d8f283fb37a0d203b9",
+    "google/genai/_gaos/types/interactions/allowedtools.py": "f45433ecb40bcc6932cbe44217af47f8c9fd81bc66549558aa825897f3916701",
+    "google/genai/_gaos/types/interactions/allowlistentry.py": "1f8aef900408119e7025512f324a7669f8a0686809e1676f7480786adf993374",
+    "google/genai/_gaos/types/interactions/annotation.py": "b4489212a32ee154eb4d42a695a6e628267645b920f69e357fc5dac4e27fe9e6",
+    "google/genai/_gaos/types/interactions/antigravityagentconfig.py": "cc13ad5a5c345873106bc018087d0431a600b463d3e8dcbb8dc474ca42d9c0f3",
+    "google/genai/_gaos/types/interactions/argumentsdelta.py": "51c9984087779c126dcba4950e240998358d2f0404c868ce904befdf8e2d753e",
+    "google/genai/_gaos/types/interactions/audiocontent.py": "d04495f65b52abf4c97dc6ccd54a648772cd4c72c722fcfd32e4a8c8a5c898c5",
+    "google/genai/_gaos/types/interactions/audiodelta.py": "a6555dc2d1de39eab42594a0e79bd227abba28208d8a9eeb2611afc0d68679b4",
+    "google/genai/_gaos/types/interactions/audioresponseformat.py": "af0d75897e5f02947f52f915455aeff6c2ef96206de719431783358b10ba3acd",
+    "google/genai/_gaos/types/interactions/codeexecution.py": "d17b72838a34bad3d88ec9817933ec895dd815da5a5aad06cb535c6deba2f51d",
+    "google/genai/_gaos/types/interactions/codeexecutioncallarguments.py": "8f05936fb467334b38387138429eb9661e720eafcbd7725a20361bcc60faf2c6",
+    "google/genai/_gaos/types/interactions/codeexecutioncalldelta.py": "4b04fdf7b83c6872ffa4ee93cb7da28e8d6464c638791bc828994f83bf632a00",
+    "google/genai/_gaos/types/interactions/codeexecutioncallstep.py": "0229deb863d9eb2e5e0bf2aad7406d6c5cb25dc08817e5efc8cbe45f17e2191b",
+    "google/genai/_gaos/types/interactions/codeexecutionresultdelta.py": "6089eaa298799d627c758c790a0c0dcb381c99ad744f7c9338ed9b44c7bba708",
+    "google/genai/_gaos/types/interactions/codeexecutionresultstep.py": "e26509bb53af2010269d53c66e66e718563a55bdcbde4c61ea97c67e9fabcbb0",
+    "google/genai/_gaos/types/interactions/codemenderagentconfig.py": "dd3dfa8c7f70f7d43aba4ef3288f3841d8a43845eeba585ec2dd4275d7055294",
+    "google/genai/_gaos/types/interactions/computeruse.py": "b2d0868edd53b6f7b8c8235864524fdb3bfc4638df9187170f43a5bb8355a90a",
+    "google/genai/_gaos/types/interactions/content.py": "7b754d37ecd868982fba8e5e2e076039b0c5a53e4611632a1ee8db5b4a76fc8b",
+    "google/genai/_gaos/types/interactions/createagentinteraction.py": "7a48668cb54137e60a57024a97a1d9c3739f3c6b3f1037514cda560ed0135e3b",
+    "google/genai/_gaos/types/interactions/createmodelinteraction.py": "1e9216ea8a5af31ac353cf42c17090053bf96c4e32c71dbe76621d74abeae1b8",
+    "google/genai/_gaos/types/interactions/deepresearchagentconfig.py": "ce1f55f6a7cc3369a8db17bec39c17cb8954c882c4ec22f7103326a5025d5d0a",
+    "google/genai/_gaos/types/interactions/documentcontent.py": "4c360d1d7b8467b28a1c89aa0b5b702b99a42b13c09c450e31461feec216636c",
+    "google/genai/_gaos/types/interactions/documentdelta.py": "2ad096ca55f61993ff724a2f79332f76366ea7e0996dcd891bfc7e79a0525695",
+    "google/genai/_gaos/types/interactions/dynamicagentconfig.py": "22c3433dca5d3eb545641380191bc2b504eaa29d4ba0a2d6448ec24159c07ec8",
+    "google/genai/_gaos/types/interactions/empty.py": "3752a57862aac9c98034580848beb7fa0acdb1bf75d8f7414a57e1c3cd43159c",
+    "google/genai/_gaos/types/interactions/environment.py": "0680aea779be51f32236e5f83363766eb6c21027193a9a04a9a26e74db1005f0",
+    "google/genai/_gaos/types/interactions/environmentnetworkegressallowlist.py": "d5aa8facdb6567c4e3012a6daf2b31cbd978fbe187567932768c66461a7f2e5a",
+    "google/genai/_gaos/types/interactions/envvar.py": "f442c397934575cb33f746faa09aaf354e66d03fda948f41d8312a9cb9e672d8",
+    "google/genai/_gaos/types/interactions/error.py": "fec3de91691afa2334b1087b299a47f24032f1caf32cb9f6f4dc1b6e80b08799",
+    "google/genai/_gaos/types/interactions/errorevent.py": "caa32e2b2ecddba2eb6d040a51a99c748cf493ae041bd50bf995ba14074aac9a",
+    "google/genai/_gaos/types/interactions/exaaisearchconfig.py": "143702c1af4cbbf3ef93a785a2de1b7239b4e909fe501295c148084e42bf656b",
+    "google/genai/_gaos/types/interactions/filecitation.py": "e91eac4bc0516322d63f9047e024007db5b5ff35573edf96f346e422af582620",
+    "google/genai/_gaos/types/interactions/filecontent.py": "fdf7de399060dad47c306b5be77f4946e0b073dbf4fdd368e65e3a6b67d3c372",
+    "google/genai/_gaos/types/interactions/filesearch.py": "22f610ad5c354ae5c7e0c363bb5bcd6f0416e2a805b8b99dde4015645fc7a13b",
+    "google/genai/_gaos/types/interactions/filesearchcalldelta.py": "68e7afe909c0bc6fd9691e5c35c957c4f160dca3a59845ae9aef552e3e318824",
+    "google/genai/_gaos/types/interactions/filesearchcallstep.py": "c6eb55b9efcc8e3aa60759e63f80773d10235fe22770f6dc341b696611783411",
+    "google/genai/_gaos/types/interactions/filesearchresult.py": "4538cbb1104338a18639daaa7ef52d25febfc03754415fbdfdf8be9e369038c0",
+    "google/genai/_gaos/types/interactions/filesearchresultdelta.py": "d9d50c34472482dd02a3626c25967004bf7172920b827d05e8afefd94c9b826d",
+    "google/genai/_gaos/types/interactions/filesearchresultstep.py": "2bf6257c1df32d04e2dc29284d011671ad0126836362d78d2718cfdaa1bfd430",
+    "google/genai/_gaos/types/interactions/filter_.py": "dd8f772c01eb5590e0a23d3186bafe9bdd87d63f6c54fdbec5279d541231a24b",
+    "google/genai/_gaos/types/interactions/findrequest.py": "e0862bcc185af0f22ff86ef9416e27a77edc30a181e0220bd097988ce575df3a",
+    "google/genai/_gaos/types/interactions/fixrequest.py": "6db75653311000d314aa8a14fc723db9c4a7927940e49aa2028f38d4546a291a",
+    "google/genai/_gaos/types/interactions/function.py": "3929983307340061ebce16abbf68870d6b5bb941d457d94398318a41b6149b7f",
+    "google/genai/_gaos/types/interactions/functioncallstep.py": "d47af67c48748cee0aaedc6c836a456fc6871568bd9c5fc23f7fdd6933db25cc",
+    "google/genai/_gaos/types/interactions/functionresultdelta.py": "dd7dfc35e7d1d9b8972602028e640528e395847cf5543ce2d26101cc6debd145",
+    "google/genai/_gaos/types/interactions/functionresultstep.py": "065dfcd41cfb2393c029b420df33c4a45b8dc3c01f7521ce35b8b78e851fbe8a",
+    "google/genai/_gaos/types/interactions/functionresultsubcontent.py": "ab85295a1e67b6ceb95b73101408fb1c00e3bc4a9fa12d67ba59905f8e858ebe",
+    "google/genai/_gaos/types/interactions/generationconfig.py": "a92c573fc04219e1c3f7bfd69514eeda06d047032666fa492c14e3a8e7c6d41c",
+    "google/genai/_gaos/types/interactions/googlemaps.py": "bc4a84ca853b372d89115d8a2bc208b07fcee618ba1d6af66ec13e4f368acf5f",
+    "google/genai/_gaos/types/interactions/googlemapscallarguments.py": "4a30e3c6667f98bfdbb83882a4e3c11640f750a5247c4c34a1499e4018792c76",
+    "google/genai/_gaos/types/interactions/googlemapscalldelta.py": "6808615a9379e9809b1b0f0c729cb2c5f23c1437e727ad04e124394cf13f5502",
+    "google/genai/_gaos/types/interactions/googlemapscallstep.py": "29ef74337a151dc8cb64348884637763fdd44abc85eb8add429967c9318e28ed",
+    "google/genai/_gaos/types/interactions/googlemapsresult.py": "c1ec661948c483aa99d3a1391ed691fe161dc817435ed918c06810b68efc2a93",
+    "google/genai/_gaos/types/interactions/googlemapsresultdelta.py": "22fa74e027a9ec60c4c5c9bfb3f3661c667979d2dfa0e88e247359eb1a4fa58b",
+    "google/genai/_gaos/types/interactions/googlemapsresultplaces.py": "26d3ca1c321dddffdb52ec3fdd1435b397faf3b5919f560ad2dc7fc6d679b2bc",
+    "google/genai/_gaos/types/interactions/googlemapsresultstep.py": "23ea0dd394855f4c184d815b6c17d9cac0b953f33cd79c5c07f684a0cfc0dca4",
+    "google/genai/_gaos/types/interactions/googlesearch.py": "388957582fdebd5f08e0da3535cebb839f594090e1346c3bed7b355ba9db309f",
+    "google/genai/_gaos/types/interactions/googlesearchcallarguments.py": "4c0c0d28aa321baa56e5bae7aa884d1442dcc8c75f17a7aacbc3436b85e82f9d",
+    "google/genai/_gaos/types/interactions/googlesearchcalldelta.py": "1228990e5d8d525e5954735d80eac48b4ae86315f85360133bb54ed8d59bfab9",
+    "google/genai/_gaos/types/interactions/googlesearchcallstep.py": "e21876c7c47e4cb9b553a4ce93453b409910fe9823ad72226540ce504b1b39a2",
+    "google/genai/_gaos/types/interactions/googlesearchresult.py": "de5e0271d6e99bf838045c4193599389efed407e1a67eb38f214b71594519db3",
+    "google/genai/_gaos/types/interactions/googlesearchresultdelta.py": "3766e718e598fb94e283370d88a4bc835be9cecf9ff1fc75434a2ff2416d5fa9",
+    "google/genai/_gaos/types/interactions/googlesearchresultstep.py": "0be6d9289582d2088a147b681df176f948c7201179ddacf61d09da9f3941eb62",
+    "google/genai/_gaos/types/interactions/groundingtoolcount.py": "fcd692e7389c7c2826bcc46ad80d39942dd5b3a5c92e7894889834fe60b36eb2",
+    "google/genai/_gaos/types/interactions/harmcategory.py": "848f0ab58ec7c94a151389627f6b3ae762f46ceb1e93c8ce81fdca5119d492a5",
+    "google/genai/_gaos/types/interactions/hybridsearch.py": "ce3035c6024a99c95ab18938e523226bb3e01cf206ee47d46f849ec7b3d59e5a",
+    "google/genai/_gaos/types/interactions/imageconfig.py": "09a8c9823ff46d08c6d154aff25eb80a0d0168af1bc42cdde18f0471f6794e4c",
+    "google/genai/_gaos/types/interactions/imagecontent.py": "f8ae999d16b45a3d23752d4b7b986cdcea0b3087186a996db2139abc7b000d6c",
+    "google/genai/_gaos/types/interactions/imagedelta.py": "8621abb547c7f64ed999968679a5e3185f3d385f909b434832edf727097352bc",
+    "google/genai/_gaos/types/interactions/imageresponseformat.py": "a5f8c727d79aee10613b825266933d35bf95f305dc1abbea2f84c12575e889c1",
+    "google/genai/_gaos/types/interactions/interaction.py": "0cb7794e4d27ac2584ea1eada6d913239f27cb24fdcfdaf6319e9a8f77fa34bc",
+    "google/genai/_gaos/types/interactions/interactioncompletedevent.py": "ae29a0d98eb4d75875ca36dc0be880349c91486d10cbec3d54cb5a6ad8bdf9a7",
+    "google/genai/_gaos/types/interactions/interactioncreatedevent.py": "6db9aa6a3ea27bdf2198a648bb97f1078d18b4f24be57072ad081721ad05ca55",
+    "google/genai/_gaos/types/interactions/interactionsinput.py": "61fc5c9240022add08f43ec5f23b2f86aebff8313eb4fb8822add2877dfb9401",
+    "google/genai/_gaos/types/interactions/interactionsseevent.py": "8688ce255029311fd774ea39c2e45b3dea2ead2f8c7d1bf3884957926d8798c9",
+    "google/genai/_gaos/types/interactions/interactionsseeventinteraction.py": "eb5786673b97922befa83269b0173ef0c872cadfcad7fd51b309e6f1cdb9d03a",
+    "google/genai/_gaos/types/interactions/interactionssestreamevent.py": "bbf22303a9102da313eb22b04d99e04d842f00bf25286b74c359a0f4d9fff4b9",
+    "google/genai/_gaos/types/interactions/interactionstatusupdate.py": "09e6acf35ff96d3241167596cb0f3074cd4d188e6700a23b3913065714e2f968",
+    "google/genai/_gaos/types/interactions/mcpserver.py": "89d59f826f3f38b666441be032f5aa8706da3d963bae1ca332374e9e23d47a4a",
+    "google/genai/_gaos/types/interactions/mcpservertoolcalldelta.py": "469f421716c9512247649b75f28df2770dfde92bb0b546dc509ef96a9fbf0dc6",
+    "google/genai/_gaos/types/interactions/mcpservertoolcallstep.py": "5f59abdce9e7d02be7059ac880257812a5a77098d27f5f9252c0b294031162b0",
+    "google/genai/_gaos/types/interactions/mcpservertoolresultdelta.py": "ba965776e3b27028c91bb20112a83d715bdd7c37da219a2a273fbb1d971cdddf",
+    "google/genai/_gaos/types/interactions/mcpservertoolresultstep.py": "f9b126757cc3494f6e0e7c56103041d5ddd14d01c915b9ad759f1c7492e7d3d2",
+    "google/genai/_gaos/types/interactions/mediaprocessing.py": "88d670969a138565f7376fd95d49bef2e8bd5cf13658086d6b80f48a71819699",
+    "google/genai/_gaos/types/interactions/mediaresolution.py": "9024790e0243c51d23224e9c429c4958c9cdfab0ee2f364fe4911b5644ca657a",
+    "google/genai/_gaos/types/interactions/modalitytokens.py": "3e274b8187f6a01802308f5e404cca81d8823f8c76117083102082ec430504cc",
+    "google/genai/_gaos/types/interactions/model.py": "8a853a6d149136cd659400aa3bdb8589f634a1ef3a49228c16defa9447c2e396",
+    "google/genai/_gaos/types/interactions/modeloutputstep.py": "d7251eb088426e1368bb9470edc4fbad40374e2c2e7888cfe3faa571975a10da",
+    "google/genai/_gaos/types/interactions/parallelaisearchconfig.py": "964b8e59f15eb368c800141a9897ce9aa28d315b73c8687d28aed22e8b750bdc",
+    "google/genai/_gaos/types/interactions/placecitation.py": "edf04846cabae2eeed4c654033e5eda8b657512cf9f11c53a68714b37cea3709",
+    "google/genai/_gaos/types/interactions/processingcalldelta.py": "0abe7d98e23a34ec4d90ae976e59647826fddf70ac78b530cb9a0a5b2edb0c7e",
+    "google/genai/_gaos/types/interactions/processingcallstep.py": "5c0eeba0dae7ba467d11494fa0d18ae3573d3e12b50e70b93a380fe7834b4327",
+    "google/genai/_gaos/types/interactions/processingresultdelta.py": "ac06421106a4aa16e1e10612d20bcf8a70a8d20b96410512124fbdd1d6103823",
+    "google/genai/_gaos/types/interactions/processingresultstep.py": "f6843f74236a266222acfd341932eb3564f787a1e3d51c95e72715681e96de10",
+    "google/genai/_gaos/types/interactions/ragresource.py": "cbacb2d684bac005a05b83db6c82e6debadc22b64109f8b2e5480080cb71df8a",
+    "google/genai/_gaos/types/interactions/ragretrievalconfig.py": "1b38de499ce7a73fc8dbfe0021bbb034d42f7afcf3802aad30c79526d7c11acc",
+    "google/genai/_gaos/types/interactions/ragstoreconfig.py": "6542dbf5acaf39bfe53d78c4fffdbe4d16113334edba0ab77f61ad5867224f2a",
+    "google/genai/_gaos/types/interactions/ranking.py": "cad1eb0b626f03158142534647294faf27ecdb6bdff6e68206dde8c822a7ca93",
+    "google/genai/_gaos/types/interactions/rankservice.py": "d819deeda5d4ee7221d687b670af510f6ed4de5769da542a9410dd481ff16f29",
+    "google/genai/_gaos/types/interactions/responseformat.py": "85d92a5e2aba27e05b9341a4bd46bf4c520765ecbf4fd5fa8dd0bfa83b9d1f65",
+    "google/genai/_gaos/types/interactions/responsemodality.py": "81a46ce223a5de926b3982c2bf520818c46f9917119a7a38527a2249aeffe49a",
+    "google/genai/_gaos/types/interactions/retrieval.py": "d40b5e3db7e1ebafbda66d80ad4fa95c544476a71028f0152915bbbe1230d213",
+    "google/genai/_gaos/types/interactions/retrievalcallarguments.py": "e29c28b7b51d11fc1fafff0fa25d655493e7ae1606c8916e367f10edcd24e750",
+    "google/genai/_gaos/types/interactions/retrievalcalldelta.py": "5930181bf218b4876e367ba717b6025e7fd4d07252e2eb89feb152a4080d1288",
+    "google/genai/_gaos/types/interactions/retrievalcallstep.py": "e87e53cc0bf87eddc0a034bce1f31d2c8aa160db49da1b82baa59c9b4ee39f42",
+    "google/genai/_gaos/types/interactions/retrievalresultdelta.py": "9d3ec470dae48d4bcfba64934a591807358d1218b8183e9ee39d43aafc86c614",
+    "google/genai/_gaos/types/interactions/retrievalresultstep.py": "1556830f84dc64c1e2f8f7420c3c1f08faaa3f62c8ed17cf0652044c99805159",
+    "google/genai/_gaos/types/interactions/reviewsnippet.py": "98d0f736a4cc1d5dd914d5923fe99466307f6a6dd25df282db15058388541213",
+    "google/genai/_gaos/types/interactions/safetysetting.py": "60e4529406d493172d1ee82f0fd1d18c303c6266ab37aa47c57d2857ba190892",
+    "google/genai/_gaos/types/interactions/servicetier.py": "cd2b8b7960a6e1b3b93ebba74780cb6262fb98246d662704fd09656216a4252b",
+    "google/genai/_gaos/types/interactions/sessionconfig.py": "bdc50021101722b21dcd4e09a89897647901be6ef6218486a852f117f7d96083",
+    "google/genai/_gaos/types/interactions/smarttranscriptionmode.py": "9569826cc51d23980b8f3df64d274a0e903a55973ad697c1a1f7674b033bceab",
+    "google/genai/_gaos/types/interactions/source.py": "5d43d2c7b06b1a3a32d59732901200486ab7b6f09b07642d76e921aeb8a7af72",
+    "google/genai/_gaos/types/interactions/speakerconfig.py": "e697ead379085ff11d64287b552b804812cde86e2f6778d37d651883f9842cee",
+    "google/genai/_gaos/types/interactions/speechannotation.py": "acedbe61b86d4a4c1f5419e989e04ab64ed42b24b46ff647fea21a9a59b2eb88",
+    "google/genai/_gaos/types/interactions/speechconfig.py": "219a93c751ff1f0d466029608cc9c394ca5c31394d151c5cf6c9922d8468cf02",
+    "google/genai/_gaos/types/interactions/staticmediaprocessing.py": "eac2b3a848b81cf7ea1be63206a056f5e551a3fe9b2a8acd98c7c435751b1c21",
+    "google/genai/_gaos/types/interactions/status.py": "2c042b41c580518ed019e70285a20528384b7eed7ede703d4c44c11dcd503087",
+    "google/genai/_gaos/types/interactions/step.py": "0764ab70d2d4297d5fb952cff7ff43534e6a641fe5d248fc25600512ed7446d1",
+    "google/genai/_gaos/types/interactions/stepdelta.py": "398d425ad234d17c60874e69c8c6cf362ad9fb59e80ef23112a85aa013f5078a",
+    "google/genai/_gaos/types/interactions/stepdeltadata.py": "e9419e9994938e3fae52cf9737fae87280199e0e7a29e5d43897822f6bde216b",
+    "google/genai/_gaos/types/interactions/stepdeltametadata.py": "9b82cf09c679c7c3d60030e556ab884f1568ec6c4d44c7ee411a2ec08d951887",
+    "google/genai/_gaos/types/interactions/stepstart.py": "027ff6ccd21953c0966b000bd2378049f2a87795fdd61657e5295cf8e301f78b",
+    "google/genai/_gaos/types/interactions/stepstop.py": "a7b8169328277211f790f098b39b2d980103d2a172e26a291a2990788e9faac4",
+    "google/genai/_gaos/types/interactions/textannotationdelta.py": "3f6498c6ff3fbde717717207b0341b3d25899d7bf0e359fb92b29efe7e6ded44",
+    "google/genai/_gaos/types/interactions/textcontent.py": "d3305fd790a95b48e2b0e8ee4fcc1238ca3dcec14a4e92cd0c3c56a90fd195c0",
+    "google/genai/_gaos/types/interactions/textdelta.py": "dce4d97f0cba26da4da76dd82da911f6dbb491f19d5d16c6118d495603c82305",
+    "google/genai/_gaos/types/interactions/textresponseformat.py": "369e71639d3df0e970338ef3c4a9524f24f1cd3a4af7a0fd871f82d563bf45c6",
+    "google/genai/_gaos/types/interactions/thinkinglevel.py": "d5988a14d22db96228cc8d64d9b148791cac44510006aa3e73d0845cb837d4b3",
+    "google/genai/_gaos/types/interactions/thinkingsummaries.py": "6fad0b2d8291d9516e35690684e028f94ee104ef7906025a27c32a96f27da5b8",
+    "google/genai/_gaos/types/interactions/thoughtsignaturedelta.py": "709c6bed23ec8194f4f348110fd1d6e0dc0d6cacd92350686a43c734b813b2a4",
+    "google/genai/_gaos/types/interactions/thoughtstep.py": "ffe380f3e153f86319b55ede2eeffee4ac3eeb404ee4cc08d2378a5aa3767382",
+    "google/genai/_gaos/types/interactions/thoughtsummarycontent.py": "d32f7053a2b3c5ca18b67ec147cb76161fdd7fc3c88cd6af66b8a6529928a99f",
+    "google/genai/_gaos/types/interactions/thoughtsummarydelta.py": "4977419ca04d2e6a35e2ac885de0bb9bb50994bfc5969d5f47deb458d1fe1efa",
+    "google/genai/_gaos/types/interactions/tool.py": "90937b69b93eda457b84548438df33d9473be0352193082c97e5b53725741c02",
+    "google/genai/_gaos/types/interactions/toolchoiceconfig.py": "4a4af465571fe3d20d9e9e6f7e4ee5d0fe9dc5e551a51858b114d272b3edf6e9",
+    "google/genai/_gaos/types/interactions/toolchoicetype.py": "747219f59842393456ba3578f5a7fe80e55590bc0f90844ec9dd6d5e3830cf85",
+    "google/genai/_gaos/types/interactions/transcriptionconfig.py": "2e3462c0d916ade1e0d4d5af7d67754f8a56e9afb5250035339e015bc366a0ee",
+    "google/genai/_gaos/types/interactions/transcriptionmode.py": "73aa40277808d361b819d9b44d025f51611a2fac146e9017f3fdbe0dda215588",
+    "google/genai/_gaos/types/interactions/urlcitation.py": "d5ad9c90531adaad89c48955e62510439af782fc004ba32a0075924d08a02640",
+    "google/genai/_gaos/types/interactions/urlcontext.py": "01bd15d07dbfbd1778eaa6b782382ff88e16898da46a1c3b9507153cb67fbac6",
+    "google/genai/_gaos/types/interactions/urlcontextcallarguments.py": "c8c2b251d729a060f0c72bd026c875917ece2c7a3daa81b46bf5d38b5d8c9efa",
+    "google/genai/_gaos/types/interactions/urlcontextcalldelta.py": "8141bc188f8802363b3be202f344e49f56785b83758b007584a0fc07257adcb0",
+    "google/genai/_gaos/types/interactions/urlcontextcallstep.py": "a6493fabbb3ef6cbfe623ad1378091e50ea33a638e2cccd832275b3b5e2f44ae",
+    "google/genai/_gaos/types/interactions/urlcontextresult.py": "fbea0ac1aa640d8953b032f0c22c090027e42da11ba80fdadd12b3d426bbcfc3",
+    "google/genai/_gaos/types/interactions/urlcontextresultdelta.py": "66677d0cf6adfc1f7285470f721296636c57e39927c43fa07b10c2393186beff",
+    "google/genai/_gaos/types/interactions/urlcontextresultstep.py": "620a6fa6d789e5884a0f8311af10982b3c3ea6e0e582113e12fc2de9532577f2",
+    "google/genai/_gaos/types/interactions/usage.py": "3f6f086af7bb60579efb18b44f079964398c924b3b567410f22ff0e7231d0e5e",
+    "google/genai/_gaos/types/interactions/userinputstep.py": "bd77cf2bb21626e89af23427b38348e39752d3968dba858cc148c35be3c1028f",
+    "google/genai/_gaos/types/interactions/verbatimtranscriptionmode.py": "565e4734a6790d50de2b2459152cbd5e1a2b62e1b0baba05930275794052fe3e",
+    "google/genai/_gaos/types/interactions/vertexaisearchconfig.py": "a462daee8a0161b0902a1030fa5068199500cc193b9619e8f0202a0d67a11c08",
+    "google/genai/_gaos/types/interactions/videoconfig.py": "faec6c92db37ff95a8d2a58eef4aabeb668dd53116faf08357b9564ecfe5bf13",
+    "google/genai/_gaos/types/interactions/videocontent.py": "586096955d24407b4e7f56418f35e948b0b983264f850219295b321fe2f5b689",
+    "google/genai/_gaos/types/interactions/videodelta.py": "d22de22f63fdeeffbe33e3e776136661ce8bedc429eb4f6432663b639e00ff6c",
+    "google/genai/_gaos/types/interactions/videoresponseformat.py": "9f83111ad0c7f5f9517cf836a0d228fe4832552abbeaae7c6a8790266e147fea",
+    "google/genai/_gaos/types/interactions/webhookconfig.py": "1c266e4c3c8f322033ce351be7628c3b22d6bb001434e8aa9d00a4838b1f9b00",
+    "google/genai/_gaos/types/interactions/wordinfo.py": "dcd22df2a0d0616c7ddd1747610fb1d0c3e4ff8f5934621bc444011da42eda89",
+    "google/genai/_gaos/types/security.py": "52ed959d10259d2ab04866c08a9dfbc9ff3dd1fa625245eaade1acbac60d336f",
+    "google/genai/_gaos/types/triggers/__init__.py": "91204d7e20aae747867b76c263abbf2772c584f093495551170ca0cf035f90a3",
+    "google/genai/_gaos/types/triggers/listtriggerexecutionsresponse.py": "2c834aec2b73dd7e90d7393e120b2164d13f6a5e35c3ffe1b92747f047f63e04",
+    "google/genai/_gaos/types/triggers/listtriggersresponse.py": "f23d3a09db816deba417938b307aa0476f71b47f8e5ec8ee87f183bb6cfa9870",
+    "google/genai/_gaos/types/triggers/trigger.py": "f28567c3b406bc97f42f2b37bc8726c536d96c0f48902353fe847bc930afbbee",
+    "google/genai/_gaos/types/triggers/triggercreateparams.py": "cf0c7b455cacae352ef347e4c43954626af1459701d0230abeb0b723bdb3040b",
+    "google/genai/_gaos/types/triggers/triggerexecution.py": "bb8ac755ed3ea223d8ee48917978363c15bd03dc5deadc41df588bbe2474b795",
+    "google/genai/_gaos/types/triggers/triggerupdate.py": "88f68d46158558e22aba8993c20808362c64212270a0db6e2447a7e38b355ba8",
+    "google/genai/_gaos/types/voices/__init__.py": "135854442c531c28d0d8c1eb38779da5879b1fa36f0be0c376290e2d7858932f",
+    "google/genai/_gaos/types/voices/audiodata.py": "c9b0101a9cf585d1ac8663095bbbf0f3af5245f0c16cd221192365cc36f2950c",
+    "google/genai/_gaos/types/voices/createvoicerequest.py": "c4424fd8a9cbb61af12ad355a493e319fcc30abe856eb74ae286556d78842c7f",
+    "google/genai/_gaos/types/voices/deletevoiceresponse.py": "8846f97437e8973fd187b484b52c0be7043746b6020f790a0b9c3ce36d2ac81e",
+    "google/genai/_gaos/types/voices/listvoicesresponse.py": "57b0aef18ade297e3ce72fa8d867420618761b3d9ff0e61e53bcbc471f2f11db",
+    "google/genai/_gaos/types/voices/pitch.py": "c47fe752a7987f6958b3381f1df97b6c11a4777a0be91192a708350728456cee",
+    "google/genai/_gaos/types/voices/promptedvoice.py": "bafc78dd35e817e17e534c40fb5d0a86d3a39b60f7c0856bfaf01f4cb89ec333",
+    "google/genai/_gaos/types/voices/replicatedvoice.py": "2b3feb1c6228e97f499b10d8a244a72219824ee6b538eccb30cfeb1fd3f88da6",
+    "google/genai/_gaos/types/voices/voice_input.py": "868d69e040e261249ce7b7842a8babeee012cb26d28abf50e558a3174f3c62b1",
+    "google/genai/_gaos/types/voices/voice_output.py": "8a251dd67ef4d2e6554283b1d65c3f6a97935de639abdf735f551b11f542f5ac",
+    "google/genai/_gaos/types/voices/voicetype.py": "4722efb999db7fb36b506d13f7214d5067c69723ba9768f8582d9051f08dd83a",
+    "google/genai/_gaos/types/webhooks/__init__.py": "10d497839c14182dc2e1ff7e8bc055ffa869890603ad27ec51a05d882d10c258",
+    "google/genai/_gaos/types/webhooks/pingwebhookrequest.py": "b6fe6829c7d18155151b9d737de3bdfa2d607a48c96cf789cc5ab1eb1e7da366",
+    "google/genai/_gaos/types/webhooks/rotatesigningsecretrequest.py": "065399aeff8ad335f7d615028650c2c103e54cd2618e75c78529c0b99e6e9257",
+    "google/genai/_gaos/types/webhooks/signingsecret.py": "64d3f4f495c76cfed5e54da0f85c4d1066ce903e5438436451954bf66d52b6ae",
+    "google/genai/_gaos/types/webhooks/webhook.py": "b472b9bb5d65fe3e25aeadd31e55724aba28ad6559583bed2892036fef811efc",
+    "google/genai/_gaos/types/webhooks/webhooklistresponse.py": "600400f2add67597a7e2491c9e964df8a173b80c808cfcf8702200eb709fb046",
+    "google/genai/_gaos/types/webhooks/webhookpingresponse.py": "b4580f7d112de00fa511457f825303f82a31a1abff039acd6f02d3a8b660c159",
+    "google/genai/_gaos/types/webhooks/webhookrotatesigningsecretresponse.py": "b4493223932757f17245b7011944bcc6bc9db9af0c0db2dd7095ae7c953b9be4",
+    "google/genai/_gaos/types/webhooks/webhookupdate.py": "e74d4bed17e19c657e763624f3305c895744e07f194fe0fe4702b9c4e0827654",
+    "google/genai/_gaos/utils/__init__.py": "15843376f12ceea177f975eacfe1288520201a555ab629a6bd24faa4462f2c4e",
+    "google/genai/_gaos/utils/metadata.py": "0b3aec4c15835bbcc69a31362cddb1771a4aa7e439cb20ca175bfb44e898f98d",
+    "google/genai/_gaos/utils/serializers.py": "0d774e86e7be490f9cc4eb60ad189ad28c4a0b1935dbdab53dc1ee80fee72251",
+    "google/genai/_gaos/utils/unions.py": "e5ced9594a283663b95fe377dfb5946188e328a489d279ac1638d820b8eae076",
+    "google/genai/_replay_api_client.py": "a1664d7f1c1093edd162b41e17e23da7585f945506192f3c843547bac1b93b0c",
+    "google/genai/client.py": "64d53f858606224ef444c7ad8d19bab3e1fb2bea675dfbb57f714494388072d7",
+    "google/genai/types.py": "1a435d319fb2cd9da117ab962433c53783c3e5ab71851762574700ec975a5350",
+    "httpx/_client.py": "c43f941baefe58c91e96d00039e1868fe719d91453026d7db1647194563bff8d",
+    "httpx2/_client.py": "a4380f9842a38896430618673ccef66486a5cdbd6653987d581b869c72df9b53"
+  },
+  "minimum_python": [
+    3,
+    11
+  ],
+  "optional_integrations": {
+    "pillow": false,
+    "aiohttp": false,
+    "http_clients": "opaque markers"
+  },
+  "verification": {
+    "python": "3.14",
+    "schema_outcomes": 749,
+    "normalization": [
+      "exclude descriptions",
+      "sort enum members"
+    ],
+    "upstream_outcome_sha256": "e587e480547b3f635c4236ea977c271538e434bf30fdcb18abcce96a555e3922"
+  },
+  "eager_schema_building": true
+}

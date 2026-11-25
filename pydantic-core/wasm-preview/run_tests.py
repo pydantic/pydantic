@@ -2,13 +2,13 @@ import importlib
 import os
 import stat
 import sys
+import tomllib
 import traceback
 from pathlib import Path
 from zipfile import ZipFile
 
 import micropip
 import pyodide
-import tomllib
 
 
 def extract_repo(zip_path: str) -> None:
@@ -49,7 +49,7 @@ async def main(repo_zip_path: str, pydantic_core_wheel_url: str) -> None:
 
 
 try:
-    await main(repo_zip_path, pydantic_core_wheel_url)  # noqa: F821,F704
+    await main(repo_zip_path, pydantic_core_wheel_url)  # noqa: F821,F704,PLE1142
 except Exception:
     traceback.print_exc()
     raise

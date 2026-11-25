@@ -16,7 +16,6 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
-    PydanticDeprecatedSince20,
     PydanticUserError,
     RootModel,
     ValidationError,
@@ -113,6 +112,14 @@ def test_root_model_repr():
     assert repr(SpecializedSubRootModel(1)) == 'SpecializedSubRootModel(root=1)'
 
 
+def test_root_model_repr_false():
+    class Token(RootModel[str]):
+        root: str = Field(repr=False)
+
+    assert repr(Token('secret')) == 'Token()'
+    assert str(Token('secret')) == ''
+
+
 def test_root_model_recursive():
     class A(RootModel[list['B']]):
         def my_a_method(self):
@@ -176,8 +183,6 @@ def test_v1_compatibility_serializer():
     m = MyOuterModel.model_validate({'my_root': {'x': 1}})
 
     assert m.model_dump() == {'my_root': {'__root__': {'x': 1}}}
-    with pytest.warns(PydanticDeprecatedSince20):
-        assert m.dict() == {'my_root': {'__root__': {'x': 1}}}
 
 
 def test_construct():

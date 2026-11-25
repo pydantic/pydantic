@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 def schema(*, strict: bool = False) -> CoreSchema:
     class MyModel:
         # __slots__ is not required, but it avoids __pydantic_fields_set__ falling into __dict__
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     def append_func(input_value, info):
         return f'{input_value} Changed'
@@ -252,10 +252,10 @@ def input_data_lax():
         'field_list_any': ['a', b'b', True, 1.0, None] * 10,
         'field_list_str': ['a', 'b', 'c'] * 10,
         'field_list_str_con': ['a', 'b', 'c'] * 10,
-        'field_set_any': {'a', b'b', True, 1.0, None},
+        'field_set_any': {'a', b'b', True, None},
         'field_set_int': set(range(100)),
         'field_set_int_con': set(range(42)),
-        'field_frozenset_any': frozenset({'a', b'b', True, 1.0, None}),
+        'field_frozenset_any': frozenset({'a', b'b', True, None}),
         'field_frozenset_bytes': frozenset([f'{i}'.encode() for i in range(100)]),
         'field_frozenset_bytes_con': frozenset([f'{i}'.encode() for i in range(42)]),
         'field_tuple_var_len_any': ('a', b'b', True, 1.0, None),
@@ -334,7 +334,7 @@ def input_data_wrong():
         'field_tuple_var_len_float': tuple(f'x{i}' for i in range(100)),
         'field_tuple_var_len_float_con': (1.0, 2.0),
         'field_tuple_fix_len': ('a', 1, 1.0, True, 'more'),
-        'field_dict_any': {'a', 'b', 1, True, 1.0, 2.0},
+        'field_dict_any': {'a', 'b', 1, 2.0},
         'field_dict_str_float': {(i,): f'x{i}' for i in range(100)},
         'field_literal_1_int': 2,
         'field_literal_1_str': 'bat',
@@ -351,7 +351,7 @@ def input_data_wrong():
 def wrap_schema_in_root_model(schema: CoreSchema) -> CoreSchema:
     class MyRootModel:
         # __slots__ is not required, but it avoids __pydantic_fields_set__ falling into __dict__
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
     return {
         'type': 'model',

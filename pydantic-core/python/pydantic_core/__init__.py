@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import sys as _sys
+from collections.abc import MutableSet
 from typing import Any as _Any
+from typing import NotRequired as _NotRequired
 
 from typing_extensions import Sentinel
 
 from ._pydantic_core import (
     ArgsKwargs,
+    ModelFieldsSet,
     MultiHostUrl,
     PydanticCustomError,
     PydanticKnownError,
@@ -30,43 +33,39 @@ from ._pydantic_core import (
 )
 from .core_schema import CoreConfig, CoreSchema, CoreSchemaType, ErrorType
 
-if _sys.version_info < (3, 11):
-    from typing_extensions import NotRequired as _NotRequired
-else:
-    from typing import NotRequired as _NotRequired
-
 if _sys.version_info < (3, 12):
     from typing_extensions import TypedDict as _TypedDict
 else:
     from typing import TypedDict as _TypedDict
 
 __all__ = [
-    '__version__',
     'UNSET',
+    'ArgsKwargs',
     'CoreConfig',
     'CoreSchema',
     'CoreSchemaType',
-    'SchemaValidator',
-    'SchemaSerializer',
-    'Some',
-    'Url',
-    'MultiHostUrl',
-    'ArgsKwargs',
-    'PydanticUndefined',
-    'PydanticUndefinedType',
-    'SchemaError',
     'ErrorDetails',
     'InitErrorDetails',
-    'ValidationError',
+    'ModelFieldsSet',
+    'MultiHostUrl',
     'PydanticCustomError',
     'PydanticKnownError',
     'PydanticOmit',
-    'PydanticUseDefault',
     'PydanticSerializationError',
     'PydanticSerializationUnexpectedValue',
+    'PydanticUndefined',
+    'PydanticUndefinedType',
+    'PydanticUseDefault',
+    'SchemaError',
+    'SchemaSerializer',
+    'SchemaValidator',
+    'Some',
     'TzInfo',
-    'to_json',
+    'Url',
+    'ValidationError',
+    '__version__',
     'from_json',
+    'to_json',
     'to_jsonable_python',
 ]
 
@@ -191,3 +190,6 @@ timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
     When [applying constraints](./fields.md#field-constraints) to a union containing the `MISSING` sentinel,
     such constraints are automatically applied to the remaining type(s) of the union.
 """
+
+
+MutableSet.register(ModelFieldsSet)

@@ -3,10 +3,9 @@ This file is used to test pyright's ability to check Pydantic decorators used in
 """
 
 from functools import partial, partialmethod
-from typing import Any
+from typing import Any, Self, assert_type
 
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import Self, assert_type
 
 from pydantic import (
     BaseModel,

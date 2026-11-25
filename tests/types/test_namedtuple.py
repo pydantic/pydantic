@@ -3,7 +3,6 @@ from collections.abc import Mapping
 from typing import Annotated, Generic, NamedTuple, Optional, TypeVar
 
 import pytest
-from typing_extensions import NamedTuple as TypingExtensionsNamedTuple
 
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, PositiveInt, TypeAdapter, ValidationError
 from pydantic.errors import PydanticSchemaGenerationError
@@ -196,10 +195,9 @@ def test_recursive_namedtuple():
 
 
 def test_recursive_generic_namedtuple():
-    # Need to use TypingExtensionsNamedTuple to make it work with Python <3.11
     T = TypeVar('T')
 
-    class MyNamedTuple(TypingExtensionsNamedTuple, Generic[T]):
+    class MyNamedTuple(NamedTuple, Generic[T]):
         x: T
         y: Optional['MyNamedTuple[T]']
 

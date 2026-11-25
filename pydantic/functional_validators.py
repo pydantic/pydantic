@@ -3,25 +3,18 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import sys
 import warnings
 from collections.abc import Callable
 from functools import partialmethod
-from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol, Self, TypeAlias, TypeVar, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
-from typing_extensions import Self, TypeForm
+from typing_extensions import TypeForm
 
 from ._internal import _decorators, _generics
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
-from .version import version_short
-from .warnings import ArbitraryTypeWarning, PydanticDeprecatedSince212
-
-if sys.version_info < (3, 11):
-    from typing_extensions import Protocol
-else:
-    from typing import Protocol
+from .warnings import ArbitraryTypeWarning
 
 _inspect_validator = _decorators.inspect_validator
 
@@ -685,7 +678,7 @@ def model_validator(
 
     Example usage:
     ```python
-    from typing_extensions import Self
+    from typing import Self
 
     from pydantic import BaseModel, ValidationError, model_validator
 
@@ -730,17 +723,17 @@ def model_validator(
     """
 
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
-        # auto apply the @classmethod decorator. NOTE: in V3, do not apply the conversion for 'after' validators:
-        f = _decorators.ensure_classmethod_based_on_signature(f)
-        if mode == 'after' and isinstance(f, classmethod):
-            warnings.warn(
-                category=PydanticDeprecatedSince212,
-                message=(
-                    "Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. "
-                    f'See the documentation at https://pydantic.dev/docs/validation/{version_short()}/concepts/validators/#model-after-validator.'
-                ),
-                stacklevel=2,
-            )
+        if mode == 'after':
+            if isinstance(
+                _decorators.unwrap_wrapped_function(f, unwrap_class_static_method=False), classmethod
+            ) or _decorators._is_classmethod_from_sig(f):
+                raise PydanticUserError(
+                    "`@model_validator` with mode='after' must be applied on an instance method, not a class method.",
+                    code='model-after-validator-classmethod',
+                )
+        else:
+            # auto apply the @classmethod decorator:
+            f = _decorators.ensure_classmethod_based_on_signature(f)
 
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
         return _decorators.PydanticDescriptorProxy(f, dec_info)

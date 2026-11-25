@@ -51,6 +51,7 @@ def test_typed_dict_omit():
     assert v.validate_python({'x': 'x', 'y': 42}) == {'x': 'x'}
 
 
+@pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
 def test_arguments():
     v = SchemaValidator(
         core_schema.arguments_schema(
@@ -71,6 +72,7 @@ def test_arguments():
     assert v.validate_python(()) == ((), {'a': 1})
 
 
+@pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
 def test_arguments_omit():
     with pytest.raises(SchemaError, match="Parameter 'a': omit_on_error cannot be used with arguments"):
         SchemaValidator(
@@ -305,7 +307,7 @@ def test_build_default_and_default_factory():
 
 def test_model_class():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -380,10 +382,10 @@ def test_validate_default(
 
 def test_validate_default_factory():
     v = SchemaValidator(
-        core_schema.tuple_positional_schema(
+        core_schema.tuple_schema(
             [core_schema.with_default_schema(core_schema.int_schema(), default_factory=lambda: '42')]
         ),
-        config=dict(validate_default=True),
+        config={'validate_default': True},
     )
     assert v.validate_python(('2',)) == (2,)
     assert v.validate_python(()) == (42,)
@@ -391,7 +393,7 @@ def test_validate_default_factory():
 
 def test_validate_default_error_tuple():
     v = SchemaValidator(
-        core_schema.tuple_positional_schema(
+        core_schema.tuple_schema(
             [core_schema.with_default_schema(core_schema.int_schema(), default='wrong', validate_default=True)]
         )
     )
@@ -635,9 +637,7 @@ def test_use_default_error() -> None:
         validator.validate_python('')
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
-)
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
 @pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_leak_with_default():
     def fn():
@@ -786,7 +786,7 @@ def test_validate_default_raises(
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(input_value)
-        assert exc_info.value.errors(include_url=False, include_context=False) == expected
+    assert exc_info.value.errors(include_url=False, include_context=False) == expected
 
 
 @pytest.mark.parametrize('input_value,expected', validate_default_raises_examples)

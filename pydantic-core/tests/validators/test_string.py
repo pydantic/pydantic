@@ -2,6 +2,7 @@ import platform
 import re
 import sys
 from decimal import Decimal
+from enum import Enum
 from numbers import Number
 from typing import Any
 
@@ -51,7 +52,7 @@ def test_str(py_and_json: PyAndJson, input_value, expected):
         (b'\x00', '\x00'),
         (123, Err('Input should be a valid string [type=string_type, input_value=123, input_type=int]')),
         (
-            Decimal('123'),
+            Decimal(123),
             Err("Input should be a valid string [type=string_type, input_value=Decimal('123'), input_type=Decimal]"),
         ),
     ],
@@ -225,9 +226,8 @@ def test_default_validator():
 
 @pytest.fixture(scope='session', name='FruitEnum')
 def fruit_enum_fixture():
-    from enum import Enum
 
-    class FruitEnum(str, Enum):
+    class FruitEnum(str, Enum):  # noqa: UP042 (`str()` differs from the value, which must not be used)
         pear = 'pear'
         banana = 'banana'
 

@@ -10,6 +10,9 @@ from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson, plain_repr
 
+# The deprecated `arguments` schema functions are still tested:
+pytestmark = pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
+
 
 @pytest.mark.parametrize(
     'input_value,expected',
@@ -55,7 +58,6 @@ def test_function_call_arguments(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [((1, 2, 3), {}), 6],
         [((1, 2, 3), {}), 6],
         [{'a': 1, 'b': 1, 'c': 1}, 3],
         ['x', TypeError('Arguments validator should return a tuple')],

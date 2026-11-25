@@ -219,7 +219,7 @@ def test_float_repr():
     assert plain_repr(v).startswith('SchemaValidator(title="constrained-float",validator=ConstrainedFloat(')
 
 
-@pytest.mark.parametrize('input_value,expected', [(Decimal('1.23'), 1.23), (Decimal('1'), 1.0)])
+@pytest.mark.parametrize('input_value,expected', [(Decimal('1.23'), 1.23), (Decimal(1), 1.0)])
 def test_float_not_json(input_value, expected):
     v = SchemaValidator(cs.float_schema())
     if isinstance(expected, Err):

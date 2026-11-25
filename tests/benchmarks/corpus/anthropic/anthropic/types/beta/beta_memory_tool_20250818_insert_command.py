@@ -1,0 +1,10 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing_extensions import Literal
+from ..._models import BaseModel
+
+class BetaMemoryTool20250818InsertCommand(BaseModel):
+    command: Literal['insert']
+    insert_line: int
+    insert_text: str
+    path: str

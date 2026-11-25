@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date, time
-from enum import Enum, IntEnum
+from enum import IntEnum, StrEnum
 from itertools import permutations
 from typing import Any
 from uuid import UUID
@@ -408,7 +408,7 @@ def test_strict_reference():
         core_schema.definitions_schema(
             core_schema.definition_reference_schema(schema_ref='tuple-ref'),
             [
-                core_schema.tuple_positional_schema(
+                core_schema.tuple_schema(
                     [
                         core_schema.float_schema(),
                         core_schema.union_schema(
@@ -518,7 +518,7 @@ def test_union_function_before_called_once():
     # See https://github.com/pydantic/pydantic/issues/6830 - in particular the
     # smart union validator used to call `remove_prefix` twice, which is not
     # ideal from a user perspective.
-    class SpecialValues(str, Enum):
+    class SpecialValues(StrEnum):
         DEFAULT = 'default'
         OTHER = 'other'
 

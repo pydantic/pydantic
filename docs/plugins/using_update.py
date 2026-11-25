@@ -1,8 +1,8 @@
+import tomllib
 from pathlib import Path
 from time import sleep
 
 import requests
-import tomli
 
 THIS_DIR = Path(__file__).parent
 
@@ -26,7 +26,7 @@ def update_lib(lib, *, retry=0):
 
 
 with (THIS_DIR / 'using.toml').open('rb') as f:
-    table = tomli.load(f)
+    table = tomllib.load(f)
 
 libs = table['libs']
 for lib in libs:

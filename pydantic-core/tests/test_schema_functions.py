@@ -10,6 +10,9 @@ from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_a
 
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, ValidationError, core_schema
 
+# The deprecated `arguments` schema functions are still tested:
+pytestmark = pytest.mark.filterwarnings(r'ignore:`arguments_(schema|parameter)\(\)` is deprecated:DeprecationWarning')
+
 
 def val_function(x, *args: Any):
     return x
@@ -20,7 +23,7 @@ def make_5():
 
 
 class MyModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
 
 
 @dataclasses.dataclass
@@ -248,8 +251,8 @@ all_schema_functions = [
         core_schema.arguments_schema,
         args(
             [
-                core_schema.arguments_parameter('foo', {'type': 'int'}),
-                core_schema.arguments_parameter('bar', {'type': 'str'}),
+                {'name': 'foo', 'schema': {'type': 'int'}},
+                {'name': 'bar', 'schema': {'type': 'str'}},
             ],
             serialization=core_schema.format_ser_schema('d'),
         ),
@@ -282,7 +285,7 @@ all_schema_functions = [
     ),
     (
         core_schema.call_schema,
-        args(core_schema.arguments_schema([core_schema.arguments_parameter('foo', {'type': 'int'})]), val_function),
+        args({'type': 'arguments', 'arguments_schema': [{'name': 'foo', 'schema': {'type': 'int'}}]}, val_function),
         {
             'type': 'call',
             'function': val_function,
@@ -434,16 +437,8 @@ def test_err_on_invalid() -> None:
         SchemaValidator(core_schema.invalid_schema())
 
 
-def test_deprecation_warning() -> None:
-    with pytest.deprecated_call(
-        match='The `field_name` argument on `with_info_before_validator_function` is deprecated'
-    ):
-        core_schema.with_info_before_validator_function(val_function, schema={'type': 'int'}, field_name='foo')
-
-
-def test_enum_schema_missing_deprecation_warning() -> None:
-    class MyEnum(Enum):
-        a = 1
-
-    with pytest.deprecated_call(match=r'The `missing` argument on `enum_schema\(\)` is deprecated and no longer used'):
-        core_schema.enum_schema(MyEnum, list(MyEnum.__members__.values()), missing=MyEnum._missing_)
+def test_arguments_schema_deprecated() -> None:
+    with pytest.warns(DeprecationWarning, match=r'`arguments_parameter\(\)` is deprecated'):
+        parameter = core_schema.arguments_parameter('a', core_schema.int_schema())
+    with pytest.warns(DeprecationWarning, match=r'`arguments_schema\(\)` is deprecated'):
+        core_schema.arguments_schema([parameter])

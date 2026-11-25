@@ -17,7 +17,7 @@ Built-in type: [`bool`][]
 <h3>Validation</h3>
 
 * A valid [`bool`][] instance, i.e. `True` or `False`.
-* The integers `0` or `1`.
+* The integers `0` or `1`, as well as floats and [`Decimal`][decimal.Decimal] instances equal to `0` or `1` (e.g. `1.0`).
 * A string, which when converted to lowercase is one of `'0'`, `'off'`, `'f'`, `'false'`, `'n'`, `'no'`, `'1'`, `'on'` `'t'`, `'true'`, `'y'`, `'yes'`.
 * [`bytes`][] objects that are valid per the previous rule when decoded to a string.
 
@@ -229,14 +229,14 @@ Built-in type: [`float`][].
 
 Floats support the following constraints:
 
-| Constraint      | Description                                             | JSON Schema                                                                                             |
-| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `le`            | The value must be less than or equal to this number     | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
-| `ge`            | The value must be greater than or equal to this number  | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
-| `lt`            | The value must be strictly less than this number        | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
-| `gt`            | The value must be strictly greater than this number     | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
-| `multiple_of`   | The value must be a multiple of this number             | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword   |
-| `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A                                                                                                     |
+| Constraint      | Description                                                                  | JSON Schema                                                                                             |
+| --------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `le`            | The value must be less than or equal to this number                          | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
+| `ge`            | The value must be greater than or equal to this number                       | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
+| `lt`            | The value must be strictly less than this number                             | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
+| `gt`            | The value must be strictly greater than this number                          | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
+| `multiple_of`   | The value must be a multiple of this number                                  | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword   |
+| `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values. Defaults to `True`. | N/A                                                                                                     |
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 
@@ -286,7 +286,8 @@ Standard library type: [`decimal.Decimal`][].
 <h4>Validation</h4>
 
 * [`Decimal`][decimal.Decimal] instances are validated as is.
-* Any value accepted by the [`Decimal`][decimal.Decimal] constructor.
+* Floats are converted to strings before being passed to the [`Decimal`][decimal.Decimal] constructor.
+* All other values are passed to the [`Decimal`][decimal.Decimal] constructor, except boolean values which are rejected.
 
 <h4>Constraints</h4>
 
@@ -299,9 +300,9 @@ Decimals support the following constraints (numbers must be coercible to decimal
 | `lt`             | The value must be strictly less than this number                                                                    | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                        |
 | `gt`             | The value must be strictly greater than this number                                                                 | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                        |
 | `multiple_of`    | The value must be a multiple of this number                                                                         | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword                          |
-| `allow_inf_nan`  | Whether to allow NaN (not-a-number) and infinite values                                                             | N/A                                                                                                                            |
-| `max_digits`     | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | N/A (see below)                                                                                                           |
-| `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted.                                       | N/A (see below)                                                                                                           |
+| `allow_inf_nan`  | Whether to allow NaN (not-a-number) and infinite values. Defaults to `False`.                                       | N/A                                                                                                                            |
+| `max_digits`     | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | N/A (see below)                                                                                                                |
+| `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted.                                       | N/A (see below)                                                                                                                |
 
 /// version-changed | v2.12
 The JSON Schema includes a [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) matching the `max_digits`
@@ -425,8 +426,8 @@ Standard library type: [`fractions.Fraction`][].
 <h4>Validation</h4>
 
 * [`Fraction`][fractions.Fraction] instances are validated as is.
-* Floats, strings and [`decimal.Decimal`][] instances are validated using the [`Fraction()`][fractions.Fraction]
-  constructor.
+* Integers, floats, strings and [`decimal.Decimal`][] instances are validated using the
+  [`Fraction()`][fractions.Fraction] constructor.
 
 <h4>Strictness</h4>
 
@@ -680,7 +681,12 @@ Standard library type: [`datetime.timedelta`][].
 <h4>Validation</h4>
 
 * [`timedelta`][datetime.timedelta] instances are validated as is.
-* Strings and bytes are validated according to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) time format.
+* Strings and bytes are validated as durations, in one of the following formats:
+    * The [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Durations) duration format, e.g. `P3DT12H30M5S`.
+    * An optional number of days followed by an optional `HH:MM[:SS[.ffffff]]` time, e.g. `1 day, 01:02:03`,
+      `2 days` or `12:30:00`.
+
+    See the [speedate](https://docs.rs/speedate/latest/speedate/struct.Duration.html) documentation for more details.
 * Integers and floats (or values that can be coerced to such numbers) are validated as seconds.
 
 <h4>Constraints</h4>
@@ -756,12 +762,12 @@ their [value][enum.Enum.value].
 <h3>Example</h3>
 
 ```python
-from enum import Enum, IntEnum
+from enum import IntEnum, StrEnum
 
 from pydantic import BaseModel, ValidationError
 
 
-class FruitEnum(str, Enum):
+class FruitEnum(StrEnum):
     PEAR = 'pear'
     BANANA = 'banana'
 
@@ -1025,7 +1031,7 @@ Standard library type: [`collections.deque`][] (deprecated alias: [`typing.Deque
 
 <h4>Validation</h4>
 
-Any iterable (except strings, bytes and mappings) is accepted and converted to a [`deque`][collections.deque],
+Any iterable (except strings, bytes, bytearrays and mappings) is accepted and converted to a [`deque`][collections.deque],
 with each item validated against the parameter type. If the input is already a `deque` instance, its
 [`maxlen`][collections.deque.maxlen] attribute is preserved.
 
@@ -1081,7 +1087,7 @@ will apply. The [`Sequence`][collections.abc.Sequence] type can be used when you
 
 <h4>Validation</h4>
 
-Any [`collections.abc.Sequence`][] instance (expect strings and bytes) is accepted. It is converted to a list using the [`list()`][list]
+Any [`collections.abc.Sequence`][] instance (except strings, bytes and bytearrays) is accepted. It is converted to a list using the [`list()`][list]
 constructor, and then converted back to the original input type.
 
 !!! warning "Strings aren't treated as sequences"

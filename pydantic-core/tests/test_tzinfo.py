@@ -7,13 +7,12 @@ import copy
 import functools
 import pickle
 import sys
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import UTC, datetime, timedelta, timezone, tzinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import pytest
-from pydantic import TypeAdapter
 
-from pydantic_core import TzInfo
+from pydantic_core import SchemaValidator, TzInfo, core_schema
 
 
 class _ALWAYS_EQ:
@@ -70,7 +69,7 @@ ZERO = timedelta(0).total_seconds()
 
 ACDT = TzInfo(timedelta(hours=9.5).total_seconds())
 EST = TzInfo(-timedelta(hours=5).total_seconds())
-UTC = TzInfo(timedelta(0).total_seconds())
+UTC_TZ = TzInfo(timedelta(0).total_seconds())
 DT = datetime(2010, 1, 1)
 
 
@@ -141,7 +140,7 @@ def test_fromutc(tz):
     utctime = DT.replace(tzinfo=tz)
     local = tz.fromutc(utctime)
     assert local - utctime == tz.utcoffset(local)
-    assert local == DT.replace(tzinfo=timezone.utc)
+    assert local == DT.replace(tzinfo=UTC)
 
 
 def test_comparison():
@@ -153,7 +152,7 @@ def test_comparison():
 
     tz = TzInfo(ZERO)
     assert tz == ALWAYS_EQ
-    assert not tz != ALWAYS_EQ
+    assert tz == ALWAYS_EQ
     assert tz < LARGEST
     assert not tz > LARGEST
     assert tz <= LARGEST
@@ -164,7 +163,7 @@ def test_comparison():
     assert tz >= SMALLEST
 
     # offset based comparison tests for tzinfo derived classes like datetime.timezone.
-    utcdatetime = DT.replace(tzinfo=timezone.utc)
+    utcdatetime = DT.replace(tzinfo=UTC)
     assert tz == utcdatetime.tzinfo
     estdatetime = DT.replace(tzinfo=timezone(-timedelta(hours=5)))
     assert EST == estdatetime.tzinfo
@@ -177,9 +176,9 @@ def test_comparison():
             # tz data not available
             pass
         else:
-            assert not tz == europe_london
+            assert tz != europe_london
             with pytest.raises(TypeError):
-                tz > europe_london
+                assert tz > europe_london
 
 
 @pytest.mark.parametrize('tz', [ACDT, EST])
@@ -230,7 +229,7 @@ def test_no_args_constructor():
     assert str(tz) == 'UTC'
 
 
-@pytest.mark.parametrize('tz', [ACDT, EST, UTC])
+@pytest.mark.parametrize('tz', [ACDT, EST, UTC_TZ])
 @pytest.mark.parametrize(('pickler', 'unpickler', 'proto'), pickle_choices)
 def test_pickle(tz, pickler, unpickler, proto):
     # Test that TzInfo can be pickled and unpickled
@@ -240,8 +239,23 @@ def test_pickle(tz, pickler, unpickler, proto):
     assert tz.utcoffset(None) == unpickled.utcoffset(None)
 
 
+def test_utc_instance_is_shared() -> None:
+    utc = TzInfo(0)
+    assert TzInfo(0) is utc
+    assert TzInfo() is utc
+    assert copy.copy(utc) is utc
+    assert copy.deepcopy(utc) is utc
+    assert pickle.loads(pickle.dumps(utc)) is utc
+
+    v = SchemaValidator(core_schema.datetime_schema())
+    assert v.validate_python('2015-10-21T15:28:00Z').tzinfo is utc
+    assert v.validate_python('2015-10-21T15:28:00+00:00').tzinfo is utc
+    assert v.validate_json('"2015-10-21T15:28:00Z"').tzinfo is utc
+    assert SchemaValidator(core_schema.time_schema()).validate_python('15:28:00Z').tzinfo is utc
+
+
 def test_tzinfo_could_be_reused():
-    value = TypeAdapter(datetime).validate_python('2015-10-21T15:28:00.000000+01:00')
+    value = SchemaValidator(core_schema.datetime_schema()).validate_python('2015-10-21T15:28:00.000000+01:00')
 
     target = datetime(1955, 11, 12, 14, 38, tzinfo=value.tzinfo)
     assert target == datetime(1955, 11, 12, 14, 38, tzinfo=timezone(timedelta(hours=1)))

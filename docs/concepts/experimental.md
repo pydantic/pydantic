@@ -152,7 +152,7 @@ request, which makes it easier to reconstruct how a given stream was handled.
 !!! warning
     Partial validation is an experimental feature and may change in future versions of Pydantic. The current implementation should be considered a proof of concept at this time and has a number of [limitations](#limitations-of-partial-validation).
 
-Partial validation can be enabled when using the three validation methods on `TypeAdapter`: [`TypeAdapter.validate_json()`][pydantic.TypeAdapter.validate_json], [`TypeAdapter.validate_python()`][pydantic.TypeAdapter.validate_python], and [`TypeAdapter.validate_strings()`][pydantic.TypeAdapter.validate_strings]. This allows you to parse and validation incomplete JSON, but also to validate Python objects created by parsing incomplete data of any format.
+Partial validation can be enabled when using the three validation methods on `TypeAdapter`: [`TypeAdapter.validate_json()`][pydantic.TypeAdapter.validate_json], [`TypeAdapter.validate_python()`][pydantic.TypeAdapter.validate_python], and [`TypeAdapter.validate_strings()`][pydantic.TypeAdapter.validate_strings]. This allows you to parse and validate incomplete JSON, but also to validate Python objects created by parsing incomplete data of any format.
 
 The `experimental_allow_partial` flag can be passed to these methods to enable partial validation.
 It can take the following values (and is `False`, by default):
@@ -186,7 +186,7 @@ It can take the following values (and is `False`, by default):
     {'a': 'hello', 'b': 'wor'}
     ```
 
-`experiment_allow_partial` in action:
+`experimental_allow_partial` in action:
 
 ```python
 from typing import Annotated
@@ -308,7 +308,7 @@ print(v)
 
 #### TypeAdapter only
 
-You can only pass `experiment_allow_partial` to [`TypeAdapter`][pydantic.TypeAdapter] methods, it's not yet supported via other Pydantic entry points like [`BaseModel`][pydantic.BaseModel].
+You can only pass `experimental_allow_partial` to [`TypeAdapter`][pydantic.TypeAdapter] methods, it's not yet supported via other Pydantic entry points like [`BaseModel`][pydantic.BaseModel].
 
 #### Types supported
 

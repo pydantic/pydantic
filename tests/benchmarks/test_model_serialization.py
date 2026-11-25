@@ -38,3 +38,13 @@ def test_list_of_models_serialization(benchmark):
 def test_model_json_serialization(benchmark):
     model = ComplexModel(field1='test', field2=[{'a': 1, 'b': 2.2}, {'c': 3, 'd': 4.4}], field3=['test', 1, 2, 'test2'])
     benchmark(model.model_dump_json)
+
+
+@pytest.mark.benchmark(group='model_serialization')
+def test_list_of_models_serialization_exclude_per_index(benchmark):
+    class SimpleListModel(BaseModel):
+        items: list[SimpleModel]
+
+    model = SimpleListModel(items=[SimpleModel(field1=f'test{i}', field2=i, field3=float(i)) for i in range(1_000)])
+    exclude = {'items': {i: {'field3'} for i in range(1_000)}}
+    benchmark(model.model_dump, exclude=exclude)

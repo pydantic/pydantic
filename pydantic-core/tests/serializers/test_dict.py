@@ -68,18 +68,18 @@ def test_filter():
 @pytest.mark.parametrize(
     'params',
     [
-        dict(include=None, exclude=None, expected={'0': 0, '1': 1, '2': 2, '3': 3}),
-        dict(include={'0', '1'}, exclude=None, expected={'0': 0, '1': 1}),
-        dict(include={'0': ..., '1': ...}, exclude=None, expected={'0': 0, '1': 1}),
-        dict(include={'0': {1}, '1': {1}}, exclude=None, expected={'0': 0, '1': 1}),
-        dict(include=None, exclude={'0', '1'}, expected={'2': 2, '3': 3}),
-        dict(include=None, exclude={'0': ..., '1': ...}, expected={'2': 2, '3': 3}),
-        dict(include={'0', '1'}, exclude={'1', '2'}, expected={'0': 0}),
-        dict(include=None, exclude={'3': {1}}, expected={'0': 0, '1': 1, '2': 2, '3': 3}),
-        dict(include={'0', '1'}, exclude={'3': {1}}, expected={'0': 0, '1': 1}),
-        dict(include={'0', '1'}, exclude={'1': {1}}, expected={'0': 0, '1': 1}),
-        dict(include={'0', '1'}, exclude={'1': ...}, expected={'0': 0}),
-        dict(include=None, exclude={'__all__'}, expected={}),
+        {'include': None, 'exclude': None, 'expected': {'0': 0, '1': 1, '2': 2, '3': 3}},
+        {'include': {'0', '1'}, 'exclude': None, 'expected': {'0': 0, '1': 1}},
+        {'include': {'0': ..., '1': ...}, 'exclude': None, 'expected': {'0': 0, '1': 1}},
+        {'include': {'0': {1}, '1': {1}}, 'exclude': None, 'expected': {'0': 0, '1': 1}},
+        {'include': None, 'exclude': {'0', '1'}, 'expected': {'2': 2, '3': 3}},
+        {'include': None, 'exclude': {'0': ..., '1': ...}, 'expected': {'2': 2, '3': 3}},
+        {'include': {'0', '1'}, 'exclude': {'1', '2'}, 'expected': {'0': 0}},
+        {'include': None, 'exclude': {'3': {1}}, 'expected': {'0': 0, '1': 1, '2': 2, '3': 3}},
+        {'include': {'0', '1'}, 'exclude': {'3': {1}}, 'expected': {'0': 0, '1': 1}},
+        {'include': {'0', '1'}, 'exclude': {'1': {1}}, 'expected': {'0': 0, '1': 1}},
+        {'include': {'0', '1'}, 'exclude': {'1': ...}, 'expected': {'0': 0}},
+        {'include': None, 'exclude': {'__all__'}, 'expected': {}},
     ],
 )
 def test_filter_args(params):
@@ -96,16 +96,22 @@ def test_filter_args(params):
 @pytest.mark.parametrize(
     'params',
     [
-        dict(include=None, exclude=None, expected={'0': [0], '1': [0, 1], '2': [0, 1, 2], '3': [0, 1, 2, 3]}),
-        dict(include=None, exclude={'1': {0}}, expected={'0': [0], '1': [1], '2': [0, 1, 2], '3': [0, 1, 2, 3]}),
-        dict(include={'1': {0}}, exclude=None, expected={'1': [0]}),
-        dict(include={'__all__': {0}}, exclude=None, expected={'0': [0], '1': [0], '2': [0], '3': [0]}),
-        dict(
-            include=None, exclude={'0': {'__all__'}}, expected={'0': [], '1': [0, 1], '2': [0, 1, 2], '3': [0, 1, 2, 3]}
-        ),
-        dict(include=None, exclude={'__all__': {'__all__'}}, expected={'0': [], '1': [], '2': [], '3': []}),
-        dict(include=None, exclude={'__all__': {0}}, expected={'0': [], '1': [1], '2': [1, 2], '3': [1, 2, 3]}),
-        dict(include=None, exclude={'__all__': {0}, '3': {1}}, expected={'0': [], '1': [1], '2': [1, 2], '3': [2, 3]}),
+        {'include': None, 'exclude': None, 'expected': {'0': [0], '1': [0, 1], '2': [0, 1, 2], '3': [0, 1, 2, 3]}},
+        {'include': None, 'exclude': {'1': {0}}, 'expected': {'0': [0], '1': [1], '2': [0, 1, 2], '3': [0, 1, 2, 3]}},
+        {'include': {'1': {0}}, 'exclude': None, 'expected': {'1': [0]}},
+        {'include': {'__all__': {0}}, 'exclude': None, 'expected': {'0': [0], '1': [0], '2': [0], '3': [0]}},
+        {
+            'include': None,
+            'exclude': {'0': {'__all__'}},
+            'expected': {'0': [], '1': [0, 1], '2': [0, 1, 2], '3': [0, 1, 2, 3]},
+        },
+        {'include': None, 'exclude': {'__all__': {'__all__'}}, 'expected': {'0': [], '1': [], '2': [], '3': []}},
+        {'include': None, 'exclude': {'__all__': {0}}, 'expected': {'0': [], '1': [1], '2': [1, 2], '3': [1, 2, 3]}},
+        {
+            'include': None,
+            'exclude': {'__all__': {0}, '3': {1}},
+            'expected': {'0': [], '1': [1], '2': [1, 2], '3': [2, 3]},
+        },
     ],
 )
 def test_filter_args_nested(params):

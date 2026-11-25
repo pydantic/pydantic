@@ -13,9 +13,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
-        additional_dependencies:
-          - tomli
-        exclude: '^uv\.lock$'
+        exclude: '^(uv\.lock$|tests/benchmarks/corpus/)'
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.18.1

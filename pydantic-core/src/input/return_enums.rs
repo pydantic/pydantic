@@ -12,10 +12,11 @@ use pyo3::ffi;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyFunction;
-use pyo3::types::{PyBytes, PyComplex, PyFloat, PyFrozenSet, PyIterator, PyMapping, PySet, PyString};
+use pyo3::types::{PyBytes, PyComplex, PyFloat, PyFrozenSet, PyIterator, PyList, PyMapping, PySet, PyString};
 
 use pyo3::IntoPyObjectExt;
 use serde::{Serialize, Serializer, ser::Error};
+use smallvec::SmallVec;
 
 use crate::errors::{
     ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult, py_err_string,
@@ -117,6 +118,8 @@ macro_rules! any_next_error {
     };
 }
 
+type ValidationVec = SmallVec<[Py<PyAny>; 8]>;
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn validate_iter_to_vec<'py>(
     py: Python<'py>,
@@ -126,8 +129,8 @@ pub(crate) fn validate_iter_to_vec<'py>(
     validator: &CombinedValidator,
     state: &mut ValidationState<'_, 'py>,
     fail_fast: bool,
-) -> ValResult<Vec<Py<PyAny>>> {
-    let mut output: Vec<Py<PyAny>> = Vec::with_capacity(capacity);
+) -> ValResult<Bound<'py, PyList>> {
+    let mut output = ValidationVec::with_capacity(capacity);
     let mut errors: Vec<ValLineError> = Vec::new();
     let allow_partial = state.allow_partial;
 
@@ -157,7 +160,7 @@ pub(crate) fn validate_iter_to_vec<'py>(
     }
 
     if errors.is_empty() {
-        Ok(output)
+        Ok(PyList::new(py, output.drain(..))?)
     } else {
         Err(ValError::LineErrors(errors))
     }
@@ -278,14 +281,16 @@ pub(crate) fn no_validator_iter_to_vec<'py>(
     input: &(impl Input<'py> + ?Sized),
     iter: impl Iterator<Item = PyResult<impl BorrowInput<'py>>>,
     mut max_length_check: MaxLengthCheck<'_, impl Input<'py> + ?Sized>,
-) -> ValResult<Vec<Py<PyAny>>> {
-    iter.enumerate()
+) -> ValResult<Bound<'py, PyList>> {
+    let mut output = iter
+        .enumerate()
         .map(|(index, result)| {
             let v = result.map_err(|e| any_next_error!(py, e, input, index))?;
             max_length_check.incr()?;
             Ok(v.borrow_input().to_object(py)?.unbind())
         })
-        .collect()
+        .collect::<ValResult<ValidationVec>>()?;
+    Ok(PyList::new(py, output.drain(..))?)
 }
 
 pub(crate) fn iterate_mapping_items<'a, 'py>(

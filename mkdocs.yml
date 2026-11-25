@@ -94,7 +94,7 @@ nav:
       - Help with Pydantic: help_with_pydantic.md
       - Enterprise Support: enterprise-support.md
       - Installation: install.md
-      - Migration Guide: migration.md
+      - Migration Guide (V1 to V2): migration.md
       - Version Policy: version-policy.md
       - Contributing: contributing.md
       - Changelog: changelog.md
@@ -232,7 +232,7 @@ plugins:
       markdown_description: |-
         Pydantic is the most widely used data validation library for Python.
         Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
-        Define how data should be in pure, canonical Python 3.10+; validate it with Pydantic.
+        Define how data should be in pure, canonical Python 3.11+; validate it with Pydantic.
       sections:
         Concepts documentation:
           - concepts/*.md

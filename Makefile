@@ -23,7 +23,7 @@ rebuild-lockfiles: .uv
 .PHONY: build-constraints  ## Generate the hashed constraints file for build dependencies
 build-constraints: .uv
 	uv run --no-project python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['build-system']['requires']))" \
-		| uv pip compile - --universal --python-version 3.10 --generate-hashes --upgrade \
+		| uv pip compile - --universal --python-version 3.11 --generate-hashes --upgrade \
 			--custom-compile-command 'make build-constraints' -o .github/build-constraints.txt
 
 .PHONY: .rust  # Check that Rust is installed
@@ -91,11 +91,6 @@ testcov: test
 	@echo "building coverage lcov"
 	@uv run coverage lcov
 
-.PHONY: test-examples  ## Run only the tests from the documentation
-test-examples: .uv
-	@echo "running examples"
-	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'uv run python {} >/dev/null 2>&1 || (echo "{} failed")'
-
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
 test-pydantic-settings: .uv
 	git clone https://github.com/pydantic/pydantic-settings.git --single-branch
@@ -148,7 +143,3 @@ help:
 		'^.PHONY: .*?## .*$$' $(MAKEFILE_LIST) | \
 		sort | \
 		awk 'BEGIN {FS = ".PHONY: |## "}; {printf "\033[36m%-19s\033[0m %s\n", $$2, $$3}'
-
-.PHONY: update-v1  ## Update V1 namespace
-update-v1:
-	uv run ./update_v1.sh

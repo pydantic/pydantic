@@ -215,7 +215,7 @@ impl NamedTupleValidator {
                 continue;
             }
 
-            match field.validator.default_value(py, Some(field.name.clone()), state) {
+            match field.validator.default_value(py, Some(field.name.as_str()), state) {
                 Ok(Some(value)) => output.push(value),
                 Ok(None) => {
                     let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);

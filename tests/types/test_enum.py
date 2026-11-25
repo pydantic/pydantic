@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from typing import Annotated, Any, NamedTuple
 
 import pytest
@@ -327,7 +327,7 @@ def test_enum_with_no_cases() -> None:
 
 
 def test_enum_custom_schema() -> None:
-    class MyEnum(str, Enum):
+    class MyEnum(StrEnum):
         foo = 'FOO'
         bar = 'BAR'
         baz = 'BAZ'
@@ -363,7 +363,7 @@ def test_enum_custom_schema() -> None:
 
 
 def test_diff_enums_diff_configs() -> None:
-    class MyEnum(str, Enum):
+    class MyEnum(StrEnum):
         A = 'a'
 
     class MyModel(BaseModel, use_enum_values=True):

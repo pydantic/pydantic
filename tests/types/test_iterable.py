@@ -189,3 +189,24 @@ def test_iterable_arbitrary_type():
         match='Unable to generate pydantic-core schema for .*CustomIterable.*. Set `arbitrary_types_allowed=True`',
     ):
         TypeAdapter(CustomIterable)
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+def test_iterable_serialization_exclude_indices(mode):
+    ta = TypeAdapter(Iterable[int])
+
+    # In python mode, the result is a lazy iterator, serializing one item at a time:
+    assert list(ta.dump_python(iter(range(5)), mode=mode, exclude={1, 3})) == [0, 2, 4]
+    assert list(ta.dump_python(iter(range(5)), mode=mode, include={0: ..., 4: ...})) == [0, 4]
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+def test_iterable_serialization_negative_indices(mode):
+    ta = TypeAdapter(Iterable[int])
+
+    # The length of the iterable isn't known, so negative indices can't be used:
+    with pytest.raises(ValueError, match='Negative indices cannot be used to exclude items on unsized iterables'):
+        list(ta.dump_python(iter(range(5)), mode=mode, exclude={-1}))
+
+    # ... but this is only checked once an item is serialized:
+    assert list(ta.dump_python(iter([]), mode=mode, exclude={-1})) == []

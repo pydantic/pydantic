@@ -19,7 +19,7 @@ Pydantic has a few dependencies:
 * [`annotated-types`](https://pypi.org/project/annotated-types/): Reusable constraint types to use with [`typing.Annotated`][].
 * [`typing-inspection`](https://pypi.org/project/typing-inspection/): Runtime typing introspection tools.
 
-If you've got Python 3.10+ and `pip` installed, you're good to go.
+If you've got Python 3.11+ and `pip` installed, you're good to go.
 
 Pydantic is also available on [conda](https://www.anaconda.com) under the [conda-forge](https://conda-forge.org)
 channel:

@@ -195,8 +195,8 @@ the `source` will be the actual class where `__get_pydantic_core_schema__` is de
 ## Model validation and serialization
 
 While model definition was scoped to the *class* level (i.e. when defining your model), model validation
-and serialization happens at the *instance* level. Both these concepts are handled in `pydantic-core`
-(providing a 5 to 20 performance increase compared to Pydantic V1), by using the previously built core schema.
+and serialization happens at the *instance* level. Both these concepts are handled in `pydantic-core`,
+by using the previously built core schema.
 
 `pydantic-core` exposes a [`SchemaValidator`][pydantic_core.SchemaValidator] and
 [`SchemaSerializer`][pydantic_core.SchemaSerializer] class to perform these tasks:

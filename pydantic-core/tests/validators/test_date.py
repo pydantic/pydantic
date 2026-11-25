@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -39,7 +39,7 @@ def test_constraints_schema_validation() -> None:
         pytest.param('1654646400', date(2022, 6, 8), id='int-as-str'),
         pytest.param(1654646400.00, date(2022, 6, 8), id='float'),
         pytest.param('1654646400.00', date(2022, 6, 8), id='float-as-str'),
-        pytest.param(Decimal('1654646400'), date(2022, 6, 8), id='decimal'),
+        pytest.param(Decimal(1654646400), date(2022, 6, 8), id='decimal'),
         pytest.param(253_402_300_800_000, Err('Input should be a valid date'), id='int-too-high'),
         pytest.param(-80_000_000_000_000, Err('Input should be a valid date'), id='int-too-low'),
         pytest.param(datetime(2022, 6, 8), date(2022, 6, 8), id='datetime-exact'),
@@ -92,8 +92,7 @@ def test_date(input_value, expected):
     v = SchemaValidator(cs.date_schema())
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            result = v.validate_python(input_value)
-            print(f'input_value={input_value!r} result={result}')
+            v.validate_python(input_value)
         assert v.isinstance_python(input_value) is False
     else:
         output = v.validate_python(input_value)
@@ -293,7 +292,7 @@ def test_date_future(py_and_json: PyAndJson, input_value, expected):
 
 def test_date_past_future_today():
     v = SchemaValidator(core_schema.date_schema(now_op='past', now_utc_offset=0))
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(UTC).date()
     assert v.isinstance_python(today) is False
     assert v.isinstance_python(today - timedelta(days=1)) is True
     assert v.isinstance_python(today + timedelta(days=1)) is False

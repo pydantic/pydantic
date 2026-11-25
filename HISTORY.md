@@ -2,6 +2,163 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.14.4 (2026-11-19)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.4)
+
+### What's Changed
+
+#### Packaging
+
+* Bump jiter to v0.19.0 by @Viicos in [#14247](https://github.com/pydantic/pydantic/pull/14247).
+  This addresses memory issues introduced by the previous jiter release.
+
+#### Changes
+
+* Don't mark subclasses of `@deprecated` classes as deprecated in JSON Schema by @Viicos in [#14325](https://github.com/pydantic/pydantic/pull/14325)
+
+#### Performance
+
+* Cache UTC `TzInfo` instance by @Viicos in [#14256](https://github.com/pydantic/pydantic/pull/14256)
+* Skip schema deduplication for alternatives with a single schema by @fredheir in [#14274](https://github.com/pydantic/pydantic/pull/14274)
+
+#### Fixes
+
+* Exclude `InitVar` fields from the serialization JSON schema by @Alvi-Rahman in [#14223](https://github.com/pydantic/pydantic/pull/14223)
+* Fix more issues about GC tracking in `pydantic-core` by @Viicos in [#14253](https://github.com/pydantic/pydantic/pull/14253)
+* Fix validation constraints leaking into the `Decimal` JSON Schema by @aidxhxr in [#14254](https://github.com/pydantic/pydantic/pull/14254)
+* Fix model signature when a field alias is the name used for extra kwargs by @aidxhxr in [#14255](https://github.com/pydantic/pydantic/pull/14255)
+* Fix display of `Callable` parameters in type representations by @aidxhxr in [#14261](https://github.com/pydantic/pydantic/pull/14261)
+* Respect validation-time `strict=True` for `complex` by @Viicos in [#14293](https://github.com/pydantic/pydantic/pull/14293)
+* Fill missing type alias arguments from type parameter defaults by @Viicos in [#14324](https://github.com/pydantic/pydantic/pull/14324)
+
+### New Contributors
+
+* @Alvi-Rahman made their first contribution in [#14223](https://github.com/pydantic/pydantic/pull/14223)
+* @aidxhxr made their first contribution in [#14254](https://github.com/pydantic/pydantic/pull/14254)
+* @fredheir made their first contribution in [#14274](https://github.com/pydantic/pydantic/pull/14274)
+
+## v2.14.3 (2026-11-04)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.3)
+
+### What's Changed
+
+#### Packaging
+
+* Build wheels for GraalPy 3.13 by @msimacek in [#14136](https://github.com/pydantic/pydantic/pull/14136).
+
+  The previous v2.14.2 release published GraalPy 3.11 wheels, which were not working due to a PyO3 version bump. A CI workflow issue
+  made it so that the wheel wasn't tested before publishing. This is now fixed: starting in v2.14.3, we no longer publish GraalPy 3.11
+  wheels, and GraalPy 3.13 wheels are now published together with the existing 3.12 one.
+
+#### Performance
+
+* Improve schema generation for fixed type handlers by @alexmojaki in [#14130](https://github.com/pydantic/pydantic/pull/14130)
+* Skip general schema dispatch for builtin scalars by @alexmojaki in [#14141](https://github.com/pydantic/pydantic/pull/14141)
+* Skip annotation handler setup when annotations are empty by @alexmojaki in [#14149](https://github.com/pydantic/pydantic/pull/14149)
+* Fix quadratic serialization time with per-index `include`/`exclude` on sequences by @Viicos in [#14160](https://github.com/pydantic/pydantic/pull/14160)
+* Avoid type lookups when checking for `None` during serialization by @Viicos in [#14167](https://github.com/pydantic/pydantic/pull/14167)
+* Improve performance of model serialization by @Viicos in [#14171](https://github.com/pydantic/pydantic/pull/14171)
+* Improve performance of dict serialization by @Viicos in [#14172](https://github.com/pydantic/pydantic/pull/14172)
+* Improve performance of type inference during serialization by @Viicos in [#14173](https://github.com/pydantic/pydantic/pull/14173)
+* Avoid cloning the field name when using the default value during validation by @Viicos in [#14175](https://github.com/pydantic/pydantic/pull/14175)
+* Do not evaluate `model_config` annotations by @Viicos in [#14195](https://github.com/pydantic/pydantic/pull/14195)
+* Avoid slow runtime `Protocol` check when expanding `GroupedMetadata` annotations by @Viicos in [#14196](https://github.com/pydantic/pydantic/pull/14196)
+* Use a lightweight `@contextmanager` implementation internally by @Viicos in [#14199](https://github.com/pydantic/pydantic/pull/14199)
+
+#### Fixes
+
+* Fix various issues about GC tracking in `pydantic-core` by @Viicos in [#13819](https://github.com/pydantic/pydantic/pull/13819)
+* Include `null` in serialization JSON Schema for `unless-none` field serializers by @Kropiunig in [#13848](https://github.com/pydantic/pydantic/pull/13848)
+* Fix `RecursionError` when copying or unpickling models with `defer_build` by @Viicos in [#14115](https://github.com/pydantic/pydantic/pull/14115)
+* Remove dead `default_factory` check in unsupported `Field()` attribute by @owtaylor in [#14129](https://github.com/pydantic/pydantic/pull/14129)
+* Disallow non string extra keys during validation by @Viicos in [#14135](https://github.com/pydantic/pydantic/pull/14135)
+* Fix deeply nested data being reported as a cyclic reference by @Viicos in [#14164](https://github.com/pydantic/pydantic/pull/14164)
+
+### New Contributors
+
+* @owtaylor made their first contribution in [#14129](https://github.com/pydantic/pydantic/pull/14129)
+
+## v2.14.2 (2026-10-29)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.2)
+
+### What's Changed
+
+#### Packaging
+
+* Bump PyO3 to 0.30.1, jiter to 0.18.0, use `PyFrozenDict` by @Viicos in [#14003](https://github.com/pydantic/pydantic/pull/14003)
+* Bump speedate to v0.18.0 by @Viicos in [#14007](https://github.com/pydantic/pydantic/pull/14007)
+* Publish `pydantic-core` wheels for PyPy 8.0 (`pp80` ABI) by @Viicos in [#14083](https://github.com/pydantic/pydantic/pull/14083)
+
+#### Performance
+
+* Avoid Python tuple allocation during model fields validation by @Viicos in [#13955](https://github.com/pydantic/pydantic/pull/13955)
+* Lazily call repr of values during nested union serialization by @Viicos in [#14082](https://github.com/pydantic/pydantic/pull/14082)
+* Skip decorator field checks when no field decorators exist by @alexmojaki in [#14111](https://github.com/pydantic/pydantic/pull/14111)
+* Avoid heap allocation for small JSON model field buffers by @alexmojaki in [#14113](https://github.com/pydantic/pydantic/pull/14113)
+
+#### Fixes
+
+* Make JSON validation by iteration consistent with Python approach by @davidhewitt in [#13275](https://github.com/pydantic/pydantic/pull/13275).
+
+  JSON validation now handles field lookup and extra data the same way as Python validation. In particular, keys that only match an
+  unused alias or field name are now treated as extra data, instead of being silently dropped:
+
+    ```python
+    from pydantic import BaseModel, ConfigDict
+    from pydantic.alias_generators import to_camel
+
+
+    class Page(BaseModel):
+        model_config = ConfigDict(extra='forbid', alias_generator=to_camel)
+
+        page_size: int = 10
+
+
+    Page.model_validate_json('{"page_size": 50}')
+    # Before: Page(page_size=10)
+    # After: ValidationError (extra_forbidden)
+    ```
+
+  See the [pull request](https://github.com/pydantic/pydantic/pull/13275) for the full list of behavior changes.
+
+* Fix unpickling of generic classes defined in separate module by @Viicos in [#13994](https://github.com/pydantic/pydantic/pull/13994)
+* Support explicit `by_alias` overriding `validate_by_alias` in validation JSON schemas by @Viicos in [#13997](https://github.com/pydantic/pydantic/pull/13997)
+* Fix mypy plugin crash on deferred empty model by @ilevkivskyi in [#14027](https://github.com/pydantic/pydantic/pull/14027)
+* Fix infinite recursion when validating an invalid default with `PydanticUseDefault` by @Viicos in [#14028](https://github.com/pydantic/pydantic/pull/14028)
+* Implement recursion guard for `validate_strings()` by @Viicos in [#14029](https://github.com/pydantic/pydantic/pull/14029)
+* Support named tuples in `Sequence` serialization by @Viicos in [#14033](https://github.com/pydantic/pydantic/pull/14033)
+* Take `preserve_empty_path` into account in URL types equality by @Viicos in [#14035](https://github.com/pydantic/pydantic/pull/14035)
+* Fix pickling of `PydanticCustomError` and `ValidationError`s containing custom errors by @Viicos in [#14051](https://github.com/pydantic/pydantic/pull/14051)
+* Do not extract attribute docstrings from nested classes and functions by @Viicos in [#14052](https://github.com/pydantic/pydantic/pull/14052)
+* Fix forward annotations evaluation and type variables substitution when rebuilding parametrized generic models by @Viicos in [#14054](https://github.com/pydantic/pydantic/pull/14054)
+* Fix `Self` resolution in parametrized generics by @Viicos in [#14065](https://github.com/pydantic/pydantic/pull/14065)
+* Ignore extra data matching a field name in `TypedDict` and dataclasses with `extra=allow` by @Viicos in [#14090](https://github.com/pydantic/pydantic/pull/14090)
+* Check mapping `max_length` constraint during validation by @Viicos in [#14092](https://github.com/pydantic/pydantic/pull/14092)
+* Fix deep copy of self-referential models by @Viicos in [#14116](https://github.com/pydantic/pydantic/pull/14116)
+
+## v2.14.1 (2026-10-11)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.1)
+
+### What's Changed
+
+#### Performance
+
+* Avoid Python tuple allocation during model fields validation by @Viicos in [#13955](https://github.com/pydantic/pydantic/pull/13955)
+* Avoid unnecessary extra dict allocation in model validation by @Viicos in [#13956](https://github.com/pydantic/pydantic/pull/13956)
+
+#### Fixes
+
+* Fix `arguments-v3` schema with variadic keywords by @Viicos in [#13954](https://github.com/pydantic/pydantic/pull/13954)
+* Fix `TypeError` on `ForwardRef` on Python 3.10.0 by @Viicos in [#13964](https://github.com/pydantic/pydantic/pull/13964)
+* Support `closed` and `extra_items` via inheritance in `TypedDict` by @Viicos in [#13967](https://github.com/pydantic/pydantic/pull/13967)
+* Enforce the `max_digits` whole-digits limit in the Python `Decimal` validator by @Viicos in [#13972](https://github.com/pydantic/pydantic/pull/13972)
+* Reject out-of-range int inputs for `timedelta` by @Viicos in [#13973](https://github.com/pydantic/pydantic/pull/13973)
+* Support named tuples in `Sequence` validation by @Viicos in [#13978](https://github.com/pydantic/pydantic/pull/13978)
+
 ## v2.14.0 (2026-10-08)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.0)

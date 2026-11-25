@@ -1,11 +1,10 @@
 import pickle
 import re
 from collections.abc import Sequence
-from typing import Final
+from typing import Final, NotRequired, Required
 
 import pytest
 from pydantic_core import PydanticCustomError
-from typing_extensions import NotRequired, Required
 
 from pydantic import BaseModel, PydanticForbiddenQualifier, PydanticUserError, ValidationError, field_validator
 from pydantic.version import version_short

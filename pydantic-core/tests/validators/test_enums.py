@@ -1,7 +1,7 @@
 import re
 import sys
 from decimal import Decimal
-from enum import Enum, IntEnum, IntFlag
+from enum import Enum, IntEnum, IntFlag, StrEnum
 
 import pytest
 
@@ -91,7 +91,7 @@ def test_int_enum():
 
 
 def test_str_enum():
-    class MyEnum(str, Enum):
+    class MyEnum(StrEnum):
         a = 'x'
         b = 'y'
 
@@ -254,8 +254,8 @@ def test_enum_exactness():
 
 def test_plain_enum_lists():
     class MyEnum(Enum):
-        a = [1]
-        b = [2]
+        a = [1]  # noqa: RUF012
+        b = [2]  # noqa: RUF012
 
     assert MyEnum([1]) is MyEnum.a
     v = SchemaValidator(core_schema.enum_schema(MyEnum, list(MyEnum.__members__.values())))
@@ -442,7 +442,7 @@ def test_enum_int_validation_should_fail_for_incorrect_decimal_value():
         v.validate_python((1, 2))
 
     with pytest.raises(ValidationError):
-        v.validate_python(Decimal(1.1))
+        v.validate_python(Decimal('1.1'))
 
 
 def test_enum_int_validation_should_fail_for_plain_type_without_eq_checking():
@@ -494,7 +494,7 @@ def test_support_custom_new_method() -> None:
 def test_strict_enum_wrap_json() -> None:
     """https://github.com/pydantic/pydantic/issues/11070"""
 
-    class Animal(str, Enum):
+    class Animal(StrEnum):
         CAT = 'cat'
         DOG = 'dog'
 

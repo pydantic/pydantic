@@ -1,15 +1,14 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class ConfigClassUsed(BaseModel):
+class ModelConfigUsed(BaseModel):
     i: int = Field(2, alias='j')
 
-    class Config:
-        validate_by_name = True
+    model_config = ConfigDict(validate_by_name=True)
 
 
-ConfigClassUsed(i=None)
-# MYPY: error: Argument "i" to "ConfigClassUsed" has incompatible type "None"; expected "int"  [arg-type]
+ModelConfigUsed(i=None)
+# MYPY: error: Argument "i" to "ModelConfigUsed" has incompatible type "None"; expected "int"  [arg-type]
 
 
 class MetaclassArgumentsNoDefault(BaseModel, validate_by_name=True):

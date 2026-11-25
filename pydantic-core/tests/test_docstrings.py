@@ -22,7 +22,9 @@ PYDANTIC_CORE_DIR = Path(__file__).resolve().parent.parent
 )
 @pytest.mark.thread_unsafe  # TODO investigate why pytest_examples seems to be thread unsafe here
 def test_docstrings(example: CodeExample, eval_example: EvalExample):
-    eval_example.set_config(quotes='single')
+    # Ruff selects `I001` by default, which requires two blank lines between imports and a class/function definition.
+    # This conflicts with `pytest-examples`, which collapses double blank lines in examples from `.py` files:
+    eval_example.set_config(quotes='single', ruff_ignore=['I001'])
 
     prefix_settings = example.prefix_settings()
     requires_settings = prefix_settings.get('requires')

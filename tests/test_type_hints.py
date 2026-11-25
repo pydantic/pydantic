@@ -20,24 +20,6 @@ from pydantic import (
 )
 from pydantic.dataclasses import dataclass
 
-DEPRECATED_MODEL_MEMBERS = {
-    'construct',
-    'copy',
-    'dict',
-    'from_orm',
-    'json',
-    'json_schema',
-    'parse_file',
-    'parse_obj',
-}
-
-# Disable deprecation warnings, as we enumerate members that may be
-# i.e. pydantic.warnings.PydanticDeprecatedSince20: The `__fields__` attribute is deprecated,
-#      use `model_fields` instead.
-pytestmark = [
-    pytest.mark.filterwarnings('ignore::DeprecationWarning'),
-]
-
 
 @pytest.fixture(name='ParentModel', scope='session')
 def parent_sub_model_fixture():
@@ -62,7 +44,6 @@ def get_type_checking_only_ns():
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
-    from pydantic.deprecated.parse import Protocol as DeprecatedParseProtocol
     from pydantic.fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from pydantic.fields import PrivateAttr as _PrivateAttr
 
@@ -71,7 +52,6 @@ def get_type_checking_only_ns():
         'CoreSchema': CoreSchema,
         'SchemaSerializer': SchemaSerializer,
         'SchemaValidator': SchemaValidator,
-        'DeprecatedParseProtocol': DeprecatedParseProtocol,
         'ComputedFieldInfo': ComputedFieldInfo,
         'FieldInfo': FieldInfo,
         'ModelPrivateAttr': ModelPrivateAttr,
@@ -79,14 +59,11 @@ def get_type_checking_only_ns():
     }
 
 
-def inspect_type_hints(
-    obj_type, members: set[str] | None = None, exclude_members: set[str] | None = None, recursion_limit: int = 3
-):
+def inspect_type_hints(obj_type, members: set[str] | None = None, recursion_limit: int = 3):
     """
     Test an object and its members to make sure type hints can be resolved.
     :param obj_type: Type to check
     :param members: Explicit set of members to check, None to check all
-    :param exclude_members: Set of member names to exclude
     :param recursion_limit: Recursion limit (0 to disallow)
     """
 
@@ -105,7 +82,7 @@ def inspect_type_hints(
             if member_name.startswith('_'):
                 # Ignore private members
                 continue
-            if (members and member_name not in members) or (exclude_members and member_name in exclude_members):
+            if members and member_name not in members:
                 continue
 
             if inspect.isclass(member_obj) or inspect.isfunction(member_obj):
@@ -114,24 +91,23 @@ def inspect_type_hints(
 
 
 @pytest.mark.parametrize(
-    ('obj_type', 'members', 'exclude_members'),
+    ('obj_type', 'members'),
     [
-        (BaseModel, None, DEPRECATED_MODEL_MEMBERS),
-        (RootModel, None, DEPRECATED_MODEL_MEMBERS),
+        (BaseModel, None),
+        (RootModel, None),
     ],
 )
-def test_obj_type_hints(obj_type, members: set[str] | None, exclude_members: set[str] | None):
+def test_obj_type_hints(obj_type, members: set[str] | None):
     """
     Test an object and its members to make sure type hints can be resolved.
     :param obj_type: Type to check
     :param members: Explicit set of members to check, None to check all
-    :param exclude_members: Set of member names to exclude
     """
-    inspect_type_hints(obj_type, members, exclude_members)
+    inspect_type_hints(obj_type, members)
 
 
 def test_parent_sub_model(ParentModel):
-    inspect_type_hints(ParentModel, None, DEPRECATED_MODEL_MEMBERS)
+    inspect_type_hints(ParentModel)
 
 
 def test_root_model_as_field():
@@ -141,8 +117,8 @@ def test_root_model_as_field():
     class MyModel(BaseModel):
         root_model: MyRootModel
 
-    inspect_type_hints(MyRootModel, None, DEPRECATED_MODEL_MEMBERS)
-    inspect_type_hints(MyModel, None, DEPRECATED_MODEL_MEMBERS)
+    inspect_type_hints(MyRootModel)
+    inspect_type_hints(MyModel)
 
 
 def test_generics():
@@ -151,8 +127,8 @@ def test_generics():
     class Result(BaseModel, Generic[data_type]):
         data: data_type
 
-    inspect_type_hints(Result, None, DEPRECATED_MODEL_MEMBERS)
-    inspect_type_hints(Result[dict[str, Any]], None, DEPRECATED_MODEL_MEMBERS)
+    inspect_type_hints(Result)
+    inspect_type_hints(Result[dict[str, Any]])
 
 
 def test_dataclasses():

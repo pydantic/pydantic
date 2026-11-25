@@ -23,7 +23,6 @@ use super::{
 struct FunctionInfo {
     /// The actual function object that will get called
     pub function: Py<PyAny>,
-    pub field_name: Option<Py<PyString>>,
     pub info_arg: bool,
 }
 
@@ -36,12 +35,7 @@ fn destructure_function_schema(schema: &Bound<'_, PyDict>) -> PyResult<FunctionI
         "no-info" => false,
         _ => unreachable!(),
     };
-    let field_name = func_dict.get_as(intern!(schema.py(), "field_name"))?;
-    Ok(FunctionInfo {
-        function,
-        field_name,
-        info_arg,
-    })
+    Ok(FunctionInfo { function, info_arg })
 }
 
 macro_rules! impl_build {
@@ -71,7 +65,6 @@ macro_rules! impl_build {
                             None => py.None(),
                         },
                         name,
-                        field_name: func_info.field_name,
                         info_arg: func_info.info_arg,
                     }
                     .into(),
@@ -87,7 +80,6 @@ pub struct FunctionBeforeValidator {
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
-    field_name: Option<Py<PyString>>,
     info_arg: bool,
 }
 
@@ -102,11 +94,7 @@ impl FunctionBeforeValidator {
         state: &'s mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let r = if self.info_arg {
-            let field_name = state
-                .field_name()
-                .cloned()
-                .map(Bound::unbind)
-                .or_else(|| self.field_name.clone());
+            let field_name = state.field_name().cloned().map(Bound::unbind);
             let info = ValidationInfo::new(py, state, &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, info))
         } else {
@@ -160,7 +148,6 @@ pub struct FunctionAfterValidator {
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
-    field_name: Option<Py<PyString>>,
     info_arg: bool,
 }
 
@@ -176,11 +163,7 @@ impl FunctionAfterValidator {
     ) -> ValResult<Py<PyAny>> {
         let v = call(input, state)?;
         let r = if self.info_arg {
-            let field_name = state
-                .field_name()
-                .cloned()
-                .map(Bound::unbind)
-                .or_else(|| self.field_name.clone());
+            let field_name = state.field_name().cloned().map(Bound::unbind);
             let info = ValidationInfo::new(py, state, &self.config, field_name);
             self.func.call1(py, (v, info))
         } else {
@@ -232,7 +215,6 @@ pub struct FunctionPlainValidator {
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
-    field_name: Option<Py<PyString>>,
     info_arg: bool,
 }
 
@@ -253,7 +235,6 @@ impl BuildValidator for FunctionPlainValidator {
                 None => py.None(),
             },
             name: format!("function-plain[{}()]", function_name(function_info.function.bind(py))?),
-            field_name: function_info.field_name.clone(),
             info_arg: function_info.info_arg,
         })
         .into())
@@ -270,11 +251,7 @@ impl Validator for FunctionPlainValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let r = if self.info_arg {
-            let field_name = state
-                .field_name()
-                .cloned()
-                .map(Bound::unbind)
-                .or_else(|| self.field_name.clone());
+            let field_name = state.field_name().cloned().map(Bound::unbind);
             let info = ValidationInfo::new(py, state, &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, info))
         } else {
@@ -294,7 +271,6 @@ pub struct FunctionWrapValidator {
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
-    field_name: Option<Py<PyString>>,
     info_arg: bool,
     hide_input_in_errors: bool,
     validation_error_cause: bool,
@@ -321,7 +297,6 @@ impl BuildValidator for FunctionWrapValidator {
                 None => py.None(),
             },
             name: format!("function-wrap[{}()]", function_name(function_info.function.bind(py))?),
-            field_name: function_info.field_name.clone(),
             info_arg: function_info.info_arg,
             hide_input_in_errors,
             validation_error_cause,
@@ -339,11 +314,7 @@ impl FunctionWrapValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let r = if self.info_arg {
-            let field_name = state
-                .field_name()
-                .cloned()
-                .map(Bound::unbind)
-                .or_else(|| self.field_name.clone());
+            let field_name = state.field_name().cloned().map(Bound::unbind);
             let info = ValidationInfo::new(py, state, &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, handler, info))
         } else {

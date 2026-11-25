@@ -1,5 +1,4 @@
 import json
-import sys
 from decimal import Decimal
 from fractions import Fraction
 from typing import Annotated
@@ -115,8 +114,8 @@ def test_fraction_validate_json_error(json_str, error):
     ],
 )
 def test_fraction_validation_error_strict(input_value):
+    ta = TypeAdapter(Fraction)
     with pytest.raises(ValidationError):
-        ta = TypeAdapter(Fraction)
         ta.validate_python(input_value, strict=True)
 
 
@@ -158,11 +157,7 @@ def test_fraction_validation_error(input: object, error_type: str):
         ('1e4300', Fraction(10**4300)),
         ('-1E+4300', Fraction(-(10**4300))),
         ('1e-4300', Fraction(1, 10**4300)),
-        pytest.param(
-            '1.5e4_300 ',
-            Fraction(15 * 10**4299),
-            marks=pytest.mark.skipif(sys.version_info < (3, 11), reason='Fraction supports underscores since 3.11'),
-        ),
+        ('1.5e4_300 ', Fraction(15 * 10**4299)),
         ('1e00000000004300', Fraction(10**4300)),
         ('1e٤٣٠٠', Fraction(10**4300)),
     ],

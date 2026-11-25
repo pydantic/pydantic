@@ -1,0 +1,39 @@
+
+# Frozen model corpus; modified from anthropic 2.3.0; see README.md and LICENSE.
+from typing import Union, Optional
+from datetime import datetime
+from typing_extensions import Literal, Annotated, TypeAlias
+from ..._models import BaseModel, UnionDiscriminator
+from .beta_managed_agents_agent_reference import BetaManagedAgentsAgentReference
+from .beta_managed_agents_trigger_context import BetaManagedAgentsTriggerContext
+from .beta_managed_agents_unknown_run_error import BetaManagedAgentsUnknownRunError
+from .beta_managed_agents_agent_archived_run_error import BetaManagedAgentsAgentArchivedRunError
+from .beta_managed_agents_file_not_found_run_error import BetaManagedAgentsFileNotFoundRunError
+from .beta_managed_agents_vault_archived_run_error import BetaManagedAgentsVaultArchivedRunError
+from .beta_managed_agents_skill_not_found_run_error import BetaManagedAgentsSkillNotFoundRunError
+from .beta_managed_agents_vault_not_found_run_error import BetaManagedAgentsVaultNotFoundRunError
+from .beta_managed_agents_mcp_egress_blocked_run_error import BetaManagedAgentsMCPEgressBlockedRunError
+from .beta_managed_agents_workspace_archived_run_error import BetaManagedAgentsWorkspaceArchivedRunError
+from .beta_managed_agents_environment_archived_run_error import BetaManagedAgentsEnvironmentArchivedRunError
+from .beta_managed_agents_session_rate_limited_run_error import BetaManagedAgentsSessionRateLimitedRunError
+from .beta_managed_agents_environment_not_found_run_error import BetaManagedAgentsEnvironmentNotFoundRunError
+from .beta_managed_agents_memory_store_archived_run_error import BetaManagedAgentsMemoryStoreArchivedRunError
+from .beta_managed_agents_organization_disabled_run_error import BetaManagedAgentsOrganizationDisabledRunError
+from .beta_managed_agents_session_creation_rejected_run_error import BetaManagedAgentsSessionCreationRejectedRunError
+from .beta_managed_agents_session_resource_not_found_run_error import BetaManagedAgentsSessionResourceNotFoundRunError
+from .beta_managed_agents_self_hosted_resources_unsupported_run_error import BetaManagedAgentsSelfHostedResourcesUnsupportedRunError
+Error: TypeAlias = Annotated[Union[BetaManagedAgentsEnvironmentArchivedRunError, BetaManagedAgentsAgentArchivedRunError, BetaManagedAgentsEnvironmentNotFoundRunError, BetaManagedAgentsVaultNotFoundRunError, BetaManagedAgentsVaultArchivedRunError, BetaManagedAgentsFileNotFoundRunError, BetaManagedAgentsMemoryStoreArchivedRunError, BetaManagedAgentsSkillNotFoundRunError, BetaManagedAgentsSessionResourceNotFoundRunError, BetaManagedAgentsWorkspaceArchivedRunError, BetaManagedAgentsOrganizationDisabledRunError, BetaManagedAgentsSessionRateLimitedRunError, BetaManagedAgentsSessionCreationRejectedRunError, BetaManagedAgentsUnknownRunError, BetaManagedAgentsSelfHostedResourcesUnsupportedRunError, BetaManagedAgentsMCPEgressBlockedRunError, None], UnionDiscriminator('type')]
+
+class BetaManagedAgentsDeploymentRun(BaseModel):
+    """A persistent, append-only record of a single deployment execution.
+
+    Records session creation success or failure — no session lifecycle tracking.
+    """
+    id: str
+    agent: BetaManagedAgentsAgentReference
+    created_at: datetime
+    deployment_id: str
+    error: Optional[Error] = None
+    session_id: Optional[str] = None
+    trigger_context: BetaManagedAgentsTriggerContext
+    type: Literal['deployment_run']

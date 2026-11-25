@@ -10,7 +10,7 @@ from pydantic_core import SchemaValidator, ValidationError, core_schema
 def test_list():
     v = SchemaValidator(
         core_schema.list_schema(
-            core_schema.tuple_positional_schema([core_schema.int_schema(), core_schema.int_schema()]),
+            core_schema.tuple_schema([core_schema.int_schema(), core_schema.int_schema()]),
         )
     )
     assert v.validate_python([[1, 2], [3, 4]]) == [(1, 2), (3, 4)]
@@ -43,7 +43,7 @@ def test_list():
 def test_set_frozenset(collection_type):
     v = SchemaValidator(
         collection_type(
-            core_schema.tuple_positional_schema([core_schema.int_schema(), core_schema.int_schema()]),
+            core_schema.tuple_schema([core_schema.int_schema(), core_schema.int_schema()]),
         )
     )
     assert v.validate_python([[1, 2], [3, 4]]) == snapshot({(1, 2), (3, 4)})
@@ -261,9 +261,7 @@ def test_double_nested():
 def test_tuple_list():
     """Tuples don't support partial, so behaviour should be disabled."""
     v = SchemaValidator(
-        core_schema.tuple_positional_schema(
-            [core_schema.list_schema(core_schema.int_schema()), core_schema.int_schema()]
-        )
+        core_schema.tuple_schema([core_schema.list_schema(core_schema.int_schema()), core_schema.int_schema()])
     )
     assert v.validate_python([['1', '2'], '3'], allow_partial=True) == snapshot(([1, 2], 3))
     with pytest.raises(ValidationError, match=r'1\s+Input should be a valid integer'):

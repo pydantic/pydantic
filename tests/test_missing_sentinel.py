@@ -6,7 +6,7 @@ import typing_extensions
 from annotated_types import Ge
 from pydantic_core import PydanticSerializationUnexpectedValue
 
-from pydantic import MISSING, BaseModel, Field, PydanticDeprecatedSince214, TypeAdapter, ValidationError
+from pydantic import MISSING, BaseModel, Field, TypeAdapter, ValidationError
 
 
 def test_missing_sentinel_model() -> None:
@@ -280,10 +280,3 @@ def test_missing_sentinel_nested_type() -> None:
             'input': 'not_an_int',
         },
     ]
-
-
-def test_missing_sentinel_experimental_import_deprecated() -> None:
-    import pydantic.experimental.missing_sentinel as experimental_module
-
-    with pytest.warns(PydanticDeprecatedSince214, match='The `MISSING` sentinel is no longer experimental'):
-        assert experimental_module.MISSING is MISSING

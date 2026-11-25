@@ -218,7 +218,7 @@ two reasons:
 By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement)
 (introduced in [PEP 695](https://peps.python.org/pep-0695/)), you can define aliases as follows:
 
-=== "Python 3.10 and above"
+=== "Python 3.11"
 
     ```python
     from typing import Annotated
@@ -308,7 +308,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
     Pydantic will *not* understand field-specific metadata inside named aliases. That is, metadata such as
     `alias`, `default`, `deprecated`, *cannot* be used:
 
-    === "Python 3.10 and above"
+    === "Python 3.11"
 
         ```python {test="skip"}
         from typing import Annotated
@@ -347,7 +347,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 !!! note
     As with implicit type aliases, [type variables][typing.TypeVar] can also be used inside the generic alias:
 
-    === "Python 3.10 and above"
+    === "Python 3.11"
 
         ```python
         from typing import Annotated, TypeVar
@@ -383,7 +383,7 @@ Named type aliases should be used whenever you need to define recursive type ali
 
 For instance, here is an example definition of a JSON type:
 
-=== "Python 3.10 and above"
+=== "Python 3.11"
 
     ```python
     from typing_extensions import TypeAliasType
@@ -482,7 +482,6 @@ handler at all.
 #### As a method on a custom type
 
 The following is an example of a type that uses `__get_pydantic_core_schema__` to customize how it gets validated.
-This is equivalent to implementing `__get_validators__` in Pydantic V1.
 
 ```python
 from typing import Any

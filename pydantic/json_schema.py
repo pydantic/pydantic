@@ -31,17 +31,14 @@ from typing import (
     NewType,
     TypeAlias,
     TypeVar,
+    assert_never,
     cast,
-    overload,
 )
 
 import pydantic_core
 from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import assert_never, deprecated, final
 from typing_inspection.introspection import get_literal_values
-
-from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
 
 from ._internal import (
     _config,
@@ -166,7 +163,8 @@ class _DefinitionsRemapping:
             # Deduplicate the schemas for each alternative; the idea is that we only want to remap to a new DefsRef
             # if it introduces no ambiguity, i.e., there is only one distinct schema for that DefsRef.
             for defs_ref in schemas_for_alternatives:
-                schemas_for_alternatives[defs_ref] = _deduplicate_schemas(schemas_for_alternatives[defs_ref])
+                if len(schemas_for_alternatives[defs_ref]) > 1:
+                    schemas_for_alternatives[defs_ref] = _deduplicate_schemas(schemas_for_alternatives[defs_ref])
 
             # Build the remapping
             defs_remapping: dict[DefsRef, DefsRef] = {}
@@ -515,11 +513,12 @@ class GenerateJsonSchema:
                 json_schema = self.ser_schema(ser_schema)
 
                 # It might be that the 'serialization'` is skipped depending on `when_used`.
-                # This is only relevant for `nullable` schemas though, so we special case here.
+                # This is only relevant for `nullable` schemas though (possibly wrapped, e.g. when
+                # using a field serializer on a field with a default value), so we special case here.
                 if (
                     json_schema is not None
                     and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
-                    and schema_or_field['type'] == 'nullable'
+                    and _is_nullable_schema(schema_or_field)
                 ):
                     json_schema = self.get_union_of_schemas([{'type': 'null'}, json_schema])
             if json_schema is None:
@@ -735,11 +734,10 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        str_schema = core_schema.str_schema()
+        json_schema: JsonSchemaValue = {'type': 'string'}
         pattern = self.get_decimal_pattern(schema)
         if pattern is not None:
-            str_schema['pattern'] = pattern
-        json_schema = self.str_schema(str_schema)
+            json_schema['pattern'] = pattern
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')
@@ -1073,28 +1071,6 @@ class GenerateJsonSchema:
         json_schema = {'type': 'array', 'items': items_schema}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
-
-    @deprecated('`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.', category=None)
-    @final
-    def tuple_positional_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Replaced by `tuple_schema`."""
-        warnings.warn(
-            '`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.',
-            PydanticDeprecatedSince26,
-            stacklevel=2,
-        )
-        return self.tuple_schema(schema)
-
-    @deprecated('`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.', category=None)
-    @final
-    def tuple_variable_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Replaced by `tuple_schema`."""
-        warnings.warn(
-            '`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.',
-            PydanticDeprecatedSince26,
-            stacklevel=2,
-        )
-        return self.tuple_schema(schema)
 
     def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a tuple schema e.g. `tuple[int,
@@ -1857,8 +1833,10 @@ class GenerateJsonSchema:
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
             )
 
-        if hasattr(cls, '__deprecated__'):
-            json_schema['deprecated'] = True
+        # Only the class decorated with `@deprecated` is deprecated, not its subclasses (the attribute is
+        # inherited, but the runtime only warns on instantiation of the decorated class).
+        if '__deprecated__' in cls.__dict__:
+            json_schema.setdefault('deprecated', True)
 
     def resolve_ref_schema(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
         """Resolve a JsonSchemaValue to the non-ref schema if it is a $ref schema.
@@ -1915,7 +1893,7 @@ class GenerateJsonSchema:
         if self.mode == 'serialization':
             # If you still want to include the field in the generated JSON schema,
             # override this method and return True
-            return not field.get('serialization_exclude')
+            return not field.get('serialization_exclude') and not field.get('init_only')
         elif self.mode == 'validation':
             return True
         else:
@@ -2070,7 +2048,11 @@ class GenerateJsonSchema:
 
         keyword_possible = not p_only_arguments and not var_args_schema
         if keyword_possible:
-            return self.kw_arguments_schema(kw_or_p_arguments + kw_only_arguments, var_kwargs_schema)
+            return self.kw_arguments_schema(
+                kw_or_p_arguments + kw_only_arguments,
+                var_kwargs_schema,
+                var_kwargs_mode=schema.get('var_kwargs_mode') or 'uniform',
+            )
 
         if not prefer_positional:
             positional_possible = not kw_only_arguments and not var_kwargs_schema
@@ -2082,12 +2064,18 @@ class GenerateJsonSchema:
         )
 
     def kw_arguments_schema(
-        self, arguments: list[core_schema.ArgumentsParameter], var_kwargs_schema: CoreSchema | None
+        self,
+        arguments: list[core_schema.ArgumentsParameter],
+        var_kwargs_schema: CoreSchema | None,
+        *,
+        var_kwargs_mode: core_schema.VarKwargsMode = 'uniform',
     ) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a function's keyword arguments.
 
         Args:
-            arguments: The core schema.
+            arguments: The list of keyword argument definitions.
+            var_kwargs_schema: The core schema of the variadic keyword arguments, if any.
+            var_kwargs_mode: How the variadic keyword arguments are validated.
 
         Returns:
             The generated JSON schema.
@@ -2111,12 +2099,25 @@ class GenerateJsonSchema:
         if required:
             json_schema['required'] = required
 
-        if var_kwargs_schema:
+        if var_kwargs_schema is None:
+            json_schema['additionalProperties'] = False
+        elif var_kwargs_mode == 'unpacked-typed-dict':
+            # The validator validates the extra keyword arguments against the typed dictionary,
+            # so its properties are merged with the arguments ones (overlapping names are rejected
+            # at schema generation time). The typed dictionary also controls extra keyword arguments.
+            # Note: in theory, `resolve_ref_schema()` could fail, but in practice this can't happen
+            # as the TypedDict's definition is generated before the arguments schema.
+            typed_dict_json_schema = self.resolve_ref_schema(self.generate_inner(var_kwargs_schema))
+            properties.update(typed_dict_json_schema.get('properties', {}))
+            required.extend(typed_dict_json_schema.get('required', []))
+            if required:
+                json_schema['required'] = required
+            if 'additionalProperties' in typed_dict_json_schema:
+                json_schema['additionalProperties'] = typed_dict_json_schema['additionalProperties']
+        else:
             additional_properties_schema = self.generate_inner(var_kwargs_schema)
             if additional_properties_schema:
                 json_schema['additionalProperties'] = additional_properties_schema
-        else:
-            json_schema['additionalProperties'] = False
         return json_schema
 
     def p_arguments_schema(
@@ -2125,7 +2126,8 @@ class GenerateJsonSchema:
         """Generates a JSON schema that matches a schema that defines a function's positional arguments.
 
         Args:
-            arguments: The core schema.
+            arguments: The list of positional argument definitions.
+            var_args_schema: The core schema of the variadic positional arguments, if any.
 
         Returns:
             The generated JSON schema.
@@ -2197,15 +2199,23 @@ class GenerateJsonSchema:
             name = self.get_argument_name(argument)
             argument_schema = self.generate_inner(argument['schema']).copy()
             if mode == 'var_args':
-                argument_schema = {'type': 'array', 'items': argument_schema}
+                argument_schema = {
+                    'type': 'array',
+                    'items': argument_schema,
+                    'title': self.get_title_from_name(name),
+                }
             elif mode == 'var_kwargs_uniform':
-                argument_schema = {'type': 'object', 'additionalProperties': argument_schema}
-
-            argument_schema.setdefault('title', self.get_title_from_name(name))
+                argument_schema = {
+                    'type': 'object',
+                    'additionalProperties': argument_schema,
+                    'title': self.get_title_from_name(name),
+                }
+            elif 'title' not in argument_schema and self.field_title_should_be_set(argument['schema']):
+                argument_schema['title'] = self.get_title_from_name(name)
             properties[name] = argument_schema
 
             if (
-                (mode == 'var_kwargs_unpacked_typed_dict' and 'required' in argument_schema)
+                (mode == 'var_kwargs_unpacked_typed_dict' and 'required' in self.resolve_ref_schema(argument_schema))
                 or mode not in {'var_args', 'var_kwargs_uniform', 'var_kwargs_unpacked_typed_dict'}
                 and argument['schema']['type'] != 'default'
             ):
@@ -2217,6 +2227,9 @@ class GenerateJsonSchema:
         json_schema: JsonSchemaValue = {'type': 'object', 'properties': properties}
         if required:
             json_schema['required'] = required
+        # Unexpected arguments are rejected by default:
+        if schema.get('extra_behavior', 'forbid') == 'forbid':
+            json_schema['additionalProperties'] = False
         return json_schema
 
     def call_schema(self, schema: core_schema.CallSchema) -> JsonSchemaValue:
@@ -2895,7 +2908,12 @@ def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | No
         opt_int_part = f'0*{_repeat("[0-9]", 0, whole)}'
         opt_frac_part = rf'\.{_repeat("[0-9]", 0, places)}0*'
         frac_part = rf'\.{_repeat("[0-9]", 1, places)}0*' if places else r'\.0+'
-        alts += [f'{int_part}(?:{opt_frac_part})?', f'{opt_int_part}{frac_part}']
+        if whole:
+            alts += [f'{int_part}(?:{opt_frac_part})?', f'{opt_int_part}{frac_part}']
+        else:
+            # No whole digits are allowed: a bare integer part (even `0`) counts as one whole digit,
+            # so only forms with a fractional part (which have zero whole digits) are valid:
+            alts.append(f'{opt_int_part}{frac_part}')
     elif max_digits is not None:
         # The whole part and decimal part must have at most `max_digits` digits in total,
         # so we enumerate the possible widths of the whole part:
@@ -2938,7 +2956,12 @@ def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int |
         whole = max(0, max_digits - decimal_places)
         places = min(max_digits, decimal_places)
         int_part = f'(?:0|[1-9]{_repeat("[0-9]", 0, whole - 1)})' if whole else '0'
-        alts.append(f'{int_part}(?:{frac_part(places)})?')
+        if whole:
+            alts.append(f'{int_part}(?:{frac_part(places)})?')
+        else:
+            # No whole digits are allowed: a bare `0` counts as one whole digit, so a decimal
+            # satisfying the constraints is always serialized with a fractional part:
+            alts.append(f'{int_part}{frac_part(places)}')
     elif max_digits is not None:
         # The whole part and decimal part must have at most `max_digits` digits in total,
         # so we enumerate the possible widths of the whole part:
@@ -2952,8 +2975,13 @@ def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int |
     else:
         alts.append(r'(?:0|[1-9][0-9]*)(?:\.[0-9]+)?')
 
-    # Zero with an exponent (e.g. `'0E-10'`), which normalizes to zero and thus satisfies any constraint:
-    alts.append(r'0E[+-][1-9][0-9]*')
+    # Zero with an exponent (e.g. `'0E-10'`), which normalizes to zero and thus satisfies any constraint,
+    # unless no whole digits are allowed and the exponent is positive (such a zero counts as one
+    # whole digit, e.g. `0E+1` is rejected when `max_digits <= decimal_places`):
+    if max_digits is not None and decimal_places is not None and max_digits <= decimal_places:
+        alts.append(r'0E-[1-9][0-9]*')
+    else:
+        alts.append(r'0E[+-][1-9][0-9]*')
 
     # Scientific notation with a positive exponent `k` (e.g. `'1.5E+3'`): the value has `k + 1` whole digits
     # and no decimal places:
@@ -3084,24 +3112,7 @@ class Examples:
     allowing you to add different examples for validation and serialization.
     """
 
-    @overload
-    @deprecated('Using a dict for `examples` is deprecated since v2.9 and will be removed in v3.0. Use a list instead.')
-    def __init__(
-        self, examples: dict[str, Any], mode: Literal['validation', 'serialization'] | None = None
-    ) -> None: ...
-
-    @overload
-    def __init__(self, examples: list[Any], mode: Literal['validation', 'serialization'] | None = None) -> None: ...
-
-    def __init__(
-        self, examples: dict[str, Any] | list[Any], mode: Literal['validation', 'serialization'] | None = None
-    ) -> None:
-        if isinstance(examples, dict):
-            warnings.warn(
-                'Using a dict for `examples` is deprecated, use a list instead.',
-                PydanticDeprecatedSince29,
-                stacklevel=2,
-            )
+    def __init__(self, examples: list[Any], mode: Literal['validation', 'serialization'] | None = None) -> None:
         self.examples = examples
         self.mode = mode
 
@@ -3115,32 +3126,8 @@ class Examples:
         examples = json_schema.get('examples')
         if examples is None:
             json_schema['examples'] = to_jsonable_python(self.examples)
-        if isinstance(examples, dict):
-            if isinstance(self.examples, list):
-                warnings.warn(
-                    'Updating existing JSON Schema examples of type dict with examples of type list. '
-                    'Only the existing examples values will be retained. Note that dict support for '
-                    'examples is deprecated and will be removed in v3.0.',
-                    UserWarning,
-                )
-                json_schema['examples'] = to_jsonable_python(
-                    [ex for value in examples.values() for ex in value] + self.examples
-                )
-            else:
-                json_schema['examples'] = to_jsonable_python({**examples, **self.examples})
-        if isinstance(examples, list):
-            if isinstance(self.examples, list):
-                json_schema['examples'] = to_jsonable_python(examples + self.examples)
-            elif isinstance(self.examples, dict):
-                warnings.warn(
-                    'Updating existing JSON Schema examples of type list with examples of type dict. '
-                    'Only the examples values will be retained. Note that dict support for '
-                    'examples is deprecated and will be removed in v3.0.',
-                    UserWarning,
-                )
-                json_schema['examples'] = to_jsonable_python(
-                    examples + [ex for value in self.examples.values() for ex in value]
-                )
+        elif isinstance(examples, list):
+            json_schema['examples'] = to_jsonable_python(examples + self.examples)
 
         return json_schema
 
@@ -3273,3 +3260,22 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
         return cast('core_schema.PlainSerializerFunctionSerSchema', ser_schema)
     if _core_utils.is_function_with_inner_schema(schema):
         return _get_ser_schema_for_default_value(schema['schema'])
+
+
+def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
+    """Whether the schema is a `'nullable'` schema, possibly wrapped in default, validator function, chain,
+    lax-or-strict and JSON-or-Python schemas.
+
+    For the latter three, the same inner schema as the one used to generate the serialization JSON Schema
+    is checked (see the corresponding `GenerateJsonSchema` methods).
+    """
+    if schema['type'] == 'default' or _core_utils.is_function_with_inner_schema(schema):
+        return _is_nullable_schema(schema['schema'])
+    if schema['type'] == 'chain':
+        return _is_nullable_schema(schema['steps'][-1])
+    if schema['type'] == 'lax-or-strict':
+        # See TODO in `GenerateJsonSchema.lax_or_strict_schema()`:
+        return _is_nullable_schema(schema['strict_schema'] if schema.get('strict', False) else schema['lax_schema'])
+    if schema['type'] == 'json-or-python':
+        return _is_nullable_schema(schema['json_schema'])
+    return schema['type'] == 'nullable'
