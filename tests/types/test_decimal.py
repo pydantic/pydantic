@@ -441,3 +441,22 @@ def test_decimal_multiple_of_invalid_constraint(multiple_of: Decimal) -> None:
 
     with pytest.raises(SchemaError, match="'multiple_of' must be a finite number greater than 0"):
         TypeAdapter(Annotated[Decimal, Field(multiple_of=multiple_of)])
+
+
+def test_decimal_str_error_propagates_on_serialization() -> None:
+    from pydantic_core import PydanticSerializationError
+
+    class BrokenDecimal(Decimal):
+        def __str__(self) -> str:
+            raise RuntimeError('str() failed')
+
+    adapter = TypeAdapter(Decimal)
+    with pytest.raises(PydanticSerializationError, match=r'str\(\) failed'):
+        adapter.dump_json(BrokenDecimal('1.5'))
+
+    with pytest.raises(RuntimeError, match=r'str\(\) failed'):
+        adapter.dump_python(BrokenDecimal('1.5'), mode='json')
+
+    dict_adapter = TypeAdapter(dict[Decimal, str])
+    with pytest.raises(PydanticSerializationError, match=r'str\(\) failed'):
+        dict_adapter.dump_json({BrokenDecimal('1.5'): 'ok'})
