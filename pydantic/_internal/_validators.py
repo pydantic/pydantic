@@ -93,6 +93,7 @@ def _import_string_logic(dotted_path: str) -> Any:
 
     An error will be raised under any of the following scenarios:
     * `dotted_path` contains more than one colon (e.g., 'collections:abc:Mapping')
+    * the substring of `dotted_path` before the colon is a relative module path (e.g., '.os:path')
     * the substring of `dotted_path` before the colon is not a valid module in the environment (e.g., '123:Mapping')
     * the substring of `dotted_path` after the colon is not an attribute of the module (e.g., 'collections:abc123')
     """
@@ -107,6 +108,8 @@ def _import_string_logic(dotted_path: str) -> Any:
     module_path = components[0]
     if not module_path:
         raise ImportError(f'Import strings should have a nonempty module name; received {dotted_path!r}')
+    if module_path.startswith('.'):
+        raise ImportError(f'Import strings should not be relative; received {dotted_path!r}')
 
     try:
         module = import_module(module_path)
