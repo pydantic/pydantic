@@ -156,7 +156,10 @@ jobs:
 
       - name: Install Rust
         if: steps.cherry-pick.outputs.has_conflicts == 'true'
-        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88 # stable
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
+        with:
+          toolchain: stable
 
       - name: Install Claude Code
         if: steps.cherry-pick.outputs.has_conflicts == 'true'
