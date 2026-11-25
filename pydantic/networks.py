@@ -1174,8 +1174,10 @@ class NameEmail(_repr.Representation):
             return input_value
 
     def __str__(self) -> str:
-        if '@' in self.name:
-            return f'"{self.name}" <{self.email}>'
+        if self.name and not _unquoted_name_regex.fullmatch(self.name):
+            # Inside a quoted display name, backslashes and double quotes must be escaped (RFC 5322 quoted-pair).
+            quoted_name = self.name.replace('\\', '\\\\').replace('"', '\\"')
+            return f'"{quoted_name}" <{self.email}>'
 
         return f'{self.name} <{self.email}>'
 
@@ -1337,9 +1339,12 @@ else:
             return cls(input_value)  # type: ignore[return-value]
 
 
+_name_chars = r'[\w.!#$%&\'*+\-/=?^_`{|}~]'
+_unquoted_name_regex = re.compile(rf'(?:{_name_chars}+\s+)*{_name_chars}+')
+
+
 def _build_pretty_email_regex() -> re.Pattern[str]:
-    name_chars = r'[\w.!#$%&\'*+\-/=?^_`{|}~]'
-    unquoted_name_group = rf'((?:{name_chars}+\s+)*{name_chars}+)'
+    unquoted_name_group = rf'({_unquoted_name_regex.pattern})'
     quoted_name_group = r'"((?:[^"]|\")+)"'
     email_group = r'<(.+)>'
     return re.compile(rf'\s*(?:{unquoted_name_group}|{quoted_name_group})?\s*{email_group}\s*')
@@ -1368,6 +1373,7 @@ def validate_email(value: str) -> tuple[str, str]:
 
         * Raw IP address (literal) domain parts are not allowed.
         * `"John Doe <local_part@domain.com>"` style "pretty" email addresses are processed.
+        * In a quoted display name, backslash escapes (RFC 5322 quoted-pairs) are removed.
         * Spaces are striped from the beginning and end of addresses, but no error is raised.
     """
     if email_validator is None:
@@ -1395,6 +1401,9 @@ def validate_email(value: str) -> tuple[str, str]:
     name: str | None = None
     if m:
         unquoted_name, quoted_name, value = m.groups()
+        if quoted_name:
+            # Undo the backslash escapes of a quoted display name (RFC 5322 quoted-pair).
+            quoted_name = re.sub(r'\\(.)', r'\1', quoted_name)
         name = unquoted_name or quoted_name
 
     email = value.strip()
