@@ -45,6 +45,7 @@ jobs:
         id: targets
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
+          retries: 3
           script: |
             const { stdout } = await exec.getExecOutput('yq', ['-o=json', '.branches', '.github/backport/config.yml'], { silent: true });
             const branches = JSON.parse(stdout);
@@ -152,6 +153,7 @@ jobs:
         if: steps.cherry-pick.outputs.has_conflicts == 'true'
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
+          enable-cache: false
           python-version: '3.15'
 
       - name: Install Rust
@@ -338,6 +340,7 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
+          retries: 3
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const fs = require('fs');
@@ -400,6 +403,7 @@ jobs:
         if: failure()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
+          retries: 3
           script: |
             const fs = require('fs');
             const { PR_NUMBER, MERGE_SHA, TARGET_BRANCH, BACKPORT_BRANCH, BACKPORT_DIR } = process.env;
