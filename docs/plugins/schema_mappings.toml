@@ -561,23 +561,24 @@ maximum = 0
 
 [ConstrainedDecimal]
 py_type = "ConstrainedDecimal"
-json_type = "number"
-additional = ""
+json_type = "anyOf"
 defined_in = "JSON Schema Core"
-notes = "If the type has values declared for the constraints, they are included as validations. See the mapping for `condecimal` below."
+notes = "If the type has values declared for the constraints, they are included as validations on the `number` schema. See the mapping for `condecimal` below."
+
+[ConstrainedDecimal.additional]
+anyOf = [{ type = "number" }, { type = "string" }]
 
 ["condecimal(gt=1, ge=2, lt=6, le=5, multiple_of=2)"]
 py_type = "condecimal(gt=1, ge=2, lt=6, le=5, multiple_of=2)"
-json_type = "number"
+json_type = "anyOf"
 defined_in = "JSON Schema Validation"
-notes = "Any argument not passed to the function (not defined) will not be included in the schema."
+notes = "Any argument not passed to the function (not defined) will not be included in the schema. In serialization mode, the schema is `{\"type\": \"string\"}`, as decimals are serialized as strings."
 
 ["condecimal(gt=1, ge=2, lt=6, le=5, multiple_of=2)".additional]
-maximum = 5
-exclusiveMaximum = 6
-minimum = 2
-exclusiveMinimum = 1
-multipleOf = 2
+anyOf = [
+    { type = "number", maximum = 5, exclusiveMaximum = 6, minimum = 2, exclusiveMinimum = 1, multipleOf = 2 },
+    { type = "string" },
+]
 
 [BaseModel]
 py_type = "BaseModel"
