@@ -843,22 +843,6 @@ print(model)
 car_owner=Owner(name='John', item=Car(color='black')) home_owner=Owner(name='James', item=House(rooms=3))
 """
 
-try:
-    # If the values of the sub-types are invalid, we get an error
-    Model(
-        car_owner=Owner(name='John', item=House(rooms=3)),
-        home_owner=Owner(name='James', item=Car(color='black')),
-    )
-except ValidationError as e:
-    print(e)
-    """
-    2 validation errors for Model
-    wine
-      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='Kinda good', input_type=str]
-    cheese
-      Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='yeah', input_type=str]
-    """
-
 # Similarly with JSON
 model = Model.model_validate_json(
     '{"car_owner":{"name":"John","item":{"color":"black"}},"home_owner":{"name":"James","item":{"rooms":3}}}'
