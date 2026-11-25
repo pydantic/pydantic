@@ -929,6 +929,16 @@ table_rows: list[Row] = [
     ),
     Row(
         deque,
+        'dict_keys',
+        python_input=True,
+    ),
+    Row(
+        deque,
+        'dict_values',
+        python_input=True,
+    ),
+    Row(
+        deque,
         Iterable,
         python_input=True,
         condition='Any iterable except `str`, `bytes`, `bytearray`, `dict` and mappings, e.g. generators.',
