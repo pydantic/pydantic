@@ -194,7 +194,7 @@ jobs:
             --model claude-opus-5-5 \
             --max-budget-usd 20 \
             --add-dir "$RUNNER_TEMP" \
-            --allowedTools 'Read,Edit,Write,Glob,Grep,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git add:*),Bash(git checkout --ours:*),Bash(git checkout --theirs:*),Bash(uv:*),Bash(make:*)' \
+            --allowedTools 'Read,Edit,Write,Glob,Grep,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git add:*),Bash(git rm:*),Bash(git checkout --ours:*),Bash(git checkout --theirs:*),Bash(uv:*),Bash(make:*)' \
             || echo "::warning::Agent exited with an error"
 
           # Don't trust the agent report alone, check that no conflicts are left:
