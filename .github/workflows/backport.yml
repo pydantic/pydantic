@@ -5,9 +5,10 @@
 name: backport
 
 on:
-  # zizmor: ignore[dangerous-triggers] -- only the merged commit (already on `main`) is checked out, never the PR head
-  pull_request_target:
-    types: [closed, labeled]
+  # Every merge into `main` is a push, and backport labels are read from the merged PR. Labels added after the merge
+  # require a manual run.
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       pr:
@@ -23,9 +24,6 @@ permissions: {}
 
 jobs:
   plan:
-    # On event `closed`, every backport label of the PR is processed. On event `labeled`, only the added label is
-    # (labels added before the merge are skipped here, and handled on `closed`).
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged && github.event.pull_request.base.ref == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -59,10 +57,15 @@ jobs:
                 return;
               }
             } else {
-              prNumber = context.payload.pull_request.number;
-              labels = context.payload.action === 'labeled'
-                ? [context.payload.label.name]
-                : context.payload.pull_request.labels.map((label) => label.name);
+              const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({ ...context.repo, commit_sha: context.sha });
+              const merged = prs.find((pr) => pr.merge_commit_sha === context.sha && pr.base.ref === 'main');
+              if (merged === undefined) {
+                core.info(`${context.sha} is not the merge commit of a PR`);
+                core.setOutput('targets', '[]');
+                return;
+              }
+              prNumber = merged.number;
+              labels = merged.labels.map((label) => label.name);
             }
 
             const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: prNumber });
