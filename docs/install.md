@@ -66,7 +66,7 @@ And if you prefer to install Pydantic directly from the repository:
     ```bash
     pip install 'git+https://github.com/pydantic/pydantic@main'
     # or with `email` and `timezone` extras:
-    pip install 'git+https://github.com/pydantic/pydantic@main#egg=pydantic[email,timezone]'
+    pip install 'pydantic[email,timezone] @ git+https://github.com/pydantic/pydantic@main'
     ```
 
 === "uv"
@@ -74,5 +74,5 @@ And if you prefer to install Pydantic directly from the repository:
     ```bash
     uv add 'git+https://github.com/pydantic/pydantic@main'
     # or with `email` and `timezone` extras:
-    uv add 'git+https://github.com/pydantic/pydantic@main#egg=pydantic[email,timezone]'
+    uv add 'pydantic[email,timezone] @ git+https://github.com/pydantic/pydantic@main'
     ```
