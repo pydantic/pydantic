@@ -58,14 +58,12 @@ Fork the repository on GitHub and clone your fork locally.
 git clone git@github.com:<your username>/pydantic.git
 cd pydantic
 
-# Install UV and pre-commit
+# Install uv
 # We use uv here, for other options see:
 # https://docs.astral.sh/uv/getting-started/installation/
-# https://pre-commit.com/#install
 curl -LsSf https://astral.sh/uv/install.sh | sh
-uv tool install pre-commit
 
-# Install pydantic, dependencies, test dependencies and doc dependencies
+# Install development dependencies and register the pre-commit hooks
 make install
 ```
 
