@@ -566,6 +566,7 @@ pub enum EitherInt<'py> {
     #[expect(dead_code, reason = "Should this variant be used?")]
     U64(u64),
     BigInt(BigInt),
+    BigIntRef(&'py BigInt),
     Py(Bound<'py, PyAny>),
 }
 
@@ -596,6 +597,13 @@ impl<'py> EitherInt<'py> {
                     e.into_original().into_bound_py_any(py)?,
                 )),
             },
+            EitherInt::BigIntRef(u) => match i64::try_from(u) {
+                Ok(u) => Ok(u),
+                Err(_) => Err(ValError::new(
+                    ErrorTypeDefaults::IntParsingSize,
+                    u.into_bound_py_any(py)?,
+                )),
+            },
             EitherInt::Py(i) => i
                 .extract()
                 .map_err(|_| ValError::new(ErrorTypeDefaults::IntParsingSize, &i)),
@@ -610,6 +618,7 @@ impl<'py> EitherInt<'py> {
                 Err(_) => Ok(Int::Big(BigInt::from(*u))),
             },
             EitherInt::BigInt(b) => Ok(Int::Big(b.clone())),
+            EitherInt::BigIntRef(b) => Ok(Int::Big((*b).clone())),
             EitherInt::Py(i) => i
                 .extract()
                 .map_err(|_| ValError::new(ErrorTypeDefaults::IntParsingSize, i)),
@@ -629,6 +638,11 @@ impl<'py> EitherInt<'py> {
                 _ => None,
             },
             EitherInt::BigInt(i) => match u8::try_from(i) {
+                Ok(0) => Some(false),
+                Ok(1) => Some(true),
+                _ => None,
+            },
+            EitherInt::BigIntRef(i) => match u8::try_from(*i) {
                 Ok(0) => Some(false),
                 Ok(1) => Some(true),
                 _ => None,

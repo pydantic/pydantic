@@ -170,7 +170,7 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
     fn validate_int(&self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'_>>> {
         match self {
             JsonValue::Int(i) => Ok(ValidationMatch::exact(EitherInt::I64(*i))),
-            JsonValue::BigInt(b) => Ok(ValidationMatch::exact(EitherInt::BigInt(b.clone()))),
+            JsonValue::BigInt(b) => Ok(ValidationMatch::exact(EitherInt::BigIntRef(b))),
             JsonValue::Bool(b) if !strict => Ok(ValidationMatch::lax(EitherInt::I64((*b).into()))),
             JsonValue::Float(f) if !strict => float_as_int(self, *f).map(ValidationMatch::lax),
             JsonValue::Str(str) if !strict => str_as_int(self, str).map(ValidationMatch::lax),

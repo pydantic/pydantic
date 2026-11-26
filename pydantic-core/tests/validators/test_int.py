@@ -591,3 +591,18 @@ def test_json_big_int_key():
     assert v.validate_python({big_integer: 'x'}) == {big_integer: 'x'}
     assert v.validate_json('{"' + str(big_integer) + '": "x"}') == {big_integer: 'x'}
     assert v.validate_strings({str(big_integer): 'x'}) == {big_integer: 'x'}
+
+
+@pytest.mark.parametrize('value', [-(10**60 + 1), 2**64, 10**60 + 1])
+@pytest.mark.parametrize('strict', [False, True])
+def test_json_big_int_exact(value: int, strict: bool) -> None:
+    data = str(value)
+    validator = SchemaValidator(cs.int_schema(strict=strict))
+    assert validator.validate_json(data) == value
+    assert validator.validate_json(data, strict=not strict) == value
+
+    # A JSON BigInt remains an exact integer match when float comes first.
+    union = SchemaValidator(cs.union_schema([cs.float_schema(), cs.int_schema(strict=strict)]))
+    result = union.validate_json(data)
+    assert result == value
+    assert type(result) is int
