@@ -252,7 +252,8 @@ In its simplest form, a field validator is a callable taking the value to be val
            did operations on the original input type.
 
 * ***Plain* validators**: act similarly to *before* validators but they **terminate validation immediately** after returning,
-  so no further validators are called and Pydantic does not do any of its internal validation against the field type.
+  so validators to their left in `Annotated` are not called and Pydantic does not do any of its internal validation
+  against the field type. *After* validators to their right still run.
   {#field-plain-validator}
 
     === "Annotated pattern"
