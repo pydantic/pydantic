@@ -145,3 +145,42 @@ def test_transform_reference_encoder_order(monkeypatch: pytest.MonkeyPatch) -> N
         schema = generator._apply_annotations(Colour, [], transform_inner_schema=transform)
     assert events == ['transform', 'encoder']
     assert SchemaSerializer(generator.clean_schema(schema)).to_json(Colour.red) == b'"RED"'
+
+
+def test_cached_container_schemas_are_independent() -> None:
+    annotation = list[dict[str, int | str]]
+    adapter = TypeAdapter(annotation)
+    schema = adapter.core_schema
+    assert schema['type'] == 'list'
+    item = schema['items_schema']
+    assert item is not None and item['type'] == 'dict'
+    union = item['values_schema']
+    assert union is not None and union['type'] == 'union'
+    first = union['choices'][0]
+    assert not isinstance(first, tuple) and first['type'] == 'int'
+    first['strict'] = True
+    union['choices'].reverse()
+
+    fresh = TypeAdapter(annotation).core_schema
+    assert fresh == core_schema.list_schema(
+        core_schema.dict_schema(
+            core_schema.str_schema(), core_schema.union_schema([core_schema.int_schema(), core_schema.str_schema()])
+        )
+    )
+    assert fresh is not schema
+
+    reversed_annotation = list[dict[str, str | int]]
+    assert reversed_annotation == annotation
+    assert TypeAdapter(reversed_annotation).core_schema == core_schema.list_schema(
+        core_schema.dict_schema(
+            core_schema.str_schema(), core_schema.union_schema([core_schema.str_schema(), core_schema.int_schema()])
+        )
+    )
+
+
+@pytest.mark.filterwarnings('ignore:`json_encoders` is deprecated.*:DeprecationWarning')
+def test_cached_container_schema_respects_json_encoders() -> None:
+    annotation = list[str]
+    assert TypeAdapter(annotation).dump_json(['x']) == b'["x"]'
+    adapter = TypeAdapter(annotation, config={'json_encoders': {str: str.upper}})
+    assert adapter.dump_json(['x']) == b'["X"]'
