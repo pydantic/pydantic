@@ -891,7 +891,7 @@ Built-in type: [`tuple`][] (deprecated alias: [`typing.Tuple`][]).
 
 <h4>Constraints</h4>
 
-Lists support the following constraints:
+Tuples support the following constraints:
 
 | Constraint   | Description                                  | JSON Schema                                                                                    |
 |--------------|----------------------------------------------|------------------------------------------------------------------------------------------------|
