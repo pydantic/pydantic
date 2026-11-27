@@ -83,6 +83,14 @@ pub(crate) trait Input<'py>: fmt::Debug {
         None
     }
 
+    fn as_json_object_bytes(&self) -> Option<super::JsonObjectBytes<'_>> {
+        None
+    }
+
+    fn materialized_json(&self) -> Option<&JsonValue<'_>> {
+        self.as_json()
+    }
+
     fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>>;
 
     type Arguments<'a>: Arguments<'py>
