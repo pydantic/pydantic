@@ -108,13 +108,14 @@ class ValidateCallWrapper:
             return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
             gen_schema = GenerateSchema(self.config_wrapper, self.ns_resolver)
             schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
+            return_core_config = self.config_wrapper.core_config(title=f'{self.qualname} return value')
             validator = create_schema_validator(
                 schema,
                 self.schema_type,
                 self.module,
                 self.qualname,
                 'validate_call',
-                core_config,
+                return_core_config,
                 self.config_wrapper.plugin_settings,
             )
             if inspect.iscoroutinefunction(self.function):
