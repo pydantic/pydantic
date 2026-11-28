@@ -3339,3 +3339,22 @@ def test_generics_parameterization_not_hashable() -> None:
     Mint = Model[Annotated[int, NoHash()]]
 
     assert Mint(f='1').f == 1
+
+
+def test_bare_type_alias_with_default_nested_defs() -> None:
+    from typing_extensions import TypeAliasType, TypeVar as ExtTypeVar
+
+    T1 = ExtTypeVar('T1', default=int)
+    T2 = ExtTypeVar('T2', default=int)
+    T3 = ExtTypeVar('T3', default=str)
+
+    B = TypeAliasType('B', list[T1], type_params=(T1,))
+    N = TypeAliasType('N', list[B[T2]], type_params=(T2,))
+    M = TypeAliasType('M', list[B[T3]], type_params=(T3,))
+
+    class X(BaseModel):
+        a: N
+        b: M
+
+    assert list(X.model_json_schema()['$defs']) == ['B_int_', 'B_str_', 'M', 'N']
+    assert list(TypeAdapter(N).json_schema()['$defs']) == ['B_int_']

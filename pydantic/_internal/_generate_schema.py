@@ -1379,6 +1379,12 @@ class GenerateSchema:
 
             origin: TypeAliasType = get_origin(obj) or obj
             typevars_map = get_standard_typevars_map(obj)
+            if typevars_map is None and getattr(origin, '__parameters__', ()):
+                defaults_map: dict[TypeVar, Any] = {}
+                for param in origin.__parameters__:
+                    if hasattr(param, 'has_default') and param.has_default():
+                        defaults_map[param] = replace_types(param.__default__, defaults_map)
+                typevars_map = defaults_map or None
 
             with self._ns_resolver.push(origin):
                 try:
